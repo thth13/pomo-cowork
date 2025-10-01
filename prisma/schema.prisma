@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  username    String   @unique
+  password    String
+  isAnonymous Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Settings
+  workDuration   Int @default(25) // minutes
+  shortBreak     Int @default(5) // minutes
+  longBreak      Int @default(15) // minutes
+  longBreakAfter Int @default(4) // sessions
+
+  // Relations
+  sessions PomodoroSession[]
+  settings UserSettings?
+
+  @@map("users")
+}
+
+model UserSettings {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Timer settings
+  workDuration   Int @default(25)
+  shortBreak     Int @default(5)
+  longBreak      Int @default(15)
+  longBreakAfter Int @default(4)
+
+  // Sound settings
+  soundEnabled Boolean @default(true)
+  soundVolume  Float   @default(0.5)
+
+  // Notification settings
+  notificationsEnabled Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("user_settings")
+}
+
+model PomodoroSession {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  task     String
+  duration Int // in minutes
+  type     String @default("WORK")
+  status   String @default("ACTIVE")
+
+  startedAt   DateTime  @default(now())
+  endedAt     DateTime?
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("pomodoro_sessions")
+}
