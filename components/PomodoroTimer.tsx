@@ -30,7 +30,9 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     completeSession,
     cancelSession,
     tick,
-    restoreSession
+    restoreSession,
+    previewSessionType,
+    initializeWithSettings
   } = useTimerStore()
 
   const { user } = useAuthStore()
@@ -98,6 +100,19 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     }
   }, [user?.id]) // Only depend on user ID, not the whole user object
 
+  useEffect(() => {
+    if (!user?.settings) return
+    if (currentSession) return
+
+    initializeWithSettings({
+      workDuration: user.settings.workDuration,
+      shortBreak: user.settings.shortBreak,
+      longBreak: user.settings.longBreak,
+      longBreakAfter: user.settings.longBreakAfter,
+    })
+    setSessionType(SessionType.WORK)
+  }, [user?.settings, currentSession, initializeWithSettings])
+
   // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined
@@ -130,6 +145,12 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       default:
         return workDuration
     }
+  }
+
+  const handleSessionTypeChange = (type: SessionType) => {
+    if (currentSession) return
+    setSessionType(type)
+    previewSessionType(type)
   }
 
   const getNextSessionType = (): SessionType => {
@@ -435,7 +456,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           {Object.values(SessionType).map((type) => (
             <button
               key={type}
-              onClick={() => !currentSession && setSessionType(type)}
+              onClick={() => handleSessionTypeChange(type)}
               disabled={!!currentSession}
               className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                 sessionType === type

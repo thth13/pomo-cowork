@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import ActiveSessions from '@/components/ActiveSessions'
 
 type ActiveSession = Prisma.PomodoroSessionGetPayload<{
   include: {

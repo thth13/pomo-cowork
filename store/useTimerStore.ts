@@ -7,10 +7,10 @@ interface TimerState {
   timeRemaining: number
   currentSession: PomodoroSession | null
   completedSessions: number
-  
+
   // Active sessions from other users
   activeSessions: ActiveSession[]
-  
+
   // Actions
   startSession: (task: string, duration: number, type: SessionType, sessionId?: string) => void
   pauseSession: () => void
@@ -19,8 +19,10 @@ interface TimerState {
   cancelSession: () => void
   tick: () => void
   setActiveSessions: (sessions: ActiveSession[]) => void
+  updateActiveSessionTime: (sessionId: string, timeRemaining: number) => void
   restoreSession: (session: PomodoroSession) => void
-  
+  previewSessionType: (type: SessionType) => void
+
   // Settings
   workDuration: number
   shortBreak: number
@@ -32,16 +34,22 @@ interface TimerState {
     longBreak: number
     longBreakAfter: number
   }) => void
+  initializeWithSettings: (settings: {
+    workDuration: number
+    shortBreak: number
+    longBreak: number
+    longBreakAfter: number
+  }) => void
 }
 
 export const useTimerStore = create<TimerState>((set, get) => ({
-  // Initial state
+  // Initial state with default settings
   isRunning: false,
-  timeRemaining: 25 * 60, // 25 minutes in seconds
+  timeRemaining: 25 * 60, // Default: 25 minutes in seconds
   currentSession: null,
   completedSessions: 0,
   activeSessions: [],
-  
+
   // Default settings (25 min work, 5 min short break, 15 min long break)
   workDuration: 25,
   shortBreak: 5,
@@ -110,6 +118,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
 
   completeSession: () => {
     const { currentSession, completedSessions } = get()
+    
     if (currentSession) {
       set({
         isRunning: false,
@@ -136,12 +145,14 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   cancelSession: () => {
-    const { currentSession } = get()
+    const state = get()
+    const { currentSession } = state
     if (currentSession) {
+      const fallbackDuration = getSessionDuration(currentSession.type, state)
       set({
         isRunning: false,
         currentSession: null,
-        timeRemaining: get().workDuration * 60,
+        timeRemaining: fallbackDuration * 60,
       })
     }
   },
@@ -159,12 +170,45 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     set({ activeSessions: sessions })
   },
 
+  updateActiveSessionTime: (sessionId, timeRemaining) => {
+    set((state) => ({
+      activeSessions: state.activeSessions.map((session) => (
+        session.id === sessionId
+          ? { ...session, timeRemaining }
+          : session
+      ))
+    }))
+  },
+
+  previewSessionType: (type) => {
+    const state = get()
+    const { currentSession } = state
+    if (currentSession) {
+      return
+    }
+
+    const duration = getSessionDuration(type, state)
+    set({
+      timeRemaining: duration * 60,
+    })
+  },
+
   setTimerSettings: (settings) => {
     set({
       workDuration: settings.workDuration,
       shortBreak: settings.shortBreak,
       longBreak: settings.longBreak,
       longBreakAfter: settings.longBreakAfter,
+    })
+  },
+
+  initializeWithSettings: (settings) => {
+    set({
+      workDuration: settings.workDuration,
+      shortBreak: settings.shortBreak,
+      longBreak: settings.longBreak,
+      longBreakAfter: settings.longBreakAfter,
+      timeRemaining: settings.workDuration * 60, // Initialize timeRemaining with workDuration
     })
   },
 }))

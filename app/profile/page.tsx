@@ -232,7 +232,7 @@ export default function ProfilePage() {
             Hi, {user?.username}! 👋
           </h1>
           <p className="text-slate-600">
-            Here's your productivity statistics
+            Here&apos;s your productivity statistics
           </p>
         </motion.div>
 

@@ -49,7 +49,7 @@ export default function HomePage() {
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
@@ -61,7 +61,7 @@ export default function HomePage() {
             Boost your productivity with the Pomodoro Technique.
             See what other users are working on in real-time.
           </p>
-        </motion.div>
+        </motion.div> */}
 
         {/* Main Content */}
         <div className="space-y-12">
