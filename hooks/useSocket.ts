@@ -79,7 +79,7 @@ export function useSocket() {
     }
   }, [setActiveSessions]) // Remove user dependency to prevent reconnects
 
-  // Отдельный эффект для подключения пользователя
+  // Separate effect for user connection
   useEffect(() => {
     if (socketRef.current && user) {
       socketRef.current.emit('join-user', user.id)

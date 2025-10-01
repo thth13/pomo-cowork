@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
 
     if (!token) {
       return NextResponse.json(
-        { error: 'Токен не предоставлен' },
+        { error: 'Token not provided' },
         { status: 401 }
       )
     }
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const payload = verifyToken(token)
     if (!payload) {
       return NextResponse.json(
-        { error: 'Недействительный токен' },
+        { error: 'Invalid token' },
         { status: 401 }
       )
     }
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Пользователь не найден' },
+        { error: 'User not found' },
         { status: 404 }
       )
     }
@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Auth check error:', error)
     return NextResponse.json(
-      { error: 'Ошибка сервера' },
+      { error: 'Server error' },
       { status: 500 }
     )
   }

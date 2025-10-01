@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
 
     if (!email || !password) {
       return NextResponse.json(
-        { error: 'Email и пароль обязательны' },
+        { error: 'Email and password are required' },
         { status: 400 }
       )
     }
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: 'Неверный email или пароль' },
+        { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const isValidPassword = await comparePasswords(password, user.password)
     if (!isValidPassword) {
       return NextResponse.json(
-        { error: 'Неверный email или пароль' },
+        { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Login error:', error)
     return NextResponse.json(
-      { error: 'Ошибка сервера' },
+      { error: 'Server error' },
       { status: 500 }
     )
   }

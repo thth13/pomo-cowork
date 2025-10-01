@@ -9,7 +9,7 @@ export default function ConnectionStatus() {
   const [showStatus, setShowStatus] = useState(true)
 
   useEffect(() => {
-    // Проверяем подключение к вынесенному WebSocket серверу
+    // Check connection to external WebSocket server
     const checkConnection = async () => {
       const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL ?? 'http://localhost:4000'
       const healthUrl = `${socketUrl.replace(/\/$/, '')}/health`
@@ -33,7 +33,7 @@ export default function ConnectionStatus() {
     checkConnection()
     const interval = setInterval(checkConnection, 5000)
 
-    // Скрываем статус через 10 секунд если все хорошо
+    // Hide status after 10 seconds if everything is fine
     const hideTimer = setTimeout(() => {
       if (isConnected) {
         setShowStatus(false)
@@ -63,12 +63,12 @@ export default function ConnectionStatus() {
         {isConnected ? (
           <>
             <Wifi className="w-4 h-4" />
-            <span className="text-sm font-medium">Real-time подключен</span>
+            <span className="text-sm font-medium">Real-time connected</span>
           </>
         ) : (
           <>
             <WifiOff className="w-4 h-4" />
-            <span className="text-sm font-medium">Нет подключения к серверу</span>
+            <span className="text-sm font-medium">No server connection</span>
           </>
         )}
         

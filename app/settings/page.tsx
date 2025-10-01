@@ -81,14 +81,14 @@ export default function SettingsPage() {
           longBreakAfter: settings.longBreakAfter,
         })
         
-        setSaveMessage('Настройки сохранены!')
+        setSaveMessage('Settings saved!')
         setTimeout(() => setSaveMessage(''), 3000)
       } else {
-        setSaveMessage('Ошибка сохранения настроек')
+        setSaveMessage('Failed to save settings')
       }
     } catch (error) {
       console.error('Failed to save settings:', error)
-      setSaveMessage('Ошибка сохранения настроек')
+      setSaveMessage('Failed to save settings')
     } finally {
       setIsSaving(false)
     }
@@ -101,10 +101,10 @@ export default function SettingsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-slate-800 mb-4">
-              Необходима авторизация
+              Authorization Required
             </h1>
             <p className="text-slate-600">
-              Войдите в аккаунт, чтобы изменить настройки.
+              Please log in to change your settings.
             </p>
           </div>
         </div>
@@ -138,10 +138,10 @@ export default function SettingsPage() {
         >
           <h1 className="text-3xl font-bold text-slate-800 mb-2 flex items-center">
             <SettingsIcon className="w-8 h-8 mr-3" />
-            Настройки
+            Settings
           </h1>
           <p className="text-slate-600">
-            Настройте таймер и уведомления под себя
+            Customize your timer and notifications
           </p>
         </motion.div>
 
@@ -155,13 +155,13 @@ export default function SettingsPage() {
           >
             <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
               <User className="w-5 h-5 mr-2" />
-              Аккаунт
+              Account
             </h2>
             
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Имя пользователя
+                  Username
                 </label>
                 <input
                   type="text"
@@ -194,13 +194,13 @@ export default function SettingsPage() {
           >
             <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
               <Clock className="w-5 h-5 mr-2" />
-              Настройки таймера
+              Timer Settings
             </h2>
             
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Продолжительность работы (минуты)
+                  Work duration (minutes)
                 </label>
                 <input
                   type="number"
@@ -214,7 +214,7 @@ export default function SettingsPage() {
               
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Короткий перерыв (минуты)
+                  Short break (minutes)
                 </label>
                 <input
                   type="number"
@@ -228,7 +228,7 @@ export default function SettingsPage() {
               
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Длинный перерыв (минуты)
+                  Long break (minutes)
                 </label>
                 <input
                   type="number"
@@ -242,7 +242,7 @@ export default function SettingsPage() {
               
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Длинный перерыв после (сессий)
+                  Long break after (sessions)
                 </label>
                 <input
                   type="number"
@@ -265,17 +265,17 @@ export default function SettingsPage() {
           >
             <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
               <Volume2 className="w-5 h-5 mr-2" />
-              Звуковые уведомления
+              Sound Notifications
             </h2>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
                   <label className="text-sm font-medium text-slate-700">
-                    Включить звуки
+                    Enable sounds
                   </label>
                   <p className="text-sm text-slate-500">
-                    Воспроизводить звук при завершении сессии
+                    Play sound when session completes
                   </p>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -292,7 +292,7 @@ export default function SettingsPage() {
               {settings.soundEnabled && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">
-                    Громкость: {Math.round(settings.soundVolume * 100)}%
+                    Volume: {Math.round(settings.soundVolume * 100)}%
                   </label>
                   <input
                     type="range"
@@ -317,16 +317,16 @@ export default function SettingsPage() {
           >
             <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
               <Bell className="w-5 h-5 mr-2" />
-              Уведомления
+              Notifications
             </h2>
             
             <div className="flex items-center justify-between">
               <div>
                 <label className="text-sm font-medium text-slate-700">
-                  Браузерные уведомления
+                  Browser notifications
                 </label>
                 <p className="text-sm text-slate-500">
-                  Показывать уведомления в браузере при завершении сессии
+                  Show browser notifications when session completes
                 </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
@@ -372,12 +372,12 @@ export default function SettingsPage() {
               {isSaving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Сохранение...</span>
+                  <span>Saving...</span>
                 </>
               ) : (
                 <>
                   <Save className="w-4 h-4" />
-                  <span>Сохранить настройки</span>
+                  <span>Save Settings</span>
                 </>
               )}
             </motion.button>

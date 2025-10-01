@@ -147,7 +147,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
   const handleStart = async () => {
     if (!task.trim() && sessionType === SessionType.WORK) {
-      alert('Пожалуйста, укажите над чем вы работаете')
+      alert('Please specify what you\'re working on')
       return
     }
 
@@ -381,8 +381,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
     // Show notification
     if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification('Помодоро завершен!', {
-        body: `Время для ${getSessionTypeLabel(nextType).toLowerCase()}`,
+      new Notification('Pomodoro completed!', {
+        body: `Time for ${getSessionTypeLabel(nextType).toLowerCase()}`,
         icon: '/favicon.ico'
       })
     }
@@ -400,13 +400,13 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   const getSessionTypeLabel = (type: SessionType): string => {
     switch (type) {
       case SessionType.WORK:
-        return 'Работа'
+        return 'Work'
       case SessionType.SHORT_BREAK:
-        return 'Короткий перерыв'
+        return 'Short break'
       case SessionType.LONG_BREAK:
-        return 'Длинный перерыв'
+        return 'Long break'
       default:
-        return 'Работа'
+        return 'Work'
     }
   }
 
@@ -506,7 +506,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           <div>
             <input
               type="text"
-              placeholder="Над чем вы работаете?"
+              placeholder="What are you working on?"
               value={task}
               onChange={(e) => setTask(e.target.value)}
               disabled={!!currentSession}
@@ -526,7 +526,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               whileTap={{ scale: 0.95 }}
             >
               <Play size={20} />
-              <span>Начать</span>
+              <span>Start</span>
             </motion.button>
           ) : (
             <>
@@ -537,7 +537,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
                 whileTap={{ scale: 0.95 }}
               >
                 {isRunning ? <Pause size={20} /> : <Play size={20} />}
-                <span>{isRunning ? 'Пауза' : 'Продолжить'}</span>
+                <span>{isRunning ? 'Pause' : 'Resume'}</span>
               </motion.button>
               
               <motion.button
@@ -547,7 +547,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
                 whileTap={{ scale: 0.95 }}
               >
                 <Square size={20} />
-                <span>Стоп</span>
+                <span>Stop</span>
               </motion.button>
             </>
           )}
@@ -559,14 +559,14 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             whileTap={{ scale: 0.95 }}
           >
             <RotateCcw size={20} />
-            <span>Сброс</span>
+            <span>Reset</span>
           </motion.button>
         </div>
 
         {/* Session Counter */}
         <div className="text-center">
           <div className="text-2xl font-bold text-slate-700">{completedSessions}</div>
-          <div className="text-sm text-slate-500">завершенных сессий</div>
+          <div className="text-sm text-slate-500">completed sessions</div>
         </div>
       </div>
     </div>

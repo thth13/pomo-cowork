@@ -5,7 +5,7 @@ export interface AnonymousProfile {
 }
 
 const ANONYMOUS_EMAIL_DOMAIN = 'guest.local'
-const USERNAME_PREFIX = 'Гость #'
+const USERNAME_PREFIX = 'Guest #'
 const USERNAME_SEGMENT_LENGTH = 10
 
 const sanitizeAnonymousId = (anonymousId: string): string => {

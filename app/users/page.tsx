@@ -63,8 +63,8 @@ export default function UsersPage() {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">Пользователи</h1>
-          <p className="text-slate-600">Найдите и посмотрите профили других пользователей</p>
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">Users</h1>
+          <p className="text-slate-600">Find and view profiles of other users</p>
         </div>
 
         {/* Search */}
@@ -73,7 +73,7 @@ export default function UsersPage() {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
             <input
               type="text"
-              placeholder="Поиск пользователей по имени..."
+              placeholder="Search users by name..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
@@ -87,7 +87,7 @@ export default function UsersPage() {
             {loading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
-                <p className="text-slate-600">Поиск...</p>
+                <p className="text-slate-600">Searching...</p>
               </div>
             ) : users.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -109,7 +109,7 @@ export default function UsersPage() {
                         <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
                           <div className="flex items-center gap-1">
                             <TrendingUp className="w-4 h-4" />
-                            <span>{user._count.sessions} сессий</span>
+                            <span>{user._count.sessions} sessions</span>
                           </div>
                           <div className="flex items-center gap-1">
                             <Clock className="w-4 h-4" />
@@ -124,7 +124,7 @@ export default function UsersPage() {
             ) : (
               <div className="text-center py-8">
                 <User className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500">Пользователи не найдены</p>
+                <p className="text-slate-500">No users found</p>
               </div>
             )}
           </div>
@@ -134,9 +134,9 @@ export default function UsersPage() {
         {searchQuery.length < 2 && (
           <div className="text-center py-12">
             <Search className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-slate-700 mb-2">Найдите пользователей</h2>
+            <h2 className="text-xl font-semibold text-slate-700 mb-2">Find Users</h2>
             <p className="text-slate-500 max-w-md mx-auto">
-              Введите имя пользователя в поле поиска выше, чтобы найти и посмотреть их профили
+              Enter a username in the search field above to find and view their profiles
             </p>
           </div>
         )}

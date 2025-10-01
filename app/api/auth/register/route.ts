@@ -8,14 +8,14 @@ export async function POST(request: NextRequest) {
 
     if (!email || !username || !password) {
       return NextResponse.json(
-        { error: 'Все поля обязательны' },
+        { error: 'All fields are required' },
         { status: 400 }
       )
     }
 
     if (password.length < 6) {
       return NextResponse.json(
-        { error: 'Пароль должен содержать минимум 6 символов' },
+        { error: 'Password must be at least 6 characters long' },
         { status: 400 }
       )
     }
@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       return NextResponse.json(
-        { error: 'Пользователь с таким email или именем уже существует' },
+        { error: 'User with this email or username already exists' },
         { status: 400 }
       )
     }
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Registration error:', error)
     return NextResponse.json(
-      { error: 'Ошибка сервера' },
+      { error: 'Server error' },
       { status: 500 }
     )
   }

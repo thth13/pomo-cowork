@@ -71,10 +71,10 @@ export default function ProfilePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-bold text-slate-800 mb-4">
-              Необходима авторизация
+              Authorization Required
             </h1>
             <p className="text-slate-600">
-              Войдите в аккаунт, чтобы просмотреть статистику.
+              Please log in to view your statistics.
             </p>
           </div>
         </div>
@@ -126,7 +126,7 @@ export default function ProfilePage() {
     ),
     datasets: [
       {
-        label: 'Сессии',
+        label: 'Sessions',
         data: currentStats.weeklyStats.map(day => day.sessions),
         backgroundColor: 'rgba(239, 68, 68, 0.8)',
         borderColor: 'rgba(239, 68, 68, 1)',
@@ -134,7 +134,7 @@ export default function ProfilePage() {
         yAxisID: 'y',
       },
       {
-        label: 'Минуты',
+        label: 'Minutes',
         data: currentStats.weeklyStats.map(day => day.minutes),
         type: 'line' as const,
         backgroundColor: 'rgba(34, 197, 94, 0.2)',
@@ -152,7 +152,7 @@ export default function ProfilePage() {
     ),
     datasets: [
       {
-        label: 'Сессии',
+        label: 'Sessions',
         data: currentStats.monthlyStats.slice(-14).map(day => day.sessions),
         backgroundColor: 'rgba(239, 68, 68, 0.8)',
         borderColor: 'rgba(239, 68, 68, 1)',
@@ -163,7 +163,7 @@ export default function ProfilePage() {
   }
 
   const sessionTypeData = {
-    labels: ['Работа', 'Короткие перерывы', 'Длинные перерывы'],
+    labels: ['Work', 'Short breaks', 'Long breaks'],
     datasets: [
       {
         data: [70, 25, 5], // Mock percentages
@@ -229,10 +229,10 @@ export default function ProfilePage() {
           className="mb-8"
         >
           <h1 className="text-3xl font-bold text-slate-800 mb-2">
-            Привет, {user?.username}! 👋
+            Hi, {user?.username}! 👋
           </h1>
           <p className="text-slate-600">
-            Вот твоя статистика продуктивности
+            Here's your productivity statistics
           </p>
         </motion.div>
 
@@ -255,7 +255,7 @@ export default function ProfilePage() {
             {
               title: 'Всего сессий',
               value: currentStats.totalSessions,
-              subtitle: 'завершенных',
+              subtitle: 'completed',
               icon: Target,
               color: 'text-secondary-600',
               bgColor: 'bg-secondary-50'
@@ -271,7 +271,7 @@ export default function ProfilePage() {
             {
               title: 'Текущая серия',
               value: 7,
-              subtitle: 'дней подряд',
+              subtitle: 'days in a row',
               icon: Flame,
               color: 'text-orange-600',
               bgColor: 'bg-orange-50'
@@ -309,7 +309,7 @@ export default function ProfilePage() {
           >
             <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
               <TrendingUp className="w-5 h-5 mr-2" />
-              Активность за неделю
+              Weekly Activity
             </h3>
             <div className="h-64">
               <Bar data={weeklyChartData as any} options={chartOptions as any} />
@@ -325,7 +325,7 @@ export default function ProfilePage() {
           >
             <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
               <Award className="w-5 h-5 mr-2" />
-              Типы сессий
+              Session Types
             </h3>
             <div className="h-64">
               <Doughnut data={sessionTypeData} options={simpleChartOptions} />
@@ -342,7 +342,7 @@ export default function ProfilePage() {
         >
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
             <Calendar className="w-5 h-5 mr-2" />
-            Тренд за последние 2 недели
+            Trend for the last 2 weeks
           </h3>
           <div className="h-64">
             <Line data={monthlyChartData} options={simpleChartOptions} />
@@ -358,16 +358,16 @@ export default function ProfilePage() {
         >
           <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center">
             <Award className="w-5 h-5 mr-2" />
-            Достижения
+            Achievements
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
-              { title: 'Первая сессия', description: 'Завершил первую помодоро сессию', earned: true },
-              { title: '10 сессий', description: 'Завершил 10 помодоро сессий', earned: true },
-              { title: '50 сессий', description: 'Завершил 50 помодоро сессий', earned: false },
-              { title: 'Неделя подряд', description: 'Работал 7 дней подряд', earned: true },
-              { title: 'Ранняя пташка', description: 'Начал сессию до 7 утра', earned: false },
-              { title: 'Сова', description: 'Работал после 10 вечера', earned: false },
+              { title: 'First Session', description: 'Completed your first pomodoro session', earned: true },
+              { title: '10 Sessions', description: 'Completed 10 pomodoro sessions', earned: true },
+              { title: '50 Sessions', description: 'Completed 50 pomodoro sessions', earned: false },
+              { title: 'Week Streak', description: 'Worked 7 days in a row', earned: true },
+              { title: 'Early Bird', description: 'Started a session before 7 AM', earned: false },
+              { title: 'Night Owl', description: 'Worked after 10 PM', earned: false },
             ].map((achievement, index) => (
               <div
                 key={achievement.title}

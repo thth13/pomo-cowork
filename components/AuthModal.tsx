@@ -34,17 +34,17 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       if (isLogin) {
         success = await login(formData.email, formData.password)
         if (!success) {
-          setError('Неверный email или пароль')
+          setError('Invalid email or password')
         }
       } else {
         if (!formData.username.trim()) {
-          setError('Имя пользователя обязательно')
+          setError('Username is required')
           setIsLoading(false)
           return
         }
         success = await register(formData.email, formData.username, formData.password)
         if (!success) {
-          setError('Ошибка регистрации. Попробуйте еще раз.')
+          setError('Registration error. Please try again.')
         }
       }
 
@@ -53,7 +53,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setFormData({ email: '', username: '', password: '' })
       }
     } catch (error) {
-      setError('Произошла ошибка. Попробуйте еще раз.')
+      setError('An error occurred. Please try again.')
     } finally {
       setIsLoading(false)
     }
@@ -87,7 +87,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-slate-800">
-              {isLogin ? 'Вход' : 'Регистрация'}
+              {isLogin ? 'Login' : 'Registration'}
             </h2>
             <button
               onClick={onClose}
@@ -122,7 +122,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             {!isLogin && (
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">
-                  Имя пользователя
+                  Username
                 </label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -132,7 +132,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     value={formData.username}
                     onChange={handleInputChange}
                     className="input pl-10"
-                    placeholder="Ваше имя"
+                    placeholder="Your name"
                     required={!isLogin}
                   />
                 </div>
@@ -142,7 +142,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             {/* Password */}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Пароль
+                Password
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -152,7 +152,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   value={formData.password}
                   onChange={handleInputChange}
                   className="input pl-10 pr-10"
-                  placeholder="Ваш пароль"
+                  placeholder="Your password"
                   required
                   minLength={6}
                 />
@@ -166,7 +166,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               </div>
               {!isLogin && (
                 <p className="text-xs text-slate-500 mt-1">
-                  Минимум 6 символов
+                  Minimum 6 characters
                 </p>
               )}
             </div>
@@ -193,10 +193,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               {isLoading ? (
                 <div className="flex items-center justify-center space-x-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  <span>Загрузка...</span>
+                  <span>Loading...</span>
                 </div>
               ) : (
-                isLogin ? 'Войти' : 'Зарегистрироваться'
+                isLogin ? 'Login' : 'Register'
               )}
             </motion.button>
           </form>
@@ -204,12 +204,12 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           {/* Toggle Mode */}
           <div className="mt-6 text-center">
             <p className="text-slate-600">
-              {isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'}
+              {isLogin ? "Don't have an account?" : 'Already have an account?'}
               <button
                 onClick={toggleMode}
                 className="ml-1 text-primary-600 hover:text-primary-700 font-medium"
               >
-                {isLogin ? 'Зарегистрироваться' : 'Войти'}
+                {isLogin ? 'Register' : 'Login'}
               </button>
             </p>
           </div>

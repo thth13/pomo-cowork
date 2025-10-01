@@ -59,11 +59,11 @@ export default function UserProfilePage() {
           const data = await response.json()
           setProfile(data)
         } else {
-          setError('Пользователь не найден')
+          setError('User not found')
         }
       } catch (error) {
         console.error('Error fetching user profile:', error)
-        setError('Ошибка загрузки профиля')
+        setError('Error loading profile')
       } finally {
         setLoading(false)
       }
@@ -103,19 +103,19 @@ export default function UserProfilePage() {
 
   const getSessionTypeLabel = (type: string) => {
     switch (type) {
-      case 'WORK': return 'Работа'
-      case 'SHORT_BREAK': return 'Короткий перерыв'
-      case 'LONG_BREAK': return 'Длинный перерыв'
+      case 'WORK': return 'Work'
+      case 'SHORT_BREAK': return 'Short break'
+      case 'LONG_BREAK': return 'Long break'
       default: return type
     }
   }
 
   const getSessionStatusLabel = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return 'Завершена'
-      case 'CANCELLED': return 'Отменена'
-      case 'ACTIVE': return 'Активна'
-      case 'PAUSED': return 'Приостановлена'
+      case 'COMPLETED': return 'Completed'
+      case 'CANCELLED': return 'Cancelled'
+      case 'ACTIVE': return 'Active'
+      case 'PAUSED': return 'Paused'
       default: return status
     }
   }
@@ -125,7 +125,7 @@ export default function UserProfilePage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-slate-600">Загрузка профиля...</p>
+          <p className="text-slate-600">Loading profile...</p>
         </div>
       </div>
     )
@@ -136,13 +136,13 @@ export default function UserProfilePage() {
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😞</div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-2">Пользователь не найден</h1>
+          <h1 className="text-2xl font-bold text-slate-800 mb-2">User not found</h1>
           <p className="text-slate-600 mb-6">{error}</p>
           <button
             onClick={() => router.back()}
             className="bg-primary-500 text-white px-6 py-2 rounded-lg hover:bg-primary-600 transition-colors"
           >
-            Назад
+            Back
           </button>
         </div>
       </div>
@@ -162,7 +162,7 @@ export default function UserProfilePage() {
           </button>
           <div>
             <h1 className="text-3xl font-bold text-slate-800">{profile.user.username}</h1>
-            <p className="text-slate-600">Профиль пользователя</p>
+            <p className="text-slate-600">User Profile</p>
           </div>
         </div>
 
@@ -176,11 +176,11 @@ export default function UserProfilePage() {
               className="card"
             >
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-slate-800">Статус</h2>
+                <h2 className="text-xl font-semibold text-slate-800">Status</h2>
                 <div className="flex items-center gap-2">
                   <div className={`w-3 h-3 rounded-full ${isUserOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
                   <span className="text-sm text-slate-600">
-                    {isUserOnline ? 'Онлайн' : 'Оффлайн'}
+                    {isUserOnline ? 'Online' : 'Offline'}
                   </span>
                 </div>
               </div>
@@ -189,19 +189,19 @@ export default function UserProfilePage() {
                 <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-2">
                     <Activity className="w-5 h-5 text-primary-600" />
-                    <span className="font-medium text-primary-800">Сейчас работает</span>
+                    <span className="font-medium text-primary-800">Currently working</span>
                   </div>
-                  <p className="text-primary-700 mb-2">Задача: {profile.activeSession?.task}</p>
+                  <p className="text-primary-700 mb-2">Task: {profile.activeSession?.task}</p>
                   <div className="flex items-center gap-4 text-sm text-primary-600">
-                    <span>Тип: {getSessionTypeLabel(profile.activeSession?.type || '')}</span>
-                    <span>Осталось: {getTimeRemaining()}</span>
+                    <span>Type: {getSessionTypeLabel(profile.activeSession?.type || '')}</span>
+                    <span>Remaining: {getTimeRemaining()}</span>
                   </div>
                 </div>
               ) : (
                 <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
                   <div className="flex items-center gap-3">
                     <Clock className="w-5 h-5 text-slate-500" />
-                    <span className="text-slate-600">Не работает</span>
+                    <span className="text-slate-600">Not working</span>
                   </div>
                 </div>
               )}
@@ -214,23 +214,23 @@ export default function UserProfilePage() {
               transition={{ delay: 0.1 }}
               className="card"
             >
-              <h2 className="text-xl font-semibold text-slate-800 mb-6">Статистика</h2>
+              <h2 className="text-xl font-semibold text-slate-800 mb-6">Statistics</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-primary-600">{profile.stats.totalSessions}</div>
-                  <div className="text-sm text-slate-600">Всего сессий</div>
+                  <div className="text-sm text-slate-600">Total sessions</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-green-600">{profile.stats.completedSessions}</div>
-                  <div className="text-sm text-slate-600">Завершено</div>
+                  <div className="text-sm text-slate-600">Completed</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{profile.stats.totalWorkHours}ч</div>
-                  <div className="text-sm text-slate-600">Время работы</div>
+                  <div className="text-2xl font-bold text-blue-600">{profile.stats.totalWorkHours}h</div>
+                  <div className="text-sm text-slate-600">Work time</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-purple-600">{profile.stats.completionRate}%</div>
-                  <div className="text-sm text-slate-600">Успешность</div>
+                  <div className="text-sm text-slate-600">Success rate</div>
                 </div>
               </div>
             </motion.div>
@@ -242,7 +242,7 @@ export default function UserProfilePage() {
               transition={{ delay: 0.2 }}
               className="card"
             >
-              <h2 className="text-xl font-semibold text-slate-800 mb-6">Последние сессии</h2>
+              <h2 className="text-xl font-semibold text-slate-800 mb-6">Recent Sessions</h2>
               {profile.recentSessions.length > 0 ? (
                 <div className="space-y-3">
                   {profile.recentSessions.map((session) => (
@@ -251,7 +251,7 @@ export default function UserProfilePage() {
                         <p className="font-medium text-slate-800">{session.task}</p>
                         <div className="flex items-center gap-4 text-sm text-slate-600">
                           <span>{getSessionTypeLabel(session.type)}</span>
-                          <span>{session.duration} мин</span>
+                          <span>{session.duration} min</span>
                           <span className={`px-2 py-1 rounded text-xs ${
                             session.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
                             session.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
@@ -270,7 +270,7 @@ export default function UserProfilePage() {
               ) : (
                 <div className="text-center py-8 text-slate-500">
                   <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p>Пока нет сессий</p>
+                  <p>No sessions yet</p>
                 </div>
               )}
             </motion.div>
@@ -285,14 +285,14 @@ export default function UserProfilePage() {
               transition={{ delay: 0.3 }}
               className="card"
             >
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Информация</h3>
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Information</h3>
               <div className="space-y-3">
                 <div>
-                  <div className="text-sm text-slate-500">Дата регистрации</div>
+                  <div className="text-sm text-slate-500">Registration date</div>
                   <div className="font-medium">{formatDate(profile.user.createdAt)}</div>
                 </div>
                 <div>
-                  <div className="text-sm text-slate-500">Всего сессий</div>
+                  <div className="text-sm text-slate-500">Total sessions</div>
                   <div className="font-medium">{profile.user.totalSessions}</div>
                 </div>
                 {currentUser?.id === userId && (
@@ -301,7 +301,7 @@ export default function UserProfilePage() {
                       onClick={() => router.push('/profile')}
                       className="w-full bg-primary-500 text-white py-2 px-4 rounded-lg hover:bg-primary-600 transition-colors"
                     >
-                      Мой профиль
+                      My Profile
                     </button>
                   </div>
                 )}
@@ -315,19 +315,19 @@ export default function UserProfilePage() {
               transition={{ delay: 0.4 }}
               className="card"
             >
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Достижения</h3>
+              <h3 className="text-lg font-semibold text-slate-800 mb-4">Achievements</h3>
               <div className="space-y-3">
                 <div className="flex items-center gap-3">
                   <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-sm">Завершено {profile.stats.completedSessions} сессий</span>
+                  <span className="text-sm">Completed {profile.stats.completedSessions} sessions</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <TrendingUp className="w-5 h-5 text-blue-500" />
-                  <span className="text-sm">{profile.stats.totalWorkHours} часов работы</span>
+                  <span className="text-sm">{profile.stats.totalWorkHours} hours of work</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Clock className="w-5 h-5 text-purple-500" />
-                  <span className="text-sm">{profile.stats.completionRate}% успешность</span>
+                  <span className="text-sm">{profile.stats.completionRate}% success rate</span>
                 </div>
               </div>
             </motion.div>

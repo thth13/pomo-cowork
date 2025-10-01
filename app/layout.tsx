@@ -6,7 +6,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pomo-co.work'),
-  title: 'Pomodo Timer',
+  title: 'Pomo Cowork',
   description: 'Pomodo Timer is a collaborative pomodoro coworking app that keeps your focus and team in sync.',
   icons: {
     icon: [

@@ -3,18 +3,19 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { 
-  Timer, 
-  User, 
-  Settings, 
-  BarChart3, 
-  LogOut, 
-  Menu, 
+import {
+  User,
+  Settings,
+  BarChart3,
+  LogOut,
+  Menu,
   X,
-  Users
+  Users,
+  Timer
 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
+import Image from 'next/image'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -28,10 +29,10 @@ export default function Navbar() {
 
   const navigation = isAuthenticated
     ? [
-        { name: 'Таймер', href: '/', icon: Timer },
-        { name: 'Статистика', href: '/profile', icon: BarChart3 },
-        { name: 'Пользователи', href: '/users', icon: Users },
-        { name: 'Настройки', href: '/settings', icon: Settings },
+        { name: 'Timer', href: '/', icon: Timer },
+        { name: 'Statistics', href: '/profile', icon: BarChart3 },
+        { name: 'Users', href: '/users', icon: Users },
+        { name: 'Settings', href: '/settings', icon: Settings },
       ]
     : []
 
@@ -45,7 +46,7 @@ export default function Navbar() {
               <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
                 <Timer className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-xl text-slate-800">Pomodo</span>
+              <span className="font-bold text-xl text-slate-800">Pomo Cowork</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -77,7 +78,7 @@ export default function Navbar() {
                     className="btn-secondary flex items-center space-x-1"
                   >
                     <LogOut className="w-4 h-4" />
-                    <span>Выйти</span>
+                    <span>Logout</span>
                   </button>
                 </>
               ) : (
@@ -85,7 +86,7 @@ export default function Navbar() {
                   onClick={() => setIsAuthModalOpen(true)}
                   className="btn-primary"
                 >
-                  Войти
+                  Login
                 </button>
               )}
             </div>
@@ -136,7 +137,7 @@ export default function Navbar() {
                         className="w-full btn-secondary flex items-center justify-center space-x-1"
                       >
                         <LogOut className="w-4 h-4" />
-                        <span>Выйти</span>
+                        <span>Logout</span>
                       </button>
                     </>
                   ) : (
@@ -147,7 +148,7 @@ export default function Navbar() {
                       }}
                       className="w-full btn-primary"
                     >
-                      Войти
+                      Login
                     </button>
                   )}
                 </div>
