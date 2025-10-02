@@ -9,6 +9,7 @@ import { useSocket } from '@/hooks/useSocket'
 import { SessionType } from '@/types'
 import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUser'
 import { buildAnonymousProfile } from '@/lib/anonymousProfile'
+import { playStartSound, playEndSound } from '@/lib/notificationSound'
 
 // Wake Lock API types
 interface WakeLockSentinel extends EventTarget {
@@ -54,6 +55,9 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   const [task, setTask] = useState('')
   const [sessionType, setSessionType] = useState<SessionType>(SessionType.WORK)
   const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null)
+  const [notificationEnabled, setNotificationEnabled] = useState(true)
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const [soundVolume, setSoundVolume] = useState(0.5)
 
   // Restore active session on component mount - ONLY ONCE
   useEffect(() => {
@@ -146,8 +150,9 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }, [user?.id]) // Only depend on user ID, not the whole user object
 
   useEffect(() => {
-    if (!user?.settings) return
-    if (currentSession) return
+    if (!user?.settings || currentSession) {
+      return
+    }
 
     initializeWithSettings({
       workDuration: user.settings.workDuration,
@@ -155,7 +160,25 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       longBreak: user.settings.longBreak,
       longBreakAfter: user.settings.longBreakAfter,
     })
+
   }, [user?.settings, currentSession, initializeWithSettings])
+
+  useEffect(() => {
+    if (user?.settings) {
+      setNotificationEnabled(user.settings.notificationsEnabled)
+      setSoundEnabled(user.settings.soundEnabled)
+      setSoundVolume(user.settings.soundVolume)
+      return
+    }
+
+    setNotificationEnabled(true)
+    setSoundEnabled(true)
+    setSoundVolume(0.5)
+  }, [
+    user?.settings?.notificationsEnabled,
+    user?.settings?.soundEnabled,
+    user?.settings?.soundVolume
+  ])
 
   // Wake Lock API - keep tab active
   useEffect(() => {
@@ -205,22 +228,30 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   // Page Visibility API - recalculate time when tab becomes visible
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && currentSession && isRunning) {
-        // Recalculate time based on start time (startedAt already accounts for pauses)
-        const startTime = new Date(currentSession.startedAt).getTime()
-        const now = Date.now()
-        const elapsed = Math.floor((now - startTime) / 1000)
-        const totalDuration = currentSession.duration * 60
-        const newTimeRemaining = Math.max(0, totalDuration - elapsed)
+      if (document.visibilityState === 'visible') {
+        const session = useTimerStore.getState().currentSession
+        const running = useTimerStore.getState().isRunning
         
-        // Update store directly with calculated time
-        if (Math.abs(newTimeRemaining - timeRemaining) > 2) { // Allow 2 sec tolerance
-          useTimerStore.setState({ timeRemaining: newTimeRemaining })
-          console.log('Time recalculated on tab focus:', newTimeRemaining)
-        }
+        if (session && running) {
+          // Recalculate time based on start time (startedAt already accounts for pauses)
+          const startTime = new Date(session.startedAt).getTime()
+          const now = Date.now()
+          const elapsed = Math.floor((now - startTime) / 1000)
+          const totalDuration = session.duration * 60
+          const newTimeRemaining = Math.max(0, totalDuration - elapsed)
+          
+          const currentTimeRemaining = useTimerStore.getState().timeRemaining
+          
+          // Update store directly with calculated time
+          if (Math.abs(newTimeRemaining - currentTimeRemaining) > 2) { // Allow 2 sec tolerance
+            useTimerStore.setState({ timeRemaining: newTimeRemaining })
+            console.log('Time recalculated on tab focus:', newTimeRemaining)
+          }
 
-        if (newTimeRemaining === 0 && isRunning) {
-          handleSessionComplete()
+          // Check if session completed while tab was hidden
+          if (newTimeRemaining === 0) {
+            handleSessionComplete()
+          }
         }
       }
     }
@@ -230,11 +261,12 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [currentSession, isRunning, timeRemaining])
+  }, [])
 
   // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined
+    let checkInterval: NodeJS.Timeout | undefined
 
     if (isRunning && timeRemaining > 0) {
       interval = setInterval(() => {
@@ -244,12 +276,31 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           emitTimerTick(currentSession.id, timeRemaining - 1)
         }
       }, 1000)
+
+      // Fallback check every 5 seconds - works even in background tabs
+      checkInterval = setInterval(() => {
+        const session = useTimerStore.getState().currentSession
+        const running = useTimerStore.getState().isRunning
+        
+        if (session && running) {
+          const startTime = new Date(session.startedAt).getTime()
+          const now = Date.now()
+          const elapsed = Math.floor((now - startTime) / 1000)
+          const totalDuration = session.duration * 60
+          const actualTimeRemaining = Math.max(0, totalDuration - elapsed)
+          
+          if (actualTimeRemaining === 0) {
+            handleSessionComplete()
+          }
+        }
+      }, 5000)
     } else if (timeRemaining === 0 && currentSession && isRunning) {
       handleSessionComplete()
     }
 
     return () => {
       if (interval) clearInterval(interval)
+      if (checkInterval) clearInterval(checkInterval)
     }
   }, [isRunning, timeRemaining, currentSession])
 
@@ -532,11 +583,34 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     }
 
     // Show notification
-    if ('Notification' in window && Notification.permission === 'granted') {
+    if (
+      notificationEnabled &&
+      'Notification' in window &&
+      Notification.permission === 'granted'
+    ) {
       new Notification('Pomodoro completed!', {
         body: `Starting ${getSessionTypeLabel(nextType).toLowerCase()}...`,
         icon: '/favicon.ico'
       })
+    }
+
+    if (soundEnabled) {
+      console.log('Sound enabled, nextType:', nextType, 'volume:', soundVolume)
+      // If going to a break, play break-start sound
+      // If going back to work, play break-end sound
+      if (nextType === SessionType.SHORT_BREAK || nextType === SessionType.LONG_BREAK) {
+        console.log('Playing break-start sound')
+        playStartSound(soundVolume).catch((error) => {
+          console.error('Failed to play start sound:', error)
+        })
+      } else {
+        console.log('Playing break-end sound')
+        playEndSound(soundVolume).catch((error) => {
+          console.error('Failed to play end sound:', error)
+        })
+      }
+    } else {
+      console.log('Sound is disabled')
     }
 
     // Auto-start next session after a brief delay

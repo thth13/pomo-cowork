@@ -16,6 +16,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { UserSettings } from '@/types'
 import Navbar from '@/components/Navbar'
+import { playEndSound, disposeNotificationSound } from '@/lib/notificationSound'
 
 export default function SettingsPage() {
   const { user, isAuthenticated } = useAuthStore()
@@ -36,6 +37,49 @@ export default function SettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
+  const [testMessage, setTestMessage] = useState('')
+
+  const handleTestNotification = async () => {
+    setTestMessage('')
+
+    if (!settings.notificationsEnabled) {
+      setTestMessage('Enable notifications toggle first')
+      return
+    }
+
+    if (typeof window === 'undefined' || !('Notification' in window)) {
+      setTestMessage('Browser notifications are not supported here')
+      return
+    }
+
+    let permission = Notification.permission
+
+    if (permission === 'default') {
+      permission = await Notification.requestPermission()
+    }
+
+    if (permission !== 'granted') {
+      setTestMessage('Allow notifications in your browser settings')
+      return
+    }
+
+    try {
+      new Notification('Test notification', {
+        body: 'Browser notifications are working!',
+        icon: '/icons/favicon-192.png'
+      })
+      setTestMessage('Notification sent')
+
+      if (settings.soundEnabled) {
+        await playEndSound(settings.soundVolume)
+      }
+    } catch (error) {
+      console.error('Failed to send test notification:', error)
+      setTestMessage('Failed to send notification')
+    }
+
+    setTimeout(() => setTestMessage(''), 5000)
+  }
 
   useEffect(() => {
     if (isAuthenticated && user?.settings) {
@@ -56,6 +100,7 @@ export default function SettingsPage() {
       [key]: value
     }))
     setSaveMessage('')
+    setTestMessage('')
   }
 
   const handleSave = async () => {
@@ -80,6 +125,23 @@ export default function SettingsPage() {
           longBreak: settings.longBreak,
           longBreakAfter: settings.longBreakAfter,
         })
+
+        useAuthStore.setState((state) => {
+          if (!state.user) {
+            return state
+          }
+
+          return {
+            ...state,
+            user: {
+              ...state.user,
+              settings: {
+                ...state.user.settings,
+                ...settings
+              }
+            }
+          }
+        })
         
         setSaveMessage('Settings saved!')
         setTimeout(() => setSaveMessage(''), 3000)
@@ -93,6 +155,14 @@ export default function SettingsPage() {
       setIsSaving(false)
     }
   }
+
+  useEffect(() => {
+    return () => {
+      disposeNotificationSound().catch((error) => {
+        console.error('Failed to dispose audio context:', error)
+      })
+    }
+  }, [])
 
   if (!isAuthenticated) {
     return (
@@ -320,26 +390,47 @@ export default function SettingsPage() {
               Notifications
             </h2>
             
-            <div className="flex items-center justify-between">
-              <div>
-                <label className="text-sm font-medium text-slate-700">
-                  Browser notifications
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="text-sm font-medium text-slate-700">
+                    Browser notifications
+                  </label>
+                  <p className="text-sm text-slate-500">
+                    Show browser notifications when session completes
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={settings.notificationsEnabled}
+                    onChange={(e) => handleSettingChange('notificationsEnabled', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                 </label>
-                <p className="text-sm text-slate-500">
-                  Show browser notifications when session completes
-                </p>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={settings.notificationsEnabled}
-                  onChange={(e) => handleSettingChange('notificationsEnabled', e.target.checked)}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-              </label>
+
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <motion.button
+                  type="button"
+                  className="btn-secondary px-5 py-2"
+                  onClick={handleTestNotification}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Test notification
+                </motion.button>
+
+                {testMessage && (
+                  <span className="text-sm text-slate-500">
+                    {testMessage}
+                  </span>
+                )}
+              </div>
             </div>
           </motion.div>
+          
 
           {/* Save Button */}
           <motion.div
