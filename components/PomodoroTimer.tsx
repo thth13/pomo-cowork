@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Play, Pause, Square, RotateCcw } from 'lucide-react'
+import { Play, Pause, Square, RotateCcw, Settings } from 'lucide-react'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSocket } from '@/hooks/useSocket'
@@ -47,7 +47,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     tick,
     restoreSession,
     previewSessionType,
-    initializeWithSettings
+    initializeWithSettings,
+    setTimerSettings
   } = useTimerStore()
 
   const { user } = useAuthStore()
@@ -60,6 +61,27 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [soundVolume, setSoundVolume] = useState(0.5)
   const completedSessionIdRef = useRef<string | null>(null)
+
+  interface TimerSettingsForm {
+    workDuration: number
+    shortBreak: number
+    longBreak: number
+  }
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [settingsForm, setSettingsForm] = useState<TimerSettingsForm>(() => ({
+    workDuration,
+    shortBreak,
+    longBreak,
+  }))
+
+  useEffect(() => {
+    setSettingsForm({
+      workDuration,
+      shortBreak,
+      longBreak,
+    })
+  }, [workDuration, shortBreak, longBreak])
 
   useEffect(() => {
     completedSessionIdRef.current = null
@@ -407,6 +429,71 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     if (currentSession) return
     setSessionType(type)
     previewSessionType(type)
+  }
+
+  const openSettings = () => {
+    setSettingsForm({
+      workDuration,
+      shortBreak,
+      longBreak,
+    })
+    setIsSettingsOpen(true)
+  }
+
+  const handleSettingsChange = (key: keyof TimerSettingsForm, value: number) => {
+    setSettingsForm((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
+  }
+
+  const handleSettingsSave = async () => {
+    const normalized: TimerSettingsForm = {
+      workDuration: Math.max(1, Math.round(settingsForm.workDuration)),
+      shortBreak: Math.max(1, Math.round(settingsForm.shortBreak)),
+      longBreak: Math.max(1, Math.round(settingsForm.longBreak)),
+    }
+
+    setSettingsForm(normalized)
+    setTimerSettings({
+      workDuration: normalized.workDuration,
+      shortBreak: normalized.shortBreak,
+      longBreak: normalized.longBreak,
+      longBreakAfter,
+    })
+
+    // Save to backend if user is authenticated
+    if (user) {
+      try {
+        const token = localStorage.getItem('token')
+        if (token) {
+          await fetch('/api/settings', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              workDuration: normalized.workDuration,
+              shortBreak: normalized.shortBreak,
+              longBreak: normalized.longBreak,
+              longBreakAfter,
+              soundEnabled,
+              soundVolume,
+              notificationsEnabled: notificationEnabled
+            })
+          })
+        }
+      } catch (error) {
+        console.error('Failed to save timer settings:', error)
+      }
+    }
+
+    if (!currentSession) {
+      previewSessionType(sessionType)
+    }
+
+    setIsSettingsOpen(false)
   }
 
   const getNextSessionType = (): SessionType => {
@@ -862,7 +949,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     : 0
 
   return (
-    <div className="card max-w-md mx-auto">
+    <div className="card max-w-md mx-auto relative">
       <div className="text-center space-y-6">
         {/* Session Type Selector */}
         <div className="flex justify-center space-x-2">
@@ -884,6 +971,14 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
         {/* Timer Display */}
         <div className="relative">
+          <button
+            type="button"
+            onClick={openSettings}
+            className="absolute -top-2 -right-2 rounded-full bg-white shadow-sm border border-slate-200 p-2 text-slate-500 hover:text-slate-700 hover:border-slate-300 transition"
+            aria-label="Timer settings"
+          >
+            <Settings size={16} />
+          </button>
           <motion.div
             className="relative w-48 h-48 mx-auto"
             initial={{ scale: 0.9 }}
@@ -1003,6 +1098,60 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           <div className="text-sm text-slate-500">completed sessions</div>
         </div>
       </div>
+
+      {isSettingsOpen && (
+        <div className="absolute top-4 right-4 z-20 w-64 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold text-slate-600">Timer durations (min)</span>
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(false)}
+              className="text-xs text-slate-400 hover:text-slate-600"
+            >
+              Close
+            </button>
+          </div>
+          <div className="space-y-3">
+            <label className="flex flex-col text-left text-xs font-medium text-slate-500">
+              Work
+              <input
+                type="number"
+                min={1}
+                value={settingsForm.workDuration}
+                onChange={(event) => handleSettingsChange('workDuration', Number(event.target.value))}
+                className="input mt-1"
+              />
+            </label>
+            <label className="flex flex-col text-left text-xs font-medium text-slate-500">
+              Short break
+              <input
+                type="number"
+                min={1}
+                value={settingsForm.shortBreak}
+                onChange={(event) => handleSettingsChange('shortBreak', Number(event.target.value))}
+                className="input mt-1"
+              />
+            </label>
+            <label className="flex flex-col text-left text-xs font-medium text-slate-500">
+              Long break
+              <input
+                type="number"
+                min={1}
+                value={settingsForm.longBreak}
+                onChange={(event) => handleSettingsChange('longBreak', Number(event.target.value))}
+                className="input mt-1"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            onClick={handleSettingsSave}
+            className="btn-primary mt-4 w-full"
+          >
+            Apply
+          </button>
+        </div>
+      )}
     </div>
   )
 }
