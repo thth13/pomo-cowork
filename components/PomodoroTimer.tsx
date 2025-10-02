@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Play, Pause, Square, RotateCcw } from 'lucide-react'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -59,6 +59,11 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   const [notificationEnabled, setNotificationEnabled] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [soundVolume, setSoundVolume] = useState(0.5)
+  const completedSessionIdRef = useRef<string | null>(null)
+
+  useEffect(() => {
+    completedSessionIdRef.current = null
+  }, [currentSession?.id])
 
   // Restore active session on component mount - ONLY ONCE
   useEffect(() => {
@@ -639,10 +644,21 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const handleSessionComplete = async () => {
-    const completedType = currentSession?.type
+    if (!currentSession) {
+      return
+    }
+
+    if (completedSessionIdRef.current === currentSession.id) {
+      return
+    }
+
+    completedSessionIdRef.current = currentSession.id
+
+    const completedType = currentSession.type
+    const sessionSnapshot = currentSession
     
-    if (currentSession) {
-      emitSessionEnd(currentSession.id)
+    if (sessionSnapshot) {
+      emitSessionEnd(sessionSnapshot.id)
       
       // Update session in database
       try {
@@ -665,7 +681,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           body.anonymousId = getOrCreateAnonymousId()
         }
 
-        await fetch(`/api/sessions/${currentSession.id}`, {
+        await fetch(`/api/sessions/${sessionSnapshot.id}`, {
           method: 'PUT',
           headers,
           body: JSON.stringify(body)

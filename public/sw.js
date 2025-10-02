@@ -140,14 +140,8 @@ function handleTimerComplete() {
     },
   })
 
-  // Показываем нотификацию
-  self.registration.showNotification('Pomodoro completed! 🍅', {
-    body: 'Time to take a break',
-    icon: '/icons/favicon-192.png',
-    badge: '/icons/favicon-32.png',
-    tag: 'pomodoro-timer',
-    requireInteraction: true,
-  })
+  // Показываем нотификацию только если нет видимых клиентов
+  notifyIfHidden()
 
   timerState = {
     isRunning: false,
@@ -190,6 +184,27 @@ async function broadcastMessage(message) {
 
   clients.forEach((client) => {
     client.postMessage(message)
+  })
+}
+
+async function notifyIfHidden() {
+  const clients = await self.clients.matchAll({
+    includeUncontrolled: true,
+    type: 'window',
+  })
+
+  const hasVisibleClient = clients.some((client) => client.visibilityState === 'visible')
+
+  if (hasVisibleClient) {
+    return
+  }
+
+  self.registration.showNotification('Pomodoro completed! 🍅', {
+    body: 'Time to take a break',
+    icon: '/icons/favicon-192.png',
+    badge: '/icons/favicon-32.png',
+    tag: 'pomodoro-timer',
+    requireInteraction: true,
   })
 }
 
