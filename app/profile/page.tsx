@@ -121,8 +121,8 @@ export default function ProfilePage() {
 
   // Chart data
   const weeklyChartData = {
-    labels: currentStats.weeklyStats.map(day => 
-      new Date(day.date).toLocaleDateString('ru-RU', { weekday: 'short' })
+    labels: currentStats.weeklyStats.map(day =>
+      new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })
     ),
     datasets: [
       {
@@ -148,7 +148,7 @@ export default function ProfilePage() {
 
   const monthlyChartData = {
     labels: currentStats.monthlyStats.slice(-14).map(day =>
-      new Date(day.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+      new Date(day.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
     ),
     datasets: [
       {
@@ -245,15 +245,15 @@ export default function ProfilePage() {
         >
           {[
             {
-              title: 'Сегодня',
+              title: 'Today',
               value: currentStats.todaysSessions,
-              subtitle: `${currentStats.todaysMinutes} минут`,
+              subtitle: `${currentStats.todaysMinutes} minutes`,
               icon: Calendar,
               color: 'text-primary-600',
               bgColor: 'bg-primary-50'
             },
             {
-              title: 'Всего сессий',
+              title: 'Total Sessions',
               value: currentStats.totalSessions,
               subtitle: 'completed',
               icon: Target,
@@ -261,21 +261,21 @@ export default function ProfilePage() {
               bgColor: 'bg-secondary-50'
             },
             {
-              title: 'Общее время',
+              title: 'Total Time',
               value: Math.floor(currentStats.totalMinutes / 60),
-              subtitle: `${currentStats.totalMinutes % 60} минут`,
+              subtitle: `${currentStats.totalMinutes % 60} minutes`,
               icon: Clock,
               color: 'text-blue-600',
               bgColor: 'bg-blue-50'
             },
-            {
-              title: 'Текущая серия',
-              value: 7,
-              subtitle: 'days in a row',
-              icon: Flame,
-              color: 'text-orange-600',
-              bgColor: 'bg-orange-50'
-            }
+            // {
+            //   title: 'Current Streak',
+            //   value: 7,
+            //   subtitle: 'days in a row',
+            //   icon: Flame,
+            //   color: 'text-orange-600',
+            //   bgColor: 'bg-orange-50'
+            // }
           ].map((stat, index) => (
             <motion.div
               key={stat.title}
@@ -350,7 +350,7 @@ export default function ProfilePage() {
         </motion.div>
 
         {/* Achievements */}
-        <motion.div
+        {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.35 }}
@@ -389,7 +389,7 @@ export default function ProfilePage() {
               </div>
             ))}
           </div>
-        </motion.div>
+        </motion.div> */}
       </main>
     </div>
   )

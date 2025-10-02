@@ -31,7 +31,7 @@ export default function Navbar() {
     ? [
         { name: 'Timer', href: '/', icon: Timer },
         { name: 'Statistics', href: '/profile', icon: BarChart3 },
-        { name: 'Users', href: '/users', icon: Users },
+        // { name: 'Users', href: '/users', icon: Users },
         { name: 'Settings', href: '/settings', icon: Settings },
       ]
     : []

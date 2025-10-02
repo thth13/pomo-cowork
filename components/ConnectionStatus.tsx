@@ -63,7 +63,7 @@ export default function ConnectionStatus() {
         {isConnected ? (
           <>
             <Wifi className="w-4 h-4" />
-            <span className="text-sm font-medium">Real-time connected</span>
+            <span className="text-sm font-medium">Connected</span>
           </>
         ) : (
           <>

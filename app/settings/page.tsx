@@ -66,7 +66,8 @@ export default function SettingsPage() {
     try {
       new Notification('Test notification', {
         body: 'Browser notifications are working!',
-        icon: '/icons/favicon-192.png'
+        icon: '/icons/favicon-192.png',
+        badge: '/icons/favicon-32.png',
       })
       setTestMessage('Notification sent')
 

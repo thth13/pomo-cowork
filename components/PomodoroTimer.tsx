@@ -588,9 +588,10 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       'Notification' in window &&
       Notification.permission === 'granted'
     ) {
-      new Notification('Pomodoro completed!', {
+      new Notification('Pomodoro completed! 🍅', {
         body: `Starting ${getSessionTypeLabel(nextType).toLowerCase()}...`,
-        icon: '/favicon.ico'
+        icon: '/icons/favicon-192.png',
+        badge: '/icons/favicon-32.png',
       })
     }
 
@@ -820,7 +821,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             </motion.button>
           ) : (
             <>
-              <motion.button
+              {/* <motion.button
                 onClick={isRunning ? handlePause : handleResume}
                 className="btn-secondary flex items-center space-x-2"
                 whileHover={{ scale: 1.05 }}
@@ -828,7 +829,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               >
                 {isRunning ? <Pause size={20} /> : <Play size={20} />}
                 <span>{isRunning ? 'Pause' : 'Resume'}</span>
-              </motion.button>
+              </motion.button> */}
               
               <motion.button
                 onClick={handleStop}
@@ -842,7 +843,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             </>
           )}
           
-          <motion.button
+          {/* <motion.button
             onClick={handleReset}
             className="btn-secondary flex items-center space-x-2"
             whileHover={{ scale: 1.05 }}
@@ -850,7 +851,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           >
             <RotateCcw size={20} />
             <span>Reset</span>
-          </motion.button>
+          </motion.button> */}
         </div>
 
         {/* Session Counter */}
