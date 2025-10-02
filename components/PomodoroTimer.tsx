@@ -155,7 +155,6 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       longBreak: user.settings.longBreak,
       longBreakAfter: user.settings.longBreakAfter,
     })
-    setSessionType(SessionType.WORK)
   }, [user?.settings, currentSession, initializeWithSettings])
 
   // Wake Lock API - keep tab active
@@ -289,10 +288,10 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const handleStart = async () => {
-    if (!task.trim() && sessionType === SessionType.WORK) {
-      alert('Please specify what you\'re working on')
-      return
-    }
+    // if (!task.trim() && sessionType === SessionType.WORK) {
+    //   alert('Please specify what you\'re working on')
+    //   return
+    // }
 
     // If there's already an active session, end it first
     if (currentSession) {
@@ -638,6 +637,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     }
   }
 
+  const activeSessionType = currentSession?.type ?? sessionType
+
   const progress = currentSession 
     ? ((currentSession.duration * 60 - timeRemaining) / (currentSession.duration * 60)) * 100
     : 0
@@ -692,9 +693,9 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
                 strokeDasharray={`${2 * Math.PI * 45}`}
                 strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
                 className={`transition-all duration-1000 ${
-                  sessionType === SessionType.WORK
+                  activeSessionType === SessionType.WORK
                     ? 'text-primary-500'
-                    : sessionType === SessionType.SHORT_BREAK
+                    : activeSessionType === SessionType.SHORT_BREAK
                     ? 'text-secondary-500'
                     : 'text-blue-500'
                 }`}
@@ -705,11 +706,11 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             {/* Time Display */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center">
-                <div className={`text-4xl font-bold ${getSessionTypeColor(sessionType)}`}>
+                <div className={`text-4xl font-bold ${getSessionTypeColor(activeSessionType)}`}>
                   {formatTime(timeRemaining)}
                 </div>
                 <div className="text-sm text-slate-500 mt-1">
-                  {getSessionTypeLabel(sessionType)}
+                  {getSessionTypeLabel(activeSessionType)}
                 </div>
               </div>
             </div>
