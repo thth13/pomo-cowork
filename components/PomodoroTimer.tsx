@@ -10,6 +10,7 @@ import { SessionType } from '@/types'
 import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUser'
 import { buildAnonymousProfile } from '@/lib/anonymousProfile'
 import { playStartSound, playEndSound } from '@/lib/notificationSound'
+import { sendMessageToServiceWorker, listenToServiceWorker } from '@/lib/serviceWorker'
 
 // Wake Lock API types
 interface WakeLockSentinel extends EventTarget {
@@ -263,22 +264,78 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     }
   }, [])
 
-  // Timer effect
+  // Service Worker message listener
   useEffect(() => {
-    let interval: NodeJS.Timeout | undefined
-    let checkInterval: NodeJS.Timeout | undefined
+    const unsubscribe = listenToServiceWorker((message) => {
+      const { type, payload } = message
 
-    if (isRunning && timeRemaining > 0) {
-      interval = setInterval(() => {
-        tick()
-        // Only emit timer tick every 30 seconds to reduce WebSocket traffic
-        if (currentSession && timeRemaining % 30 === 0) {
-          emitTimerTick(currentSession.id, timeRemaining - 1)
-        }
-      }, 1000)
+      switch (type) {
+        case 'TIMER_TICK':
+          // Обновляем время из Service Worker
+          if (currentSession && payload.sessionId === currentSession.id) {
+            useTimerStore.setState({ timeRemaining: payload.timeRemaining })
+            
+            // Emit WebSocket tick every 30 seconds
+            if (payload.timeRemaining % 30 === 0) {
+              emitTimerTick(currentSession.id, payload.timeRemaining)
+            }
+          }
+          break
+        
+        case 'TIMER_COMPLETE':
+          if (payload.sessionId === currentSession?.id) {
+            handleSessionComplete()
+          }
+          break
+        
+        case 'TIMER_STATE':
+          // Синхронизация состояния при подключении
+          if (payload.isRunning && payload.sessionId === currentSession?.id) {
+            useTimerStore.setState({ 
+              timeRemaining: payload.timeRemaining,
+              isRunning: payload.isRunning 
+            })
+          }
+          break
+      }
+    })
 
-      // Fallback check every 5 seconds - works even in background tabs
-      checkInterval = setInterval(() => {
+    return unsubscribe
+  }, [currentSession, emitTimerTick])
+
+  // Синхронизация с Service Worker при изменении состояния
+  useEffect(() => {
+    if (!currentSession) return
+
+    // Запрашиваем текущее состояние из Service Worker
+    sendMessageToServiceWorker({
+      type: 'GET_STATE',
+    })
+  }, [currentSession])
+
+  // Обновление title страницы с временем таймера
+  useEffect(() => {
+    if (isRunning && currentSession && timeRemaining > 0) {
+      const timeStr = formatTime(timeRemaining)
+      const sessionLabel = getSessionTypeLabel(currentSession.type as SessionType)
+      document.title = `${timeStr} - ${sessionLabel} | Pomodoro`
+    } else {
+      document.title = 'Pomodoro Timer'
+    }
+
+    return () => {
+      document.title = 'Pomodoro Timer'
+    }
+  }, [isRunning, currentSession, timeRemaining])
+
+  // Локальный таймер для плавного обновления UI
+  useEffect(() => {
+    let localInterval: NodeJS.Timeout | undefined
+    let syncInterval: NodeJS.Timeout | undefined
+
+    if (isRunning && currentSession) {
+      // Локальное обновление каждую секунду для плавности
+      localInterval = setInterval(() => {
         const session = useTimerStore.getState().currentSession
         const running = useTimerStore.getState().isRunning
         
@@ -289,20 +346,44 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           const totalDuration = session.duration * 60
           const actualTimeRemaining = Math.max(0, totalDuration - elapsed)
           
+          // Обновляем время каждую секунду
+          useTimerStore.setState({ timeRemaining: actualTimeRemaining })
+          
           if (actualTimeRemaining === 0) {
             handleSessionComplete()
           }
         }
+      }, 1000)
+
+      // Синхронизация с Service Worker каждые 5 секунд
+      syncInterval = setInterval(() => {
+        const session = useTimerStore.getState().currentSession
+        const running = useTimerStore.getState().isRunning
+        
+        if (session && running) {
+          const startTime = new Date(session.startedAt).getTime()
+          const now = Date.now()
+          const elapsed = Math.floor((now - startTime) / 1000)
+          const totalDuration = session.duration * 60
+          const actualTimeRemaining = Math.max(0, totalDuration - elapsed)
+          
+          // Синхронизируем Service Worker
+          sendMessageToServiceWorker({
+            type: 'SYNC_TIME',
+            payload: {
+              timeRemaining: actualTimeRemaining,
+              isRunning: running,
+            },
+          })
+        }
       }, 5000)
-    } else if (timeRemaining === 0 && currentSession && isRunning) {
-      handleSessionComplete()
     }
 
     return () => {
-      if (interval) clearInterval(interval)
-      if (checkInterval) clearInterval(checkInterval)
+      if (localInterval) clearInterval(localInterval)
+      if (syncInterval) clearInterval(syncInterval)
     }
-  }, [isRunning, timeRemaining, currentSession])
+  }, [isRunning, currentSession])
 
   const getSessionDuration = (type: SessionType): number => {
     switch (type) {
@@ -389,6 +470,17 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         // Start local timer with database session ID
         startSession(taskName, duration, sessionType, dbSession.id)
         
+        // Start Service Worker timer
+        sendMessageToServiceWorker({
+          type: 'START_TIMER',
+          payload: {
+            sessionId: dbSession.id,
+            duration,
+            timeRemaining: duration * 60,
+            startedAt: dbSession.startedAt,
+          },
+        })
+        
         // Emit to WebSocket with session ID
         const sessionData = {
           id: dbSession.id,
@@ -416,6 +508,11 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   const handlePause = async () => {
     pauseSession()
     if (currentSession) {
+      // Pause Service Worker timer
+      sendMessageToServiceWorker({
+        type: 'PAUSE_TIMER',
+      })
+      
       emitSessionPause(currentSession.id)
       
       // Update session in database
@@ -452,6 +549,15 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     resumeSession()
     if (currentSession) {
       const username = user?.username || getAnonymousUsername()
+      
+      // Resume Service Worker timer
+      sendMessageToServiceWorker({
+        type: 'RESUME_TIMER',
+        payload: {
+          timeRemaining,
+          startedAt: currentSession.startedAt,
+        },
+      })
       
       emitSessionStart({
         ...currentSession,
@@ -492,6 +598,11 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
   const handleStop = async () => {
     if (currentSession) {
+      // Stop Service Worker timer
+      sendMessageToServiceWorker({
+        type: 'STOP_TIMER',
+      })
+      
       emitSessionEnd(currentSession.id)
       
       // Update session in database
@@ -655,6 +766,17 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           
           startSession(taskName, duration, nextType, dbSession.id)
           
+          // Start Service Worker timer
+          sendMessageToServiceWorker({
+            type: 'START_TIMER',
+            payload: {
+              sessionId: dbSession.id,
+              duration,
+              timeRemaining: duration * 60,
+              startedAt: dbSession.startedAt,
+            },
+          })
+          
           const sessionData = {
             id: dbSession.id,
             task: taskName,
@@ -679,6 +801,11 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
   const handleReset = () => {
     if (currentSession) {
+      // Stop Service Worker timer
+      sendMessageToServiceWorker({
+        type: 'STOP_TIMER',
+      })
+      
       emitSessionEnd(currentSession.id)
     }
     cancelSession()

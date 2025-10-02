@@ -9,6 +9,7 @@ import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
 import AuthModal from '@/components/AuthModal'
 import ConnectionStatus from '@/components/ConnectionStatus'
+import { registerServiceWorker } from '@/lib/serviceWorker'
 
 export default function HomePage() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
@@ -28,6 +29,11 @@ export default function HomePage() {
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()
     }
+  }, [])
+
+  useEffect(() => {
+    // Регистрация Service Worker для фонового таймера
+    registerServiceWorker()
   }, [])
 
   // Show loading while checking auth
