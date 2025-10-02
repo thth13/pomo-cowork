@@ -45,6 +45,7 @@ const serializeSessions = () =>
     username: session.username,
     task: session.task,
     type: session.type,
+    duration: session.duration,
     timeRemaining: session.timeRemaining,
     startedAt: session.startedAt,
     status: session.status

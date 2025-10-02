@@ -14,32 +14,34 @@ function SessionCard({ session, index, isCurrentUser = false }: {
   index: number; 
   isCurrentUser?: boolean;
 }) {
-  const [currentTimeRemaining, setCurrentTimeRemaining] = useState(session.timeRemaining)
   const router = useRouter()
+  
+  // Calculate initial time remaining once
+  const getInitialTimeRemaining = () => {
+    const startTime = new Date(session.startedAt).getTime()
+    const now = Date.now()
+    const elapsed = Math.floor((now - startTime) / 1000) // seconds
+    const totalDuration = (session.duration || 25) * 60 // minutes to seconds
+    return Math.max(0, totalDuration - elapsed)
+  }
+
+  const [currentTimeRemaining, setCurrentTimeRemaining] = useState(getInitialTimeRemaining)
 
   useEffect(() => {
-    // Calculate time since session start
-    const updateTime = () => {
-      const startTime = new Date(session.startedAt).getTime()
-      const now = Date.now()
-      const elapsed = Math.floor((now - startTime) / 1000) // seconds
-      
-      // Use timeRemaining from session as base time
-      // If it's a fresh session, use its timeRemaining
-      // Otherwise calculate based on standard duration
-      const totalDuration = session.timeRemaining || 25 * 60
-      const remaining = Math.max(0, totalDuration - elapsed)
-      setCurrentTimeRemaining(remaining)
-    }
+    // Reset time when session changes
+    setCurrentTimeRemaining(getInitialTimeRemaining())
+  }, [session.id, session.startedAt, session.duration])
 
-    // Update time immediately
-    updateTime()
+  useEffect(() => {
+    // Local tick - decrease by 1 every second
+    if (currentTimeRemaining <= 0) return
 
-    // Then every 5 seconds (instead of every second to reduce updates)
-    const interval = setInterval(updateTime, 5000)
+    const interval = setInterval(() => {
+      setCurrentTimeRemaining(prev => Math.max(0, prev - 1))
+    }, 1000)
 
     return () => clearInterval(interval)
-  }, [session.startedAt, session.timeRemaining])
+  }, [currentTimeRemaining])
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)
@@ -158,7 +160,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
             }`}
             initial={{ width: 0 }}
             animate={{
-              width: `${Math.max(0, (currentTimeRemaining / (session.timeRemaining || 25 * 60)) * 100)}%`
+              width: `${Math.max(0, (currentTimeRemaining / ((session.duration || 25) * 60)) * 100)}%`
             }}
           />
         </div>
@@ -227,8 +229,15 @@ export default function ActiveSessions() {
   // Use sessions from WebSocket if available, otherwise from API
   const sessionsToShow = activeSessions.length > 0 ? activeSessions : localSessions
 
-  // Show all sessions, including current user
-  const allActiveSessions = sessionsToShow
+  // Filter out expired sessions
+  const allActiveSessions = sessionsToShow.filter(session => {
+    const startTime = new Date(session.startedAt).getTime()
+    const now = Date.now()
+    const elapsed = Math.floor((now - startTime) / 1000)
+    const totalDuration = (session.duration || 25) * 60
+    const timeRemaining = totalDuration - elapsed
+    return timeRemaining > 0
+  })
 
   if (allActiveSessions.length === 0) {
     return (
@@ -245,7 +254,6 @@ export default function ActiveSessions() {
       </div>
     )
   }
-
   return (
     <div className="space-y-4">
       <h2 className="text-xl font-bold text-slate-700 flex items-center">

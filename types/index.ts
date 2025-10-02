@@ -58,6 +58,7 @@ export interface ActiveSession {
   userId: string
   username: string
   task: string
+  duration: number
   timeRemaining: number
   type: SessionType
   startedAt: string

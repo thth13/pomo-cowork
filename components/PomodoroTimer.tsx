@@ -62,17 +62,48 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           const activeSession = sessions.find((s: any) => s.status === 'ACTIVE')
           
           if (activeSession && isMounted) {
-            // Restore session state
-            restoreSession(activeSession)
-            setTask(activeSession.task)
-            setSessionType(activeSession.type as SessionType)
-            
             // Calculate current time remaining
             const startTime = new Date(activeSession.startedAt).getTime()
             const now = Date.now()
             const elapsed = Math.floor((now - startTime) / 1000)
             const totalDuration = activeSession.duration * 60
             const currentTimeRemaining = Math.max(0, totalDuration - elapsed)
+            
+            // Check if session expired
+            if (currentTimeRemaining === 0) {
+              // Complete expired session
+              const headers: Record<string, string> = {
+                'Content-Type': 'application/json'
+              }
+              
+              if (token) {
+                headers.Authorization = `Bearer ${token}`
+              }
+              
+              const body: Record<string, any> = {
+                status: 'COMPLETED',
+                completedAt: new Date().toISOString(),
+                endedAt: new Date().toISOString()
+              }
+              
+              if (!user) {
+                body.anonymousId = getOrCreateAnonymousId()
+              }
+
+              await fetch(`/api/sessions/${activeSession.id}`, {
+                method: 'PUT',
+                headers,
+                body: JSON.stringify(body)
+              })
+              
+              console.log('Expired session completed:', activeSession.id)
+              return
+            }
+            
+            // Restore session state if not expired
+            restoreSession(activeSession)
+            setTask(activeSession.task)
+            setSessionType(activeSession.type as SessionType)
             
             // Emit to WebSocket to sync with others
             const sessionData = {
@@ -283,6 +314,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       
       emitSessionStart({
         ...currentSession,
+        duration: currentSession.duration,
         timeRemaining,
         username
       })
