@@ -10,6 +10,19 @@ import { SessionType } from '@/types'
 import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUser'
 import { buildAnonymousProfile } from '@/lib/anonymousProfile'
 
+// Wake Lock API types
+interface WakeLockSentinel extends EventTarget {
+  released: boolean
+  type: 'screen'
+  release(): Promise<void>
+}
+
+interface Navigator {
+  wakeLock?: {
+    request(type: 'screen'): Promise<WakeLockSentinel>
+  }
+}
+
 interface PomodoroTimerProps {
   onSessionComplete?: () => void
 }
@@ -40,6 +53,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
   const [task, setTask] = useState('')
   const [sessionType, setSessionType] = useState<SessionType>(SessionType.WORK)
+  const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null)
 
   // Restore active session on component mount - ONLY ONCE
   useEffect(() => {
@@ -144,6 +158,81 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     setSessionType(SessionType.WORK)
   }, [user?.settings, currentSession, initializeWithSettings])
 
+  // Wake Lock API - keep tab active
+  useEffect(() => {
+    let lock: WakeLockSentinel | null = null
+
+    const requestWakeLock = async () => {
+      if ('wakeLock' in navigator && isRunning && currentSession) {
+        try {
+          lock = await navigator.wakeLock.request('screen')
+          
+          // Handle wake lock release (browser may release it automatically)
+          lock.addEventListener('release', () => {
+            console.log('Wake Lock was released by browser')
+            lock = null
+          })
+          
+          setWakeLock(lock)
+          console.log('Wake Lock acquired')
+        } catch (err) {
+          console.error('Wake Lock error:', err)
+        }
+      }
+    }
+
+    const releaseWakeLock = async () => {
+      if (lock && !lock.released) {
+        try {
+          await lock.release()
+          lock = null
+          setWakeLock(null)
+          console.log('Wake Lock released')
+        } catch (err) {
+          console.error('Wake Lock release error:', err)
+        }
+      }
+    }
+
+    if (isRunning && currentSession) {
+      requestWakeLock()
+    }
+
+    return () => {
+      releaseWakeLock()
+    }
+  }, [isRunning, currentSession])
+
+  // Page Visibility API - recalculate time when tab becomes visible
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && currentSession && isRunning) {
+        // Recalculate time based on start time (startedAt already accounts for pauses)
+        const startTime = new Date(currentSession.startedAt).getTime()
+        const now = Date.now()
+        const elapsed = Math.floor((now - startTime) / 1000)
+        const totalDuration = currentSession.duration * 60
+        const newTimeRemaining = Math.max(0, totalDuration - elapsed)
+        
+        // Update store directly with calculated time
+        if (Math.abs(newTimeRemaining - timeRemaining) > 2) { // Allow 2 sec tolerance
+          useTimerStore.setState({ timeRemaining: newTimeRemaining })
+          console.log('Time recalculated on tab focus:', newTimeRemaining)
+        }
+
+        if (newTimeRemaining === 0 && isRunning) {
+          handleSessionComplete()
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [currentSession, isRunning, timeRemaining])
+
   // Timer effect
   useEffect(() => {
     let interval: NodeJS.Timeout | undefined
@@ -156,14 +245,14 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           emitTimerTick(currentSession.id, timeRemaining - 1)
         }
       }, 1000)
-    } else if (timeRemaining === 0 && currentSession) {
+    } else if (timeRemaining === 0 && currentSession && isRunning) {
       handleSessionComplete()
     }
 
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [isRunning, timeRemaining, currentSession, tick, emitTimerTick])
+  }, [isRunning, timeRemaining, currentSession])
 
   const getSessionDuration = (type: SessionType): number => {
     switch (type) {
@@ -185,7 +274,9 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const getNextSessionType = (): SessionType => {
-    if (completedSessions > 0 && completedSessions % longBreakAfter === 0) {
+    // Calculate based on the number of completed sessions AFTER this one
+    const nextCompletedCount = completedSessions + 1
+    if (nextCompletedCount % longBreakAfter === 0) {
       return SessionType.LONG_BREAK
     }
     return sessionType === SessionType.WORK ? SessionType.SHORT_BREAK : SessionType.WORK
@@ -387,6 +478,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const handleSessionComplete = async () => {
+    const completedType = currentSession?.type
+    
     if (currentSession) {
       emitSessionEnd(currentSession.id)
       
@@ -426,7 +519,14 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     // Auto-switch to next session type
     const nextType = getNextSessionType()
     setSessionType(nextType)
-    setTask('')
+    
+    // Clear task if we're going to a break
+    if (nextType === SessionType.SHORT_BREAK || nextType === SessionType.LONG_BREAK) {
+      setTask('')
+    } else if (nextType === SessionType.WORK) {
+      // Set default task for auto-started work sessions
+      setTask('Work Session')
+    }
 
     if (onSessionComplete) {
       onSessionComplete()
@@ -435,10 +535,72 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     // Show notification
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('Pomodoro completed!', {
-        body: `Time for ${getSessionTypeLabel(nextType).toLowerCase()}`,
+        body: `Starting ${getSessionTypeLabel(nextType).toLowerCase()}...`,
         icon: '/favicon.ico'
       })
     }
+
+    // Auto-start next session after a brief delay
+    setTimeout(async () => {
+      const duration = getSessionDuration(nextType)
+      const taskName = nextType === SessionType.WORK 
+        ? 'Work Session' 
+        : getSessionTypeLabel(nextType)
+
+      const userId = user?.id || getOrCreateAnonymousId()
+      const username = user?.username || getAnonymousUsername()
+
+      try {
+        const token = localStorage.getItem('token')
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
+        }
+        
+        if (token) {
+          headers.Authorization = `Bearer ${token}`
+        }
+
+        const body: Record<string, any> = {
+          task: taskName,
+          duration,
+          type: nextType
+        }
+        
+        if (!user) {
+          body.anonymousId = userId
+        }
+
+        const response = await fetch('/api/sessions', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body)
+        })
+
+        if (response.ok) {
+          const dbSession = await response.json()
+          
+          startSession(taskName, duration, nextType, dbSession.id)
+          
+          const sessionData = {
+            id: dbSession.id,
+            task: taskName,
+            duration,
+            type: nextType,
+            userId,
+            username,
+            timeRemaining: duration * 60,
+            startedAt: dbSession.startedAt
+          }
+          
+          emitSessionStart(sessionData)
+        } else {
+          startSession(taskName, duration, nextType)
+        }
+      } catch (error) {
+        console.error('Failed to auto-start session:', error)
+        startSession(taskName, duration, nextType)
+      }
+    }, 1000) // 1 second delay to show notification
   }
 
   const handleReset = () => {

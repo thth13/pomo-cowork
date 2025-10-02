@@ -7,6 +7,7 @@ interface TimerState {
   timeRemaining: number
   currentSession: PomodoroSession | null
   completedSessions: number
+  pausedAt: number | null // timestamp when paused
 
   // Active sessions from other users
   activeSessions: ActiveSession[]
@@ -48,6 +49,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   timeRemaining: 25 * 60, // Default: 25 minutes in seconds
   currentSession: null,
   completedSessions: 0,
+  pausedAt: null,
   activeSessions: [],
 
   // Default settings (25 min work, 5 min short break, 15 min long break)
@@ -71,6 +73,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       currentSession: session,
       timeRemaining: duration * 60,
       isRunning: true,
+      pausedAt: null,
     })
   },
 
@@ -95,6 +98,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     if (currentSession) {
       set({
         isRunning: false,
+        pausedAt: Date.now(),
         currentSession: {
           ...currentSession,
           status: SessionStatus.PAUSED,
@@ -104,13 +108,19 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   resumeSession: () => {
-    const { currentSession } = get()
-    if (currentSession) {
+    const { currentSession, pausedAt, timeRemaining } = get()
+    if (currentSession && pausedAt) {
+      // Adjust startedAt to account for pause time
+      const pauseDuration = Date.now() - pausedAt
+      const newStartedAt = new Date(new Date(currentSession.startedAt).getTime() + pauseDuration).toISOString()
+      
       set({
         isRunning: true,
+        pausedAt: null,
         currentSession: {
           ...currentSession,
           status: SessionStatus.ACTIVE,
+          startedAt: newStartedAt, // Update startedAt to compensate for pause
         },
       })
     }
@@ -120,27 +130,17 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     const { currentSession, completedSessions } = get()
     
     if (currentSession) {
-      set({
-        isRunning: false,
-        currentSession: {
-          ...currentSession,
-          status: SessionStatus.COMPLETED,
-          completedAt: new Date().toISOString(),
-        },
-        completedSessions: completedSessions + 1,
-        timeRemaining: 0,
-      })
-      
       // Auto-suggest next session type
       const nextType = getNextSessionType(completedSessions + 1, get().longBreakAfter)
       const nextDuration = getSessionDuration(nextType, get())
       
-      setTimeout(() => {
-        set({
-          currentSession: null,
-          timeRemaining: nextDuration * 60,
-        })
-      }, 3000) // Show completion for 3 seconds
+      set({
+        isRunning: false,
+        currentSession: null,
+        completedSessions: completedSessions + 1,
+        timeRemaining: nextDuration * 60,
+        pausedAt: null,
+      })
     }
   },
 
@@ -153,6 +153,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         isRunning: false,
         currentSession: null,
         timeRemaining: fallbackDuration * 60,
+        pausedAt: null,
       })
     }
   },
@@ -161,8 +162,6 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     const { isRunning, timeRemaining } = get()
     if (isRunning && timeRemaining > 0) {
       set({ timeRemaining: timeRemaining - 1 })
-    } else if (isRunning && timeRemaining === 0) {
-      get().completeSession()
     }
   },
 

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Clock, User, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -16,32 +16,59 @@ function SessionCard({ session, index, isCurrentUser = false }: {
 }) {
   const router = useRouter()
   
-  // Calculate initial time remaining once
-  const getInitialTimeRemaining = () => {
+  // Calculate time remaining based on timestamp - always accurate
+  const getTimeRemaining = useCallback(() => {
     const startTime = new Date(session.startedAt).getTime()
     const now = Date.now()
     const elapsed = Math.floor((now - startTime) / 1000) // seconds
     const totalDuration = (session.duration || 25) * 60 // minutes to seconds
     return Math.max(0, totalDuration - elapsed)
-  }
+  }, [session.startedAt, session.duration])
 
-  const [currentTimeRemaining, setCurrentTimeRemaining] = useState(getInitialTimeRemaining)
+  const [currentTimeRemaining, setCurrentTimeRemaining] = useState(() => getTimeRemaining())
 
+  // Recalculate when session changes
   useEffect(() => {
-    // Reset time when session changes
-    setCurrentTimeRemaining(getInitialTimeRemaining())
-  }, [session.id, session.startedAt, session.duration])
+    setCurrentTimeRemaining(getTimeRemaining())
+  }, [getTimeRemaining])
 
+  // Recalculate on visibility change
   useEffect(() => {
-    // Local tick - decrease by 1 every second
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const newTime = getTimeRemaining()
+        setCurrentTimeRemaining(newTime)
+        console.log(`ActiveSession ${session.id}: Time recalculated on tab focus:`, newTime)
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [getTimeRemaining, session.id])
+
+  // Update time every second, but with periodic recalculation to avoid drift
+  useEffect(() => {
     if (currentTimeRemaining <= 0) return
 
+    let tickCount = 0
     const interval = setInterval(() => {
-      setCurrentTimeRemaining(prev => Math.max(0, prev - 1))
+      tickCount++
+      
+      // Every 10 seconds, recalculate from timestamp to prevent drift
+      if (tickCount % 10 === 0) {
+        const accurateTime = getTimeRemaining()
+        setCurrentTimeRemaining(accurateTime)
+      } else {
+        // Normal tick
+        setCurrentTimeRemaining(prev => Math.max(0, prev - 1))
+      }
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [currentTimeRemaining])
+  }, [currentTimeRemaining, getTimeRemaining])
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)
