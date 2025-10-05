@@ -8,8 +8,9 @@ import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
 import AuthModal from '@/components/AuthModal'
-import ConnectionStatus from '@/components/ConnectionStatus'
 import { registerServiceWorker } from '@/lib/serviceWorker'
+import dynamic from 'next/dynamic'
+const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => null })
 
 export default function HomePage() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
@@ -50,7 +51,6 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen">
-      <ConnectionStatus />
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -71,7 +71,6 @@ export default function HomePage() {
 
         {/* Main Content */}
         <div className="space-y-12">
-          {/* Timer Section */}
           <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -157,8 +156,10 @@ export default function HomePage() {
             </motion.div>
           )}
         </div>
+        <div className="mt-12">
+          <Chat matchHeightSelector="[data-timer-panel]" />
+        </div>
       </main>
-
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}

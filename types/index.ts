@@ -80,3 +80,11 @@ export interface SessionStats {
     minutes: number
   }[]
 }
+
+export interface ChatMessage {
+  id: string
+  userId: string | null
+  username: string
+  text: string
+  timestamp: number
+}

@@ -949,7 +949,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     : 0
 
   return (
-    <div className="card max-w-md mx-auto relative">
+    <div className="card max-w-md mx-auto relative" data-timer-panel>
       <div className="text-center space-y-6">
         {/* Session Type Selector */}
         <div className="flex justify-center space-x-2">

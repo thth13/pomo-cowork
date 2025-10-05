@@ -1,0 +1,191 @@
+"use client"
+
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { SendHorizonal, Loader2 } from 'lucide-react'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useSocket } from '@/hooks/useSocket'
+import type { ChatMessage } from '@/types'
+
+interface TypingState {
+  username: string
+  isTyping: boolean
+}
+
+interface ChatProps {
+  matchHeightSelector?: string
+}
+
+export default function Chat({ matchHeightSelector }: ChatProps) {
+  const { user } = useAuthStore()
+  const {
+    sendChatMessage,
+    requestChatHistory,
+    onChatMessage,
+    offChatMessage,
+    onChatHistory,
+    offChatHistory,
+    emitChatTyping,
+    onChatTyping,
+    offChatTyping
+  } = useSocket()
+
+  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [input, setInput] = useState("")
+  const [loading, setLoading] = useState(true)
+  const [typing, setTyping] = useState<TypingState | null>(null)
+  const listRef = useRef<HTMLDivElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [matchedHeight, setMatchedHeight] = useState<number | undefined>(undefined)
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  useEffect(() => {
+    // Height matching with timer panel
+    if (!matchHeightSelector) return
+    if (typeof window === 'undefined') return
+
+    const el = document.querySelector(matchHeightSelector) as HTMLElement | null
+    if (!el) return
+
+    const apply = () => {
+      setMatchedHeight(el.getBoundingClientRect().height)
+    }
+
+    apply()
+
+    const ro = new ResizeObserver(() => apply())
+    ro.observe(el)
+
+    window.addEventListener('resize', apply)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', apply)
+    }
+  }, [matchHeightSelector])
+
+  useEffect(() => {
+    const handleHistory = (history: ChatMessage[]) => {
+      setMessages(history)
+      setLoading(false)
+      scrollToBottom()
+    }
+
+    const handleNew = (msg: ChatMessage) => {
+      setMessages((prev) => [...prev.slice(-99), msg])
+      scrollToBottomSmooth()
+    }
+
+    const handleTyping = (payload: { username: string; isTyping: boolean }) => {
+      if (!payload.isTyping) {
+        setTyping(null)
+        return
+      }
+      setTyping({ username: payload.username, isTyping: true })
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+      typingTimeoutRef.current = setTimeout(() => setTyping(null), 2500)
+    }
+
+    onChatHistory(handleHistory)
+    onChatMessage(handleNew)
+    onChatTyping(handleTyping)
+      // Try fetch via API first
+      fetch('/api/chat/messages?take=50')
+        .then((r) => r.ok ? r.json() : null)
+        .then((data: { items: ChatMessage[] } | null) => {
+          if (data?.items) {
+            setMessages(data.items)
+            setLoading(false)
+            scrollToBottom()
+          } else {
+            requestChatHistory()
+          }
+        })
+        .catch(() => requestChatHistory())
+
+    return () => {
+      offChatHistory(handleHistory)
+      offChatMessage(handleNew)
+      offChatTyping(handleTyping)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const scrollToBottom = () => {
+    requestAnimationFrame(() => {
+      if (listRef.current) {
+        listRef.current.scrollTop = listRef.current.scrollHeight
+      }
+    })
+  }
+
+  const scrollToBottomSmooth = () => {
+    requestAnimationFrame(() => {
+      if (listRef.current) {
+        listRef.current.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+      }
+    })
+  }
+
+  const onSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const text = input.trim()
+    if (!text) return
+      // Optimistic local append (will be overwritten by server push)
+      sendChatMessage(text)
+
+    setInput("")
+  }
+
+  const onInputChange = (v: string) => {
+    setInput(v)
+    emitChatTyping(true)
+  }
+
+  const meName = useMemo(() => user?.username ?? 'Guest', [user])
+
+  return (
+    <div ref={containerRef} className="card p-0 overflow-hidden flex flex-col min-h-0" style={matchedHeight ? { height: matchedHeight } : undefined}>
+      <div className="px-4 py-3 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+        <div className="font-semibold text-slate-700">Live Chat</div>
+        <div className="text-xs text-slate-500">You are: {meName}</div>
+      </div>
+
+      <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+        {loading ? (
+          <div className="flex items-center justify-center py-8 text-slate-500">
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading messages...
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="text-center text-slate-500 py-6">No messages yet. Be the first!</div>
+        ) : (
+          messages.map((m) => (
+            <div key={m.id} className="text-sm">
+              <span className="font-medium text-slate-700 mr-2">{m.username}:</span>
+              <span className="text-slate-700 break-words">{m.text}</span>
+              <span className="ml-2 text-[10px] text-slate-400 align-middle">{new Date(m.timestamp).toLocaleTimeString()}</span>
+            </div>
+          ))
+        )}
+
+        {typing && (
+          <div className="text-xs text-slate-500">{typing.username} is typing...</div>
+        )}
+      </div>
+
+      <form onSubmit={onSubmit} className="border-t border-slate-200 px-3 py-2">
+        <div className="flex items-center gap-2">
+          <input
+            value={input}
+            onChange={(e) => onInputChange(e.target.value)}
+            placeholder="Type a message"
+            className="flex-1 input"
+            aria-label="Message"
+          />
+          <button type="submit" className="btn-primary flex items-center gap-1">
+            <SendHorizonal className="w-4 h-4" />
+            Send
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}

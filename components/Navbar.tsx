@@ -16,16 +16,26 @@ import {
 import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import Image from 'next/image'
+import { useConnectionStore } from '@/store/useConnectionStore'
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const { user, isAuthenticated, logout } = useAuthStore()
 
+  const { isConnected, isChecking, onlineUserCount, anonymousOnlineCount, totalOnlineCount } = useConnectionStore()
+
   const handleLogout = () => {
     logout()
     setIsMenuOpen(false)
   }
+  const statusColor = isChecking ? 'bg-amber-400' : isConnected ? 'bg-emerald-500' : 'bg-red-500'
+  const statusTitle = isChecking ? 'Checking connection...' : isConnected ? 'Online' : 'Offline'
+  const statusLabel = isChecking
+    ? 'Checking...'
+    : isConnected
+      && `${totalOnlineCount} online`
+
 
   const navigation = isAuthenticated
     ? [
@@ -65,6 +75,16 @@ export default function Navbar() {
 
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center space-x-4">
+              <div className="flex items-center" title={statusTitle}>
+                <span
+                  aria-hidden
+                  className={`h-2.5 w-2.5 rounded-full transition-colors duration-300 ${statusColor}`}
+                />
+                <span className="sr-only">{statusTitle}</span>
+                {!isChecking && (
+                  <span className="ml-2 text-sm text-slate-500">{statusLabel}</span>
+                )}
+              </div>
               {isAuthenticated && user ? (
                 <>
                   <div className="flex items-center space-x-3">
@@ -124,6 +144,14 @@ export default function Navbar() {
                 ))}
                 
                 <div className="px-4 pt-4 border-t border-slate-200">
+                  <div className="flex items-center mb-3" title={statusTitle}>
+                    <span
+                      aria-hidden
+                      className={`h-2.5 w-2.5 rounded-full transition-colors duration-300 ${statusColor}`}
+                    />
+                    <span className="sr-only">{statusTitle}</span>
+                    <span className="ml-2 text-sm text-slate-600">{statusLabel}</span>
+                  </div>
                   {isAuthenticated && user ? (
                     <>
                       <div className="flex items-center space-x-3 mb-3">

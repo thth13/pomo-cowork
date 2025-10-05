@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  url      = "postgresql://neondb_owner:npg_KQ34zPwldEyg@ep-cool-hat-ad9nr8he-pooler.c-2.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
 }
 
 model User {
@@ -71,4 +71,15 @@ model PomodoroSession {
   updatedAt DateTime @updatedAt
 
   @@map("pomodoro_sessions")
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  userId    String?
+  username  String
+  text      String   @db.Text
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("chat_messages")
 }
