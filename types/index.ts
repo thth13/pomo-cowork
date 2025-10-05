@@ -87,4 +87,9 @@ export interface ChatMessage {
   username: string
   text: string
   timestamp: number
+  type?: 'message' | 'system'
+  action?: {
+    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop'
+    duration?: number
+  }
 }

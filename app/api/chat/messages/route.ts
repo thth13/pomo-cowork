@@ -14,14 +14,30 @@ export async function GET(request: Request) {
     take,
     ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
     orderBy: { createdAt: 'desc' }
-  }) as Array<{ id: string; userId: string | null; username: string; text: string; createdAt: Date }>
+  }) as Array<{ 
+    id: string; 
+    userId: string | null; 
+    username: string; 
+    text: string; 
+    type?: string;
+    actionType?: string;
+    actionDuration?: number;
+    createdAt: Date 
+  }>
 
   const items: PublicChatMessage[] = messages.reverse().map((m) => ({
     id: m.id,
     userId: m.userId,
     username: m.username,
     text: m.text,
-    timestamp: new Date(m.createdAt).getTime()
+    timestamp: new Date(m.createdAt).getTime(),
+    type: m.type === 'system' ? 'system' : 'message',
+    ...(m.type === 'system' && m.actionType && {
+      action: {
+        type: m.actionType as any,
+        ...(m.actionDuration && { duration: m.actionDuration })
+      }
+    })
   }))
 
   return NextResponse.json({
@@ -31,25 +47,84 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null) as { userId?: string | null; username?: string; text?: string } | null
+  const body = await request.json().catch(() => null) as { 
+    userId?: string | null; 
+    username?: string; 
+    text?: string;
+    type?: 'message' | 'system';
+    action?: {
+      type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop';
+      duration?: number;
+    }
+  } | null
   if (!body) return NextResponse.json({ error: 'invalid_json' }, { status: 400 })
 
-  const text = (body.text ?? '').toString().slice(0, MAX_LEN).trim()
-  if (!text) return NextResponse.json({ error: 'empty' }, { status: 400 })
-
+  const isSystem = body.type === 'system'
   const username = (body.username ?? 'Guest').toString().slice(0, 100)
   const userId = body.userId ?? null
 
+  let text: string
+  let actionType: string | null = null
+  let actionDuration: number | null = null
+
+  if (isSystem && body.action) {
+    // Для системных сообщений генерируем текст на основе действия
+    switch (body.action.type) {
+      case 'work_start':
+        text = `${username} начал работу на ${body.action.duration} минут`
+        actionDuration = body.action.duration || null
+        break
+      case 'break_start':
+        text = `${username} начал перерыв`
+        break
+      case 'long_break_start':
+        text = `${username} начал долгий перерыв`
+        break
+      case 'timer_stop':
+        text = `${username} остановил таймер`
+        break
+      default:
+        text = `${username} выполнил действие`
+    }
+    actionType = body.action.type
+  } else {
+    text = (body.text ?? '').toString().slice(0, MAX_LEN).trim()
+    if (!text) return NextResponse.json({ error: 'empty' }, { status: 400 })
+  }
+
   const saved = await (prisma as any).chatMessage.create({
-    data: { text, username, userId }
-  }) as { id: string; userId: string | null; username: string; text: string; createdAt: Date }
+    data: { 
+      text, 
+      username, 
+      userId,
+      type: isSystem ? 'system' : 'message',
+      actionType,
+      actionDuration
+    }
+  }) as { 
+    id: string; 
+    userId: string | null; 
+    username: string; 
+    text: string; 
+    type: string;
+    actionType?: string;
+    actionDuration?: number;
+    createdAt: Date 
+  }
 
   const result: PublicChatMessage = {
     id: saved.id,
     userId: saved.userId,
     username: saved.username,
     text: saved.text,
-    timestamp: new Date(saved.createdAt).getTime()
+    timestamp: new Date(saved.createdAt).getTime(),
+    type: saved.type === 'system' ? 'system' : 'message',
+    ...(saved.type === 'system' && saved.actionType && {
+      action: {
+        type: saved.actionType as any,
+        ...(saved.actionDuration && { duration: saved.actionDuration })
+      }
+    })
   }
   return NextResponse.json(result)
 }

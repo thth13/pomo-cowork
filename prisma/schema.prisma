@@ -74,11 +74,14 @@ model PomodoroSession {
 }
 
 model ChatMessage {
-  id        String   @id @default(cuid())
-  userId    String?
-  username  String
-  text      String   @db.Text
-  createdAt DateTime @default(now())
+  id             String   @id @default(cuid())
+  userId         String?
+  username       String
+  text           String
+  type           String   @default("message") // "message" or "system"
+  actionType     String? // "work_start", "break_start", "long_break_start", "timer_stop"
+  actionDuration Int? // duration in minutes for work sessions
+  createdAt      DateTime @default(now())
 
   @@index([createdAt])
   @@map("chat_messages")

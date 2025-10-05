@@ -28,6 +28,11 @@ interface ChatMessage {
   username: string
   text: string
   timestamp: number
+  type?: 'message' | 'system'
+  action?: {
+    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop'
+    duration?: number
+  }
 }
 
 const app = express()
@@ -57,14 +62,21 @@ const CHAT_API_BASE = process.env.CHAT_API_BASE || process.env.APP_URL || 'http:
 
 async function persistChatMessage(message: Omit<ChatMessage, 'id' | 'timestamp'> & { timestamp?: number }) {
   try {
+    const payload: any = {
+      userId: message.userId,
+      username: message.username,
+      text: message.text
+    }
+
+    if (message.type === 'system' && message.action) {
+      payload.type = 'system'
+      payload.action = message.action
+    }
+
     const res = await fetch(`${CHAT_API_BASE}/api/chat/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        userId: message.userId,
-        username: message.username,
-        text: message.text
-      })
+      body: JSON.stringify(payload)
     })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const saved = await res.json() as ChatMessage
@@ -290,6 +302,56 @@ io.on('connection', (socket) => {
       startTime: Date.now()
     })
 
+    // Send system message about session start
+    const userId = socketUserMap.get(socket.id) ?? null
+    const anonymousId = anonymousSockets.get(socket.id)
+    let username = 'Guest'
+    if (userId) {
+      username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+    } else if (anonymousId) {
+      username = `Guest-${anonymousId.slice(-4)}`
+    }
+
+    let actionType: 'work_start' | 'break_start' | 'long_break_start'
+    switch (sessionData.type) {
+      case 'WORK':
+        actionType = 'work_start'
+        break
+      case 'SHORT_BREAK':
+        actionType = 'break_start'
+        break
+      case 'LONG_BREAK':
+        actionType = 'long_break_start'
+        break
+      default:
+        actionType = 'work_start'
+    }
+
+    const systemMessage: ChatMessage = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      userId,
+      username,
+      text: '',
+      timestamp: Date.now(),
+      type: 'system',
+      action: {
+        type: actionType,
+        ...(actionType === 'work_start' && { duration: sessionData.duration })
+      }
+    }
+
+    void (async () => {
+      const saved = await persistChatMessage(systemMessage)
+      const toEmit = saved ?? systemMessage
+      if (!saved) {
+        chatMessages.push(systemMessage)
+        if (chatMessages.length > MAX_CHAT_HISTORY) {
+          chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
+        }
+      }
+      io.emit('chat-new', toEmit)
+    })()
+
     io.emit('session-update', serializeSessions())
   })
 
@@ -304,6 +366,43 @@ io.on('connection', (socket) => {
   })
 
   socket.on('session-end', (sessionId: string) => {
+    const session = sessions.get(sessionId)
+    if (session) {
+      // Send system message about timer stop
+      const userId = socketUserMap.get(socket.id) ?? null
+      const anonymousId = anonymousSockets.get(socket.id)
+      let username = 'Guest'
+      if (userId) {
+        username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+      } else if (anonymousId) {
+        username = `Guest-${anonymousId.slice(-4)}`
+      }
+
+      const systemMessage: ChatMessage = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        userId,
+        username,
+        text: '',
+        timestamp: Date.now(),
+        type: 'system',
+        action: {
+          type: 'timer_stop'
+        }
+      }
+
+      void (async () => {
+        const saved = await persistChatMessage(systemMessage)
+        const toEmit = saved ?? systemMessage
+        if (!saved) {
+          chatMessages.push(systemMessage)
+          if (chatMessages.length > MAX_CHAT_HISTORY) {
+            chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
+          }
+        }
+        io.emit('chat-new', toEmit)
+      })()
+    }
+
     sessions.delete(sessionId)
     io.emit('session-update', serializeSessions())
   })
