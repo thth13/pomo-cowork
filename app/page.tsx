@@ -43,7 +43,7 @@ export default function HomePage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-          <span className="text-lg text-slate-600">Loading...</span>
+          <span className="text-lg text-slate-600 dark:text-slate-400">Loading...</span>
         </div>
       </div>
     )
@@ -60,10 +60,10 @@ export default function HomePage() {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
         >
-          <h1 className="text-4xl md:text-6xl font-bold text-slate-800 mb-4">
+          <h1 className="text-4xl md:text-6xl font-bold text-slate-800 dark:text-slate-200 mb-4">
             Pomodoro Timer
           </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
             Boost your productivity with the Pomodoro Technique.
             See what other users are working on in real-time.
           </p>
@@ -99,10 +99,10 @@ export default function HomePage() {
               {/* Call to Action */}
               <div className="card max-w-md mx-auto">
                 <div className="text-center space-y-4">
-                  <h2 className="text-2xl font-bold text-slate-800">
+                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
                     Save Your Progress
                   </h2>
-                  <p className="text-slate-600">
+                  <p className="text-slate-600 dark:text-slate-400">
                     Create an account to save your session history, view detailed statistics
                     and track your progress over time.
                   </p>
@@ -144,10 +144,10 @@ export default function HomePage() {
                     className="card text-center"
                   >
                     <div className="text-4xl mb-4">{feature.icon}</div>
-                    <h3 className="text-lg font-semibold text-slate-800 mb-2">
+                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">
                       {feature.title}
                     </h3>
-                    <p className="text-slate-600">
+                    <p className="text-slate-600 dark:text-slate-400">
                       {feature.description}
                     </p>
                   </motion.div>

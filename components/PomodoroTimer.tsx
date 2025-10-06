@@ -962,7 +962,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
                 sessionType === type
                   ? 'bg-primary-100 text-primary-700'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
               } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {getSessionTypeLabel(type)}
@@ -975,7 +975,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           <button
             type="button"
             onClick={openSettings}
-            className="absolute -top-2 -right-2 rounded-full bg-white shadow-sm border border-slate-200 p-2 text-slate-500 hover:text-slate-700 hover:border-slate-300 transition"
+            className="absolute -top-2 -right-2 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 transition"
             aria-label="Timer settings"
           >
             <Settings size={16} />
@@ -995,7 +995,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
                 stroke="currentColor"
                 strokeWidth="2"
                 fill="transparent"
-                className="text-slate-200"
+                className="text-slate-200 dark:text-slate-300"
               />
               <circle
                 cx="50"
@@ -1023,7 +1023,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
                 <div className={`text-4xl font-bold ${getSessionTypeColor(activeSessionType)}`}>
                   {formatTime(timeRemaining)}
                 </div>
-                <div className="text-sm text-slate-500 mt-1">
+                <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                   {getSessionTypeLabel(activeSessionType)}
                 </div>
               </div>
@@ -1095,25 +1095,25 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
         {/* Session Counter */}
         <div className="text-center">
-          <div className="text-2xl font-bold text-slate-700">{completedSessions}</div>
-          <div className="text-sm text-slate-500">completed sessions</div>
+          <div className="text-2xl font-bold text-slate-700 dark:text-slate-300">{completedSessions}</div>
+          <div className="text-sm text-slate-500 dark:text-slate-400">completed sessions</div>
         </div>
       </div>
 
       {isSettingsOpen && (
-        <div className="absolute top-4 right-4 z-20 w-64 rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+        <div className="absolute top-4 right-4 z-20 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-xl">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-slate-600">Timer durations (min)</span>
+            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Timer durations (min)</span>
             <button
               type="button"
               onClick={() => setIsSettingsOpen(false)}
-              className="text-xs text-slate-400 hover:text-slate-600"
+              className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
             >
               Close
             </button>
           </div>
           <div className="space-y-3">
-            <label className="flex flex-col text-left text-xs font-medium text-slate-500">
+            <label className="flex flex-col text-left text-xs font-medium text-slate-500 dark:text-slate-400">
               Work
               <input
                 type="number"
@@ -1123,7 +1123,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
                 className="input mt-1"
               />
             </label>
-            <label className="flex flex-col text-left text-xs font-medium text-slate-500">
+            <label className="flex flex-col text-left text-xs font-medium text-slate-500 dark:text-slate-400">
               Short break
               <input
                 type="number"
@@ -1133,7 +1133,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
                 className="input mt-1"
               />
             </label>
-            <label className="flex flex-col text-left text-xs font-medium text-slate-500">
+            <label className="flex flex-col text-left text-xs font-medium text-slate-500 dark:text-slate-400">
               Long break
               <input
                 type="number"

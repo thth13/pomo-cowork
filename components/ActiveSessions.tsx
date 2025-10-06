@@ -129,23 +129,23 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         {/* User Info */}
         <div className="flex items-center space-x-3">
           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-            isCurrentUser ? 'bg-primary-100' : 'bg-slate-200'
+            isCurrentUser ? 'bg-primary-100 dark:bg-primary-900/30' : 'bg-slate-200 dark:bg-slate-700'
           }`}>
-            <User className={`w-5 h-5 ${isCurrentUser ? 'text-primary-600' : 'text-slate-600'}`} />
+            <User className={`w-5 h-5 ${isCurrentUser ? 'text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300'}`} />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <div className={`font-semibold ${isCurrentUser ? 'text-primary-800' : 'text-slate-700'}`}>
+              <div className={`font-semibold ${isCurrentUser ? 'text-primary-800 dark:text-primary-200' : 'text-slate-700 dark:text-slate-200'}`}>
                 {session.username}
                 {isCurrentUser && ' (You)'}
               </div>
               {!isCurrentUser && (
                 <button
                   onClick={() => router.push(`/user/${session.userId}`)}
-                  className="p-1 hover:bg-slate-100 rounded transition-colors"
+                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-600 rounded transition-colors"
                   title="View profile"
                 >
-                  <ExternalLink className="w-4 h-4 text-slate-500" />
+                  <ExternalLink className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                 </button>
               )}
             </div>
@@ -157,17 +157,17 @@ function SessionCard({ session, index, isCurrentUser = false }: {
 
         {/* Task */}
         <div className={`rounded-lg p-3 ${
-          isCurrentUser ? 'bg-primary-50' : 'bg-slate-50'
+          isCurrentUser ? 'bg-primary-50 dark:bg-primary-900/20' : 'bg-slate-50 dark:bg-slate-800/50'
         }`}>
-          <div className="text-sm text-slate-600 mb-1">Task:</div>
-          <div className="font-medium text-slate-800 line-clamp-2">
+          <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Task:</div>
+          <div className="font-medium text-slate-800 dark:text-slate-200 line-clamp-2">
             {session.task}
           </div>
         </div>
 
         {/* Time Remaining */}
         <div className="flex items-center justify-between">
-          <div className="text-sm text-slate-600">Remaining:</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400">Remaining:</div>
           <div className={`text-xl font-bold ${
             isCurrentUser ? 'text-primary-700' : 'text-primary-600'
           }`}>
@@ -176,7 +176,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full bg-slate-200 rounded-full h-2">
+        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
           <motion.div
             className={`h-2 rounded-full transition-all duration-1000 ${
               session.type === SessionType.WORK
@@ -193,7 +193,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         </div>
 
         {/* Started Time */}
-        <div className="text-xs text-slate-500 text-center">
+        <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
           Started at {new Date(session.startedAt).toLocaleTimeString('en-US', {
             hour: '2-digit',
             minute: '2-digit'
@@ -270,12 +270,12 @@ export default function ActiveSessions() {
     return (
       <div className="card">
         <div className="text-center py-8">
-          <User className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-600 mb-2">
-            No one is working yet
+          <User className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-300 mb-2">
+            No Active Sessions
           </h3>
-          <p className="text-slate-500">
-            Be the first to start a pomodoro timer!
+          <p className="text-slate-500 dark:text-slate-400">
+            Start a timer session to see your activity here!
           </p>
         </div>
       </div>
@@ -283,7 +283,7 @@ export default function ActiveSessions() {
   }
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-bold text-slate-700 flex items-center">
+      <h2 className="text-xl font-bold text-slate-700 dark:text-slate-300 flex items-center">
         <Clock className="w-5 h-5 mr-2" />
         Currently working ({allActiveSessions.length})
       </h2>

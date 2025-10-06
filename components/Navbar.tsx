@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
+import ThemeToggle from './ThemeToggle'
 import Image from 'next/image'
 import { useConnectionStore } from '@/store/useConnectionStore'
 
@@ -48,7 +49,7 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white/80 backdrop-blur-sm border-b border-slate-200 sticky top-0 z-40">
+      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
@@ -56,7 +57,7 @@ export default function Navbar() {
               <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
                 <Timer className="w-5 h-5 text-white" />
               </div>
-              <span className="font-bold text-xl text-slate-800">Pomo Cowork</span>
+              <span className="font-bold text-xl text-slate-800 dark:text-slate-200">Pomo Cowork</span>
             </Link>
 
             {/* Desktop Navigation */}
@@ -65,7 +66,7 @@ export default function Navbar() {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center space-x-1 text-slate-600 hover:text-slate-900 transition-colors"
+                  className="flex items-center space-x-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
                 >
                   <item.icon className="w-4 h-4" />
                   <span>{item.name}</span>
@@ -75,6 +76,7 @@ export default function Navbar() {
 
             {/* Desktop Auth */}
             <div className="hidden md:flex items-center space-x-4">
+              <ThemeToggle />
               <div className="flex items-center" title={statusTitle}>
                 <span
                   aria-hidden
@@ -82,16 +84,16 @@ export default function Navbar() {
                 />
                 <span className="sr-only">{statusTitle}</span>
                 {!isChecking && (
-                  <span className="ml-2 text-sm text-slate-500">{statusLabel}</span>
+                  <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">{statusLabel}</span>
                 )}
               </div>
               {isAuthenticated && user ? (
                 <>
                   <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-slate-600" />
+                    <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center">
+                      <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                     </div>
-                    <span className="text-slate-700 font-medium">{user.username}</span>
+                    <span className="text-slate-700 dark:text-slate-300 font-medium">{user.username}</span>
                   </div>
                   <button
                     onClick={handleLogout}
@@ -112,10 +114,11 @@ export default function Navbar() {
             </div>
 
             {/* Mobile menu button */}
-            <div className="md:hidden">
+            <div className="md:hidden flex items-center space-x-2">
+              <ThemeToggle />
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 text-slate-600 hover:text-slate-900 transition-colors"
+                className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
               >
                 {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
@@ -128,7 +131,7 @@ export default function Navbar() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-slate-200"
+              className="md:hidden border-t border-slate-200 dark:border-slate-700"
             >
               <div className="py-4 space-y-2">
                 {navigation.map((item) => (
@@ -136,29 +139,29 @@ export default function Navbar() {
                     key={item.name}
                     href={item.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 px-4 py-2 text-slate-600 hover:text-slate-900 hover:bg-slate-50 rounded-lg transition-colors"
+                    className="flex items-center space-x-2 px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
                   >
                     <item.icon className="w-4 h-4" />
                     <span>{item.name}</span>
                   </Link>
                 ))}
                 
-                <div className="px-4 pt-4 border-t border-slate-200">
+                <div className="px-4 pt-4 border-t border-slate-200 dark:border-slate-700">
                   <div className="flex items-center mb-3" title={statusTitle}>
                     <span
                       aria-hidden
                       className={`h-2.5 w-2.5 rounded-full transition-colors duration-300 ${statusColor}`}
                     />
                     <span className="sr-only">{statusTitle}</span>
-                    <span className="ml-2 text-sm text-slate-600">{statusLabel}</span>
+                    <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">{statusLabel}</span>
                   </div>
                   {isAuthenticated && user ? (
                     <>
                       <div className="flex items-center space-x-3 mb-3">
-                        <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
-                          <User className="w-4 h-4 text-slate-600" />
+                        <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center">
+                          <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                         </div>
-                        <span className="text-slate-700 font-medium">{user.username}</span>
+                        <span className="text-slate-700 dark:text-slate-300 font-medium">{user.username}</span>
                       </div>
                       <button
                         onClick={handleLogout}
