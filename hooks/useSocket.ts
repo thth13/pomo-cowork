@@ -110,6 +110,10 @@ export function useSocket() {
     sharedSocket?.emit('session-start', sessionData)
   }
 
+  const emitSessionSync = (sessionData: any) => {
+    sharedSocket?.emit('session-sync', sessionData)
+  }
+
   const emitSessionPause = (sessionId: string) => {
     sharedSocket?.emit('session-pause', sessionId)
   }
@@ -161,6 +165,7 @@ export function useSocket() {
 
   return {
     emitSessionStart,
+    emitSessionSync,
     emitSessionPause,
     emitSessionEnd,
     emitTimerTick,

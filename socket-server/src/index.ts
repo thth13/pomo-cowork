@@ -295,6 +295,17 @@ io.on('connection', (socket) => {
     io.emit('session-update', serializeSessions())
   })
 
+  socket.on('session-sync', (sessionData: PomodoroSession) => {
+    // Sync existing session without sending system message
+    sessions.set(sessionData.id, {
+      ...sessionData,
+      socketId: socket.id,
+      startTime: Date.now() - (sessionData.duration * 60 * 1000 - sessionData.timeRemaining * 1000)
+    })
+
+    io.emit('session-update', serializeSessions())
+  })
+
   socket.on('session-pause', (sessionId: string) => {
     const session = sessions.get(sessionId)
     if (!session) {

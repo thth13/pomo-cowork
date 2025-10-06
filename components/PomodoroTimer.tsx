@@ -52,7 +52,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   } = useTimerStore()
 
   const { user } = useAuthStore()
-  const { emitSessionStart, emitSessionPause, emitSessionEnd, emitTimerTick } = useSocket()
+  const { emitSessionStart, emitSessionSync, emitSessionPause, emitSessionEnd, emitTimerTick } = useSocket()
 
   const [task, setTask] = useState('')
   const [sessionType, setSessionType] = useState<SessionType>(SessionType.WORK)
@@ -151,7 +151,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             setTask(activeSession.task)
             setSessionType(activeSession.type as SessionType)
             
-            // Emit to WebSocket to sync with others
+            // Emit to WebSocket to sync with others (without system message)
             const sessionData = {
               id: activeSession.id,
               task: activeSession.task,
@@ -162,7 +162,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               timeRemaining: currentTimeRemaining,
               startedAt: activeSession.startedAt
             }
-            emitSessionStart(sessionData)
+            emitSessionSync(sessionData)
           }
         }
       } catch (error) {
@@ -651,7 +651,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         },
       })
       
-      emitSessionStart({
+      // Use sync instead of start for resuming
+      emitSessionSync({
         ...currentSession,
         duration: currentSession.duration,
         timeRemaining,
