@@ -12,9 +12,9 @@ services:
       - PORT=8000
     networks:
       - app-network
-    # Remove direct port exposure since Caddy will handle it
     expose:
       - "8000"
+    restart: unless-stopped
       
   caddy:
     image: caddy:latest
@@ -29,6 +29,7 @@ services:
       - app-network
     depends_on:
       - api
+    restart: unless-stopped
 
 networks:
   app-network:
