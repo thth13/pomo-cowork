@@ -38,6 +38,23 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
   const [matchedHeight, setMatchedHeight] = useState<number | undefined>(undefined)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
+  const saveSystemMessage = async (systemMessage: ChatMessage) => {
+    try {
+      await fetch('/api/chat/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: systemMessage.userId,
+          username: systemMessage.username,
+          type: 'system',
+          action: systemMessage.action
+        })
+      })
+    } catch (error) {
+      console.error('Error saving system message:', error)
+    }
+  }
+
   const getActionColor = (actionType?: string) => {
     switch (actionType) {
       case 'work_start':
@@ -104,6 +121,11 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     const handleNew = (msg: ChatMessage) => {
       setMessages((prev) => [...prev.slice(-99), msg])
       scrollToBottomSmooth()
+      
+      // Save system messages to DB
+      if (msg.type === 'system') {
+        saveSystemMessage(msg)
+      }
     }
 
     const handleTyping = (payload: { username: string; isTyping: boolean }) => {
@@ -157,14 +179,54 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     })
   }
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const text = input.trim()
     if (!text) return
-      // Optimistic local append (will be overwritten by server push)
-      sendChatMessage(text)
 
+    // Optimistic UI update
+    const optimisticMessage: ChatMessage = {
+      id: `temp-${Date.now()}`,
+      userId: user?.id || null,
+      username: user?.username || 'Guest',
+      text,
+      timestamp: Date.now(),
+      type: 'message'
+    }
+    setMessages(prev => [...prev, optimisticMessage])
     setInput("")
+    scrollToBottomSmooth()
+
+    try {
+      // Save to database
+      const response = await fetch('/api/chat/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user?.id || null,
+          username: user?.username || 'Guest',
+          text
+        })
+      })
+
+      if (response.ok) {
+        const savedMessage = await response.json() as ChatMessage
+        // Replace optimistic message with real one
+        setMessages(prev => prev.map(m => 
+          m.id === optimisticMessage.id ? savedMessage : m
+        ))
+        // Send via socket for other users
+        sendChatMessage(text)
+      } else {
+        throw new Error('Failed to save message')
+      }
+    } catch (error) {
+      console.error('Error saving message:', error)
+      // Remove optimistic message on error
+      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id))
+      // Still send via socket as fallback
+      sendChatMessage(text)
+    }
   }
 
   const onInputChange = (v: string) => {

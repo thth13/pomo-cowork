@@ -58,46 +58,6 @@ const userNames = new Map<string, string>()
 const chatMessages: ChatMessage[] = []
 
 const MAX_CHAT_HISTORY = 100
-const CHAT_API_BASE = process.env.CHAT_API_BASE || process.env.APP_URL || 'http://localhost:3000'
-
-async function persistChatMessage(message: Omit<ChatMessage, 'id' | 'timestamp'> & { timestamp?: number }) {
-  try {
-    const payload: any = {
-      userId: message.userId,
-      username: message.username,
-      text: message.text
-    }
-
-    if (message.type === 'system' && message.action) {
-      payload.type = 'system'
-      payload.action = message.action
-    }
-
-    const res = await fetch(`${CHAT_API_BASE}/api/chat/messages`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const saved = await res.json() as ChatMessage
-    return saved
-  } catch (err) {
-    console.error('Persist chat message failed:', err)
-    return null
-  }
-}
-
-async function fetchChatHistory(take = 50) {
-  try {
-    const res = await fetch(`${CHAT_API_BASE}/api/chat/messages?take=${take}`)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json() as { items: ChatMessage[] }
-    return data.items
-  } catch (err) {
-    console.error('Fetch chat history failed:', err)
-    return null
-  }
-}
 
 const incrementUserConnection = (userId: string) => {
   const next = (userConnectionCounts.get(userId) ?? 0) + 1
@@ -255,29 +215,14 @@ io.on('connection', (socket) => {
       timestamp: Date.now()
     }
 
-    // Try persist to DB, fallback to local
-    void (async () => {
-      const saved = await persistChatMessage({ userId, username, text: rawText })
-      const toEmit = saved ?? localMessage
-      if (!saved) {
-        chatMessages.push(localMessage)
-        if (chatMessages.length > MAX_CHAT_HISTORY) {
-          chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
-        }
-      }
-      io.emit('chat-new', toEmit)
-    })()
-  })
-
-  socket.on('chat-history', () => {
-    void (async () => {
-      const items = await fetchChatHistory(50)
-      if (items) {
-        socket.emit('chat-history', items)
-      } else {
-        socket.emit('chat-history', chatMessages)
-      }
-    })()
+    // Store locally and broadcast
+    chatMessages.push(localMessage)
+    if (chatMessages.length > MAX_CHAT_HISTORY) {
+      chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
+    }
+    
+    // Broadcast to all other clients (not sender)
+    socket.broadcast.emit('chat-new', localMessage)
   })
 
   socket.on('chat-typing', (payload: { isTyping: boolean }) => {
@@ -340,17 +285,12 @@ io.on('connection', (socket) => {
       }
     }
 
-    void (async () => {
-      const saved = await persistChatMessage(systemMessage)
-      const toEmit = saved ?? systemMessage
-      if (!saved) {
-        chatMessages.push(systemMessage)
-        if (chatMessages.length > MAX_CHAT_HISTORY) {
-          chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
-        }
-      }
-      io.emit('chat-new', toEmit)
-    })()
+    // Store locally and broadcast
+    chatMessages.push(systemMessage)
+    if (chatMessages.length > MAX_CHAT_HISTORY) {
+      chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
+    }
+    io.emit('chat-new', systemMessage)
 
     io.emit('session-update', serializeSessions())
   })
@@ -390,17 +330,12 @@ io.on('connection', (socket) => {
         }
       }
 
-      void (async () => {
-        const saved = await persistChatMessage(systemMessage)
-        const toEmit = saved ?? systemMessage
-        if (!saved) {
-          chatMessages.push(systemMessage)
-          if (chatMessages.length > MAX_CHAT_HISTORY) {
-            chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
-          }
-        }
-        io.emit('chat-new', toEmit)
-      })()
+      // Store locally and broadcast
+      chatMessages.push(systemMessage)
+      if (chatMessages.length > MAX_CHAT_HISTORY) {
+        chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
+      }
+      io.emit('chat-new', systemMessage)
     }
 
     sessions.delete(sessionId)
