@@ -32,6 +32,9 @@ self.addEventListener('message', (event) => {
     case 'GET_STATE':
       sendState(event.source)
       break
+    case 'UPDATE_SESSION_ID':
+      updateSessionId(payload)
+      break
   }
 })
 
@@ -105,6 +108,22 @@ function syncTime(payload) {
   if (!isRunning && timerInterval) {
     clearInterval(timerInterval)
     timerInterval = null
+  }
+}
+
+function updateSessionId(payload) {
+  const { oldSessionId, newSessionId, startedAt } = payload
+  
+  // Обновляем session ID если он совпадает с текущим
+  if (timerState.sessionId === oldSessionId) {
+    timerState.sessionId = newSessionId
+    
+    // Обновляем startTime если передан новый
+    if (startedAt) {
+      timerState.startTime = new Date(startedAt).getTime()
+    }
+    
+    console.log(`Session ID updated from ${oldSessionId} to ${newSessionId}`)
   }
 }
 

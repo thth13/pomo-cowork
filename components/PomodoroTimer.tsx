@@ -60,7 +60,10 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   const [notificationEnabled, setNotificationEnabled] = useState(true)
   const [soundEnabled, setSoundEnabled] = useState(true)
   const [soundVolume, setSoundVolume] = useState(0.5)
+  const [isStarting, setIsStarting] = useState(false)
+  const [isStopping, setIsStopping] = useState(false)
   const completedSessionIdRef = useRef<string | null>(null)
+  const lastActionTimeRef = useRef<number>(0)
 
   interface TimerSettingsForm {
     workDuration: number
@@ -512,88 +515,125 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const handleStart = async () => {
+    const now = Date.now()
+    
+    // Prevent multiple rapid clicks (debounce 1 second)
+    if (isStarting || now - lastActionTimeRef.current < 1000) return
+    
+    lastActionTimeRef.current = now
+    
     // if (!task.trim() && sessionType === SessionType.WORK) {
     //   alert('Please specify what you\'re working on')
     //   return
     // }
 
-    // If there's already an active session, end it first
-    if (currentSession) {
-      await handleStop()
-    }
+    setIsStarting(true)
 
-    const duration = getSessionDuration(sessionType)
-    const taskName = task.trim() || getSessionTypeLabel(sessionType)
-
-    // Get user ID or anonymous ID
-    const userId = user?.id || getOrCreateAnonymousId()
-    const username = user?.username || getAnonymousUsername()
-
-    // Create session in database (works for both authenticated and anonymous)
     try {
-      const token = localStorage.getItem('token')
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json'
-      }
-      
-      if (token) {
-        headers.Authorization = `Bearer ${token}`
+      // If there's already an active session, end it first
+      if (currentSession) {
+        await handleStop()
+        // Add small delay to ensure stop completes
+        await new Promise(resolve => setTimeout(resolve, 100))
       }
 
-      const body: Record<string, any> = {
-        task: taskName,
-        duration,
-        type: sessionType
-      }
-      
-      if (!user) {
-        body.anonymousId = userId
-      }
+      const duration = getSessionDuration(sessionType)
+      const taskName = task.trim() || getSessionTypeLabel(sessionType)
 
-    const response = await fetch('/api/sessions', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body)
+      // Get user ID or anonymous ID
+      const userId = user?.id || getOrCreateAnonymousId()
+      const username = user?.username || getAnonymousUsername()
+
+      // Optimistically start timer immediately with temporary ID
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+      startSession(taskName, duration, sessionType, tempId)
+      
+      // Start Service Worker timer with temp ID
+      sendMessageToServiceWorker({
+        type: 'START_TIMER',
+        payload: {
+          sessionId: tempId,
+          duration,
+          timeRemaining: duration * 60,
+          startedAt: new Date().toISOString(),
+        },
       })
 
-      if (response.ok) {
-        const dbSession = await response.json()
-        
-        // Start local timer with database session ID
-        startSession(taskName, duration, sessionType, dbSession.id)
-        
-        // Start Service Worker timer
-        sendMessageToServiceWorker({
-          type: 'START_TIMER',
-          payload: {
-            sessionId: dbSession.id,
-            duration,
-            timeRemaining: duration * 60,
-            startedAt: dbSession.startedAt,
-          },
-        })
-        
-        // Emit to WebSocket with session ID
-        const sessionData = {
-          id: dbSession.id,
-          task: taskName,
-          duration,
-          type: sessionType,
-          userId,
-          username,
-          timeRemaining: duration * 60,
-          startedAt: dbSession.startedAt
+      // Create session in database in background
+      try {
+        const token = localStorage.getItem('token')
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json'
         }
         
-        emitSessionStart(sessionData)
-      } else {
-        // Fallback to local-only timer if server fails
-        startSession(taskName, duration, sessionType)
+        if (token) {
+          headers.Authorization = `Bearer ${token}`
+        }
+
+        const body: Record<string, any> = {
+          task: taskName,
+          duration,
+          type: sessionType
+        }
+        
+        if (!user) {
+          body.anonymousId = userId
+        }
+
+        const response = await fetch('/api/sessions', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(body)
+        })
+
+        if (response.ok) {
+          const dbSession = await response.json()
+          
+          // Update session ID in store only if temp session still exists
+          const currentState = useTimerStore.getState()
+          if (currentState.currentSession?.id === tempId) {
+            useTimerStore.setState({
+              currentSession: {
+                ...currentState.currentSession,
+                id: dbSession.id,
+                startedAt: dbSession.startedAt
+              }
+            })
+            
+            // Update Service Worker with real session ID
+            sendMessageToServiceWorker({
+              type: 'UPDATE_SESSION_ID',
+              payload: {
+                oldSessionId: tempId,
+                newSessionId: dbSession.id,
+                startedAt: dbSession.startedAt,
+              },
+            })
+            
+            // Emit to WebSocket with real session ID
+            const sessionData = {
+              id: dbSession.id,
+              task: taskName,
+              duration,
+              type: sessionType,
+              userId,
+              username,
+              timeRemaining: duration * 60,
+              startedAt: dbSession.startedAt
+            }
+            
+            emitSessionStart(sessionData)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to create session:', error)
+        // Timer already started optimistically, continue with temp ID
       }
-    } catch (error) {
-      console.error('Failed to create session:', error)
-      // Fallback to local-only timer
-      startSession(taskName, duration, sessionType)
+    } finally {
+      // Add minimum delay to prevent too rapid clicks
+      setTimeout(() => {
+        setIsStarting(false)
+      }, 500)
     }
   }
 
@@ -690,45 +730,67 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const handleStop = async () => {
-    if (currentSession) {
-      // Stop Service Worker timer
-      sendMessageToServiceWorker({
-        type: 'STOP_TIMER',
-      })
-      
-      emitSessionEnd(currentSession.id)
-      
-      // Update session in database
-      try {
-        const token = localStorage.getItem('token')
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
-        }
-        
-        if (token) {
-          headers.Authorization = `Bearer ${token}`
-        }
-        
-        const body: Record<string, any> = {
-          status: 'CANCELLED',
-          endedAt: new Date().toISOString()
-        }
-        
-        if (!user) {
-          body.anonymousId = getOrCreateAnonymousId()
-        }
+    const now = Date.now()
+    
+    // Prevent multiple rapid clicks (debounce 1 second)
+    if (isStopping || now - lastActionTimeRef.current < 1000) return
+    
+    lastActionTimeRef.current = now
+    setIsStopping(true)
 
-        await fetch(`/api/sessions/${currentSession.id}`, {
-          method: 'PUT',
-          headers,
-          body: JSON.stringify(body)
+    try {
+      if (currentSession) {
+        const sessionId = currentSession.id
+        
+        // Optimistically stop timer immediately
+        cancelSession()
+        setTask('')
+        
+        // Stop Service Worker timer
+        sendMessageToServiceWorker({
+          type: 'STOP_TIMER',
         })
-      } catch (error) {
-        console.error('Failed to update session:', error)
+        
+        emitSessionEnd(sessionId)
+        
+        // Update session in database in background
+        try {
+          const token = localStorage.getItem('token')
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+          }
+          
+          if (token) {
+            headers.Authorization = `Bearer ${token}`
+          }
+          
+          const body: Record<string, any> = {
+            status: 'CANCELLED',
+            endedAt: new Date().toISOString()
+          }
+          
+          if (!user) {
+            body.anonymousId = getOrCreateAnonymousId()
+          }
+
+          await fetch(`/api/sessions/${sessionId}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(body)
+          })
+        } catch (error) {
+          console.error('Failed to update session:', error)
+        }
+      } else {
+        cancelSession()
+        setTask('')
       }
+    } finally {
+      // Add minimum delay to prevent too rapid clicks
+      setTimeout(() => {
+        setIsStopping(false)
+      }, 500)
     }
-    cancelSession()
-    setTask('')
   }
 
   const handleSessionComplete = async () => {
@@ -1051,12 +1113,15 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           {!currentSession ? (
             <motion.button
               onClick={handleStart}
-              className="btn-primary flex items-center space-x-2 px-6 py-3"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              disabled={isStarting}
+              className={`btn-primary flex items-center space-x-2 px-6 py-3 ${
+                isStarting ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              whileHover={!isStarting ? { scale: 1.05 } : {}}
+              whileTap={!isStarting ? { scale: 0.95 } : {}}
             >
               <Play size={20} />
-              <span>Start</span>
+              <span>{isStarting ? 'Starting...' : 'Start'}</span>
             </motion.button>
           ) : (
             <>
@@ -1072,12 +1137,15 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               
               <motion.button
                 onClick={handleStop}
-                className="btn-secondary flex items-center space-x-2"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                disabled={isStopping}
+                className={`btn-secondary flex items-center space-x-2 ${
+                  isStopping ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                whileHover={!isStopping ? { scale: 1.05 } : {}}
+                whileTap={!isStopping ? { scale: 0.95 } : {}}
               >
                 <Square size={20} />
-                <span>Stop</span>
+                <span>{isStopping ? 'Stopping...' : 'Stop'}</span>
               </motion.button>
             </>
           )}
