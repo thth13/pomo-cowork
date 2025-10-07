@@ -38,23 +38,6 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
   const [matchedHeight, setMatchedHeight] = useState<number | undefined>(undefined)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
-  const saveSystemMessage = async (systemMessage: ChatMessage) => {
-    try {
-      await fetch('/api/chat/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: systemMessage.userId,
-          username: systemMessage.username,
-          type: 'system',
-          action: systemMessage.action
-        })
-      })
-    } catch (error) {
-      console.error('Error saving system message:', error)
-    }
-  }
-
   const getActionColor = (actionType?: string) => {
     switch (actionType) {
       case 'work_start':
@@ -121,11 +104,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     const handleNew = (msg: ChatMessage) => {
       setMessages((prev) => [...prev.slice(-99), msg])
       scrollToBottomSmooth()
-      
-      // Save system messages to DB
-      if (msg.type === 'system') {
-        saveSystemMessage(msg)
-      }
+
     }
 
     const handleTyping = (payload: { username: string; isTyping: boolean }) => {

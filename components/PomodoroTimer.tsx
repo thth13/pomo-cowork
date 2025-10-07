@@ -8,7 +8,6 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useSocket } from '@/hooks/useSocket'
 import { SessionType } from '@/types'
 import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUser'
-import { buildAnonymousProfile } from '@/lib/anonymousProfile'
 import { playStartSound, playEndSound } from '@/lib/notificationSound'
 import { sendMessageToServiceWorker, listenToServiceWorker } from '@/lib/serviceWorker'
 
@@ -751,7 +750,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           type: 'STOP_TIMER',
         })
         
-  emitSessionEnd(sessionId, 'manual')
+        emitSessionEnd(sessionId, 'manual')
         
         // Update session in database in background
         try {

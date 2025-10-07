@@ -4,6 +4,7 @@ import type { Server } from 'http'
 import http from 'http'
 import cors from 'cors'
 import { Server as IOServer } from 'socket.io'
+import axios from 'axios'
 
 dotenv.config()
 
@@ -58,6 +59,22 @@ const userNames = new Map<string, string>()
 const chatMessages: ChatMessage[] = []
 
 const MAX_CHAT_HISTORY = 100
+
+// Function to save system messages to database via API
+const saveSystemMessageToDB = async (message: ChatMessage) => {
+  try {
+    const apiUrl = process.env.API_URL || 'http://localhost:3000'
+    
+    await axios.post(`${apiUrl}/api/chat/messages`, {
+      userId: message.userId,
+      username: message.username,
+      type: 'system',
+      action: message.action
+    })
+  } catch (error) {
+    console.error('Failed to save system message to database:', error)
+  }
+}
 
 const incrementUserConnection = (userId: string) => {
   const next = (userConnectionCounts.get(userId) ?? 0) + 1
@@ -332,6 +349,10 @@ io.on('connection', (socket) => {
     if (chatMessages.length > MAX_CHAT_HISTORY) {
       chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
     }
+    
+    // Save to database
+    saveSystemMessageToDB(systemMessage)
+    
     io.emit('chat-new', systemMessage)
 
     io.emit('session-update', serializeSessions())
@@ -392,6 +413,10 @@ io.on('connection', (socket) => {
         if (chatMessages.length > MAX_CHAT_HISTORY) {
           chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
         }
+        
+        // Save to database
+        saveSystemMessageToDB(systemMessage)
+        
         io.emit('chat-new', systemMessage)
       }
     }
