@@ -751,7 +751,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           type: 'STOP_TIMER',
         })
         
-        emitSessionEnd(sessionId)
+  emitSessionEnd(sessionId, 'manual')
         
         // Update session in database in background
         try {
@@ -808,7 +808,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     const sessionSnapshot = currentSession
     
     if (sessionSnapshot) {
-      emitSessionEnd(sessionSnapshot.id)
+  emitSessionEnd(sessionSnapshot.id, 'completed')
       
       // Update session in database
       try {
@@ -972,7 +972,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         type: 'STOP_TIMER',
       })
       
-      emitSessionEnd(currentSession.id)
+  emitSessionEnd(currentSession.id, 'reset')
     }
     cancelSession()
     setTask('')

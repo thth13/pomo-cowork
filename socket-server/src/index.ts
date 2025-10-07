@@ -358,37 +358,42 @@ io.on('connection', (socket) => {
     io.emit('session-update', serializeSessions())
   })
 
-  socket.on('session-end', (sessionId: string) => {
+  socket.on('session-end', (payload: { sessionId: string; reason?: 'manual' | 'completed' | 'reset' }) => {
+    const sessionId = payload?.sessionId
+    const reason = payload?.reason ?? 'manual'
     const session = sessions.get(sessionId)
     if (session) {
-      // Send system message about timer stop
-      const userId = socketUserMap.get(socket.id) ?? null
-      const anonymousId = anonymousSockets.get(socket.id)
-      let username = 'Guest'
-      if (userId) {
-        username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
-      } else if (anonymousId) {
-        username = `Guest-${anonymousId.slice(-4)}`
-      }
-
-      const systemMessage: ChatMessage = {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-        userId,
-        username,
-        text: '',
-        timestamp: Date.now(),
-        type: 'system',
-        action: {
-          type: 'timer_stop'
+      // Only emit chat event if stopped manually by the user
+      if (reason === 'manual') {
+        // Send system message about timer stop
+        const userId = socketUserMap.get(socket.id) ?? null
+        const anonymousId = anonymousSockets.get(socket.id)
+        let username = 'Guest'
+        if (userId) {
+          username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+        } else if (anonymousId) {
+          username = `Guest-${anonymousId.slice(-4)}`
         }
-      }
 
-      // Store locally and broadcast
-      chatMessages.push(systemMessage)
-      if (chatMessages.length > MAX_CHAT_HISTORY) {
-        chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
+        const systemMessage: ChatMessage = {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          userId,
+          username,
+          text: '',
+          timestamp: Date.now(),
+          type: 'system',
+          action: {
+            type: 'timer_stop'
+          }
+        }
+
+        // Store locally and broadcast
+        chatMessages.push(systemMessage)
+        if (chatMessages.length > MAX_CHAT_HISTORY) {
+          chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
+        }
+        io.emit('chat-new', systemMessage)
       }
-      io.emit('chat-new', systemMessage)
     }
 
     sessions.delete(sessionId)

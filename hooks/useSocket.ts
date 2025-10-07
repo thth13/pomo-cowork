@@ -125,8 +125,8 @@ export function useSocket() {
     sharedSocket?.emit('session-pause', sessionId)
   }
 
-  const emitSessionEnd = (sessionId: string) => {
-    sharedSocket?.emit('session-end', sessionId)
+  const emitSessionEnd = (sessionId: string, reason: 'manual' | 'completed' | 'reset' = 'manual') => {
+    sharedSocket?.emit('session-end', { sessionId, reason })
   }
 
   const emitTimerTick = (sessionId: string, timeRemaining: number) => {
