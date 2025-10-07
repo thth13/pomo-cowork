@@ -13,6 +13,7 @@ interface ConnectionState {
   setPresenceCounts: (counts: { userCount?: number; anonymousCount?: number; total?: number }) => void
   updateUserPresence: (userId: string, online: boolean) => void
   resetPresence: () => void
+  forceResetPresence: () => Promise<void>
 }
 
 export const useConnectionStore = create<ConnectionState>((set) => ({
@@ -71,6 +72,20 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     onlineUserCount: 0,
     anonymousOnlineCount: 0,
     totalOnlineCount: 0
-  })
+  }),
+  forceResetPresence: async () => {
+    try {
+      const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000'
+      await fetch(`${socketUrl}/admin/reset-presence`, { method: 'POST' })
+      set({
+        onlineUserIds: {},
+        onlineUserCount: 0,
+        anonymousOnlineCount: 0,
+        totalOnlineCount: 0
+      })
+    } catch (error) {
+      console.error('Failed to reset presence:', error)
+    }
+  }
 }))
 

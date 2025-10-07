@@ -157,7 +157,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
 
         {/* Task */}
         <div className={`rounded-lg p-3 ${
-          isCurrentUser ? 'bg-primary-50 dark:bg-slate-700/50' : 'bg-slate-50 dark:bg-slate-800/50'
+          isCurrentUser ? 'bg-primary-50 dark:bg-slate-700/50' : 'bg-slate-50 dark:bg-slate-700'
         }`}>
           <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Task:</div>
           <div className="font-medium text-slate-800 dark:text-slate-200 line-clamp-2">

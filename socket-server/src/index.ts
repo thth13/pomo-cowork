@@ -156,6 +156,48 @@ setInterval(() => {
   }
 }, 60000)
 
+// Периодическая очистка "призрачных" соединений
+setInterval(() => {
+  // Проверяем, есть ли активные сокеты для каждого пользователя
+  const activeSockets = new Set<string>()
+  io.sockets.sockets.forEach(socket => {
+    const userId = socketUserMap.get(socket.id)
+    if (userId) {
+      activeSockets.add(userId)
+    }
+  })
+
+  // Удаляем пользователей без активных сокетов
+  let cleaned = false
+  onlineUsers.forEach((_, userId) => {
+    if (!activeSockets.has(userId)) {
+      onlineUsers.delete(userId)
+      userConnectionCounts.delete(userId)
+      cleaned = true
+    }
+  })
+
+  // Очищаем анонимные соединения
+  const activeAnonymousSockets = new Set<string>()
+  io.sockets.sockets.forEach(socket => {
+    const anonId = anonymousSockets.get(socket.id)
+    if (anonId) {
+      activeAnonymousSockets.add(anonId)
+    }
+  })
+
+  anonymousConnectionCounts.forEach((_, anonId) => {
+    if (!activeAnonymousSockets.has(anonId)) {
+      anonymousConnectionCounts.delete(anonId)
+      cleaned = true
+    }
+  })
+
+  if (cleaned) {
+    emitPresenceSnapshot()
+  }
+}, 30000) // Каждые 30 секунд
+
 const emitPresenceSnapshot = () => {
   // Count unique anonymous users (by anonymousId), not connections
   const anonymousCount = anonymousConnectionCounts.size
@@ -389,9 +431,10 @@ io.on('connection', (socket) => {
       decrementUserConnection(userId)
     }
 
-    sessions.forEach((session) => {
+    // Clean up sessions for this socket (but don't double-decrement user connection)
+    sessions.forEach((session, sessionId) => {
       if (session.socketId === socket.id) {
-        decrementUserConnection(session.userId)
+        sessions.delete(sessionId)
       }
     })
 
@@ -402,8 +445,40 @@ io.on('connection', (socket) => {
 })
 
 app.use(cors({ origin: corsOrigin, credentials: true }))
+
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
+})
+
+app.post('/admin/reset-presence', (_req, res) => {
+  // Сброс всех данных о присутствии
+  onlineUsers.clear()
+  userConnectionCounts.clear()
+  socketUserMap.clear()
+  anonymousSockets.clear()
+  anonymousConnectionCounts.clear()
+  userNames.clear()
+  
+  emitPresenceSnapshot()
+  
+  res.json({ 
+    status: 'reset', 
+    message: 'All presence data has been reset',
+    timestamp: Date.now()
+  })
+})
+
+app.get('/admin/presence-debug', (_req, res) => {
+  const activeSockets = Array.from(io.sockets.sockets.keys())
+  
+  res.json({
+    onlineUsers: Array.from(onlineUsers.keys()),
+    userConnectionCounts: Object.fromEntries(userConnectionCounts),
+    socketUserMap: Object.fromEntries(socketUserMap),
+    anonymousConnectionCounts: Object.fromEntries(anonymousConnectionCounts),
+    activeSockets: activeSockets.length,
+    timestamp: Date.now()
+  })
 })
 
 const port = Number(process.env.PORT) || 4000

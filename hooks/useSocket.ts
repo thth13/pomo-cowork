@@ -61,6 +61,13 @@ const initSocketOnce = () => {
     setConnectionStatus(true)
   })
 
+  socket.on('reconnect', () => {
+    // При переподключении также обновляем присутствие
+    const user = useAuthStore.getState().user
+    socket.emit('join-presence', buildPresencePayload(user))
+    socket.emit('get-online-users')
+  })
+
   socket.on('session-update', (sessions: ActiveSession[]) => {
     setActiveSessions(sessions)
   })
