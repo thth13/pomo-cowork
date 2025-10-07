@@ -58,32 +58,32 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
   const getActionColor = (actionType?: string) => {
     switch (actionType) {
       case 'work_start':
-        return 'bg-red-500 hover:bg-red-600 border-red-600'
+        return 'text-red-600 dark:text-red-400'
       case 'break_start':
-        return 'bg-green-500 hover:bg-green-600 border-green-600'
+        return 'text-green-600 dark:text-green-400'
       case 'long_break_start':
-        return 'bg-blue-500 hover:bg-blue-600 border-blue-600'
+        return 'text-blue-600 dark:text-blue-400'
       case 'timer_stop':
-        return 'bg-gray-500 hover:bg-gray-600 border-gray-600'
+        return 'text-slate-600 dark:text-slate-400'
       default:
-        return 'bg-gray-500 hover:bg-gray-600 border-gray-600'
+        return 'text-slate-600 dark:text-slate-400'
     }
   }
 
-  const formatActionMessage = (username: string, action?: { type: string; duration?: number }) => {
-    if (!action) return `${username} performed an action`
+  const formatActionMessage = (action?: { type: string; duration?: number }) => {
+    if (!action) return 'performed an action'
 
     switch (action.type) {
       case 'work_start':
-        return `🍅 ${username} started working for ${action.duration} minutes`
+        return action.duration ? `started working for ${action.duration} minutes` : 'started working'
       case 'break_start':
-        return `☕ ${username} started a break`
+        return 'started a break'
       case 'long_break_start':
-        return `🌟 ${username} started a long break`
+        return 'started a long break'
       case 'timer_stop':
-        return `⏹️ ${username} stopped the timer`
+        return 'stopped the timer'
       default:
-        return `${username} performed an action`
+        return 'performed an action'
     }
   }
 
@@ -254,11 +254,13 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
           messages.map((m) => (
             <div key={m.id} className="text-sm">
               {m.type === 'system' ? (
-                <div className="flex justify-center my-3">
-                  <div className={`px-4 py-2 rounded-full text-xs font-medium text-white shadow-sm transition-all duration-200 border ${getActionColor(m.action?.type)}`}>
-                    {formatActionMessage(m.username, m.action)}
-                  </div>
-                </div>
+                <>
+                  <span className="font-medium text-slate-700 dark:text-slate-300 mr-2">{m.username}:</span>
+                  <span className={`break-words ${getActionColor(m.action?.type)}`}>
+                    {formatActionMessage(m.action)}
+                  </span>
+                  <span className="ml-2 text-[10px] text-slate-400 dark:text-slate-500 align-middle">{new Date(m.timestamp).toLocaleTimeString()}</span>
+                </>
               ) : (
                 <>
                   <span className="font-medium text-slate-700 dark:text-slate-300 mr-2">{m.username}:</span>
