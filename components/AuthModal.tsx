@@ -82,7 +82,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
-          className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+          className="bg-white dark:bg-slate-800 rounded-xl shadow-xl max-w-md w-full p-6"
         >
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
@@ -93,7 +93,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               onClick={onClose}
               className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
-              <X className="w-5 h-5" />
+              <X className="w-5 h-5 text-slate-600 dark:text-slate-300" />
             </button>
           </div>
 
@@ -176,7 +176,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm"
+                className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm"
               >
                 {error}
               </motion.div>
@@ -203,11 +203,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
           {/* Toggle Mode */}
           <div className="mt-6 text-center">
-            <p className="text-slate-600">
+            <p className="text-slate-600 dark:text-slate-300">
               {isLogin ? "Don't have an account?" : 'Already have an account?'}
               <button
                 onClick={toggleMode}
-                className="ml-1 text-primary-600 hover:text-primary-700 font-medium"
+                className="ml-1 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
               >
                 {isLogin ? 'Register' : 'Login'}
               </button>

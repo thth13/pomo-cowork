@@ -92,13 +92,13 @@ function SessionCard({ session, index, isCurrentUser = false }: {
   const getSessionTypeColor = (type: SessionType): string => {
     switch (type) {
       case SessionType.WORK:
-        return 'bg-primary-50 border-primary-200 text-primary-700'
+        return 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800/50 text-primary-700 dark:text-primary-400'
       case SessionType.SHORT_BREAK:
-        return 'bg-secondary-50 border-secondary-200 text-secondary-700'
+        return 'bg-secondary-50 dark:bg-secondary-900/20 border-secondary-200 dark:border-secondary-800/50 text-secondary-700 dark:text-secondary-400'
       case SessionType.LONG_BREAK:
-        return 'bg-blue-50 border-blue-200 text-blue-700'
+        return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-400'
       default:
-        return 'bg-primary-50 border-primary-200 text-primary-700'
+        return 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800/50 text-primary-700 dark:text-primary-400'
     }
   }
 
@@ -114,13 +114,13 @@ function SessionCard({ session, index, isCurrentUser = false }: {
       transition={{ delay: index * 0.1 }}
       className={`${
         isCurrentUser 
-          ? 'bg-white rounded-xl shadow-sm border-2 border-primary-300 p-6 relative' 
+          ? 'bg-white dark:bg-slate-800 rounded-xl shadow-sm border-2 border-slate-200 dark:border-slate-600 p-6 relative' 
           : 'card'
       } hover:shadow-md transition-shadow`}
     >
       {/* Label "You" for current user */}
       {isCurrentUser && (
-        <div className="absolute -top-2 -right-2 bg-primary-500 text-white text-xs font-medium px-2 py-1 rounded-full shadow-md">
+        <div className="absolute -top-2 -right-2 bg-primary-500 dark:bg-primary-600 text-white text-xs font-medium px-2 py-1 rounded-full shadow-md">
           You
         </div>
       )}
@@ -135,11 +135,11 @@ function SessionCard({ session, index, isCurrentUser = false }: {
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <div className={`font-semibold ${isCurrentUser ? 'text-primary-800 dark:text-primary-200' : 'text-slate-700 dark:text-slate-200'}`}>
+              <div className={`font-semibold ${isCurrentUser ? 'text-slate-800 dark:text-slate-200' : 'text-slate-700 dark:text-slate-200'}`}>
                 {session.username}
                 {isCurrentUser && ' (You)'}
               </div>
-              {!isCurrentUser && (
+              {!isCurrentUser && session.userId && (
                 <button
                   onClick={() => router.push(`/user/${session.userId}`)}
                   className="p-1 hover:bg-slate-100 dark:hover:bg-slate-600 rounded transition-colors"
@@ -157,7 +157,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
 
         {/* Task */}
         <div className={`rounded-lg p-3 ${
-          isCurrentUser ? 'bg-primary-50 dark:bg-primary-900/20' : 'bg-slate-50 dark:bg-slate-800/50'
+          isCurrentUser ? 'bg-primary-50 dark:bg-slate-700/50' : 'bg-slate-50 dark:bg-slate-800/50'
         }`}>
           <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Task:</div>
           <div className="font-medium text-slate-800 dark:text-slate-200 line-clamp-2">
@@ -169,7 +169,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         <div className="flex items-center justify-between">
           <div className="text-sm text-slate-600 dark:text-slate-400">Remaining:</div>
           <div className={`text-xl font-bold ${
-            isCurrentUser ? 'text-primary-700' : 'text-primary-600'
+            isCurrentUser ? 'text-primary-600 dark:text-primary-400' : 'text-primary-600 dark:text-primary-500'
           }`}>
             {formatTime(currentTimeRemaining)}
           </div>
