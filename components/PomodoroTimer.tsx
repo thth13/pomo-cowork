@@ -10,6 +10,7 @@ import { SessionType } from '@/types'
 import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUser'
 import { playStartSound, playEndSound } from '@/lib/notificationSound'
 import { sendMessageToServiceWorker, listenToServiceWorker } from '@/lib/serviceWorker'
+import { getNextSessionType as getExperimentalNextSessionType } from './useExperimentalSessionType'
 
 // Wake Lock API types
 interface WakeLockSentinel extends EventTarget {
@@ -34,6 +35,10 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     timeRemaining,
     currentSession,
     completedSessions,
+    completedWorkSessions,
+    lastCur,
+    overflowCount,
+    isNotOverflow,
     workDuration,
     shortBreak,
     longBreak,
@@ -499,12 +504,13 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const getNextSessionType = (): SessionType => {
-    // Calculate based on the number of completed sessions AFTER this one
-    const nextCompletedCount = completedSessions + 1
-    if (nextCompletedCount % longBreakAfter === 0) {
-      return SessionType.LONG_BREAK
-    }
-    return sessionType === SessionType.WORK ? SessionType.SHORT_BREAK : SessionType.WORK
+    return getExperimentalNextSessionType(
+      sessionType,
+      completedWorkSessions,
+      lastCur,
+      overflowCount,
+      isNotOverflow
+    )
   }
 
   const formatTime = (seconds: number): string => {

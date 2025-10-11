@@ -7,6 +7,11 @@ interface TimerState {
   timeRemaining: number
   currentSession: PomodoroSession | null
   completedSessions: number
+  completedWorkSessions: number
+  lastCur: number
+  overflowCount: number
+  isNotOverflow: boolean
+  
   pausedAt: number | null // timestamp when paused
 
   // Active sessions from other users
@@ -49,10 +54,12 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   timeRemaining: 25 * 60, // Default: 25 minutes in seconds
   currentSession: null,
   completedSessions: 0,
+  completedWorkSessions: 0,
+  lastCur: 0,
+  overflowCount: 0,
+  isNotOverflow: true,
   pausedAt: null,
   activeSessions: [],
-
-  // Default settings (25 min work, 5 min short break, 15 min long break)
   workDuration: 25,
   shortBreak: 5,
   longBreak: 15,
@@ -127,7 +134,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   completeSession: () => {
-    const { currentSession, completedSessions } = get()
+    const { currentSession, completedSessions, completedWorkSessions } = get()
     
     if (currentSession) {
       // Auto-suggest next session type
@@ -138,6 +145,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         isRunning: false,
         currentSession: null,
         completedSessions: completedSessions + 1,
+        completedWorkSessions:  completedWorkSessions + (currentSession.type === SessionType.WORK ? 1 : 0),
         timeRemaining: nextDuration * 60,
         pausedAt: null,
       })
