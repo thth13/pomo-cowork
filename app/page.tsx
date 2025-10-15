@@ -14,7 +14,7 @@ const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: (
 import TaskList from '@/components/TaskList'
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
+  const { isAuthenticated, isLoading } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [mounted, setMounted] = useState(false)
 
@@ -23,8 +23,7 @@ export default function HomePage() {
 
   useEffect(() => {
     setMounted(true)
-    checkAuth()
-  }, [checkAuth])
+  }, [])
 
   useEffect(() => {
     // Request notification permission
