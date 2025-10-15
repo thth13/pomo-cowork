@@ -24,6 +24,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    // Получаем период из query параметров
+    const { searchParams } = new URL(request.url)
+    const period = searchParams.get('period') || '7' // 7, 30, 365
+
     const now = new Date()
 
     // Получаем все завершенные WORK сессии
@@ -87,62 +91,96 @@ export async function GET(request: NextRequest) {
     })
     const focusTimeThisMonth = thisMonthSessions.reduce((sum, session) => sum + session.duration, 0)
 
-    // Активность за неделю (последние 7 дней)
+    // Активность за выбранный период
+    const daysCount = parseInt(period)
     const weeklyActivity = []
-    for (let i = 6; i >= 0; i--) {
-      const date = subDays(now, i)
-      const dayStart = startOfDay(date)
-      const dayEnd = endOfDay(date)
-      
-      const daySessions = allWorkSessions.filter(session => {
-        const sessionDate = new Date(session.completedAt || session.createdAt)
-        return sessionDate >= dayStart && sessionDate <= dayEnd
-      })
-      
-      weeklyActivity.push({
-        date: format(date, 'yyyy-MM-dd'),
-        pomodoros: daySessions.length
-      })
+    
+    if (daysCount === 365) {
+      // Для года - разбивка по месяцам за последние 12 месяцев
+      for (let i = 11; i >= 0; i--) {
+        const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const monthStartDate = startOfMonth(monthDate)
+        const monthEndDate = endOfMonth(monthDate)
+        
+        const monthSessions = allWorkSessions.filter(session => {
+          const sessionDate = new Date(session.completedAt || session.createdAt)
+          return sessionDate >= monthStartDate && sessionDate <= monthEndDate
+        })
+        
+        weeklyActivity.push({
+          date: format(monthDate, 'yyyy-MM'),
+          pomodoros: monthSessions.length
+        })
+      }
+    } else {
+      // Для 7 и 30 дней - разбивка по дням
+      for (let i = daysCount - 1; i >= 0; i--) {
+        const date = subDays(now, i)
+        const dayStart = startOfDay(date)
+        const dayEnd = endOfDay(date)
+        
+        const daySessions = allWorkSessions.filter(session => {
+          const sessionDate = new Date(session.completedAt || session.createdAt)
+          return sessionDate >= dayStart && sessionDate <= dayEnd
+        })
+        
+        weeklyActivity.push({
+          date: format(date, 'yyyy-MM-dd'),
+          pomodoros: daySessions.length
+        })
+      }
     }
 
-    // Карта активности за год (heatmap)
-    const yearStart = startOfYear(now)
+    // Карта активности за год (heatmap) - последние 53 недели
     const yearlyHeatmap = []
     
-    for (let i = 0; i < 365; i++) {
-      const date = new Date(yearStart)
-      date.setDate(date.getDate() + i)
-      
-      if (date > now) break
-      
-      const dayStart = startOfDay(date)
-      const dayEnd = endOfDay(date)
+    // Начинаем с воскресенья 53 недели назад
+    const weeksAgo = 52
+    let startDate = subDays(now, weeksAgo * 7)
+    
+    // Находим ближайшее воскресенье в прошлом
+    while (startDate.getDay() !== 0) {
+      startDate = subDays(startDate, 1)
+    }
+    
+    // Генерируем данные для каждого дня
+    let currentDate = startDate
+    let weekIndex = 0
+    
+    while (currentDate <= now) {
+      const dayStart = startOfDay(currentDate)
+      const dayEnd = endOfDay(currentDate)
       
       const daySessions = allWorkSessions.filter(session => {
         const sessionDate = new Date(session.completedAt || session.createdAt)
         return sessionDate >= dayStart && sessionDate <= dayEnd
       })
       
-      const dayOfYear = differenceInDays(date, yearStart)
-      const week = Math.floor(dayOfYear / 7)
-      const dayOfWeek = date.getDay()
+      const dayOfWeek = currentDate.getDay()
       
       yearlyHeatmap.push({
-        week,
+        week: weekIndex,
         dayOfWeek,
         pomodoros: daySessions.length,
-        date: format(date, 'yyyy-MM-dd')
+        date: format(currentDate, 'yyyy-MM-dd')
       })
+      
+      // Переходим к следующему дню
+      currentDate = new Date(currentDate)
+      currentDate.setDate(currentDate.getDate() + 1)
+      
+      // Если начинается новая неделя (воскресенье), увеличиваем индекс недели
+      if (currentDate.getDay() === 0 && currentDate <= now) {
+        weekIndex++
+      }
     }
 
-    // Разбивка по месяцам (текущий год)
+    // Разбивка по месяцам (последние 12 месяцев)
     const monthlyBreakdown = []
-    for (let month = 0; month < 12; month++) {
-      const monthDate = new Date(now.getFullYear(), month, 1)
+    for (let i = 11; i >= 0; i--) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
       const monthStartDate = startOfMonth(monthDate)
       const monthEndDate = endOfMonth(monthDate)
-      
-      if (monthStartDate > now) break
       
       const monthSessions = allWorkSessions.filter(session => {
         const sessionDate = new Date(session.completedAt || session.createdAt)
@@ -151,9 +189,106 @@ export async function GET(request: NextRequest) {
       
       monthlyBreakdown.push({
         month: format(monthDate, 'MMM'),
-        monthIndex: month,
+        monthIndex: monthDate.getMonth(),
         pomodoros: monthSessions.length
       })
+    }
+
+    // Тренды продуктивности
+    // 1. Лучшее время дня (по часам)
+    const sessionsByHour = new Map<number, number>()
+    allWorkSessions.forEach(session => {
+      const hour = new Date(session.completedAt || session.createdAt).getHours()
+      sessionsByHour.set(hour, (sessionsByHour.get(hour) || 0) + 1)
+    })
+    
+    let bestHour = 0
+    let maxSessions = 0
+    sessionsByHour.forEach((count, hour) => {
+      if (count > maxSessions) {
+        maxSessions = count
+        bestHour = hour
+      }
+    })
+    
+    const bestTimeStart = `${bestHour.toString().padStart(2, '0')}:00`
+    const bestTimeEnd = `${(bestHour + 2).toString().padStart(2, '0')}:00`
+    const bestTimeEfficiency = allWorkSessions.length > 0 
+      ? Math.round((maxSessions / allWorkSessions.length) * 100) 
+      : 0
+
+    // 2. Лучший день недели
+    const sessionsByDayOfWeek = new Map<number, number>()
+    allWorkSessions.forEach(session => {
+      const dayOfWeek = new Date(session.completedAt || session.createdAt).getDay()
+      sessionsByDayOfWeek.set(dayOfWeek, (sessionsByDayOfWeek.get(dayOfWeek) || 0) + 1)
+    })
+    
+    let bestDayOfWeek = 0
+    let maxDaySessions = 0
+    sessionsByDayOfWeek.forEach((count, day) => {
+      if (count > maxDaySessions) {
+        maxDaySessions = count
+        bestDayOfWeek = day
+      }
+    })
+    
+    const daysNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
+    const bestDayName = daysNames[bestDayOfWeek]
+    
+    // Считаем количество уникальных дней для этого дня недели
+    const uniqueDaysOfWeek = new Set<string>()
+    allWorkSessions.forEach(session => {
+      const date = new Date(session.completedAt || session.createdAt)
+      if (date.getDay() === bestDayOfWeek) {
+        uniqueDaysOfWeek.add(format(date, 'yyyy-MM-dd'))
+      }
+    })
+    const avgPomodorosPerBestDay = uniqueDaysOfWeek.size > 0 
+      ? (maxDaySessions / uniqueDaysOfWeek.size).toFixed(1) 
+      : '0'
+
+    // 3. Средняя длительность фокус-режима
+    const avgSessionDuration = allWorkSessions.length > 0 
+      ? Math.round(allWorkSessions.reduce((sum, s) => sum + s.duration, 0) / allWorkSessions.length) 
+      : 0
+
+    // 4. Завершенные задачи за эту неделю
+    const weekStart = subDays(now, 6)
+    const weekTasks = await prisma.task.findMany({
+      where: {
+        userId: payload.userId,
+        completed: true,
+        updatedAt: {
+          gte: weekStart
+        }
+      }
+    })
+    
+    const allTasks = await prisma.task.findMany({
+      where: {
+        userId: payload.userId,
+        createdAt: {
+          gte: weekStart
+        }
+      }
+    })
+
+    const productivityTrends = {
+      bestTime: {
+        start: bestTimeStart,
+        end: bestTimeEnd,
+        efficiency: bestTimeEfficiency
+      },
+      bestDay: {
+        name: bestDayName,
+        avgPomodoros: avgPomodorosPerBestDay
+      },
+      avgSessionDuration,
+      weeklyTasks: {
+        completed: weekTasks.length,
+        total: allTasks.length
+      }
     }
 
     const stats = {
@@ -164,14 +299,17 @@ export async function GET(request: NextRequest) {
       avgMinutesPerDay,
       focusTimeThisMonth,
       
-      // Активность за неделю
+      // Активность за выбранный период
       weeklyActivity,
       
       // Карта активности за год
       yearlyHeatmap,
       
-      // Разбивка по месяцам
-      monthlyBreakdown
+      // Разбивка по месяцам (последние 12 месяцев)
+      monthlyBreakdown,
+      
+      // Тренды продуктивности
+      productivityTrends
     }
 
     return NextResponse.json(stats)
