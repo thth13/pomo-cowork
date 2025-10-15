@@ -226,27 +226,27 @@ const serializeSessions = () =>
     status: session.status
   }))
 
-// Периодическое обновление времени для сессий (каждые 5 секунд)
-setInterval(() => {
-  let updated = false
-  sessions.forEach((session) => {
-    // Рассчитываем актуальное оставшееся время на основе startTime
-    const elapsed = (Date.now() - session.startTime) / 1000
-    const totalDuration = session.duration * 60
-    const calculatedTimeRemaining = Math.max(0, totalDuration - elapsed)
+// // Периодическое обновление времени для сессий (каждые 5 секунд)
+// setInterval(() => {
+//   let updated = false
+//   sessions.forEach((session) => {
+//     // Рассчитываем актуальное оставшееся время на основе startTime
+//     const elapsed = (Date.now() - session.startTime) / 1000
+//     const totalDuration = session.duration * 60
+//     const calculatedTimeRemaining = Math.max(0, totalDuration - elapsed)
     
-    // Обновляем только если изменилось
-    if (Math.abs(session.timeRemaining - calculatedTimeRemaining) > 1) {
-      session.timeRemaining = calculatedTimeRemaining
-      session.lastUpdate = Date.now()
-      updated = true
-    }
-  })
+//     // Обновляем только если изменилось
+//     if (Math.abs(session.timeRemaining - calculatedTimeRemaining) > 1) {
+//       session.timeRemaining = calculatedTimeRemaining
+//       session.lastUpdate = Date.now()
+//       updated = true
+//     }
+//   })
   
-  if (updated) {
-    io.emit('session-update', serializeSessions())
-  }
-}, 5000)
+//   if (updated) {
+//     io.emit('session-update', serializeSessions())
+//   }
+// }, 5000)
 
 // Периодическая синхронизация с БД (каждые 30 секунд)
 setInterval(async () => {
