@@ -28,7 +28,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { title, description, pomodoros, priority, completed } = body
+    const { title, description, pomodoros, priority, completed, incrementPomodoro } = body
 
     // Проверяем, что задача принадлежит пользователю
     const existingTask = await prisma.task.findFirst({
@@ -43,6 +43,19 @@ export async function PUT(
         { error: 'Task not found' },
         { status: 404 }
       )
+    }
+
+    // Если нужно увеличить счетчик помидоров
+    if (incrementPomodoro) {
+      const task = await prisma.task.update({
+        where: { id: params.id },
+        data: {
+          completedPomodoros: {
+            increment: 1
+          }
+        }
+      })
+      return NextResponse.json(task)
     }
 
     const task = await prisma.task.update({

@@ -223,7 +223,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
           <h3 className="text-lg font-bold text-gray-900">Общий чат</h3>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
-            <span className="text-sm text-gray-600">участников онлайн</span>
+            {/* <span className="text-sm text-gray-600">участников онлайн</span> */}
           </div>
         </div>
       </div>

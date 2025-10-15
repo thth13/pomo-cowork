@@ -43,7 +43,7 @@ export default function Navbar() {
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
-              <span>{totalOnlineCount} активных пользователей</span>
+              <span>{totalOnlineCount} online</span>
             </div>
             
             <div className="flex items-center space-x-3">

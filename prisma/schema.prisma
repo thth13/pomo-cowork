@@ -59,11 +59,12 @@ model Task {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  title       String
-  description String  @default("")
-  pomodoros   Int     @default(1)
-  priority    String  @default("Средний") // "Критичный", "Высокий", "Средний", "Низкий"
-  completed   Boolean @default(false)
+  title              String
+  description        String  @default("")
+  pomodoros          Int     @default(1) // Планируемое количество
+  completedPomodoros Int     @default(0) // Фактически потраченное количество
+  priority           String  @default("Средний") // "Критичный", "Высокий", "Средний", "Низкий"
+  completed          Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

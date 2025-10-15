@@ -864,6 +864,30 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           headers,
           body: JSON.stringify(body)
         })
+
+        // Increment task pomodoro counter if it's a work session and a task is selected
+        if (
+          completedType === SessionType.WORK &&
+          selectedTask &&
+          selectedTask.id &&
+          token
+        ) {
+          try {
+            await fetch(`/api/tasks/${selectedTask.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({ 
+                incrementPomodoro: true 
+              })
+            })
+            console.log('Pomodoro counter incremented for task:', selectedTask.id)
+          } catch (error) {
+            console.error('Failed to increment task pomodoro:', error)
+          }
+        }
       } catch (error) {
         console.error('Failed to update session:', error)
       }

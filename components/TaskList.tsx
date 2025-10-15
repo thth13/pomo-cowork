@@ -11,6 +11,7 @@ interface Task {
   title: string
   description: string
   pomodoros: number
+  completedPomodoros: number
   priority: 'Критичный' | 'Высокий' | 'Средний' | 'Низкий'
   completed: boolean
   isPending?: boolean
@@ -59,6 +60,7 @@ export default function TaskList() {
           title: task.title,
           description: task.description ?? '',
           pomodoros: task.pomodoros ?? 1,
+          completedPomodoros: task.completedPomodoros ?? 0,
           priority: task.priority ?? 'Средний',
           completed: task.completed ?? false,
           isPending: false,
@@ -176,6 +178,7 @@ export default function TaskList() {
       title: newTaskTitle.trim(),
       description: '',
       pomodoros: 1,
+      completedPomodoros: 0,
       priority: newTaskPriority,
       completed: false,
       isPending: true,
@@ -220,6 +223,7 @@ export default function TaskList() {
               title: createdTask.title,
               description: createdTask.description ?? '',
               pomodoros: createdTask.pomodoros ?? 1,
+              completedPomodoros: createdTask.completedPomodoros ?? 0,
               priority: createdTask.priority ?? optimisticTask.priority,
               completed: createdTask.completed ?? false,
               isPending: false,
@@ -389,19 +393,9 @@ export default function TaskList() {
                       {task.description}
                     </div>
                   )}
-{/* 
-                  {task.isPending && (
-                    <div className="text-xs text-blue-500 dark:text-blue-400 mb-2 flex items-center space-x-1">
-                      <svg className="w-3 h-3 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
-                        <path d="M21 12a9 9 0 00-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                      </svg>
-                      <span>Сохраняется...</span>
-                    </div>
-                  )} */}
                   
-                  <div className="flex items-center space-x-4">
-                    {/* <div className={`flex items-center space-x-1 text-xs ${
+                  <div className="flex items-center space-x-2">
+                    <div className={`flex items-center space-x-1 text-xs ${
                       task.completed
                         ? 'text-gray-400 dark:text-slate-500'
                         : 'text-gray-500 dark:text-slate-400'
@@ -409,15 +403,8 @@ export default function TaskList() {
                       <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span>{task.pomodoros} помодоро</span>
+                      <span>{task.completedPomodoros} {task.completedPomodoros === 1 ? 'pomodoro' : 'pomodoros'}</span>
                     </div>
-                    
-                    <div className={`flex items-center space-x-1 text-xs ${priorityColors[task.priority]}`}>
-                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z" />
-                      </svg>
-                      <span>{task.priority}</span>
-                    </div> */}
                   </div>
                 </div>
                 
