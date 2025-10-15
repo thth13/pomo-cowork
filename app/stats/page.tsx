@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useThemeStore } from '@/store/useThemeStore'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import heatmapModule from 'highcharts/modules/heatmap'
@@ -44,10 +45,13 @@ let isHeatmapInitialized = false
 
 export default function StatsPage() {
   const { isAuthenticated, token } = useAuthStore()
+  const { theme } = useThemeStore()
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [chartReady, setChartReady] = useState(false)
   const [activityPeriod, setActivityPeriod] = useState<'7' | '30' | '365'>('7')
+  
+  const isDark = theme === 'dark'
 
   useEffect(() => {
     if (typeof window === 'undefined' || isHeatmapInitialized) {
@@ -134,16 +138,23 @@ export default function StatsPage() {
           }
         }
       }) || [],
-      lineColor: '#e5e7eb',
-      tickColor: '#e5e7eb',
+      lineColor: isDark ? '#475569' : '#e5e7eb',
+      tickColor: isDark ? '#475569' : '#e5e7eb',
       labels: {
         rotation: 0,
-        step: activityPeriod === '30' ? 2 : 1
+        step: activityPeriod === '30' ? 2 : 1,
+        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       }
     },
     yAxis: {
-      title: { text: 'Помодоро' },
-      gridLineColor: '#f3f4f6'
+      title: { 
+        text: 'Помодоро',
+        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+      },
+      gridLineColor: isDark ? '#334155' : '#f3f4f6',
+      labels: {
+        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+      }
     },
     legend: { enabled: false },
     plotOptions: {
@@ -181,7 +192,10 @@ export default function StatsPage() {
       title: { text: '' },
       reversed: true,
       labels: {
-        style: { fontSize: '10px' }
+        style: { 
+          fontSize: '10px',
+          color: isDark ? '#cbd5e1' : '#6b7280'
+        }
       },
       gridLineWidth: 0,
       lineWidth: 0
@@ -189,7 +203,13 @@ export default function StatsPage() {
     colorAxis: {
       min: 0,
       max: 10,
-      stops: [
+      stops: isDark ? [
+        [0, '#334155'],
+        [0.25, '#14532d'],
+        [0.5, '#166534'],
+        [0.75, '#15803d'],
+        [1, '#22c55e']
+      ] : [
         [0, '#ebedf0'],
         [0.25, '#c6e48b'],
         [0.5, '#7bc96f'],
@@ -213,7 +233,7 @@ export default function StatsPage() {
     plotOptions: {
       heatmap: {
         borderWidth: 2,
-        borderColor: '#ffffff',
+        borderColor: isDark ? '#1e293b' : '#ffffff',
         dataLabels: { enabled: false }
       }
     },
@@ -232,12 +252,21 @@ export default function StatsPage() {
     credits: { enabled: false },
     xAxis: {
       categories: stats?.monthlyBreakdown?.map(m => m.month) || ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
-      lineColor: '#e5e7eb',
-      tickColor: '#e5e7eb'
+      lineColor: isDark ? '#475569' : '#e5e7eb',
+      tickColor: isDark ? '#475569' : '#e5e7eb',
+      labels: {
+        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+      }
     },
     yAxis: {
-      title: { text: 'Помодоро' },
-      gridLineColor: '#f3f4f6'
+      title: { 
+        text: 'Помодоро',
+        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+      },
+      gridLineColor: isDark ? '#334155' : '#f3f4f6',
+      labels: {
+        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+      }
     },
     legend: { enabled: false },
     plotOptions: {
@@ -274,7 +303,7 @@ export default function StatsPage() {
 
   if (loading || !chartReady) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
           <span className="text-lg text-slate-600 dark:text-slate-400">Загрузка...</span>
@@ -284,13 +313,13 @@ export default function StatsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-8 py-12">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Моя статистика</h1>
-          <p className="text-gray-600">Отслеживайте свою продуктивность и прогресс</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Моя статистика</h1>
+          <p className="text-gray-600 dark:text-slate-300">Отслеживайте свою продуктивность и прогресс</p>
         </div>
 
         {/* Overview Stats */}
@@ -298,7 +327,7 @@ export default function StatsPage() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-all"
+            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
@@ -306,15 +335,15 @@ export default function StatsPage() {
               </div>
               <span className="text-sm text-green-600 font-medium">+12%</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{totalPomodoros.toLocaleString()}</div>
-            <div className="text-sm text-gray-600">Всего помодоро</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalPomodoros.toLocaleString()}</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Всего помодоро</div>
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-all"
+            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
@@ -322,15 +351,15 @@ export default function StatsPage() {
               </div>
               <span className="text-sm text-green-600 font-medium">+8%</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{totalHours}ч {totalMinutesRemainder}м</div>
-            <div className="text-sm text-gray-600">Общее время фокуса</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalHours}ч {totalMinutesRemainder}м</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Общее время фокуса</div>
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-all"
+            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
@@ -338,16 +367,16 @@ export default function StatsPage() {
               </div>
               <span className="text-sm text-green-600 font-medium">+2 дня</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{currentStreak}</div>
-            <div className="text-sm text-gray-600">Текущая серия</div>
-            <div className="text-xs text-gray-500 mt-1">дней подряд</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Текущая серия</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">дней подряд</div>
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-all"
+            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
@@ -355,16 +384,16 @@ export default function StatsPage() {
               </div>
               <span className="text-sm text-green-600 font-medium">+3%</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{avgTimePerDay}м</div>
-            <div className="text-sm text-gray-600">Среднее время в день</div>
-            <div className="text-xs text-gray-500 mt-1">За активные дни</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{avgTimePerDay}м</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Среднее время в день</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">За активные дни</div>
           </motion.div>
 
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
-            className="bg-white rounded-2xl border border-gray-200 p-6 hover:shadow-lg transition-all"
+            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
@@ -372,9 +401,9 @@ export default function StatsPage() {
               </div>
               <span className="text-sm text-green-600 font-medium">+18%</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 mb-1">{focusTimeThisMonth}ч {focusTimeThisMonthMinutes}м</div>
-            <div className="text-sm text-gray-600">Время фокуса</div>
-            <div className="text-xs text-gray-500 mt-1">Этот месяц</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{focusTimeThisMonth}ч {focusTimeThisMonthMinutes}м</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Время фокуса</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">Этот месяц</div>
           </motion.div>
         </div>
 
@@ -384,10 +413,10 @@ export default function StatsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="bg-white rounded-2xl border border-gray-200 p-6"
+            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
           >
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                 {activityPeriod === '7' && 'Активность за неделю'}
                 {activityPeriod === '30' && 'Активность за месяц'}
                 {activityPeriod === '365' && 'Активность за год'}
@@ -398,7 +427,7 @@ export default function StatsPage() {
                   className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                     activityPeriod === '7' 
                       ? 'text-white bg-blue-500' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                   }`}
                 >
                   7д
@@ -408,7 +437,7 @@ export default function StatsPage() {
                   className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                     activityPeriod === '30' 
                       ? 'text-white bg-blue-500' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                   }`}
                 >
                   30д
@@ -418,7 +447,7 @@ export default function StatsPage() {
                   className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                     activityPeriod === '365' 
                       ? 'text-white bg-blue-500' 
-                      : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                      : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                   }`}
                 >
                   Год
@@ -434,15 +463,15 @@ export default function StatsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.7 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6 mb-8"
+          className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 mb-8"
         >
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-gray-900">Карта активности за год</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Карта активности за год</h3>
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-gray-600">
+              <div className="text-sm text-gray-600 dark:text-slate-300">
                 <span className="font-medium">{totalPomodoros.toLocaleString()}</span> помодоро в {new Date().getFullYear()}
               </div>
-              <select className="text-sm border border-gray-200 rounded-lg px-3 py-1 bg-white">
+              <select className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
                 <option>{new Date().getFullYear()}</option>
               </select>
             </div>
@@ -450,33 +479,33 @@ export default function StatsPage() {
           
           <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
           
-          <div className="flex items-center justify-between text-xs text-gray-500 mt-4">
+          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 mt-4">
             <span>Меньше</span>
             <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-gray-100 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-200 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-400 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-600 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-800 rounded-sm"></div>
+              <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
+              <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
+              <div className="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm"></div>
+              <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
+              <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
             </div>
             <span>Больше</span>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 mb-1">87%</div>
-              <div className="text-sm text-gray-600">Лучшая неделя</div>
-              <div className="text-xs text-gray-500">15-21 мая</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">87%</div>
+              <div className="text-sm text-gray-600 dark:text-slate-300">Лучшая неделя</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">15-21 мая</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 mb-1">234</div>
-              <div className="text-sm text-gray-600">Активных дней</div>
-              <div className="text-xs text-gray-500">из 365 дней</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">234</div>
+              <div className="text-sm text-gray-600 dark:text-slate-300">Активных дней</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">из 365 дней</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 mb-1">18</div>
-              <div className="text-sm text-gray-600">Максимальная серия</div>
-              <div className="text-xs text-gray-500">дней подряд</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">18</div>
+              <div className="text-sm text-gray-600 dark:text-slate-300">Максимальная серия</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">дней подряд</div>
             </div>
           </div>
         </motion.div>
@@ -487,74 +516,74 @@ export default function StatsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.8 }}
-            className="bg-white rounded-2xl border border-gray-200 p-6"
+            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
           >
-            <h3 className="text-lg font-bold text-gray-900 mb-6">Тренды продуктивности</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Тренды продуктивности</h3>
             
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faArrowUp} className="text-green-600 text-sm" />
+                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon={faArrowUp} className="text-green-600 dark:text-green-400 text-sm" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900">Лучшее время</div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Лучшее время</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">
                       {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
                     </div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold text-gray-900">{stats?.productivityTrends?.bestTime?.efficiency || 0}%</div>
-                  <div className="text-xs text-gray-500">эффективность</div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestTime?.efficiency || 0}%</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">эффективность</div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faCalendar} className="text-blue-600 text-sm" />
+                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon={faCalendar} className="text-blue-600 dark:text-blue-400 text-sm" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900">Лучший день</div>
-                    <div className="text-xs text-gray-500">{stats?.productivityTrends?.bestDay?.name || 'Нет данных'}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Лучший день</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">{stats?.productivityTrends?.bestDay?.name || 'Нет данных'}</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold text-gray-900">{stats?.productivityTrends?.bestDay?.avgPomodoros || '0'}</div>
-                  <div className="text-xs text-gray-500">ср. помодоро</div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestDay?.avgPomodoros || '0'}</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">ср. помодоро</div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faBullseye} className="text-purple-600 text-sm" />
+                  <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon={faBullseye} className="text-purple-600 dark:text-purple-400 text-sm" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900">Фокус-режим</div>
-                    <div className="text-xs text-gray-500">Средняя длительность</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Фокус-режим</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">Средняя длительность</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold text-gray-900">{stats?.productivityTrends?.avgSessionDuration || 0}м</div>
-                  <div className="text-xs text-gray-500">за сессию</div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.avgSessionDuration || 0}м</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">за сессию</div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faTasks} className="text-orange-600 text-sm" />
+                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                    <FontAwesomeIcon icon={faTasks} className="text-orange-600 dark:text-orange-400 text-sm" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900">Завершенные задачи</div>
-                    <div className="text-xs text-gray-500">За эту неделю</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Завершенные задачи</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">За эту неделю</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold text-gray-900">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
-                  <div className="text-xs text-gray-500">из {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">из {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
                 </div>
               </div>
             </div>
@@ -564,9 +593,9 @@ export default function StatsPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.9 }}
-            className="bg-white rounded-2xl border border-gray-200 p-6"
+            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
           >
-            <h3 className="text-lg font-bold text-gray-900 mb-6">Разбивка по месяцам</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Разбивка по месяцам</h3>
             <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
           </motion.div>
         </div>
@@ -576,41 +605,41 @@ export default function StatsPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.0 }}
-          className="bg-white rounded-2xl border border-gray-200 p-6"
+          className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
         >
-          <h3 className="text-lg font-bold text-gray-900 mb-6">Достижения</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Достижения</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="p-4 border border-gray-200 rounded-xl text-center hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FontAwesomeIcon icon={faMedal} className="text-yellow-600 text-2xl" />
+            <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center hover:shadow-lg transition-all">
+              <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FontAwesomeIcon icon={faMedal} className="text-yellow-600 dark:text-yellow-400 text-2xl" />
               </div>
-              <div className="text-sm font-medium text-gray-900 mb-1">Первый помодоро</div>
-              <div className="text-xs text-gray-500">Разблокировано</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Первый помодоро</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">Разблокировано</div>
             </div>
 
-            <div className="p-4 border border-gray-200 rounded-xl text-center hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FontAwesomeIcon icon={faFire} className="text-orange-600 text-2xl" />
+            <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center hover:shadow-lg transition-all">
+              <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FontAwesomeIcon icon={faFire} className="text-orange-600 dark:text-orange-400 text-2xl" />
               </div>
-              <div className="text-sm font-medium text-gray-900 mb-1">Неделя подряд</div>
-              <div className="text-xs text-gray-500">Разблокировано</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Неделя подряд</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">Разблокировано</div>
             </div>
 
-            <div className="p-4 border border-gray-200 rounded-xl text-center hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FontAwesomeIcon icon={faCrown} className="text-purple-600 text-2xl" />
+            <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center hover:shadow-lg transition-all">
+              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FontAwesomeIcon icon={faCrown} className="text-purple-600 dark:text-purple-400 text-2xl" />
               </div>
-              <div className="text-sm font-medium text-gray-900 mb-1">1000 помодоро</div>
-              <div className="text-xs text-gray-500">Разблокировано</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">1000 помодоро</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">Разблокировано</div>
             </div>
 
-            <div className="p-4 border border-gray-200 rounded-xl text-center opacity-50">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FontAwesomeIcon icon={faRocket} className="text-gray-400 text-2xl" />
+            <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center opacity-50">
+              <div className="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
+                <FontAwesomeIcon icon={faRocket} className="text-gray-400 dark:text-slate-500 text-2xl" />
               </div>
-              <div className="text-sm font-medium text-gray-500 mb-1">5000 помодоро</div>
-              <div className="text-xs text-gray-400">{totalPomodoros}/5000</div>
+              <div className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-1">5000 помодоро</div>
+              <div className="text-xs text-gray-400 dark:text-slate-500">{totalPomodoros}/5000</div>
             </div>
           </div>
         </motion.div>

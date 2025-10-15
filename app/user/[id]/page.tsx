@@ -156,7 +156,7 @@ export default function UserProfilePage() {
         <div className="flex items-center gap-4 mb-8">
           <button
             onClick={() => router.back()}
-            className="p-2 hover:bg-white rounded-lg transition-colors"
+            className="p-2 hover:bg-white dark:bg-slate-800 rounded-lg transition-colors"
           >
             <ArrowLeft className="w-6 h-6 text-slate-600" />
           </button>

@@ -167,14 +167,14 @@ export default function SettingsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-slate-800 mb-4">
+            <h1 className="text-2xl font-bold text-slate-800 dark:text-white mb-4">
               Authorization Required
             </h1>
-            <p className="text-slate-600">
+            <p className="text-slate-600 dark:text-slate-300">
               Please log in to change your settings.
             </p>
           </div>
@@ -185,7 +185,7 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center">
@@ -197,7 +197,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
       <Navbar />
       
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -207,11 +207,11 @@ export default function SettingsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-slate-800 mb-2 flex items-center">
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-2 flex items-center">
             <SettingsIcon className="w-8 h-8 mr-3" />
             Settings
           </h1>
-          <p className="text-slate-600">
+          <p className="text-slate-600 dark:text-slate-300">
             Customize your timer and notifications
           </p>
         </motion.div>
@@ -224,33 +224,33 @@ export default function SettingsPage() {
             transition={{ delay: 0.1 }}
             className="card"
           >
-            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4 flex items-center">
               <User className="w-5 h-5 mr-2" />
               Account
             </h2>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Username
                 </label>
                 <input
                   type="text"
                   value={user?.username || ''}
                   disabled
-                  className="input bg-slate-50 cursor-not-allowed"
+                  className="input bg-slate-50 dark:bg-slate-700 cursor-not-allowed"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Email
                 </label>
                 <input
                   type="email"
                   value={user?.email || ''}
                   disabled
-                  className="input bg-slate-50 cursor-not-allowed"
+                  className="input bg-slate-50 dark:bg-slate-700 cursor-not-allowed"
                 />
               </div>
             </div>
@@ -263,14 +263,14 @@ export default function SettingsPage() {
             transition={{ delay: 0.2 }}
             className="card"
           >
-            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4 flex items-center">
               <Clock className="w-5 h-5 mr-2" />
               Timer Settings
             </h2>
             
             <div className="grid md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Work duration (minutes)
                 </label>
                 <input
@@ -284,7 +284,7 @@ export default function SettingsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Short break (minutes)
                 </label>
                 <input
@@ -298,7 +298,7 @@ export default function SettingsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Long break (minutes)
                 </label>
                 <input
@@ -312,7 +312,7 @@ export default function SettingsPage() {
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Long break after (sessions)
                 </label>
                 <input
@@ -334,7 +334,7 @@ export default function SettingsPage() {
             transition={{ delay: 0.3 }}
             className="card"
           >
-            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4 flex items-center">
               <Volume2 className="w-5 h-5 mr-2" />
               Sound Notifications
             </h2>
@@ -342,10 +342,10 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Enable sounds
                   </label>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     Play sound when session completes
                   </p>
                 </div>
@@ -356,13 +356,13 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingChange('soundEnabled', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                  <div className="w-11 h-6 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                 </label>
               </div>
               
               {settings.soundEnabled && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                     Volume: {Math.round(settings.soundVolume * 100)}%
                   </label>
                   <input
@@ -372,7 +372,7 @@ export default function SettingsPage() {
                     step="0.1"
                     value={settings.soundVolume}
                     onChange={(e) => handleSettingChange('soundVolume', parseFloat(e.target.value))}
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
+                    className="w-full h-2 bg-slate-200 dark:bg-slate-600 rounded-lg appearance-none cursor-pointer slider"
                   />
                 </div>
               )}
@@ -386,7 +386,7 @@ export default function SettingsPage() {
             transition={{ delay: 0.4 }}
             className="card"
           >
-            <h2 className="text-xl font-semibold text-slate-800 mb-4 flex items-center">
+            <h2 className="text-xl font-semibold text-slate-800 dark:text-white mb-4 flex items-center">
               <Bell className="w-5 h-5 mr-2" />
               Notifications
             </h2>
@@ -394,10 +394,10 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <label className="text-sm font-medium text-slate-700">
+                  <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
                     Browser notifications
                   </label>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
                     Show browser notifications when session completes
                   </p>
                 </div>
@@ -408,7 +408,7 @@ export default function SettingsPage() {
                     onChange={(e) => handleSettingChange('notificationsEnabled', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                  <div className="w-11 h-6 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                 </label>
               </div>
 
@@ -424,7 +424,7 @@ export default function SettingsPage() {
                 </motion.button>
 
                 {testMessage && (
-                  <span className="text-sm text-slate-500">
+                  <span className="text-sm text-slate-500 dark:text-slate-400">
                     {testMessage}
                   </span>
                 )}
@@ -446,7 +446,7 @@ export default function SettingsPage() {
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   className={`text-sm ${
-                    saveMessage.includes('Ошибка') ? 'text-red-600' : 'text-secondary-600'
+                    saveMessage.includes('Ошибка') ? 'text-red-600 dark:text-red-400' : 'text-secondary-600 dark:text-secondary-400'
                   }`}
                 >
                   {saveMessage}

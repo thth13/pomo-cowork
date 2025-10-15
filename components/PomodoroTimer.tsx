@@ -1110,7 +1110,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             cy="60" 
             r="54" 
             fill="none" 
-            stroke="#f3f4f6" 
+            className="stroke-gray-200 dark:stroke-slate-700"
             strokeWidth="8"
           />
           <circle 
@@ -1136,14 +1136,14 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <div className={`text-6xl font-bold mb-2 ${
             activeSessionType === SessionType.WORK 
-              ? 'text-red-500' 
+              ? 'text-red-500 dark:text-red-400' 
               : activeSessionType === SessionType.SHORT_BREAK 
-              ? 'text-green-500' 
-              : 'text-blue-500'
+              ? 'text-green-500 dark:text-green-400' 
+              : 'text-blue-500 dark:text-blue-400'
           }`}>
             {formatTime(timeRemaining)}
           </div>
-          <div className="text-lg font-medium text-gray-600">
+          <div className="text-lg font-medium text-gray-600 dark:text-slate-300">
             {getSessionTypeLabel(activeSessionType)}
           </div>
         </div>
@@ -1177,14 +1177,14 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       </div>
       
       {/* Timer Tabs */}
-      <div className="flex bg-white rounded-xl p-1 border border-gray-200 mb-8">
+      <div className="flex bg-white dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mb-8">
         <button 
           onClick={() => handleSessionTypeChange(SessionType.WORK)}
           disabled={!!currentSession}
           className={`px-6 py-2 rounded-lg font-medium ${
             sessionType === SessionType.WORK
               ? 'bg-red-500 text-white'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
           } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Фокус
@@ -1195,7 +1195,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           className={`px-6 py-2 rounded-lg font-medium ${
             sessionType === SessionType.SHORT_BREAK
               ? 'bg-red-500 text-white'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
           } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Короткий перерыв
@@ -1206,7 +1206,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           className={`px-6 py-2 rounded-lg font-medium ${
             sessionType === SessionType.LONG_BREAK
               ? 'bg-red-500 text-white'
-              : 'text-gray-600 hover:text-gray-900'
+              : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
           } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
           Длинный перерыв

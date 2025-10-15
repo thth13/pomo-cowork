@@ -216,14 +216,14 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
   const meName = useMemo(() => user?.username ?? 'Guest', [user])
 
   return (
-    <div ref={containerRef} className="bg-white rounded-2xl border border-gray-200 h-[600px] flex flex-col">
+    <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 h-[600px] flex flex-col">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900">Общий чат</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Общий чат</h3>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
-            {/* <span className="text-sm text-gray-600">участников онлайн</span> */}
+            {/* <span className="text-sm text-gray-600 dark:text-slate-300">участников онлайн</span> */}
           </div>
         </div>
       </div>
@@ -231,21 +231,21 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       {/* Messages */}
       <div ref={listRef} className="chat-messages flex-1 p-4 space-y-4">
         {loading ? (
-          <div className="flex items-center justify-center py-8 text-gray-500">
+          <div className="flex items-center justify-center py-8 text-gray-500 dark:text-slate-400">
             <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Загрузка сообщений...
           </div>
         ) : messages.length === 0 ? (
-          <div className="text-center text-gray-500 py-6">Нет сообщений. Будьте первым!</div>
+          <div className="text-center text-gray-500 dark:text-slate-400 py-6">Нет сообщений. Будьте первым!</div>
         ) : (
           messages.map((m) => (
             <div key={m.id}>
               {m.type === 'system' ? (
                 <div className="flex justify-center">
                   <div className={`text-xs px-3 py-1 rounded-full ${
-                    m.action?.type === 'work_start' ? 'bg-red-100 text-red-600' :
-                    m.action?.type === 'break_start' ? 'bg-green-100 text-green-600' :
-                    m.action?.type === 'long_break_start' ? 'bg-blue-100 text-blue-600' :
-                    'bg-gray-100 text-gray-600'
+                    m.action?.type === 'work_start' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
+                    m.action?.type === 'break_start' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                    m.action?.type === 'long_break_start' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
+                    'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
                   }`}>
                     {m.username} {
                       m.action?.type === 'work_start' ? 'начал сессию фокуса' :
@@ -257,20 +257,20 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
                 </div>
               ) : (
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-semibold flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0">
                     {m.username.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-sm font-medium text-gray-900">{m.username}</span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-sm font-medium text-gray-900 dark:text-white">{m.username}</span>
+                      <span className="text-xs text-gray-500 dark:text-slate-400">
                         {new Date(m.timestamp).toLocaleTimeString('ru-RU', {
                           hour: '2-digit',
                           minute: '2-digit'
                         })}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-700">{m.text}</div>
+                    <div className="text-sm text-gray-700 dark:text-slate-300">{m.text}</div>
                   </div>
                 </div>
               )}
@@ -279,14 +279,14 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
         )}
 
         {typing && (
-          <div className="text-xs text-gray-500">{typing.username} печатает...</div>
+          <div className="text-xs text-gray-500 dark:text-slate-400">{typing.username} печатает...</div>
         )}
       </div>
 
       {/* Input */}
-      <form onSubmit={onSubmit} className="p-4 border-t border-gray-200">
+      <form onSubmit={onSubmit} className="p-4 border-t border-gray-200 dark:border-slate-700">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-semibold flex-shrink-0">
+          <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0">
             {meName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 relative">
@@ -294,11 +294,11 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
               value={input}
               onChange={(e) => onInputChange(e.target.value)}
               placeholder="Написать сообщение..." 
-              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
+              className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
             />
             <button 
               type="submit"
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             >
               <i className="fa-solid fa-paper-plane"></i>
             </button>

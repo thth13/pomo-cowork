@@ -10,7 +10,7 @@
   }
   
   body {
-    @apply bg-gradient-to-br from-gray-50 to-gray-100 text-gray-900 font-inter;
+    @apply bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 text-gray-900 dark:text-slate-100 font-inter;
     font-feature-settings: "rlig" 1, "calt" 1;
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -19,7 +19,7 @@
 
 @layer components {
   .card {
-    @apply bg-white rounded-2xl shadow-sm border border-gray-200 p-8;
+    @apply bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-200 dark:border-slate-700 p-8;
   }
   
   .btn {
@@ -31,7 +31,7 @@
   }
   
   .btn-secondary {
-    @apply btn bg-gray-200 text-gray-700 hover:bg-gray-300 focus-visible:ring-gray-500;
+    @apply btn bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-300 dark:hover:bg-slate-600 focus-visible:ring-gray-500;
   }
   
   .btn-success {
@@ -39,7 +39,7 @@
   }
   
   .input {
-    @apply flex h-10 w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 text-gray-900;
+    @apply flex h-10 w-full rounded-xl border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-700 px-4 py-2 text-sm ring-offset-white dark:ring-offset-slate-900 file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-gray-500 dark:placeholder:text-slate-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:border-transparent disabled:cursor-not-allowed disabled:opacity-50 text-gray-900 dark:text-slate-100;
   }
   
   .pulse-dot {
@@ -61,11 +61,11 @@
   }
   
   .chat-messages::-webkit-scrollbar-track {
-    background: #f1f5f9;
+    @apply bg-slate-100 dark:bg-slate-800;
   }
   
   .chat-messages::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
+    @apply bg-slate-300 dark:bg-slate-600;
     border-radius: 2px;
   }
   
