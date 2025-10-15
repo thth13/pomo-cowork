@@ -529,11 +529,49 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     setIsStarting(true)
 
     try {
-      // If there's already an active session, end it first
+      // If there's already an active session, silently end it first
       if (currentSession) {
-        await handleStop()
-        // Add small delay to ensure stop completes
-        await new Promise(resolve => setTimeout(resolve, 100))
+        const sessionId = currentSession.id
+        
+        // Stop local timer
+        cancelSession()
+        
+        // Stop Service Worker timer
+        sendMessageToServiceWorker({
+          type: 'STOP_TIMER',
+        })
+        
+        // End session quietly (this will be replaced by new session immediately)
+        emitSessionEnd(sessionId, 'reset')
+        
+        // Update session in database to completed state
+        try {
+          const token = localStorage.getItem('token')
+          const headers: Record<string, string> = {
+            'Content-Type': 'application/json'
+          }
+          
+          if (token) {
+            headers.Authorization = `Bearer ${token}`
+          }
+          
+          const body: Record<string, any> = {
+            status: 'CANCELLED',
+            endedAt: new Date().toISOString()
+          }
+          
+          if (!user) {
+            body.anonymousId = getOrCreateAnonymousId()
+          }
+
+          await fetch(`/api/sessions/${sessionId}`, {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify(body)
+          })
+        } catch (error) {
+          console.error('Failed to update previous session:', error)
+        }
       }
 
       const duration = getSessionDuration(sessionType)
@@ -543,22 +581,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       const userId = user?.id || getOrCreateAnonymousId()
       const username = user?.username || getAnonymousUsername()
 
-      // Optimistically start timer immediately with temporary ID
-      const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-      startSession(taskName, duration, sessionType, tempId)
-      
-      // Start Service Worker timer with temp ID
-      sendMessageToServiceWorker({
-        type: 'START_TIMER',
-        payload: {
-          sessionId: tempId,
-          duration,
-          timeRemaining: duration * 60,
-          startedAt: new Date().toISOString(),
-        },
-      })
-
-      // Create session in database in background
+      // Create session in database first
       try {
         const token = localStorage.getItem('token')
         const headers: Record<string, string> = {
@@ -588,45 +611,51 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         if (response.ok) {
           const dbSession = await response.json()
           
-          // Update session ID in store only if temp session still exists
-          const currentState = useTimerStore.getState()
-          if (currentState.currentSession?.id === tempId) {
-            useTimerStore.setState({
-              currentSession: {
-                ...currentState.currentSession,
-                id: dbSession.id,
-                startedAt: dbSession.startedAt
-              }
-            })
-            
-            // Update Service Worker with real session ID
-            sendMessageToServiceWorker({
-              type: 'UPDATE_SESSION_ID',
-              payload: {
-                oldSessionId: tempId,
-                newSessionId: dbSession.id,
-                startedAt: dbSession.startedAt,
-              },
-            })
-            
-            // Emit to WebSocket with real session ID
-            const sessionData = {
-              id: dbSession.id,
-              task: taskName,
+          // Start timer with real session ID
+          startSession(taskName, duration, sessionType, dbSession.id)
+          
+          // Start Service Worker timer with real ID
+          sendMessageToServiceWorker({
+            type: 'START_TIMER',
+            payload: {
+              sessionId: dbSession.id,
               duration,
-              type: sessionType,
-              userId,
-              username,
               timeRemaining: duration * 60,
-              startedAt: dbSession.startedAt
-            }
-            
-            emitSessionStart(sessionData)
+              startedAt: dbSession.startedAt,
+            },
+          })
+          
+          // Emit to WebSocket with real session ID
+          const sessionData = {
+            id: dbSession.id,
+            task: taskName,
+            duration,
+            type: sessionType,
+            userId,
+            username,
+            timeRemaining: duration * 60,
+            startedAt: dbSession.startedAt
           }
+          
+          emitSessionStart(sessionData)
+        } else {
+          throw new Error('Failed to create session')
         }
       } catch (error) {
         console.error('Failed to create session:', error)
-        // Timer already started optimistically, continue with temp ID
+        // Fallback: start with temporary ID
+        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        startSession(taskName, duration, sessionType, tempId)
+        
+        sendMessageToServiceWorker({
+          type: 'START_TIMER',
+          payload: {
+            sessionId: tempId,
+            duration,
+            timeRemaining: duration * 60,
+            startedAt: new Date().toISOString(),
+          },
+        })
       }
     } finally {
       // Add minimum delay to prevent too rapid clicks
@@ -806,9 +835,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     const completedType = currentSession.type
     const sessionSnapshot = currentSession
     
+    // Complete the current session in the database
     if (sessionSnapshot) {
-  emitSessionEnd(sessionSnapshot.id, 'completed')
-      
       // Update session in database
       try {
         const token = localStorage.getItem('token')
@@ -839,6 +867,9 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         console.error('Failed to update session:', error)
       }
     }
+    
+    // End current session (completed, not manual stop)
+    emitSessionEnd(sessionSnapshot.id, 'completed')
     
     completeSession()
 

@@ -60,6 +60,9 @@ const chatMessages: ChatMessage[] = []
 
 const MAX_CHAT_HISTORY = 100
 
+// URL к Next.js API
+const API_URL = process.env.API_URL || 'http://localhost:3000'
+
 // Function to save system messages to database via API
 const saveSystemMessageToDB = async (message: ChatMessage) => {
   try {
@@ -145,6 +148,71 @@ const removeAnonymousConnectionBySocket = (socketId: string) => {
   }
 }
 
+// Функция для загрузки активных сессий из БД
+const loadActiveSessionsFromDB = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/api/sessions/active`)
+    const dbSessions = response.data as Array<{
+      id: string
+      userId: string
+      username: string
+      task: string
+      type: string
+      duration: number
+      timeRemaining: number
+      startedAt: string
+    }>
+
+    // Обновляем локальный кэш сессий
+    for (const dbSession of dbSessions) {
+      // Проверяем, есть ли уже эта сессия в памяти
+      const existingSession = sessions.get(dbSession.id)
+      
+      if (!existingSession) {
+        // Добавляем новую сессию из БД
+        const startTime = new Date(dbSession.startedAt).getTime()
+        const now = Date.now()
+        const elapsed = Math.floor((now - startTime) / 1000)
+        const calculatedStartTime = now - (dbSession.duration * 60 * 1000 - dbSession.timeRemaining * 1000)
+        
+        sessions.set(dbSession.id, {
+          id: dbSession.id,
+          userId: dbSession.userId,
+          username: dbSession.username,
+          task: dbSession.task,
+          type: dbSession.type,
+          duration: dbSession.duration,
+          timeRemaining: dbSession.timeRemaining,
+          startedAt: dbSession.startedAt,
+          startTime: calculatedStartTime,
+          lastUpdate: now
+        })
+      } else {
+        // Обновляем существующую сессию с данными из БД
+        existingSession.timeRemaining = dbSession.timeRemaining
+        existingSession.lastUpdate = Date.now()
+      }
+    }
+
+    // Удаляем сессии, которых больше нет в БД
+    const dbSessionIds = new Set(dbSessions.map(s => s.id))
+    for (const [sessionId, session] of sessions.entries()) {
+      if (!dbSessionIds.has(sessionId)) {
+        // Проверяем, не устарела ли сессия (более 5 минут без обновления)
+        if (session.lastUpdate && Date.now() - session.lastUpdate > 5 * 60 * 1000) {
+          sessions.delete(sessionId)
+        }
+      }
+    }
+
+    console.log(`Loaded ${dbSessions.length} active sessions from database`)
+    return dbSessions.length
+  } catch (error) {
+    console.error('Failed to load active sessions from database:', error)
+    return 0
+  }
+}
+
 const serializeSessions = () =>
   Array.from(sessions.values()).map((session) => ({
     id: session.id,
@@ -158,6 +226,35 @@ const serializeSessions = () =>
     status: session.status
   }))
 
+// Периодическое обновление времени для сессий (каждые 5 секунд)
+setInterval(() => {
+  let updated = false
+  sessions.forEach((session) => {
+    // Рассчитываем актуальное оставшееся время на основе startTime
+    const elapsed = (Date.now() - session.startTime) / 1000
+    const totalDuration = session.duration * 60
+    const calculatedTimeRemaining = Math.max(0, totalDuration - elapsed)
+    
+    // Обновляем только если изменилось
+    if (Math.abs(session.timeRemaining - calculatedTimeRemaining) > 1) {
+      session.timeRemaining = calculatedTimeRemaining
+      session.lastUpdate = Date.now()
+      updated = true
+    }
+  })
+  
+  if (updated) {
+    io.emit('session-update', serializeSessions())
+  }
+}, 5000)
+
+// Периодическая синхронизация с БД (каждые 30 секунд)
+setInterval(async () => {
+  await loadActiveSessionsFromDB()
+  io.emit('session-update', serializeSessions())
+}, 30000)
+
+// Периодическая очистка устаревших сессий (каждую минуту)
 setInterval(() => {
   let cleaned = 0
   sessions.forEach((session, sessionId) => {
@@ -226,8 +323,12 @@ const emitPresenceSnapshot = () => {
   })
 }
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   emitPresenceSnapshot()
+  
+  // При подключении загружаем актуальные сессии из БД и отправляем клиенту
+  await loadActiveSessionsFromDB()
+  socket.emit('session-update', serializeSessions())
 
   socket.on('join-presence', (payload?: { userId: string | null; anonymousId?: string | null; username?: string | null }) => {
     const userId = payload?.userId ?? null
@@ -300,6 +401,24 @@ io.on('connection', (socket) => {
   })
 
   socket.on('session-start', (sessionData: PomodoroSession) => {
+    // Remove any existing sessions for this user/socket to prevent duplicates
+    const userId = socketUserMap.get(socket.id) ?? null
+    const anonymousId = anonymousSockets.get(socket.id)
+    
+    // Clean up any existing sessions for this user
+    sessions.forEach((existingSession, existingSessionId) => {
+      const isSameUser = (
+        (userId && existingSession.userId === userId) ||
+        (anonymousId && existingSession.socketId === socket.id)
+      )
+      
+      if (isSameUser && existingSessionId !== sessionData.id) {
+        console.log(`Removing duplicate session ${existingSessionId} for user ${userId || anonymousId}`)
+        sessions.delete(existingSessionId)
+      }
+    })
+
+    // Add new session
     sessions.set(sessionData.id, {
       ...sessionData,
       socketId: socket.id,
@@ -307,8 +426,6 @@ io.on('connection', (socket) => {
     })
 
     // Send system message about session start
-    const userId = socketUserMap.get(socket.id) ?? null
-    const anonymousId = anonymousSockets.get(socket.id)
     let username = 'Guest'
     if (userId) {
       username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
@@ -359,6 +476,23 @@ io.on('connection', (socket) => {
   })
 
   socket.on('session-sync', (sessionData: PomodoroSession) => {
+    // Remove any existing sessions for this user/socket to prevent duplicates
+    const userId = socketUserMap.get(socket.id) ?? null
+    const anonymousId = anonymousSockets.get(socket.id)
+    
+    // Clean up any existing sessions for this user (but don't remove the one we're syncing)
+    sessions.forEach((existingSession, existingSessionId) => {
+      const isSameUser = (
+        (userId && existingSession.userId === userId) ||
+        (anonymousId && existingSession.socketId === socket.id)
+      )
+      
+      if (isSameUser && existingSessionId !== sessionData.id) {
+        console.log(`Removing duplicate session ${existingSessionId} during sync for user ${userId || anonymousId}`)
+        sessions.delete(existingSessionId)
+      }
+    })
+
     // Sync existing session without sending system message
     sessions.set(sessionData.id, {
       ...sessionData,
@@ -383,46 +517,52 @@ io.on('connection', (socket) => {
     const sessionId = payload?.sessionId
     const reason = payload?.reason ?? 'manual'
     const session = sessions.get(sessionId)
-    if (session) {
-      // Only emit chat event if stopped manually by the user
-      if (reason === 'manual') {
-        // Send system message about timer stop
-        const userId = socketUserMap.get(socket.id) ?? null
-        const anonymousId = anonymousSockets.get(socket.id)
-        let username = 'Guest'
-        if (userId) {
-          username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
-        } else if (anonymousId) {
-          username = `Guest-${anonymousId.slice(-4)}`
-        }
-
-        const systemMessage: ChatMessage = {
-          id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-          userId,
-          username,
-          text: '',
-          timestamp: Date.now(),
-          type: 'system',
-          action: {
-            type: 'timer_stop'
-          }
-        }
-
-        // Store locally and broadcast
-        chatMessages.push(systemMessage)
-        if (chatMessages.length > MAX_CHAT_HISTORY) {
-          chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
-        }
-        
-        // Save to database
-        saveSystemMessageToDB(systemMessage)
-        
-        io.emit('chat-new', systemMessage)
-      }
+    
+    if (!session) {
+      return // Session doesn't exist, nothing to do
     }
 
-    sessions.delete(sessionId)
-    io.emit('session-update', serializeSessions())
+    // Only send chat messages for manual stops, not for resets or automatic transitions
+    if (reason === 'manual') {
+      // Send system message about timer stop
+      const userId = socketUserMap.get(socket.id) ?? null
+      const anonymousId = anonymousSockets.get(socket.id)
+      let username = 'Guest'
+      if (userId) {
+        username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+      } else if (anonymousId) {
+        username = `Guest-${anonymousId.slice(-4)}`
+      }
+
+      const systemMessage: ChatMessage = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        userId,
+        username,
+        text: '',
+        timestamp: Date.now(),
+        type: 'system',
+        action: {
+          type: 'timer_stop'
+        }
+      }
+
+      // Store locally and broadcast
+      chatMessages.push(systemMessage)
+      if (chatMessages.length > MAX_CHAT_HISTORY) {
+        chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
+      }
+      
+      // Save to database
+      saveSystemMessageToDB(systemMessage)
+      
+      io.emit('chat-new', systemMessage)
+    }
+
+    // Only delete the specific session that belongs to this socket
+    if (session.socketId === socket.id) {
+      sessions.delete(sessionId)
+      io.emit('session-update', serializeSessions())
+    }
   })
 
   socket.on('timer-tick', (payload?: { sessionId: string; timeRemaining: number }) => {
@@ -432,15 +572,19 @@ io.on('connection', (socket) => {
       return
     }
 
+    // Обновляем время и привязываем к текущему сокету (если пользователь вернулся)
     session.timeRemaining = Number(payload.timeRemaining) || 0
     session.lastUpdate = Date.now()
+    session.socketId = socket.id
 
     if (payload.timeRemaining % 30 === 0) {
       io.emit('session-update', serializeSessions())
     }
   })
 
-  socket.on('get-active-sessions', () => {
+  socket.on('get-active-sessions', async () => {
+    // Загружаем свежие данные из БД перед отправкой
+    await loadActiveSessionsFromDB()
     socket.emit('session-update', serializeSessions())
   })
 
@@ -461,10 +605,14 @@ io.on('connection', (socket) => {
       decrementUserConnection(userId)
     }
 
-    // Clean up sessions for this socket (but don't double-decrement user connection)
+    // НЕ удаляем сессии при отключении - они остаются в памяти и в БД
+    // Только убираем привязку к socketId
     sessions.forEach((session, sessionId) => {
       if (session.socketId === socket.id) {
-        sessions.delete(sessionId)
+        // Обновляем lastUpdate чтобы знать, что сокет отключился
+        session.lastUpdate = Date.now()
+        // Убираем привязку к сокету
+        delete session.socketId
       }
     })
 

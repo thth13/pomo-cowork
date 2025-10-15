@@ -63,20 +63,6 @@ export async function POST(request: NextRequest) {
       const payload = verifyToken(token)
       if (payload) {
         userId = payload.userId
-
-        // End any existing active sessions for authenticated user
-        await prisma.pomodoroSession.updateMany({
-          where: {
-            userId: payload.userId,
-            status: {
-              in: ['ACTIVE', 'PAUSED']
-            }
-          },
-          data: {
-            status: 'CANCELLED',
-            endedAt: new Date()
-          }
-        })
       } else if (anonymousId) {
         const anonymousUser = await ensureAnonymousUser(prisma, anonymousId)
         userId = anonymousUser.id
@@ -98,6 +84,21 @@ export async function POST(request: NextRequest) {
       const anonymousUser = await ensureAnonymousUser(prisma, anonymousId)
       userId = anonymousUser.id
     }
+
+    // End any existing active sessions for this user (authenticated or anonymous)
+    // This ensures each user has only one active session at a time
+    await prisma.pomodoroSession.updateMany({
+      where: {
+        userId,
+        status: {
+          in: ['ACTIVE', 'PAUSED']
+        }
+      },
+      data: {
+        status: 'CANCELLED',
+        endedAt: new Date()
+      }
+    })
 
     const session = await prisma.pomodoroSession.create({
       data: {
