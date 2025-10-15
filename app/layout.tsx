@@ -51,33 +51,12 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <head>
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  const savedTheme = localStorage.getItem('theme-storage');
-                  if (savedTheme) {
-                    const theme = JSON.parse(savedTheme).state?.theme || 'light';
-                    document.documentElement.classList.add(theme);
-                  } else {
-                    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                    document.documentElement.classList.add(systemTheme);
-                  }
-                } catch (e) {
-                  document.documentElement.classList.add('light');
-                }
-              })();
-            `,
-          }}
-        />
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
       </head>
       <body className={inter.className}>
         <ThemeProvider>
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-            {children}
-            <ConnectionDebug />
-          </div>
+          {children}
+          <ConnectionDebug />
         </ThemeProvider>
       </body>
     </html>

@@ -216,59 +216,93 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
   const meName = useMemo(() => user?.username ?? 'Guest', [user])
 
   return (
-    <div ref={containerRef} className="card p-0 overflow-hidden flex flex-col min-h-0" style={matchedHeight ? { height: matchedHeight } : undefined}>
-      <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-between">
-        <div className="font-semibold text-slate-700 dark:text-slate-300">Live Chat</div>
-        <div className="text-xs text-slate-500 dark:text-slate-400">You are: {meName}</div>
+    <div ref={containerRef} className="bg-white rounded-2xl border border-gray-200 h-[600px] flex flex-col">
+      {/* Header */}
+      <div className="p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-900">Общий чат</h3>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
+            <span className="text-sm text-gray-600">участников онлайн</span>
+          </div>
+        </div>
       </div>
 
-      <div ref={listRef} className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-0">
+      {/* Messages */}
+      <div ref={listRef} className="chat-messages flex-1 p-4 space-y-4">
         {loading ? (
-          <div className="flex items-center justify-center py-8 text-slate-500 dark:text-slate-400">
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading messages...
+          <div className="flex items-center justify-center py-8 text-gray-500">
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Загрузка сообщений...
           </div>
         ) : messages.length === 0 ? (
-          <div className="text-center text-slate-500 dark:text-slate-400 py-6">No messages yet. Be the first!</div>
+          <div className="text-center text-gray-500 py-6">Нет сообщений. Будьте первым!</div>
         ) : (
           messages.map((m) => (
-            <div key={m.id} className="text-sm">
+            <div key={m.id}>
               {m.type === 'system' ? (
-                <>
-                  <span className="font-medium text-slate-700 dark:text-slate-300 mr-2">{m.username}:</span>
-                  <span className={`break-words ${getActionColor(m.action?.type)}`}>
-                    {formatActionMessage(m.action)}
-                  </span>
-                  <span className="ml-2 text-[10px] text-slate-400 dark:text-slate-500 align-middle">{new Date(m.timestamp).toLocaleTimeString()}</span>
-                </>
+                <div className="flex justify-center">
+                  <div className={`text-xs px-3 py-1 rounded-full ${
+                    m.action?.type === 'work_start' ? 'bg-red-100 text-red-600' :
+                    m.action?.type === 'break_start' ? 'bg-green-100 text-green-600' :
+                    m.action?.type === 'long_break_start' ? 'bg-blue-100 text-blue-600' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>
+                    {m.username} {
+                      m.action?.type === 'work_start' ? 'начал сессию фокуса' :
+                      m.action?.type === 'break_start' ? 'начал короткий перерыв' :
+                      m.action?.type === 'long_break_start' ? 'начал длинный перерыв' :
+                      formatActionMessage(m.action)
+                    }
+                  </div>
+                </div>
               ) : (
-                <>
-                  <span className="font-medium text-slate-700 dark:text-slate-300 mr-2">{m.username}:</span>
-                  <span className="text-slate-700 dark:text-slate-300 break-words">{m.text}</span>
-                  <span className="ml-2 text-[10px] text-slate-400 dark:text-slate-500 align-middle">{new Date(m.timestamp).toLocaleTimeString()}</span>
-                </>
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-semibold flex-shrink-0">
+                    {m.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <span className="text-sm font-medium text-gray-900">{m.username}</span>
+                      <span className="text-xs text-gray-500">
+                        {new Date(m.timestamp).toLocaleTimeString('ru-RU', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-700">{m.text}</div>
+                  </div>
+                </div>
               )}
             </div>
           ))
         )}
 
         {typing && (
-          <div className="text-xs text-slate-500 dark:text-slate-400">{typing.username} is typing...</div>
+          <div className="text-xs text-gray-500">{typing.username} печатает...</div>
         )}
       </div>
 
-      <form onSubmit={onSubmit} className="border-t border-slate-200 dark:border-slate-700 px-3 py-2">
-        <div className="flex items-center gap-2">
-          <input
-            value={input}
-            onChange={(e) => onInputChange(e.target.value)}
-            placeholder="Type a message"
-            className="flex-1 input"
-            aria-label="Message"
-          />
-          <button type="submit" className="btn-primary flex items-center gap-1">
-            <SendHorizonal className="w-4 h-4" />
-            Send
-          </button>
+      {/* Input */}
+      <form onSubmit={onSubmit} className="p-4 border-t border-gray-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-semibold flex-shrink-0">
+            {meName.charAt(0).toUpperCase()}
+          </div>
+          <div className="flex-1 relative">
+            <input 
+              value={input}
+              onChange={(e) => onInputChange(e.target.value)}
+              placeholder="Написать сообщение..." 
+              className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
+            />
+            <button 
+              type="submit"
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors"
+            >
+              <i className="fa-solid fa-paper-plane"></i>
+            </button>
+          </div>
         </div>
       </form>
     </div>

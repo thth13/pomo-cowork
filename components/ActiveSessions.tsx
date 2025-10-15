@@ -107,100 +107,76 @@ function SessionCard({ session, index, isCurrentUser = false }: {
     return null
   }
 
+  const getBadgeColor = (type: SessionType): string => {
+    switch (type) {
+      case SessionType.WORK:
+        return 'bg-red-100 text-red-600'
+      case SessionType.SHORT_BREAK:
+        return 'bg-green-100 text-green-600'
+      case SessionType.LONG_BREAK:
+        return 'bg-blue-100 text-blue-600'
+      default:
+        return 'bg-red-100 text-red-600'
+    }
+  }
+
+  const getProgressColor = (type: SessionType): string => {
+    switch (type) {
+      case SessionType.WORK:
+        return 'bg-red-500'
+      case SessionType.SHORT_BREAK:
+        return 'bg-green-500'
+      case SessionType.LONG_BREAK:
+        return 'bg-blue-500'
+      default:
+        return 'bg-red-500'
+    }
+  }
+
+  const progressPercent = Math.max(0, ((currentTimeRemaining / ((session.duration || 25) * 60)) * 100))
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className={`${
-        isCurrentUser 
-          ? 'bg-white dark:bg-slate-800 rounded-xl shadow-sm border-2 border-slate-200 dark:border-slate-600 p-6 relative' 
-          : 'card'
-      } hover:shadow-md transition-shadow`}
-    >
-      {/* Label "You" for current user */}
-      {isCurrentUser && (
-        <div className="absolute -top-2 -right-2 bg-primary-500 dark:bg-primary-600 text-white text-xs font-medium px-2 py-1 rounded-full shadow-md">
-          You
-        </div>
-      )}
-      
-      <div className="space-y-3">
-        {/* User Info */}
-        <div className="flex items-center space-x-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-            isCurrentUser ? 'bg-primary-100 dark:bg-primary-900/30' : 'bg-slate-200 dark:bg-slate-700'
-          }`}>
-            <User className={`w-5 h-5 ${isCurrentUser ? 'text-primary-600 dark:text-primary-400' : 'text-slate-600 dark:text-slate-300'}`} />
+    <div className="bg-gray-50 rounded-xl p-6 hover:bg-gray-100 transition-colors">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center space-x-4 flex-1">
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full bg-gray-300 flex items-center justify-center text-gray-700 font-semibold">
+              {session.username.charAt(0).toUpperCase()}
+            </div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white"></div>
           </div>
           <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <div className={`font-semibold ${isCurrentUser ? 'text-slate-800 dark:text-slate-200' : 'text-slate-700 dark:text-slate-200'}`}>
-                {session.username}
-                {isCurrentUser && ' (You)'}
-              </div>
-              {!isCurrentUser && session.userId && (
-                <button
-                  onClick={() => router.push(`/user/${session.userId}`)}
-                  className="p-1 hover:bg-slate-100 dark:hover:bg-slate-600 rounded transition-colors"
-                  title="View profile"
-                >
-                  <ExternalLink className="w-4 h-4 text-slate-500 dark:text-slate-400" />
-                </button>
-              )}
+            <div className="flex items-center space-x-3 mb-2">
+              <h3 className="font-semibold text-gray-900">{session.username}</h3>
+              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getBadgeColor(session.type)}`}>
+                {getSessionTypeLabel(session.type)}
+              </span>
             </div>
-            <div className={`text-xs px-2 py-1 rounded-full border ${getSessionTypeColor(session.type)}`}>
-              {getSessionTypeLabel(session.type)}
+            <div className="text-sm text-gray-600 mb-1">
+              Задача: {session.task}
+            </div>
+            <div className="text-xs text-gray-500">
+              Начал в: {new Date(session.startedAt).toLocaleTimeString('ru-RU', {
+                hour: '2-digit',
+                minute: '2-digit'
+              })}
             </div>
           </div>
         </div>
-
-        {/* Task */}
-        <div className={`rounded-lg p-3 ${
-          isCurrentUser ? 'bg-primary-50 dark:bg-slate-700/50' : 'bg-slate-50 dark:bg-slate-700'
-        }`}>
-          <div className="text-sm text-slate-600 dark:text-slate-400 mb-1">Task:</div>
-          <div className="font-medium text-slate-800 dark:text-slate-200 line-clamp-2">
-            {session.task}
-          </div>
-        </div>
-
-        {/* Time Remaining */}
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-slate-600 dark:text-slate-400">Remaining:</div>
-          <div className={`text-xl font-bold ${
-            isCurrentUser ? 'text-primary-600 dark:text-primary-400' : 'text-primary-600 dark:text-primary-500'
-          }`}>
+        <div className="text-right">
+          <div className="text-lg font-bold text-gray-900 mb-1">
             {formatTime(currentTimeRemaining)}
           </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
-          <motion.div
-            className={`h-2 rounded-full transition-all duration-1000 ${
-              session.type === SessionType.WORK
-                ? 'bg-primary-500'
-                : session.type === SessionType.SHORT_BREAK
-                ? 'bg-secondary-500'
-                : 'bg-blue-500'
-            }`}
-            initial={{ width: 0 }}
-            animate={{
-              width: `${Math.max(0, (currentTimeRemaining / ((session.duration || 25) * 60)) * 100)}%`
-            }}
-          />
-        </div>
-
-        {/* Started Time */}
-        <div className="text-xs text-slate-500 dark:text-slate-400 text-center">
-          Started at {new Date(session.startedAt).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit'
-          })}
+          <div className="w-24 bg-gray-200 rounded-full h-2 mb-1">
+            <div 
+              className={`h-2 rounded-full progress-bar ${getProgressColor(session.type)}`} 
+              style={{ width: `${progressPercent}%` }}
+            ></div>
+          </div>
+          <div className="text-xs text-gray-500">осталось</div>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -268,27 +244,30 @@ export default function ActiveSessions() {
 
   if (allActiveSessions.length === 0) {
     return (
-      <div className="card">
+      <div className="bg-white rounded-2xl border border-gray-200 p-8">
         <div className="text-center py-8">
-          <User className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-600 dark:text-slate-300 mb-2">
-            No Active Sessions
+          <User className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">
+            Нет активных сессий
           </h3>
-          <p className="text-slate-500 dark:text-slate-400">
-            Start a timer session to see your activity here!
+          <p className="text-gray-500">
+            Начните таймер, чтобы увидеть свою активность здесь!
           </p>
         </div>
       </div>
     )
   }
   return (
-    <div className="space-y-4">
-      <h2 className="text-xl font-bold text-slate-700 dark:text-slate-300 flex items-center">
-        <Clock className="w-5 h-5 mr-2" />
-        Currently working ({allActiveSessions.length})
-      </h2>
+    <div className="bg-white rounded-2xl border border-gray-200 p-8">
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-2xl font-bold text-gray-900">Сейчас работают</h2>
+        <div className="flex items-center space-x-2 text-sm text-gray-600">
+          <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
+          <span>{allActiveSessions.length} онлайн</span>
+        </div>
+      </div>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="space-y-4">
         {allActiveSessions.map((session, index) => (
           <SessionCard 
             key={session.id} 
