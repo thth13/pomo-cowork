@@ -12,22 +12,22 @@ interface Task {
   description: string
   pomodoros: number
   completedPomodoros: number
-  priority: 'Критичный' | 'Высокий' | 'Средний' | 'Низкий'
+  priority: 'Critical' | 'High' | 'Medium' | 'Low'
   completed: boolean
   isPending?: boolean
 }
 
 const priorityColors = {
-  'Критичный': 'text-red-600',
-  'Высокий': 'text-orange-600',
-  'Средний': 'text-green-600',
-  'Низкий': 'text-blue-600',
+  'Critical': 'text-red-600',
+  'High': 'text-orange-600',
+  'Medium': 'text-green-600',
+  'Low': 'text-blue-600',
 }
 
 export default function TaskList() {
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [newTaskPriority, setNewTaskPriority] = useState<'Критичный' | 'Высокий' | 'Средний' | 'Низкий'>('Средний')
+  const [newTaskPriority, setNewTaskPriority] = useState<'Critical' | 'High' | 'Medium' | 'Low'>('Medium')
   const [isLoading, setIsLoading] = useState(true)
   const { selectedTask, setSelectedTask } = useTimerStore()
   const { user } = useAuthStore()
@@ -61,7 +61,7 @@ export default function TaskList() {
           description: task.description ?? '',
           pomodoros: task.pomodoros ?? 1,
           completedPomodoros: task.completedPomodoros ?? 0,
-          priority: task.priority ?? 'Средний',
+          priority: task.priority ?? 'Medium',
           completed: task.completed ?? false,
           isPending: false,
         }))
@@ -186,12 +186,12 @@ export default function TaskList() {
     
     setTasks(prev => [...prev, optimisticTask])
     setNewTaskTitle('')
-    setNewTaskPriority('Средний')
+    setNewTaskPriority('Medium')
 
     try {
       const token = localStorage.getItem('token')
       if (!token) {
-        alert('Войдите в аккаунт для сохранения задач')
+        alert('Login to save tasks')
         setTasks(prev => prev.filter(t => t.id !== tempId))
         return
       }
@@ -253,12 +253,12 @@ export default function TaskList() {
       <div className="p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-            Мои задачи
+            My Tasks
           </h3>
           <button
             onClick={addTask}
             className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-lg transition-colors"
-            aria-label="Добавить задачу"
+            aria-label="Add task"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -269,7 +269,7 @@ export default function TaskList() {
         <div className="space-y-2">
           <input
             type="text"
-            placeholder="Добавить новую задачу..."
+            placeholder="Add new task..."
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             onKeyPress={handleKeyPress}
@@ -328,7 +328,7 @@ export default function TaskList() {
       <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
         {isLoading ? (
           <div className="text-center py-8 text-gray-500 dark:text-slate-400">
-            Загрузка задач...
+            Loading tasks...
           </div>
         ) : (
           <AnimatePresence mode="popLayout" initial={false}>
@@ -361,7 +361,7 @@ export default function TaskList() {
                       ? 'border-blue-500 bg-blue-500'
                       : 'border-gray-300 dark:border-slate-500 hover:border-blue-500'
                   } ${task.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  aria-label={task.completed ? 'Отменить выполнение' : 'Отметить как выполненное'}
+                  aria-label={task.completed ? 'Uncheck' : 'Mark as completed'}
                 >
                   <svg
                     className={`w-3 h-3 text-white transition-opacity ${
@@ -417,7 +417,7 @@ export default function TaskList() {
                   className={`text-gray-400 hover:text-red-500 transition-colors ${
                     task.isPending ? 'opacity-50 cursor-not-allowed hover:text-gray-400' : ''
                   }`}
-                  aria-label="Удалить задачу"
+                  aria-label="Delete task"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -431,7 +431,7 @@ export default function TaskList() {
         
         {!isLoading && tasks.length === 0 && (
           <div className="text-center py-8 text-gray-500 dark:text-slate-400">
-            {user ? 'Нет задач. Добавьте новую задачу выше.' : 'Войдите в аккаунт для управления задачами.'}
+            {user ? 'No tasks. Add a new task above.' : 'Login to manage tasks.'}
           </div>
         )}
       </div>

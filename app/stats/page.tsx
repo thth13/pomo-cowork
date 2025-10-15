@@ -124,14 +124,14 @@ export default function StatsPage() {
     xAxis: {
       categories: stats?.weeklyActivity?.map(item => {
         if (activityPeriod === '365') {
-          // Для года показываем месяцы (item.date в формате 'yyyy-MM')
+          // For year, show months (item.date format 'yyyy-MM')
           const [year, month] = item.date.split('-')
           const date = new Date(parseInt(year), parseInt(month) - 1, 1)
-          return date.toLocaleDateString('ru-RU', { month: 'short' })
+          return date.toLocaleDateString('en-US', { month: 'short' })
         } else {
           const date = new Date(item.date)
           if (activityPeriod === '7') {
-            const days = ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб']
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
             return days[date.getDay()]
           } else {
             return date.getDate().toString()
@@ -148,7 +148,7 @@ export default function StatsPage() {
     },
     yAxis: {
       title: { 
-        text: 'Помодоро',
+        text: 'Pomodoros',
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       },
       gridLineColor: isDark ? '#334155' : '#f3f4f6',
@@ -166,7 +166,7 @@ export default function StatsPage() {
     },
     series: [{
       type: 'column',
-      name: 'Помодоро',
+      name: 'Pomodoros',
       data: stats?.weeklyActivity?.map(s => s.pomodoros) || [],
       color: '#3b82f6'
     }]
@@ -188,7 +188,7 @@ export default function StatsPage() {
       lineWidth: 0
     },
     yAxis: {
-      categories: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+      categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       title: { text: '' },
       reversed: true,
       labels: {
@@ -221,13 +221,13 @@ export default function StatsPage() {
     tooltip: {
       formatter: function() {
         const point = this as any
-        // Находим дату из данных
+        // Find date from data
         const dataPoint = stats?.yearlyHeatmap?.find(
           item => item.week === point.x && item.dayOfWeek === point.y
         )
         const dateStr = dataPoint?.date || ''
-        return '<b>' + point.value + '</b> помодоро<br>' + 
-               (dateStr ? new Date(dateStr).toLocaleDateString('ru-RU') : '')
+        return '<b>' + point.value + '</b> pomodoros<br>' + 
+               (dateStr ? new Date(dateStr).toLocaleDateString('en-US') : '')
       }
     },
     plotOptions: {
@@ -239,7 +239,7 @@ export default function StatsPage() {
     },
     series: [{
       type: 'heatmap',
-      name: 'Помодоро',
+      name: 'Pomodoros',
       data: generateYearlyHeatmapData(),
       colsize: 1,
       rowsize: 1
@@ -251,7 +251,7 @@ export default function StatsPage() {
     title: { text: '' },
     credits: { enabled: false },
     xAxis: {
-      categories: stats?.monthlyBreakdown?.map(m => m.month) || ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'],
+      categories: stats?.monthlyBreakdown?.map(m => m.month) || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
       lineColor: isDark ? '#475569' : '#e5e7eb',
       tickColor: isDark ? '#475569' : '#e5e7eb',
       labels: {
@@ -260,7 +260,7 @@ export default function StatsPage() {
     },
     yAxis: {
       title: { 
-        text: 'Помодоро',
+        text: 'Pomodoros',
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       },
       gridLineColor: isDark ? '#334155' : '#f3f4f6',
@@ -280,7 +280,7 @@ export default function StatsPage() {
     },
     series: [{
       type: 'line',
-      name: 'Помодоро за месяц',
+      name: 'Pomodoros per Month',
       data: stats?.monthlyBreakdown?.map(m => m.pomodoros) || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       color: '#3b82f6'
     }]
@@ -306,7 +306,7 @@ export default function StatsPage() {
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-          <span className="text-lg text-slate-600 dark:text-slate-400">Загрузка...</span>
+          <span className="text-lg text-slate-600 dark:text-slate-400">Loading...</span>
         </div>
       </div>
     )
@@ -318,8 +318,8 @@ export default function StatsPage() {
       
       <main className="max-w-7xl mx-auto px-8 py-12">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Моя статистика</h1>
-          <p className="text-gray-600 dark:text-slate-300">Отслеживайте свою продуктивность и прогресс</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Statistics</h1>
+          <p className="text-gray-600 dark:text-slate-300">Track your productivity and progress</p>
         </div>
 
         {/* Overview Stats */}
@@ -336,7 +336,7 @@ export default function StatsPage() {
               <span className="text-sm text-green-600 font-medium">+12%</span>
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalPomodoros.toLocaleString()}</div>
-            <div className="text-sm text-gray-600 dark:text-slate-300">Всего помодоро</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Total Pomodoros</div>
           </motion.div>
 
           <motion.div 
@@ -351,8 +351,8 @@ export default function StatsPage() {
               </div>
               <span className="text-sm text-green-600 font-medium">+8%</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalHours}ч {totalMinutesRemainder}м</div>
-            <div className="text-sm text-gray-600 dark:text-slate-300">Общее время фокуса</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalHours}h {totalMinutesRemainder}m</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Total Focus Time</div>
           </motion.div>
 
           <motion.div 
@@ -365,11 +365,11 @@ export default function StatsPage() {
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faCalendarCheck} className="text-orange-600 text-lg" />
               </div>
-              <span className="text-sm text-green-600 font-medium">+2 дня</span>
+              <span className="text-sm text-green-600 font-medium">+2 days</span>
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
-            <div className="text-sm text-gray-600 dark:text-slate-300">Текущая серия</div>
-            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">дней подряд</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">days in a row</div>
           </motion.div>
 
           <motion.div 
@@ -384,9 +384,9 @@ export default function StatsPage() {
               </div>
               <span className="text-sm text-green-600 font-medium">+3%</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{avgTimePerDay}м</div>
-            <div className="text-sm text-gray-600 dark:text-slate-300">Среднее время в день</div>
-            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">За активные дни</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{avgTimePerDay}m</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Average Daily Time</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">On active days</div>
           </motion.div>
 
           <motion.div 
@@ -401,9 +401,9 @@ export default function StatsPage() {
               </div>
               <span className="text-sm text-green-600 font-medium">+18%</span>
             </div>
-            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{focusTimeThisMonth}ч {focusTimeThisMonthMinutes}м</div>
-            <div className="text-sm text-gray-600 dark:text-slate-300">Время фокуса</div>
-            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">Этот месяц</div>
+            <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{focusTimeThisMonth}h {focusTimeThisMonthMinutes}m</div>
+            <div className="text-sm text-gray-600 dark:text-slate-300">Focus Time</div>
+            <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">This month</div>
           </motion.div>
         </div>
 
@@ -417,9 +417,9 @@ export default function StatsPage() {
           >
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                {activityPeriod === '7' && 'Активность за неделю'}
-                {activityPeriod === '30' && 'Активность за месяц'}
-                {activityPeriod === '365' && 'Активность за год'}
+                {activityPeriod === '7' && 'Weekly Activity'}
+                {activityPeriod === '30' && 'Monthly Activity'}
+                {activityPeriod === '365' && 'Yearly Activity'}
               </h3>
               <div className="flex items-center space-x-2">
                 <button 
@@ -430,7 +430,7 @@ export default function StatsPage() {
                       : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                   }`}
                 >
-                  7д
+                  7d
                 </button>
                 <button 
                   onClick={() => setActivityPeriod('30')}
@@ -440,7 +440,7 @@ export default function StatsPage() {
                       : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                   }`}
                 >
-                  30д
+                  30d
                 </button>
                 <button 
                   onClick={() => setActivityPeriod('365')}
@@ -450,7 +450,7 @@ export default function StatsPage() {
                       : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                   }`}
                 >
-                  Год
+                  Year
                 </button>
               </div>
             </div>
@@ -466,10 +466,10 @@ export default function StatsPage() {
           className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 mb-8"
         >
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Карта активности за год</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
             <div className="flex items-center space-x-4">
               <div className="text-sm text-gray-600 dark:text-slate-300">
-                <span className="font-medium">{totalPomodoros.toLocaleString()}</span> помодоро в {new Date().getFullYear()}
+                <span className="font-medium">{totalPomodoros.toLocaleString()}</span> pomodoros in {new Date().getFullYear()}
               </div>
               <select className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
                 <option>{new Date().getFullYear()}</option>
@@ -480,7 +480,7 @@ export default function StatsPage() {
           <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
           
           <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 mt-4">
-            <span>Меньше</span>
+            <span>Less</span>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
               <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
@@ -488,24 +488,24 @@ export default function StatsPage() {
               <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
               <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
             </div>
-            <span>Больше</span>
+            <span>More</span>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">87%</div>
-              <div className="text-sm text-gray-600 dark:text-slate-300">Лучшая неделя</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">15-21 мая</div>
+              <div className="text-sm text-gray-600 dark:text-slate-300">Best Week</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">May 15-21</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">234</div>
-              <div className="text-sm text-gray-600 dark:text-slate-300">Активных дней</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">из 365 дней</div>
+              <div className="text-sm text-gray-600 dark:text-slate-300">Active Days</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">of 365 days</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">18</div>
-              <div className="text-sm text-gray-600 dark:text-slate-300">Максимальная серия</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">дней подряд</div>
+              <div className="text-sm text-gray-600 dark:text-slate-300">Longest Streak</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">days in a row</div>
             </div>
           </div>
         </motion.div>
@@ -518,7 +518,7 @@ export default function StatsPage() {
             transition={{ delay: 0.8 }}
             className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
           >
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Тренды продуктивности</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Productivity Trends</h3>
             
             <div className="space-y-4">
               <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
@@ -527,7 +527,7 @@ export default function StatsPage() {
                     <FontAwesomeIcon icon={faArrowUp} className="text-green-600 dark:text-green-400 text-sm" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Лучшее время</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Best Time</div>
                     <div className="text-xs text-gray-500 dark:text-slate-400">
                       {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
                     </div>
@@ -535,7 +535,7 @@ export default function StatsPage() {
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestTime?.efficiency || 0}%</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400">эффективность</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">efficiency</div>
                 </div>
               </div>
 
@@ -545,13 +545,13 @@ export default function StatsPage() {
                     <FontAwesomeIcon icon={faCalendar} className="text-blue-600 dark:text-blue-400 text-sm" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Лучший день</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400">{stats?.productivityTrends?.bestDay?.name || 'Нет данных'}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Best Day</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">{stats?.productivityTrends?.bestDay?.name || 'No data'}</div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestDay?.avgPomodoros || '0'}</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400">ср. помодоро</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">avg. pomodoros</div>
                 </div>
               </div>
 
@@ -561,13 +561,13 @@ export default function StatsPage() {
                     <FontAwesomeIcon icon={faBullseye} className="text-purple-600 dark:text-purple-400 text-sm" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Фокус-режим</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400">Средняя длительность</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Focus Mode</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">Average duration</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.avgSessionDuration || 0}м</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400">за сессию</div>
+                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.avgSessionDuration || 0}m</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">per session</div>
                 </div>
               </div>
 
@@ -577,13 +577,13 @@ export default function StatsPage() {
                     <FontAwesomeIcon icon={faTasks} className="text-orange-600 dark:text-orange-400 text-sm" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Завершенные задачи</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400">За эту неделю</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">Completed Tasks</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">This week</div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400">из {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">of {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
                 </div>
               </div>
             </div>
@@ -595,7 +595,7 @@ export default function StatsPage() {
             transition={{ delay: 0.9 }}
             className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
           >
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Разбивка по месяцам</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Monthly Breakdown</h3>
             <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
           </motion.div>
         </div>
@@ -607,38 +607,38 @@ export default function StatsPage() {
           transition={{ delay: 1.0 }}
           className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
         >
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Достижения</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Achievements</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center hover:shadow-lg transition-all">
               <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
                 <FontAwesomeIcon icon={faMedal} className="text-yellow-600 dark:text-yellow-400 text-2xl" />
               </div>
-              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Первый помодоро</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">Разблокировано</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">First Pomodoro</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">Unlocked</div>
             </div>
 
             <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center hover:shadow-lg transition-all">
               <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
                 <FontAwesomeIcon icon={faFire} className="text-orange-600 dark:text-orange-400 text-2xl" />
               </div>
-              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Неделя подряд</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">Разблокировано</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Week Streak</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">Unlocked</div>
             </div>
 
             <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center hover:shadow-lg transition-all">
               <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
                 <FontAwesomeIcon icon={faCrown} className="text-purple-600 dark:text-purple-400 text-2xl" />
               </div>
-              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">1000 помодоро</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">Разблокировано</div>
+              <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">1000 Pomodoros</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">Unlocked</div>
             </div>
 
             <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center opacity-50">
               <div className="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-3">
                 <FontAwesomeIcon icon={faRocket} className="text-gray-400 dark:text-slate-500 text-2xl" />
               </div>
-              <div className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-1">5000 помодоро</div>
+              <div className="text-sm font-medium text-gray-500 dark:text-slate-400 mb-1">5000 Pomodoros</div>
               <div className="text-xs text-gray-400 dark:text-slate-500">{totalPomodoros}/5000</div>
             </div>
           </div>

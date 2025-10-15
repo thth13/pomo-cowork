@@ -220,10 +220,10 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       {/* Header */}
       <div className="p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Общий чат</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">General Chat</h3>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
-            {/* <span className="text-sm text-gray-600 dark:text-slate-300">участников онлайн</span> */}
+            {/* <span className="text-sm text-gray-600 dark:text-slate-300">online participants</span> */}
           </div>
         </div>
       </div>
@@ -232,10 +232,10 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       <div ref={listRef} className="chat-messages flex-1 p-4 space-y-4">
         {loading ? (
           <div className="flex items-center justify-center py-8 text-gray-500 dark:text-slate-400">
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Загрузка сообщений...
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading messages...
           </div>
         ) : messages.length === 0 ? (
-          <div className="text-center text-gray-500 dark:text-slate-400 py-6">Нет сообщений. Будьте первым!</div>
+          <div className="text-center text-gray-500 dark:text-slate-400 py-6">No messages. Be the first!</div>
         ) : (
           messages.map((m) => (
             <div key={m.id}>
@@ -248,9 +248,9 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
                     'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
                   }`}>
                     {m.username} {
-                      m.action?.type === 'work_start' ? 'начал сессию фокуса' :
-                      m.action?.type === 'break_start' ? 'начал короткий перерыв' :
-                      m.action?.type === 'long_break_start' ? 'начал длинный перерыв' :
+                      m.action?.type === 'work_start' ? 'started a focus session' :
+                      m.action?.type === 'break_start' ? 'started a short break' :
+                      m.action?.type === 'long_break_start' ? 'started a long break' :
                       formatActionMessage(m.action)
                     }
                   </div>
@@ -279,7 +279,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
         )}
 
         {typing && (
-          <div className="text-xs text-gray-500 dark:text-slate-400">{typing.username} печатает...</div>
+          <div className="text-xs text-gray-500 dark:text-slate-400">{typing.username} is typing...</div>
         )}
       </div>
 
@@ -293,7 +293,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
             <input 
               value={input}
               onChange={(e) => onInputChange(e.target.value)}
-              placeholder="Написать сообщение..." 
+              placeholder="Write a message..." 
               className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
             />
             <button 

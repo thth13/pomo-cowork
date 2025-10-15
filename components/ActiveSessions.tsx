@@ -153,10 +153,10 @@ function SessionCard({ session, index, isCurrentUser = false }: {
               </span>
             </div>
             <div className="text-sm text-gray-600 dark:text-slate-300 mb-1">
-              Задача: {session.task}
+              Task: {session.task}
             </div>
             <div className="text-xs text-gray-500 dark:text-slate-400">
-              Начал в: {new Date(session.startedAt).toLocaleTimeString('ru-RU', {
+              Started: {new Date(session.startedAt).toLocaleTimeString('en-US', {
                 hour: '2-digit',
                 minute: '2-digit'
               })}
@@ -173,7 +173,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
               style={{ width: `${progressPercent}%` }}
             ></div>
           </div>
-          <div className="text-xs text-gray-500 dark:text-slate-400">осталось</div>
+          <div className="text-xs text-gray-500 dark:text-slate-400">remaining</div>
         </div>
       </div>
     </div>
@@ -248,10 +248,10 @@ export default function ActiveSessions() {
         <div className="text-center py-8">
           <User className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-300 mb-2">
-            Нет активных сессий
+            No active sessions
           </h3>
           <p className="text-gray-500 dark:text-slate-400">
-            Начните таймер, чтобы увидеть свою активность здесь!
+            Start the timer to see your activity here!
           </p>
         </div>
       </div>
@@ -260,10 +260,10 @@ export default function ActiveSessions() {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-8">
       <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Сейчас работают</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Currently Working</h2>
         <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">
           <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
-          <span>{allActiveSessions.length} онлайн</span>
+          <span>{allActiveSessions.length} online</span>
         </div>
       </div>
       

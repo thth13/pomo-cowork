@@ -523,7 +523,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     lastActionTimeRef.current = now
     
     if (!selectedTask && sessionType === SessionType.WORK) {
-      alert('Выберите задачу из списка справа')
+      alert('Select a task from the list on the right')
       return
     }
 
@@ -1075,7 +1075,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       {sessionType === SessionType.WORK && (
         <div className="mb-8 w-full max-w-md">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            Текущая задача
+            Current Task
           </label>
           <div className={`w-full bg-white dark:bg-slate-800 border rounded-xl px-4 py-3 min-h-[60px] flex flex-col justify-center ${
             selectedTask 
@@ -1095,7 +1095,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               </>
             ) : (
               <div className="text-gray-500 dark:text-gray-400 text-center">
-                Выберите задачу из списка справа
+                Select a task from the list on the right
               </div>
             )}
           </div>
@@ -1160,7 +1160,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             }`}
           >
             <Play size={20} />
-            <span>{isStarting ? 'Начинается...' : 'Начать'}</span>
+            <span>{isStarting ? 'Starting...' : 'Start'}</span>
           </button>
         ) : (
           <button 
@@ -1171,7 +1171,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             }`}
           >
             <Square size={20} />
-            <span>{isStopping ? 'Останавливается...' : 'Стоп'}</span>
+            <span>{isStopping ? 'Stopping...' : 'Stop'}</span>
           </button>
         )}
       </div>
@@ -1187,7 +1187,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
           } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          Фокус
+          Focus
         </button>
         <button 
           onClick={() => handleSessionTypeChange(SessionType.SHORT_BREAK)}
@@ -1198,7 +1198,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
           } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          Короткий перерыв
+          Short Break
         </button>
         <button 
           onClick={() => handleSessionTypeChange(SessionType.LONG_BREAK)}
@@ -1209,7 +1209,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
           } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
         >
-          Длинный перерыв
+          Long Break
         </button>
       </div>
 
