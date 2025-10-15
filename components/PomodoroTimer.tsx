@@ -38,6 +38,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     shortBreak,
     longBreak,
     longBreakAfter,
+    selectedTask,
     startSession,
     pauseSession,
     resumeSession,
@@ -521,10 +522,10 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     
     lastActionTimeRef.current = now
     
-    // if (!task.trim() && sessionType === SessionType.WORK) {
-    //   alert('Please specify what you\'re working on')
-    //   return
-    // }
+    if (!selectedTask && sessionType === SessionType.WORK) {
+      alert('Выберите задачу из списка справа')
+      return
+    }
 
     setIsStarting(true)
 
@@ -575,7 +576,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       }
 
       const duration = getSessionDuration(sessionType)
-      const taskName = task.trim() || getSessionTypeLabel(sessionType)
+      const taskName = selectedTask?.title || getSessionTypeLabel(sessionType)
 
       // Get user ID or anonymous ID
       const userId = user?.id || getOrCreateAnonymousId()
@@ -1046,6 +1047,37 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
   return (
     <div className="flex flex-col items-center" data-timer-panel>
+      {/* Current Task Display */}
+      {sessionType === SessionType.WORK && (
+        <div className="mb-8 w-full max-w-md">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            Текущая задача
+          </label>
+          <div className={`w-full bg-white dark:bg-slate-800 border rounded-xl px-4 py-3 min-h-[60px] flex flex-col justify-center ${
+            selectedTask 
+              ? 'border-blue-500 dark:border-blue-400' 
+              : 'border-gray-300 dark:border-slate-600'
+          }`}>
+            {selectedTask ? (
+              <>
+                <div className="text-gray-900 dark:text-white font-medium mb-1">
+                  {selectedTask.title}
+                </div>
+                {selectedTask.description && (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {selectedTask.description}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-gray-500 dark:text-gray-400 text-center">
+                Выберите задачу из списка справа
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Timer Container */}
       <div className="relative mb-8">
         <svg className="w-80 h-80 timer-ring" viewBox="0 0 120 120">
@@ -1157,19 +1189,6 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         </button>
       </div>
 
-      {/* Task Input */}
-      {sessionType === SessionType.WORK && !currentSession && (
-        <div className="w-full max-w-md">
-          <input
-            type="text"
-            placeholder="Над чем вы работаете?"
-            value={task}
-            onChange={(e) => setTask(e.target.value)}
-            className="input w-full"
-            maxLength={100}
-          />
-        </div>
-      )}
     </div>
   )
 }

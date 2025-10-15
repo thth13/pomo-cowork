@@ -25,6 +25,7 @@ model User {
   // Relations
   sessions PomodoroSession[]
   settings UserSettings?
+  tasks    Task[]
 
   @@map("users")
 }
@@ -51,6 +52,23 @@ model UserSettings {
   updatedAt DateTime @updatedAt
 
   @@map("user_settings")
+}
+
+model Task {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title       String
+  description String  @default("")
+  pomodoros   Int     @default(1)
+  priority    String  @default("Средний") // "Критичный", "Высокий", "Средний", "Низкий"
+  completed   Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tasks")
 }
 
 model PomodoroSession {
