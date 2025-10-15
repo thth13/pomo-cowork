@@ -25,6 +25,21 @@ export default function Navbar() {
             </div>
           </Link>
           
+          <nav className="flex items-center space-x-2">
+            <Link 
+              href="/" 
+              className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-gray-100 text-gray-700"
+            >
+              <i className="fa-solid fa-clock mr-2"></i>Таймер
+            </Link>
+            <Link 
+              href="/stats" 
+              className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-gray-100 text-gray-700"
+            >
+              <i className="fa-solid fa-chart-line mr-2"></i>Статистика
+            </Link>
+          </nav>
+          
           <div className="flex items-center space-x-6">
             <div className="flex items-center space-x-2 text-sm text-gray-600">
               <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>

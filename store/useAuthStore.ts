@@ -3,6 +3,7 @@ import { User } from '@/types'
 
 interface AuthState {
   user: User | null
+  token: string | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
@@ -13,6 +14,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
+  token: null,
   isAuthenticated: false,
   isLoading: true,
 
@@ -29,7 +31,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (response.ok) {
         const { user, token } = await response.json()
         localStorage.setItem('token', token)
-        set({ user, isAuthenticated: true })
+        set({ user, token, isAuthenticated: true })
         return true
       }
       return false
@@ -52,7 +54,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (response.ok) {
         const { user, token } = await response.json()
         localStorage.setItem('token', token)
-        set({ user, isAuthenticated: true })
+        set({ user, token, isAuthenticated: true })
         return true
       }
       return false
@@ -64,7 +66,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: () => {
     localStorage.removeItem('token')
-    set({ user: null, isAuthenticated: false })
+    set({ user: null, token: null, isAuthenticated: false })
   },
 
   checkAuth: async () => {
@@ -83,14 +85,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (response.ok) {
         const user = await response.json()
-        set({ user, isAuthenticated: true, isLoading: false })
+        set({ user, token, isAuthenticated: true, isLoading: false })
       } else {
         localStorage.removeItem('token')
-        set({ user: null, isAuthenticated: false, isLoading: false })
+        set({ user: null, token: null, isAuthenticated: false, isLoading: false })
       }
     } catch (error) {
       console.error('Auth check error:', error)
-      set({ user: null, isAuthenticated: false, isLoading: false })
+      set({ user: null, token: null, isAuthenticated: false, isLoading: false })
     }
   },
 }))
