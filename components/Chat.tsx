@@ -231,8 +231,20 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       {/* Messages */}
       <div ref={listRef} className="chat-messages flex-1 p-4 space-y-4">
         {loading ? (
-          <div className="flex items-center justify-center py-8 text-gray-500 dark:text-slate-400">
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading messages...
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-start space-x-3 animate-pulse">
+                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
+                <div className="flex-1">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-24" />
+                    <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-16" />
+                  </div>
+                  <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-full mb-2" />
+                  <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-3/4" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : messages.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-slate-400 py-6">No messages. Be the first!</div>

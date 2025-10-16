@@ -74,7 +74,7 @@ export default function Navbar() {
                 <i className="fa-solid fa-cog"></i>
               </Link>
               {isAuthenticated && user ? (
-                <Link href="/settings" className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold overflow-hidden hover:ring-2 hover:ring-primary-500 transition-all">
+                <Link href={`/user/${user.id}`} className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold overflow-hidden hover:ring-2 hover:ring-primary-500 transition-all">
                   {user.avatarUrl ? (
                     <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
                   ) : (

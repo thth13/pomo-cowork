@@ -135,8 +135,15 @@ function SessionCard({ session, index, isCurrentUser = false }: {
 
   const progressPercent = Math.max(0, ((currentTimeRemaining / ((session.duration || 25) * 60)) * 100))
 
+  const handleClick = () => {
+    router.push(`/user/${session.userId}`)
+  }
+
   return (
-    <div className="bg-gray-50 dark:bg-slate-700 rounded-xl p-6 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors">
+    <div 
+      className="bg-gray-50 dark:bg-slate-700 rounded-xl p-6 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors cursor-pointer"
+      onClick={handleClick}
+    >
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-4 flex-1">
           <div className="relative">

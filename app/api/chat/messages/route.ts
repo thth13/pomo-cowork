@@ -13,14 +13,7 @@ export async function GET(request: Request) {
   const messages = await (prisma as any).chatMessage.findMany({
     take,
     ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-    orderBy: { createdAt: 'desc' },
-    include: {
-      user: {
-        select: {
-          avatarUrl: true
-        }
-      }
-    }
+    orderBy: { createdAt: 'desc' }
   }) as Array<{ 
     id: string; 
     userId: string | null; 
@@ -30,14 +23,24 @@ export async function GET(request: Request) {
     actionType?: string;
     actionDuration?: number;
     createdAt: Date;
-    user?: { avatarUrl: string | null } | null
   }>
+
+  // Получаем уникальные userId
+  const userIds = Array.from(new Set(messages.map(m => m.userId).filter(Boolean))) as string[]
+  
+  // Загружаем аватарки пользователей
+  const users = userIds.length > 0 ? await prisma.user.findMany({
+    where: { id: { in: userIds } },
+    select: { id: true, avatarUrl: true }
+  }) : []
+  
+  const userAvatarMap = new Map(users.map(u => [u.id, u.avatarUrl]))
 
   const items: PublicChatMessage[] = messages.reverse().map((m) => ({
     id: m.id,
     userId: m.userId,
     username: m.username,
-    avatarUrl: m.user?.avatarUrl || undefined,
+    avatarUrl: m.userId ? userAvatarMap.get(m.userId) || undefined : undefined,
     text: m.text,
     timestamp: new Date(m.createdAt).getTime(),
     type: m.type === 'system' ? 'system' : 'message',
@@ -109,13 +112,6 @@ export async function POST(request: Request) {
       type: isSystem ? 'system' : 'message',
       actionType,
       actionDuration
-    },
-    include: {
-      user: {
-        select: {
-          avatarUrl: true
-        }
-      }
     }
   }) as { 
     id: string; 
@@ -126,14 +122,23 @@ export async function POST(request: Request) {
     actionType?: string;
     actionDuration?: number;
     createdAt: Date;
-    user?: { avatarUrl: string | null } | null
+  }
+
+  // Получаем аватарку пользователя, если есть userId
+  let avatarUrl: string | undefined
+  if (saved.userId) {
+    const user = await prisma.user.findUnique({
+      where: { id: saved.userId },
+      select: { avatarUrl: true }
+    })
+    avatarUrl = user?.avatarUrl || undefined
   }
 
   const result: PublicChatMessage = {
     id: saved.id,
     userId: saved.userId,
     username: saved.username,
-    avatarUrl: saved.user?.avatarUrl || undefined,
+    avatarUrl,
     text: saved.text,
     timestamp: new Date(saved.createdAt).getTime(),
     type: saved.type === 'system' ? 'system' : 'message',

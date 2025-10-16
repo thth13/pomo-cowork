@@ -38,6 +38,15 @@ export async function GET(request: NextRequest) {
           lt: tomorrow
         }
       },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            avatarUrl: true
+          }
+        }
+      },
       orderBy: {
         startedAt: 'desc'
       }
