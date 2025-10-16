@@ -12,6 +12,7 @@ import { registerServiceWorker } from '@/lib/serviceWorker'
 import dynamic from 'next/dynamic'
 const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => null })
 import TaskList from '@/components/TaskList'
+import WorkHistory from '@/components/WorkHistory'
 
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuthStore()
@@ -77,10 +78,11 @@ export default function HomePage() {
             </motion.section>
           </div>
 
-          {/* Правая колонка - Список задач и Чат */}
+          {/* Правая колонка - Список задач, Чат и История */}
           <div className="col-span-12 lg:col-span-4 space-y-8">
             <TaskList />
             <Chat />
+            <WorkHistory />
           </div>
         </div>
       </main>
