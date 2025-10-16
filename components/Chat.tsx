@@ -263,9 +263,17 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
                 </div>
               ) : (
                 <div className="flex items-start space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0">
-                    {m.username.charAt(0).toUpperCase()}
-                  </div>
+                  {m.avatarUrl ? (
+                    <img 
+                      src={m.avatarUrl} 
+                      alt={m.username}
+                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0">
+                      {m.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
                       <span className="text-sm font-medium text-gray-900 dark:text-white">{m.username}</span>
@@ -292,9 +300,17 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       {/* Input */}
       <form onSubmit={onSubmit} className="p-4 border-t border-gray-200 dark:border-slate-700">
         <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0">
-            {meName.charAt(0).toUpperCase()}
-          </div>
+          {user?.avatarUrl ? (
+            <img 
+              src={user.avatarUrl} 
+              alt={meName}
+              className="w-8 h-8 rounded-full object-cover flex-shrink-0"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0">
+              {meName.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div className="flex-1 relative">
             <input 
               value={input}

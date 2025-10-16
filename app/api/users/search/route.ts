@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         username: true,
+        avatarUrl: true,
         createdAt: true,
         sessions: {
           where: {
@@ -80,6 +81,7 @@ export async function GET(request: NextRequest) {
         return {
           id: user.id,
           username: user.username,
+          avatarUrl: user.avatarUrl,
           createdAt: user.createdAt.toISOString(),
           isOnline: false, // TODO: интеграция с socket для реального статуса
           rank,

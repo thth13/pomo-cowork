@@ -162,6 +162,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               type: activeSession.type,
               userId: user.id,
               username: user.username,
+              avatarUrl: user.avatarUrl,
               timeRemaining: currentTimeRemaining,
               startedAt: activeSession.startedAt
             }
@@ -629,6 +630,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             type: sessionType,
             userId,
             username,
+            avatarUrl: user?.avatarUrl,
             timeRemaining: duration * 60,
             startedAt: dbSession.startedAt
           }
@@ -720,7 +722,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         ...currentSession,
         duration: currentSession.duration,
         timeRemaining,
-        username
+        username,
+        avatarUrl: user?.avatarUrl
       })
       
       // Update session in database
@@ -1000,6 +1003,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             type: nextType,
             userId,
             username,
+            avatarUrl: user?.avatarUrl,
             timeRemaining: duration * 60,
             startedAt: dbSession.startedAt
           }

@@ -13,7 +13,14 @@ export async function GET(request: Request) {
   const messages = await (prisma as any).chatMessage.findMany({
     take,
     ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    include: {
+      user: {
+        select: {
+          avatarUrl: true
+        }
+      }
+    }
   }) as Array<{ 
     id: string; 
     userId: string | null; 
@@ -22,13 +29,15 @@ export async function GET(request: Request) {
     type?: string;
     actionType?: string;
     actionDuration?: number;
-    createdAt: Date 
+    createdAt: Date;
+    user?: { avatarUrl: string | null } | null
   }>
 
   const items: PublicChatMessage[] = messages.reverse().map((m) => ({
     id: m.id,
     userId: m.userId,
     username: m.username,
+    avatarUrl: m.user?.avatarUrl || undefined,
     text: m.text,
     timestamp: new Date(m.createdAt).getTime(),
     type: m.type === 'system' ? 'system' : 'message',
@@ -100,6 +109,13 @@ export async function POST(request: Request) {
       type: isSystem ? 'system' : 'message',
       actionType,
       actionDuration
+    },
+    include: {
+      user: {
+        select: {
+          avatarUrl: true
+        }
+      }
     }
   }) as { 
     id: string; 
@@ -109,13 +125,15 @@ export async function POST(request: Request) {
     type: string;
     actionType?: string;
     actionDuration?: number;
-    createdAt: Date 
+    createdAt: Date;
+    user?: { avatarUrl: string | null } | null
   }
 
   const result: PublicChatMessage = {
     id: saved.id,
     userId: saved.userId,
     username: saved.username,
+    avatarUrl: saved.user?.avatarUrl || undefined,
     text: saved.text,
     timestamp: new Date(saved.createdAt).getTime(),
     type: saved.type === 'system' ? 'system' : 'message',

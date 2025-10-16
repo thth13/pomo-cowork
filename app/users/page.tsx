@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar'
 interface UserSearchResult {
   id: string
   username: string
+  avatarUrl?: string
   createdAt: string
   isOnline: boolean
   rank: number
@@ -20,6 +21,7 @@ interface UserSearchResult {
 interface LeaderboardUser {
   id: string
   username: string
+  avatarUrl?: string
   totalHours: number
   totalPomodoros: number
   rank: number
@@ -201,9 +203,17 @@ export default function UsersPage() {
                     >
                       <div className="flex flex-col items-center text-center">
                         <div className="relative mb-4">
-                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
-                            {user.username.charAt(0).toUpperCase()}
-                          </div>
+                          {user.avatarUrl ? (
+                            <img 
+                              src={user.avatarUrl} 
+                              alt={user.username}
+                              className="w-20 h-20 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                              {user.username.charAt(0).toUpperCase()}
+                            </div>
+                          )}
                           <div className={`absolute -top-1 -right-1 w-6 h-6 ${user.isOnline ? 'bg-green-400' : 'bg-gray-400 dark:bg-slate-600'} rounded-full border-2 border-white dark:border-slate-800`}></div>
                           <div className={`absolute -top-2 -right-2 min-w-[24px] h-6 rounded-xl flex items-center justify-center text-xs font-semibold border-2 border-white dark:border-slate-800 text-white ${getRankBadgeColor(user.rank)}`}>
                             #{user.rank}
@@ -272,9 +282,17 @@ export default function UsersPage() {
                   <div className={`flex items-center justify-center w-8 h-8 text-white rounded-full text-sm font-bold ${user.rank <= 3 ? getLeaderboardBadgeColor(user.rank) : 'bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300'}`}>
                     {user.rank}
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
-                    {user.username.charAt(0).toUpperCase()}
-                  </div>
+                  {user.avatarUrl ? (
+                    <img 
+                      src={user.avatarUrl} 
+                      alt={user.username}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
+                      {user.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900 dark:text-white">{user.username}</p>
                     <p className="text-sm text-gray-600 dark:text-slate-400">{user.totalHours}h / {user.totalPomodoros} pomodoros</p>
@@ -293,9 +311,17 @@ export default function UsersPage() {
                   <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white rounded-full text-sm font-bold">
                     {currentUserRank.rank}
                   </div>
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
-                    {currentUser?.username.charAt(0).toUpperCase()}
-                  </div>
+                  {currentUser?.avatarUrl ? (
+                    <img 
+                      src={currentUser.avatarUrl} 
+                      alt={currentUser.username}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
+                      {currentUser?.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900 dark:text-white">You</p>
                     <p className="text-sm text-gray-600 dark:text-slate-400">{currentUserRank.totalHours}h / {currentUserRank.totalPomodoros} pomodoros</p>

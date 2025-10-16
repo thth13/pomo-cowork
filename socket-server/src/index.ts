@@ -12,6 +12,7 @@ interface PomodoroSession {
   id: string
   userId: string
   username: string
+  avatarUrl?: string
   task: string
   type: string
   timeRemaining: number
@@ -27,6 +28,7 @@ interface ChatMessage {
   id: string
   userId: string | null
   username: string
+  avatarUrl?: string
   text: string
   timestamp: number
   type?: 'message' | 'system'
@@ -57,6 +59,7 @@ const userConnectionCounts = new Map<string, number>()
 const anonymousSockets = new Map<string, string>()
 const anonymousConnectionCounts = new Map<string, number>()
 const userNames = new Map<string, string>()
+const userAvatars = new Map<string, string>()
 const chatMessages: ChatMessage[] = []
 
 const MAX_CHAT_HISTORY = 100
@@ -219,6 +222,7 @@ const serializeSessions = () =>
     id: session.id,
     userId: session.userId,
     username: session.username,
+    avatarUrl: session.avatarUrl,
     task: session.task,
     type: session.type,
     duration: session.duration,
@@ -331,16 +335,20 @@ io.on('connection', async (socket) => {
   await loadActiveSessionsFromDB()
   socket.emit('session-update', serializeSessions())
 
-  socket.on('join-presence', (payload?: { userId: string | null; anonymousId?: string | null; username?: string | null }) => {
+  socket.on('join-presence', (payload?: { userId: string | null; anonymousId?: string | null; username?: string | null; avatarUrl?: string | null }) => {
     const userId = payload?.userId ?? null
     const anonymousId = payload?.anonymousId ?? null
     const username = payload?.username ?? null
+    const avatarUrl = payload?.avatarUrl ?? null
 
     if (userId) {
       socket.join(`user-${userId}`)
       socketUserMap.set(socket.id, userId)
       if (username) {
         userNames.set(userId, username)
+      }
+      if (avatarUrl) {
+        userAvatars.set(userId, avatarUrl)
       }
       incrementUserConnection(userId)
     }
@@ -362,8 +370,10 @@ io.on('connection', async (socket) => {
     const anonymousId = anonymousSockets.get(socket.id)
 
     let username = 'Guest'
+    let avatarUrl: string | undefined
     if (userId) {
       username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+      avatarUrl = userAvatars.get(userId)
     } else if (anonymousId) {
       username = `Guest-${anonymousId.slice(-4)}`
     }
@@ -372,6 +382,7 @@ io.on('connection', async (socket) => {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       userId,
       username,
+      avatarUrl,
       text: rawText,
       timestamp: Date.now()
     }
@@ -428,8 +439,10 @@ io.on('connection', async (socket) => {
 
     // Send system message about session start
     let username = 'Guest'
+    let avatarUrl: string | undefined
     if (userId) {
       username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+      avatarUrl = userAvatars.get(userId)
     } else if (anonymousId) {
       username = `Guest-${anonymousId.slice(-4)}`
     }
@@ -453,6 +466,7 @@ io.on('connection', async (socket) => {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       userId,
       username,
+      avatarUrl,
       text: '',
       timestamp: Date.now(),
       type: 'system',
@@ -531,8 +545,10 @@ io.on('connection', async (socket) => {
       const userId = socketUserMap.get(socket.id) ?? null
       const anonymousId = anonymousSockets.get(socket.id)
       let username = 'Guest'
+      let avatarUrl: string | undefined
       if (userId) {
         username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+        avatarUrl = userAvatars.get(userId)
       } else if (anonymousId) {
         username = `Guest-${anonymousId.slice(-4)}`
       }
@@ -541,6 +557,7 @@ io.on('connection', async (socket) => {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         userId,
         username,
+        avatarUrl,
         text: '',
         timestamp: Date.now(),
         type: 'system',

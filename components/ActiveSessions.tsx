@@ -140,9 +140,17 @@ function SessionCard({ session, index, isCurrentUser = false }: {
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-4 flex-1">
           <div className="relative">
-            <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-slate-500 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold">
-              {session.username.charAt(0).toUpperCase()}
-            </div>
+            {session.avatarUrl ? (
+              <img 
+                src={session.avatarUrl} 
+                alt={session.username}
+                className="w-12 h-12 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-slate-500 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold">
+                {session.username.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-slate-700"></div>
           </div>
           <div className="flex-1">

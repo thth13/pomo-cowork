@@ -2,6 +2,7 @@ export interface User {
   id: string
   email: string
   username: string
+  avatarUrl?: string
   createdAt: string
   isAnonymous?: boolean
   settings?: UserSettings
@@ -57,6 +58,7 @@ export interface ActiveSession {
   id: string
   userId: string
   username: string
+  avatarUrl?: string
   task: string
   duration: number
   timeRemaining: number
@@ -85,6 +87,7 @@ export interface ChatMessage {
   id: string
   userId: string | null
   username: string
+  avatarUrl?: string
   text: string
   timestamp: number
   type?: 'message' | 'system'
@@ -98,6 +101,7 @@ export interface ChatMessage {
 export interface UserSearchResult {
   id: string
   username: string
+  avatarUrl?: string
   createdAt: string
   isOnline: boolean
   rank: number
@@ -110,6 +114,7 @@ export interface UserSearchResult {
 export interface LeaderboardUser {
   id: string
   username: string
+  avatarUrl?: string
   totalHours: number
   totalPomodoros: number
   rank: number

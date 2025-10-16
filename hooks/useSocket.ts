@@ -15,12 +15,12 @@ let authSubscribed = false
 
 const getSocketUrl = () => process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000'
 
-const buildPresencePayload = (user: User | null): { userId: string | null; anonymousId?: string | null; username?: string } => {
+const buildPresencePayload = (user: User | null): { userId: string | null; anonymousId?: string | null; username?: string; avatarUrl?: string | null } => {
   if (user?.id) {
-    return { userId: user.id, username: user.username ?? undefined, anonymousId: null }
+    return { userId: user.id, username: user.username ?? undefined, avatarUrl: user.avatarUrl ?? null, anonymousId: null }
   }
   const anonymousId = getOrCreateAnonymousId()
-  return { userId: null, anonymousId, username: getAnonymousUsername() }
+  return { userId: null, anonymousId, username: getAnonymousUsername(), avatarUrl: null }
 }
 
 const initSocketOnce = () => {

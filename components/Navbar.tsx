@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import ThemeToggle from './ThemeToggle'
+import { User } from 'lucide-react'
 
 export default function Navbar() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
@@ -73,9 +74,13 @@ export default function Navbar() {
                 <i className="fa-solid fa-cog"></i>
               </Link>
               {isAuthenticated && user ? (
-                <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold">
-                  {user.username.charAt(0).toUpperCase()}
-                </div>
+                <Link href="/settings" className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold overflow-hidden hover:ring-2 hover:ring-primary-500 transition-all">
+                  {user.avatarUrl ? (
+                    <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-4 h-4" />
+                  )}
+                </Link>
               ) : (
                 <button
                   onClick={() => setIsAuthModalOpen(true)}

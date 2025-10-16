@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         username: true,
+        avatarUrl: true,
         sessions: {
           where: {
             status: 'COMPLETED',
@@ -49,6 +50,7 @@ export async function GET(request: NextRequest) {
       return {
         id: user.id,
         username: user.username,
+        avatarUrl: user.avatarUrl,
         totalHours,
         totalPomodoros,
         totalMinutes
