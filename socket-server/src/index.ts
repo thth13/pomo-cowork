@@ -31,8 +31,9 @@ interface ChatMessage {
   timestamp: number
   type?: 'message' | 'system'
   action?: {
-    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop'
+    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop' | 'session_complete'
     duration?: number
+    task?: string
   }
 }
 
@@ -457,7 +458,10 @@ io.on('connection', async (socket) => {
       type: 'system',
       action: {
         type: actionType,
-        ...(actionType === 'work_start' && { duration: sessionData.duration })
+        ...(actionType === 'work_start' && { 
+          duration: sessionData.duration,
+          task: sessionData.task 
+        })
       }
     }
 
@@ -522,9 +526,8 @@ io.on('connection', async (socket) => {
       return // Session doesn't exist, nothing to do
     }
 
-    // Only send chat messages for manual stops, not for resets or automatic transitions
-    if (reason === 'manual') {
-      // Send system message about timer stop
+    // Send system message only when session is completed (timer finished)
+    if (reason === 'completed' && session.type === 'WORK') {
       const userId = socketUserMap.get(socket.id) ?? null
       const anonymousId = anonymousSockets.get(socket.id)
       let username = 'Guest'
@@ -542,7 +545,9 @@ io.on('connection', async (socket) => {
         timestamp: Date.now(),
         type: 'system',
         action: {
-          type: 'timer_stop'
+          type: 'session_complete',
+          task: session.task,
+          duration: session.duration
         }
       }
 

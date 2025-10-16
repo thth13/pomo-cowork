@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
@@ -11,6 +12,7 @@ export default function Navbar() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const { user, isAuthenticated } = useAuthStore()
   const { totalOnlineCount } = useConnectionStore()
+  const pathname = usePathname()
 
   return (
     <>
@@ -29,21 +31,33 @@ export default function Navbar() {
           <nav className="flex items-center space-x-2">
             <Link 
               href="/" 
-              className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300"
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                pathname === '/' 
+                  ? 'bg-red-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
+              }`}
             >
               <i className="fa-solid fa-clock mr-2"></i>Timer
             </Link>
             <Link 
               href="/users" 
-              className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300"
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                pathname === '/users' 
+                  ? 'bg-red-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
+              }`}
             >
-              <i className="fa-solid fa-users mr-2"></i>Поиск
+              <i className="fa-solid fa-users mr-2"></i>Search
             </Link>
             <Link 
               href="/stats" 
-              className="px-4 py-2 rounded-lg font-medium transition-all hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300"
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                pathname === '/stats' 
+                  ? 'bg-red-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
+              }`}
             >
-              <i className="fa-solid fa-chart-line mr-2"></i>Статистика
+              <i className="fa-solid fa-chart-line mr-2"></i>Stats
             </Link>
           </nav>
           

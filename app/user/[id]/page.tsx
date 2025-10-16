@@ -162,7 +162,7 @@ export default function UserProfilePage() {
       lineWidth: 0
     },
     yAxis: {
-      categories: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+      categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       title: { text: '' },
       reversed: false,
       labels: {
@@ -205,8 +205,8 @@ export default function UserProfilePage() {
           return weekNum === point.x && dayOfWeek === point.y
         })
         const dateStr = dataPoint?.date || ''
-        return '<b>' + point.value + '</b> помодоро<br>' + 
-               (dateStr ? new Date(dateStr).toLocaleDateString('ru-RU') : '')
+        return '<b>' + point.value + '</b> pomodoros<br>' + 
+               (dateStr ? new Date(dateStr).toLocaleDateString('en-US') : '')
       }
     },
     plotOptions: {
@@ -218,7 +218,7 @@ export default function UserProfilePage() {
     },
     series: [{
       type: 'heatmap',
-      name: 'Помодоро',
+      name: 'Pomodoros',
       data: generateHeatmapData(),
       colsize: 1,
       rowsize: 1
@@ -238,7 +238,7 @@ export default function UserProfilePage() {
       enabled: false,
     },
     xAxis: {
-      categories: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+      categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       lineColor: isDark ? '#475569' : '#e5e7eb',
       tickColor: isDark ? '#475569' : '#e5e7eb',
       lineWidth: 0,
@@ -270,7 +270,7 @@ export default function UserProfilePage() {
     },
     tooltip: {
       formatter: function(this: any) {
-        return `<b>${this.x}</b><br/>Сессий: ${this.y || 0}`
+        return `<b>${this.x}</b><br/>Sessions: ${this.y || 0}`
       }
     },
     series: [{
@@ -299,7 +299,7 @@ export default function UserProfilePage() {
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
+    return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -307,7 +307,7 @@ export default function UserProfilePage() {
   }
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('ru-RU', {
+    return new Date(dateString).toLocaleTimeString('en-US', {
       hour: '2-digit',
       minute: '2-digit'
     })
@@ -315,19 +315,19 @@ export default function UserProfilePage() {
 
   const getSessionTypeLabel = (type: string) => {
     switch (type) {
-      case 'WORK': return 'Работа'
-      case 'SHORT_BREAK': return 'Короткий перерыв'
-      case 'LONG_BREAK': return 'Длинный перерыв'
+      case 'WORK': return 'Work'
+      case 'SHORT_BREAK': return 'Short Break'
+      case 'LONG_BREAK': return 'Long Break'
       default: return type
     }
   }
 
   const getSessionStatusLabel = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return 'Завершено'
-      case 'CANCELLED': return 'Отменено'
-      case 'ACTIVE': return 'Активно'
-      case 'PAUSED': return 'Пауза'
+      case 'COMPLETED': return 'Completed'
+      case 'CANCELLED': return 'Cancelled'
+      case 'ACTIVE': return 'Active'
+      case 'PAUSED': return 'Paused'
       default: return status
     }
   }
@@ -352,10 +352,10 @@ export default function UserProfilePage() {
 
   if (loading || !chartReady) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Загрузка профиля...</p>
+          <p className="text-gray-600 dark:text-slate-400">Loading profile...</p>
         </div>
       </div>
     )
@@ -363,16 +363,16 @@ export default function UserProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😞</div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">Пользователь не найден</h1>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">User not found</h1>
+          <p className="text-gray-600 dark:text-slate-400 mb-6">{error}</p>
           <button
             onClick={() => router.back()}
             className="bg-red-500 text-white px-6 py-2 rounded-xl hover:bg-red-600 transition-colors"
           >
-            Назад
+            Back
           </button>
         </div>
       </div>
@@ -402,11 +402,11 @@ export default function UserProfilePage() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{profile.user.username}</h1>
-                <p className="text-lg text-gray-600 dark:text-slate-300 mb-3">Пользователь Pomodoro</p>
+                <p className="text-lg text-gray-600 dark:text-slate-300 mb-3">Pomodoro User</p>
                 <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-slate-400">
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4" />
-                    <span>Присоединился {formatDate(profile.user.createdAt)}</span>
+                    <span>Joined {formatDate(profile.user.createdAt)}</span>
                   </div>
                 </div>
               </div>
@@ -422,7 +422,7 @@ export default function UserProfilePage() {
                   </span>
                 </div>
                 <span className="text-xs text-gray-500 dark:text-slate-400">
-                  {isUserWorking ? 'Сейчас работает' : 'Не работает'}
+                  {isUserWorking ? 'Currently Working' : 'Not Working'}
                 </span>
               </div>
 
@@ -444,7 +444,7 @@ export default function UserProfilePage() {
                 </div>
               ) : (
                 <div className="text-center py-2 text-gray-500 dark:text-slate-400 text-sm">
-                  Сейчас не в работе
+                  Not currently working
                 </div>
               )}
             </div>
@@ -466,10 +466,10 @@ export default function UserProfilePage() {
                   <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
                     <Clock className="w-6 h-6 text-red-500 dark:text-red-400" />
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">Всего</span>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">Total</span>
                 </div>
                 <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.completedSessions}</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Помодоро завершено</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Pomodoros Completed</div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
@@ -477,10 +477,10 @@ export default function UserProfilePage() {
                   <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
                     <Flame className="w-6 h-6 text-green-500 dark:text-green-400" />
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">Серия</span>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">Streak</span>
                 </div>
                 <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{userStats?.currentStreak || 0}</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Дней подряд</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Days in a row</div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
@@ -488,12 +488,12 @@ export default function UserProfilePage() {
                   <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
                     <BarChart3 className="w-6 h-6 text-blue-500 dark:text-blue-400" />
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">Среднее</span>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">Average</span>
                 </div>
                 <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
                   {profile.stats.totalSessions > 0 ? Math.round(profile.stats.completedSessions / Math.max(1, Math.ceil((Date.now() - new Date(profile.user.createdAt).getTime()) / (1000 * 60 * 60 * 24)))) : 0}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Помодоро в день</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Pomodoros per day</div>
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
@@ -501,10 +501,10 @@ export default function UserProfilePage() {
                   <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-purple-500 dark:text-purple-400" />
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">Всего</span>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">Total</span>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.totalWorkHours}ч</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Время работы</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.totalWorkHours}h</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Work Time</div>
               </div>
             </motion.div>
 
@@ -516,11 +516,11 @@ export default function UserProfilePage() {
               className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8"
             >
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Активность за год</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Yearly Activity</h3>
               </div>
               <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 mt-4">
-                <span>Меньше</span>
+                <span>Less</span>
                 <div className="flex items-center space-x-1">
                   <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
                   <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
@@ -528,7 +528,7 @@ export default function UserProfilePage() {
                   <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
                   <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
                 </div>
-                <span>Больше</span>
+                <span>More</span>
               </div>
             </motion.div>
 
@@ -540,7 +540,7 @@ export default function UserProfilePage() {
               className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8"
             >
               <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Активность по дням недели</h3>
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Weekly Activity</h3>
               </div>
               <HighchartsReact highcharts={Highcharts} options={weeklyOptions} />
             </motion.div>
@@ -555,8 +555,8 @@ export default function UserProfilePage() {
               className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6"
             >
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Последние сессии</h3>
-                <span className="text-sm text-gray-500 dark:text-slate-400">Недавно</span>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Sessions</h3>
+                <span className="text-sm text-gray-500 dark:text-slate-400">Latest</span>
               </div>
 
               {profile.recentSessions.length > 0 ? (

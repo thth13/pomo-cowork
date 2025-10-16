@@ -46,14 +46,14 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
         return 'text-green-600 dark:text-green-400'
       case 'long_break_start':
         return 'text-blue-600 dark:text-blue-400'
-      case 'timer_stop':
-        return 'text-slate-600 dark:text-slate-400'
+      case 'session_complete':
+        return 'text-emerald-600 dark:text-emerald-400'
       default:
         return 'text-slate-600 dark:text-slate-400'
     }
   }
 
-  const formatActionMessage = (action?: { type: string; duration?: number }) => {
+  const formatActionMessage = (action?: { type: string; duration?: number; task?: string }) => {
     if (!action) return 'performed an action'
 
     switch (action.type) {
@@ -63,8 +63,8 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
         return 'started a break'
       case 'long_break_start':
         return 'started a long break'
-      case 'timer_stop':
-        return 'stopped the timer'
+      case 'session_complete':
+        return action.task ? `completed "${action.task}"` : 'completed a session'
       default:
         return 'performed an action'
     }
@@ -245,13 +245,19 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
                     m.action?.type === 'work_start' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
                     m.action?.type === 'break_start' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
                     m.action?.type === 'long_break_start' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
+                    m.action?.type === 'session_complete' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' :
                     'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
                   }`}>
                     {m.username} {
-                      m.action?.type === 'work_start' ? 'started a focus session' :
-                      m.action?.type === 'break_start' ? 'started a short break' :
-                      m.action?.type === 'long_break_start' ? 'started a long break' :
-                      formatActionMessage(m.action)
+                      m.action?.type === 'work_start' 
+                        ? `started a focus session${m.action.task ? ` "${m.action.task}"` : ''}${m.action.duration ? ` for ${m.action.duration} min` : ''}`
+                        : m.action?.type === 'break_start' 
+                        ? 'started a short break' 
+                        : m.action?.type === 'long_break_start' 
+                        ? 'started a long break' 
+                        : m.action?.type === 'session_complete'
+                        ? `completed${m.action.task ? ` "${m.action.task}"` : ' a focus session'} 🎉`
+                        : formatActionMessage(m.action)
                     }
                   </div>
                 </div>

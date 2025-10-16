@@ -34,6 +34,7 @@ export default function UsersPage() {
   const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true)
   const [page, setPage] = useState(1)
 
   // Загрузка всех пользователей и топа при монтировании
@@ -56,6 +57,7 @@ export default function UsersPage() {
   }, [searchQuery, allUsers])
 
   const loadLeaderboard = async () => {
+    setLeaderboardLoading(true)
     try {
       const response = await fetch('/api/stats/leaderboard')
       if (response.ok) {
@@ -65,6 +67,8 @@ export default function UsersPage() {
       }
     } catch (error) {
       console.error('Error loading leaderboard:', error)
+    } finally {
+      setLeaderboardLoading(false)
     }
   }
 
@@ -127,6 +131,31 @@ export default function UsersPage() {
     return null
   }
 
+  const SkeletonUserCard = () => (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 min-w-[280px] animate-pulse">
+      <div className="flex flex-col items-center text-center">
+        <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-slate-700 mb-4"></div>
+        <div className="h-5 w-32 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
+          <div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
+        </div>
+        <div className="h-10 w-full bg-gray-200 dark:bg-slate-700 rounded-lg"></div>
+      </div>
+    </div>
+  )
+
+  const SkeletonLeaderboardItem = () => (
+    <div className="flex items-center space-x-3 p-3 rounded-lg border dark:border-slate-700 animate-pulse">
+      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700"></div>
+      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-slate-700"></div>
+      <div className="flex-1">
+        <div className="h-4 w-24 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+        <div className="h-3 w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
+      </div>
+    </div>
+  )
+
   return (
     <>
       <Navbar />
@@ -143,7 +172,7 @@ export default function UsersPage() {
                 </div>
                 <input 
                   type="text" 
-                  placeholder="Поиск пользователей..." 
+                  placeholder="Search users..." 
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
@@ -151,12 +180,16 @@ export default function UsersPage() {
               </div>
             </div>
 
-            {/* Результаты поиска */}
+            {/* Search Results */}
             <div className="search-results" style={{ height: 'calc(100vh - 200px)', overflowY: 'auto' }}>
               {loading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                  <p className="text-gray-600 dark:text-slate-400">Загрузка...</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
                 </div>
               ) : users.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -180,11 +213,11 @@ export default function UsersPage() {
                         <div className="flex items-center justify-center gap-3 text-sm text-gray-500 dark:text-slate-400 mb-4">
                           <div className="flex items-center space-x-1 whitespace-nowrap">
                             <i className="fa-solid fa-clock"></i>
-                            <span>{user.stats.totalHours} ч</span>
+                            <span>{user.stats.totalHours}h</span>
                           </div>
                           <div className="flex items-center space-x-1 whitespace-nowrap">
                             <i className="fa-solid fa-fire text-red-500"></i>
-                            <span>{user.stats.totalPomodoros} п</span>
+                            <span>{user.stats.totalPomodoros}p</span>
                           </div>
                         </div>
                         <button 
@@ -194,7 +227,7 @@ export default function UsersPage() {
                             router.push(`/user/${user.id}`)
                           }}
                         >
-                          Профиль
+                          Profile
                         </button>
                       </div>
                     </div>
@@ -203,24 +236,34 @@ export default function UsersPage() {
               ) : (
                 <div className="text-center py-12">
                   <i className="fa-solid fa-users text-gray-300 dark:text-slate-600 text-6xl mb-4"></i>
-                  <p className="text-gray-500 dark:text-slate-400">Пользователи не найдены</p>
+                  <p className="text-gray-500 dark:text-slate-400">No users found</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* Боковая панель с топом */}
+          {/* Leaderboard Sidebar */}
           <div className="w-80 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 h-fit sticky top-8">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Топ по часам</h3>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Top by Hours</h3>
               <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-slate-400">
                 <i className="fa-solid fa-trophy text-yellow-500"></i>
-                <span>Неделя</span>
+                <span>Week</span>
               </div>
             </div>
 
             <div className="space-y-4">
-              {leaderboard.slice(0, 7).map((user) => (
+              {leaderboardLoading ? (
+                <>
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                </>
+              ) : leaderboard.slice(0, 7).map((user) => (
                 <div 
                   key={user.id}
                   className={`flex items-center space-x-3 p-3 rounded-lg border dark:border-slate-700 cursor-pointer transition-all hover:shadow-md ${getLeaderboardItemStyle(user.rank)}`}
@@ -234,14 +277,14 @@ export default function UsersPage() {
                   </div>
                   <div className="flex-1">
                     <p className="font-semibold text-gray-900 dark:text-white">{user.username}</p>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">{user.totalHours} ч / {user.totalPomodoros} помодоро</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">{user.totalHours}h / {user.totalPomodoros} pomodoros</p>
                   </div>
                   {getLeaderboardIcon(user.rank)}
                 </div>
               ))}
             </div>
 
-            {currentUserRank && (
+            {currentUserRank && !leaderboardLoading && (
               <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
                 <div 
                   className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 cursor-pointer"
@@ -254,10 +297,10 @@ export default function UsersPage() {
                     {currentUser?.username.charAt(0).toUpperCase()}
                   </div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900 dark:text-white">Вы</p>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">{currentUserRank.totalHours} ч / {currentUserRank.totalPomodoros} помодоро</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">You</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">{currentUserRank.totalHours}h / {currentUserRank.totalPomodoros} pomodoros</p>
                   </div>
-                  <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">Ваше место</span>
+                  <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">Your rank</span>
                 </div>
               </div>
             )}

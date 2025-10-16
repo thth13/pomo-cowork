@@ -1,7 +1,6 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useThemeStore } from '@/store/useThemeStore'
@@ -301,16 +300,23 @@ export default function StatsPage() {
 
   const progressDashoffset = 314.16 - (314.16 * progress) / 100
 
-  if (loading || !chartReady) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-          <span className="text-lg text-slate-600 dark:text-slate-400">Loading...</span>
-        </div>
+  const SkeletonCard = () => (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
+      <div className="flex items-center justify-between mb-4">
+        <div className="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-xl"></div>
+        <div className="h-4 w-12 bg-gray-200 dark:bg-slate-700 rounded"></div>
       </div>
-    )
-  }
+      <div className="h-8 w-24 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+      <div className="h-4 w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
+    </div>
+  )
+
+  const SkeletonChart = () => (
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
+      <div className="h-6 w-40 bg-gray-200 dark:bg-slate-700 rounded mb-6"></div>
+      <div className="h-64 bg-gray-200 dark:bg-slate-700 rounded"></div>
+    </div>
+  )
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
@@ -322,13 +328,38 @@ export default function StatsPage() {
           <p className="text-gray-600 dark:text-slate-300">Track your productivity and progress</p>
         </div>
 
-        {/* Overview Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
-          >
+        {loading || !chartReady ? (
+          <>
+            {/* Skeleton Overview Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+
+            {/* Skeleton Chart */}
+            <div className="mb-8">
+              <SkeletonChart />
+            </div>
+
+            {/* Skeleton Heatmap */}
+            <div className="mb-8">
+              <SkeletonChart />
+            </div>
+
+            {/* Skeleton Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+              <SkeletonChart />
+              <SkeletonChart />
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Overview Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faClock} className="text-red-600 text-lg" />
@@ -337,14 +368,9 @@ export default function StatsPage() {
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalPomodoros.toLocaleString()}</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Total Pomodoros</div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
-          >
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faStopwatch} className="text-blue-600 text-lg" />
@@ -353,14 +379,9 @@ export default function StatsPage() {
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalHours}h {totalMinutesRemainder}m</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Total Focus Time</div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
-          >
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faCalendarCheck} className="text-orange-600 text-lg" />
@@ -370,14 +391,9 @@ export default function StatsPage() {
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
             <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">days in a row</div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
-          >
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faCalendarDays} className="text-purple-600 text-lg" />
@@ -387,14 +403,9 @@ export default function StatsPage() {
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{avgTimePerDay}m</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Average Daily Time</div>
             <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">On active days</div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all"
-          >
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between mb-4">
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faFire} className="text-green-600 text-lg" />
@@ -404,17 +415,12 @@ export default function StatsPage() {
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{focusTimeThisMonth}h {focusTimeThisMonthMinutes}m</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Focus Time</div>
             <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">This month</div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Weekly Chart */}
         <div className="mb-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
-          >
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                 {activityPeriod === '7' && 'Weekly Activity'}
@@ -455,16 +461,11 @@ export default function StatsPage() {
               </div>
             </div>
             <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
-          </motion.div>
+          </div>
         </div>
 
         {/* Yearly Heatmap */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 mb-8"
-        >
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
             <div className="flex items-center space-x-4">
@@ -508,16 +509,11 @@ export default function StatsPage() {
               <div className="text-xs text-gray-500 dark:text-slate-400">days in a row</div>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Productivity Trends & Monthly Breakdown */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
-          >
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Productivity Trends</h3>
             
             <div className="space-y-4">
@@ -587,18 +583,15 @@ export default function StatsPage() {
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
 
-          <motion.div 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-            className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
-          >
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Monthly Breakdown</h3>
             <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
-          </motion.div>
+          </div>
         </div>
+          </>
+        )}
 
         {/* Achievements */}
         {/* <motion.div 
