@@ -601,7 +601,7 @@ export default function StatsPage() {
         </div>
 
         {/* Achievements */}
-        <motion.div 
+        {/* <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.0 }}
@@ -642,7 +642,7 @@ export default function StatsPage() {
               <div className="text-xs text-gray-400 dark:text-slate-500">{totalPomodoros}/5000</div>
             </div>
           </div>
-        </motion.div>
+        </motion.div> */}
       </main>
     </div>
   )

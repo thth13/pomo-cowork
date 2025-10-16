@@ -262,12 +262,12 @@ export default function UsersPage() {
               </div>
             )}
 
-            <button 
+            {/* <button 
               className="w-full mt-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all"
               onClick={() => router.push('/stats')}
             >
               Полный рейтинг
-            </button>
+            </button> */}
           </div>
         </div>
       </main>

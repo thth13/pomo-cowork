@@ -3,9 +3,16 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity } from 'lucide-react'
+import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
+import { useThemeStore } from '@/store/useThemeStore'
+import Navbar from '@/components/Navbar'
+import Highcharts from 'highcharts'
+import HighchartsReact from 'highcharts-react-official'
+import heatmapModule from 'highcharts/modules/heatmap'
+
+let isHeatmapInitialized = false
 
 interface UserProfile {
   user: {
@@ -38,28 +45,75 @@ interface UserProfile {
   }>
 }
 
+interface UserStats {
+  currentStreak: number
+  yearlyHeatmap: Array<{
+    week: number
+    dayOfWeek: number
+    pomodoros: number
+    date: string
+  }>
+  weeklyActivity: number[]
+}
+
 export default function UserProfilePage() {
   const params = useParams()
   const router = useRouter()
   const { user: currentUser } = useAuthStore()
   const { activeSessions } = useTimerStore()
+  const { theme } = useThemeStore()
   const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [chartReady, setChartReady] = useState(false)
 
   const userId = params?.id as string
+  const isDark = theme === 'dark'
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || isHeatmapInitialized) {
+      return
+    }
+
+    const initHeatmap = () => {
+      const heatmapFactory =
+        typeof heatmapModule === 'function'
+          ? heatmapModule
+          : (heatmapModule as unknown as { default?: (hc: typeof Highcharts) => void }).default
+
+      if (typeof heatmapFactory === 'function') {
+        heatmapFactory(Highcharts)
+        isHeatmapInitialized = true
+      } else {
+        console.error('Highcharts heatmap module failed to initialize')
+      }
+
+      setChartReady(true)
+    }
+
+    initHeatmap()
+  }, [])
 
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
         setLoading(true)
-        const response = await fetch(`/api/users/${userId}`)
+        const [profileResponse, statsResponse] = await Promise.all([
+          fetch(`/api/users/${userId}`),
+          fetch(`/api/users/${userId}/stats`)
+        ])
         
-        if (response.ok) {
-          const data = await response.json()
+        if (profileResponse.ok) {
+          const data = await profileResponse.json()
           setProfile(data)
         } else {
           setError('User not found')
+        }
+
+        if (statsResponse.ok) {
+          const statsData = await statsResponse.json()
+          setUserStats(statsData)
         }
       } catch (error) {
         console.error('Error fetching user profile:', error)
@@ -74,8 +128,159 @@ export default function UserProfilePage() {
     }
   }, [userId])
 
+  // Generate heatmap data for the year
+  const generateHeatmapData = () => {
+    if (!userStats?.yearlyHeatmap) return []
+    
+    return userStats.yearlyHeatmap.map(item => [
+      item.week,
+      item.dayOfWeek,
+      item.pomodoros
+    ])
+  }
+
+  // Generate weekly activity data
+  const generateWeeklyData = () => {
+    if (!userStats) return []
+    
+    return userStats.weeklyActivity
+  }
+
+  const heatmapOptions: Highcharts.Options = {
+    chart: { 
+      type: 'heatmap', 
+      backgroundColor: 'transparent',
+      height: 160,
+      spacing: [0, 0, 0, 0]
+    },
+    title: { text: '' },
+    credits: { enabled: false },
+    xAxis: {
+      visible: false,
+      min: 0,
+      gridLineWidth: 0,
+      lineWidth: 0
+    },
+    yAxis: {
+      categories: ['Вс', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'],
+      title: { text: '' },
+      reversed: false,
+      labels: {
+        style: { 
+          fontSize: '10px',
+          color: isDark ? '#cbd5e1' : '#6b7280'
+        }
+      },
+      gridLineWidth: 0,
+      lineWidth: 0
+    },
+    colorAxis: {
+      min: 0,
+      max: 10,
+      stops: isDark ? [
+        [0, '#334155'],
+        [0.25, '#14532d'],
+        [0.5, '#166534'],
+        [0.75, '#15803d'],
+        [1, '#22c55e']
+      ] : [
+        [0, '#ebedf0'],
+        [0.25, '#c6e48b'],
+        [0.5, '#7bc96f'],
+        [0.75, '#239a3b'],
+        [1, '#196127']
+      ]
+    },
+    legend: { enabled: false },
+    tooltip: {
+      formatter: function() {
+        const point = this as any
+        const dataPoint = userStats?.yearlyHeatmap?.find(item => {
+          const date = new Date(item.date)
+          const dayOfWeek = date.getDay()
+          const startDate = new Date(userStats.yearlyHeatmap[0].date)
+          const diffTime = date.getTime() - startDate.getTime()
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+          const weekNum = Math.floor(diffDays / 7)
+          return weekNum === point.x && dayOfWeek === point.y
+        })
+        const dateStr = dataPoint?.date || ''
+        return '<b>' + point.value + '</b> помодоро<br>' + 
+               (dateStr ? new Date(dateStr).toLocaleDateString('ru-RU') : '')
+      }
+    },
+    plotOptions: {
+      heatmap: {
+        borderWidth: 2,
+        borderColor: isDark ? '#1e293b' : '#ffffff',
+        dataLabels: { enabled: false }
+      }
+    },
+    series: [{
+      type: 'heatmap',
+      name: 'Помодоро',
+      data: generateHeatmapData(),
+      colsize: 1,
+      rowsize: 1
+    }]
+  }
+
+  const weeklyOptions: Highcharts.Options = {
+    chart: {
+      type: 'column',
+      backgroundColor: 'transparent',
+      height: 320,
+    },
+    title: {
+      text: undefined,
+    },
+    credits: {
+      enabled: false,
+    },
+    xAxis: {
+      categories: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+      lineColor: isDark ? '#475569' : '#e5e7eb',
+      tickColor: isDark ? '#475569' : '#e5e7eb',
+      lineWidth: 0,
+      tickWidth: 0,
+      labels: {
+        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+      }
+    },
+    yAxis: {
+      title: {
+        text: undefined,
+      },
+      gridLineWidth: 1,
+      gridLineColor: isDark ? '#334155' : '#f3f4f6',
+      labels: {
+        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+      }
+    },
+    legend: {
+      enabled: false,
+    },
+    plotOptions: {
+      column: {
+        borderRadius: 4,
+        pointPadding: 0.2,
+        groupPadding: 0.1,
+        color: '#3b82f6',
+      }
+    },
+    tooltip: {
+      formatter: function(this: any) {
+        return `<b>${this.x}</b><br/>Сессий: ${this.y || 0}`
+      }
+    },
+    series: [{
+      type: 'column',
+      data: generateWeeklyData(),
+    }]
+  }
+
   // Check if user is online (has active session)
-  const isUserOnline = activeSessions.some(session => session.userId === userId)
+  const isUserOnline = activeSessions.some(session => session.userId === userId) || (profile?.activeSession ? true : false)
   const isUserWorking = profile?.activeSession ? true : false
 
   // Calculate time remaining for active session
@@ -101,31 +306,56 @@ export default function UserProfilePage() {
     })
   }
 
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
   const getSessionTypeLabel = (type: string) => {
     switch (type) {
-      case 'WORK': return 'Work'
-      case 'SHORT_BREAK': return 'Short break'
-      case 'LONG_BREAK': return 'Long break'
+      case 'WORK': return 'Работа'
+      case 'SHORT_BREAK': return 'Короткий перерыв'
+      case 'LONG_BREAK': return 'Длинный перерыв'
       default: return type
     }
   }
 
   const getSessionStatusLabel = (status: string) => {
     switch (status) {
-      case 'COMPLETED': return 'Completed'
-      case 'CANCELLED': return 'Cancelled'
-      case 'ACTIVE': return 'Active'
-      case 'PAUSED': return 'Paused'
+      case 'COMPLETED': return 'Завершено'
+      case 'CANCELLED': return 'Отменено'
+      case 'ACTIVE': return 'Активно'
+      case 'PAUSED': return 'Пауза'
       default: return status
     }
   }
 
-  if (loading) {
+  const getSessionIcon = (type: string) => {
+    switch (type) {
+      case 'WORK': return <Clock className="w-4 h-4 text-red-500" />
+      case 'SHORT_BREAK': return <Coffee className="w-4 h-4 text-green-500" />
+      case 'LONG_BREAK': return <Utensils className="w-4 h-4 text-blue-500" />
+      default: return <Clock className="w-4 h-4 text-gray-500" />
+    }
+  }
+
+  const getSessionBgColor = (type: string) => {
+    switch (type) {
+      case 'WORK': return 'bg-red-100'
+      case 'SHORT_BREAK': return 'bg-green-100'
+      case 'LONG_BREAK': return 'bg-blue-100'
+      default: return 'bg-gray-100'
+    }
+  }
+
+  if (loading || !chartReady) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500 mx-auto mb-4"></div>
-          <p className="text-slate-600">Loading profile...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка профиля...</p>
         </div>
       </div>
     )
@@ -133,16 +363,16 @@ export default function UserProfilePage() {
 
   if (error || !profile) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="text-6xl mb-4">😞</div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-2">User not found</h1>
-          <p className="text-slate-600 mb-6">{error}</p>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">Пользователь не найден</h1>
+          <p className="text-gray-600 mb-6">{error}</p>
           <button
             onClick={() => router.back()}
-            className="bg-primary-500 text-white px-6 py-2 rounded-lg hover:bg-primary-600 transition-colors"
+            className="bg-red-500 text-white px-6 py-2 rounded-xl hover:bg-red-600 transition-colors"
           >
-            Back
+            Назад
           </button>
         </div>
       </div>
@@ -150,190 +380,234 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <button
-            onClick={() => router.back()}
-            className="p-2 hover:bg-white dark:bg-slate-800 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6 text-slate-600" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-slate-800">{profile.user.username}</h1>
-            <p className="text-slate-600">User Profile</p>
-          </div>
-        </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
+      <Navbar />
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Profile Info */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Status Card */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="card"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-slate-800">Status</h2>
-                <div className="flex items-center gap-2">
-                  <div className={`w-3 h-3 rounded-full ${isUserOnline ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                  <span className="text-sm text-slate-600">
+      <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Profile Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-8 mb-8"
+        >
+          <div className="flex items-start justify-between">
+            <div className="flex items-center space-x-6">
+              <div className="relative">
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-3xl font-bold">
+                  {profile.user.username.charAt(0).toUpperCase()}
+                </div>
+                <div className={`absolute -top-1 -right-1 w-8 h-8 ${isUserOnline ? 'bg-green-400' : 'bg-gray-400'} rounded-full border-4 border-white dark:border-slate-800 flex items-center justify-center`}>
+                  <div className="w-3 h-3 bg-white rounded-full"></div>
+                </div>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{profile.user.username}</h1>
+                <p className="text-lg text-gray-600 dark:text-slate-300 mb-3">Пользователь Pomodoro</p>
+                <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-slate-400">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="w-4 h-4" />
+                    <span>Присоединился {formatDate(profile.user.createdAt)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Current Status */}
+            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 min-w-[280px]">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 ${isUserOnline ? 'bg-green-400' : 'bg-gray-400'} rounded-full ${isUserOnline ? 'pulse-dot' : ''}`}></div>
+                  <span className={`text-sm font-medium ${isUserOnline ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-slate-400'}`}>
                     {isUserOnline ? 'Online' : 'Offline'}
                   </span>
                 </div>
+                <span className="text-xs text-gray-500 dark:text-slate-400">
+                  {isUserWorking ? 'Сейчас работает' : 'Не работает'}
+                </span>
               </div>
 
-              {isUserWorking ? (
-                <div className="bg-primary-50 border border-primary-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3 mb-2">
-                    <Activity className="w-5 h-5 text-primary-600" />
-                    <span className="font-medium text-primary-800">Currently working</span>
+              {isUserWorking && profile.activeSession ? (
+                <div className="space-y-2">
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{profile.activeSession.task}</div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500 dark:text-slate-400">{getSessionTypeLabel(profile.activeSession.type)}</span>
+                    <span className="font-bold text-red-600 dark:text-red-400 text-lg">{getTimeRemaining()}</span>
                   </div>
-                  <p className="text-primary-700 mb-2">Task: {profile.activeSession?.task}</p>
-                  <div className="flex items-center gap-4 text-sm text-primary-600">
-                    <span>Type: {getSessionTypeLabel(profile.activeSession?.type || '')}</span>
-                    <span>Remaining: {getTimeRemaining()}</span>
+                  <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-1.5">
+                    <div 
+                      className="bg-red-500 h-1.5 rounded-full transition-all" 
+                      style={{ 
+                        width: `${Math.max(0, Math.min(100, ((Date.now() - new Date(profile.activeSession.startedAt).getTime()) / (profile.activeSession.duration * 60 * 1000)) * 100))}%` 
+                      }}
+                    ></div>
                   </div>
                 </div>
               ) : (
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-slate-500" />
-                    <span className="text-slate-600">Not working</span>
-                  </div>
+                <div className="text-center py-2 text-gray-500 dark:text-slate-400 text-sm">
+                  Сейчас не в работе
                 </div>
               )}
-            </motion.div>
+            </div>
+          </div>
+        </motion.div>
 
-            {/* Statistics */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Main Stats */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Stats Overview */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="card"
+              className="grid grid-cols-1 md:grid-cols-4 gap-6"
             >
-              <h2 className="text-xl font-semibold text-slate-800 mb-6">Statistics</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-primary-600">{profile.stats.totalSessions}</div>
-                  <div className="text-sm text-slate-600">Total sessions</div>
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                    <Clock className="w-6 h-6 text-red-500 dark:text-red-400" />
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">Всего</span>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{profile.stats.completedSessions}</div>
-                  <div className="text-sm text-slate-600">Completed</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.completedSessions}</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Помодоро завершено</div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                    <Flame className="w-6 h-6 text-green-500 dark:text-green-400" />
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">Серия</span>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{profile.stats.totalWorkHours}h</div>
-                  <div className="text-sm text-slate-600">Work time</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{userStats?.currentStreak || 0}</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Дней подряд</div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                    <BarChart3 className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">Среднее</span>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">{profile.stats.completionRate}%</div>
-                  <div className="text-sm text-slate-600">Success rate</div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                  {profile.stats.totalSessions > 0 ? Math.round(profile.stats.completedSessions / Math.max(1, Math.ceil((Date.now() - new Date(profile.user.createdAt).getTime()) / (1000 * 60 * 60 * 24)))) : 0}
                 </div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Помодоро в день</div>
+              </div>
+
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+                  </div>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">Всего</span>
+                </div>
+                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.totalWorkHours}ч</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Время работы</div>
               </div>
             </motion.div>
 
-            {/* Recent Sessions */}
+            {/* Activity Heatmap */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="card"
+              className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8"
             >
-              <h2 className="text-xl font-semibold text-slate-800 mb-6">Recent Sessions</h2>
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Активность за год</h3>
+              </div>
+              <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
+              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 mt-4">
+                <span>Меньше</span>
+                <div className="flex items-center space-x-1">
+                  <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
+                  <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
+                  <div className="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm"></div>
+                  <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
+                  <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
+                </div>
+                <span>Больше</span>
+              </div>
+            </motion.div>
+
+            {/* Weekly Activity Chart */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8"
+            >
+              <div className="flex items-center justify-between mb-8">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Активность по дням недели</h3>
+              </div>
+              <HighchartsReact highcharts={Highcharts} options={weeklyOptions} />
+            </motion.div>
+          </div>
+
+          {/* Recent Sessions Sidebar */}
+          <div className="lg:col-span-1">
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6"
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Последние сессии</h3>
+                <span className="text-sm text-gray-500 dark:text-slate-400">Недавно</span>
+              </div>
+
               {profile.recentSessions.length > 0 ? (
-                <div className="space-y-3">
-                  {profile.recentSessions.map((session) => (
-                    <div key={session.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium text-slate-800">{session.task}</p>
-                        <div className="flex items-center gap-4 text-sm text-slate-600">
-                          <span>{getSessionTypeLabel(session.type)}</span>
-                          <span>{session.duration} min</span>
-                          <span className={`px-2 py-1 rounded text-xs ${
-                            session.status === 'COMPLETED' ? 'bg-green-100 text-green-700' :
-                            session.status === 'CANCELLED' ? 'bg-red-100 text-red-700' :
-                            'bg-yellow-100 text-yellow-700'
-                          }`}>
-                            {getSessionStatusLabel(session.status)}
-                          </span>
+                <>
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto">
+                    {profile.recentSessions.map((session) => (
+                      <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-8 h-8 ${getSessionBgColor(session.type)} rounded-lg flex items-center justify-center`}>
+                            {getSessionIcon(session.type)}
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{getSessionTypeLabel(session.type)}</div>
+                            <div className="text-xs text-gray-500 dark:text-slate-400">{session.task}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-gray-900 dark:text-white">{session.duration}:00</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">{formatTime(session.createdAt)}</div>
                         </div>
                       </div>
-                      <div className="text-sm text-slate-500">
-                        {formatDate(session.createdAt)}
-                      </div>
+                    ))}
+                  </div>
+
+                  <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600 dark:text-slate-300">Всего времени:</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{profile.stats.totalWorkHours}ч</span>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                </>
               ) : (
-                <div className="text-center py-8 text-slate-500">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 text-slate-300" />
-                  <p>No sessions yet</p>
+                <div className="text-center py-12 text-gray-500 dark:text-slate-400">
+                  <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
+                  <p>Нет сессий</p>
                 </div>
               )}
             </motion.div>
           </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {/* User Info */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="card"
-            >
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Information</h3>
-              <div className="space-y-3">
-                <div>
-                  <div className="text-sm text-slate-500">Registration date</div>
-                  <div className="font-medium">{formatDate(profile.user.createdAt)}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-slate-500">Total sessions</div>
-                  <div className="font-medium">{profile.user.totalSessions}</div>
-                </div>
-                {currentUser?.id === userId && (
-                  <div className="pt-3 border-t border-slate-200">
-                    <button
-                      onClick={() => router.push('/profile')}
-                      className="w-full bg-primary-500 text-white py-2 px-4 rounded-lg hover:bg-primary-600 transition-colors"
-                    >
-                      My Profile
-                    </button>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-
-            {/* Quick Stats */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-              className="card"
-            >
-              <h3 className="text-lg font-semibold text-slate-800 mb-4">Achievements</h3>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <CheckCircle className="w-5 h-5 text-green-500" />
-                  <span className="text-sm">Completed {profile.stats.completedSessions} sessions</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <TrendingUp className="w-5 h-5 text-blue-500" />
-                  <span className="text-sm">{profile.stats.totalWorkHours} hours of work</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Clock className="w-5 h-5 text-purple-500" />
-                  <span className="text-sm">{profile.stats.completionRate}% success rate</span>
-                </div>
-              </div>
-            </motion.div>
-          </div>
         </div>
       </div>
+
+      <style jsx global>{`
+        .pulse-dot {
+          animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+      `}</style>
     </div>
   )
 }
