@@ -3,6 +3,8 @@ import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import ActiveSessions from '@/components/ActiveSessions'
 
+export const dynamic = 'force-dynamic'
+
 type ActiveSession = Prisma.PomodoroSessionGetPayload<{
   include: {
     user: {

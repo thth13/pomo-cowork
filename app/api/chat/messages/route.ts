@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import type { ChatMessage as PublicChatMessage } from '@/types'
 
+export const dynamic = 'force-dynamic'
+
 const MAX_LEN = 1000
 const PAGE_SIZE = 20
 

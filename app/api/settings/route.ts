@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/settings - Get user settings
 export async function GET(request: NextRequest) {
   try {

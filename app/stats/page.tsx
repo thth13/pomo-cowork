@@ -6,7 +6,6 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useThemeStore } from '@/store/useThemeStore'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
-import heatmapModule from 'highcharts/modules/heatmap'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { 
   faClock, 
@@ -40,8 +39,6 @@ interface Stats {
   }
 }
 
-let isHeatmapInitialized = false
-
 export default function StatsPage() {
   const { isAuthenticated, token } = useAuthStore()
   const { theme } = useThemeStore()
@@ -53,27 +50,19 @@ export default function StatsPage() {
   const isDark = theme === 'dark'
 
   useEffect(() => {
-    if (typeof window === 'undefined' || isHeatmapInitialized) {
-      return
+    if (typeof window !== 'undefined') {
+      // Динамически загружаем heatmap модуль только на клиенте
+      import('highcharts/modules/heatmap').then((module: any) => {
+        const heatmapFactory = module.default || module
+        if (typeof heatmapFactory === 'function') {
+          heatmapFactory(Highcharts)
+        }
+        setChartReady(true)
+      }).catch(err => {
+        console.error('Failed to load heatmap module:', err)
+        setChartReady(true) // Продолжаем работу даже если модуль не загрузился
+      })
     }
-
-    const initHeatmap = () => {
-      const heatmapFactory =
-        typeof heatmapModule === 'function'
-          ? heatmapModule
-          : (heatmapModule as unknown as { default?: (hc: typeof Highcharts) => void }).default
-
-      if (typeof heatmapFactory === 'function') {
-        heatmapFactory(Highcharts)
-        isHeatmapInitialized = true
-      } else {
-        console.error('Highcharts heatmap module failed to initialize')
-      }
-
-      setChartReady(true)
-    }
-
-    initHeatmap()
   }, [])
 
   const fetchStats = useCallback(async () => {

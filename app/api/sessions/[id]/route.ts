@@ -4,6 +4,8 @@ import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { ensureAnonymousUser } from '@/lib/anonymousServer'
 import { SessionStatus } from '@/types'
 
+export const dynamic = 'force-dynamic'
+
 // PUT /api/sessions/[id] - Update session (supports anonymous users)
 export async function PUT(
   request: NextRequest,

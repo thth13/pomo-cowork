@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 
+export const dynamic = 'force-dynamic'
+
 // PUT - обновить задачу
 export async function PUT(
   request: NextRequest,

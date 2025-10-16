@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { uploadFileToS3, deleteFileFromS3 } from '@/lib/s3'
 
+export const dynamic = 'force-dynamic'
+
 // POST /api/upload/avatar - Upload avatar through backend
 export async function POST(request: NextRequest) {
   try {

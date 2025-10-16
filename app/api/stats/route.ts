@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, differenceInDays, format } from 'date-fns'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/stats - Get user statistics
 export async function GET(request: NextRequest) {
   try {
