@@ -93,3 +93,23 @@ export interface ChatMessage {
     duration?: number
   }
 }
+
+export interface UserSearchResult {
+  id: string
+  username: string
+  createdAt: string
+  isOnline: boolean
+  rank: number
+  stats: {
+    totalHours: number
+    totalPomodoros: number
+  }
+}
+
+export interface LeaderboardUser {
+  id: string
+  username: string
+  totalHours: number
+  totalPomodoros: number
+  rank: number
+}

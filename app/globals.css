@@ -68,6 +68,24 @@
     @apply bg-slate-300 dark:bg-slate-600;
     border-radius: 2px;
   }
+
+  .search-results {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  .search-results::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .search-results::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-slate-800;
+  }
+
+  .search-results::-webkit-scrollbar-thumb {
+    @apply bg-gray-300 dark:bg-slate-600;
+    border-radius: 2px;
+  }
   
   .progress-bar {
     transition: width 0.3s ease;
