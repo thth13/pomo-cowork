@@ -1,4 +1,4 @@
-// Service Worker для фонового таймера
+// Service Worker for background timer
 let timerState = {
   isRunning: false,
   timeRemaining: 0,
@@ -9,7 +9,7 @@ let timerState = {
 
 let timerInterval = null
 
-// Обработка сообщений от клиента
+// Handle messages from client
 self.addEventListener('message', (event) => {
   const { type, payload } = event.data
 
@@ -114,11 +114,11 @@ function syncTime(payload) {
 function updateSessionId(payload) {
   const { oldSessionId, newSessionId, startedAt } = payload
   
-  // Обновляем session ID если он совпадает с текущим
+  // Update session ID if it matches current one
   if (timerState.sessionId === oldSessionId) {
     timerState.sessionId = newSessionId
     
-    // Обновляем startTime если передан новый
+    // Update startTime if new one is provided
     if (startedAt) {
       timerState.startTime = new Date(startedAt).getTime()
     }
@@ -130,7 +130,7 @@ function updateSessionId(payload) {
 function tick() {
   if (!timerState.isRunning) return
 
-  // Рассчитываем время на основе startTime для точности
+  // Calculate time based on startTime for accuracy
   const now = Date.now()
   const elapsed = Math.floor((now - timerState.startTime) / 1000)
   const newTimeRemaining = Math.max(0, timerState.duration - elapsed)
@@ -151,7 +151,7 @@ function handleTimerComplete() {
     timerInterval = null
   }
 
-  // Отправляем событие завершения
+  // Send completion event
   broadcastMessage({
     type: 'TIMER_COMPLETE',
     payload: {
@@ -159,7 +159,7 @@ function handleTimerComplete() {
     },
   })
 
-  // Показываем нотификацию только если нет видимых клиентов
+  // Show notification only if no visible clients
   notifyIfHidden()
 
   timerState = {
@@ -227,19 +227,19 @@ async function notifyIfHidden() {
   })
 }
 
-// Обработка клика по нотификации
+// Handle notification click
 self.addEventListener('notificationclick', (event) => {
   event.notification.close()
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window' }).then((clientList) => {
-      // Если есть открытое окно, фокусируемся на нем
+      // If there's an open window, focus on it
       for (const client of clientList) {
         if ('focus' in client) {
           return client.focus()
         }
       }
-      // Иначе открываем новое окно
+      // Otherwise open a new window
       if (self.clients.openWindow) {
         return self.clients.openWindow('/')
       }
@@ -247,7 +247,7 @@ self.addEventListener('notificationclick', (event) => {
   )
 })
 
-// Базовая установка Service Worker
+// Basic Service Worker installation
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...')
   self.skipWaiting()

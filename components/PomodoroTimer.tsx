@@ -302,7 +302,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
       switch (type) {
         case 'TIMER_TICK':
-          // Обновляем время из Service Worker
+          // Update time from Service Worker
           if (currentSession && payload.sessionId === currentSession.id) {
             useTimerStore.setState({ timeRemaining: payload.timeRemaining })
             
@@ -320,7 +320,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           break
         
         case 'TIMER_STATE':
-          // Синхронизация состояния при подключении
+          // State synchronization on connection
           if (payload.isRunning && payload.sessionId === currentSession?.id) {
             useTimerStore.setState({ 
               timeRemaining: payload.timeRemaining,
@@ -334,17 +334,17 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     return unsubscribe
   }, [currentSession, emitTimerTick])
 
-  // Синхронизация с Service Worker при изменении состояния
+  // Synchronize with Service Worker on state change
   useEffect(() => {
     if (!currentSession) return
 
-    // Запрашиваем текущее состояние из Service Worker
+    // Request current state from Service Worker
     sendMessageToServiceWorker({
       type: 'GET_STATE',
     })
   }, [currentSession])
 
-  // Обновление title страницы с временем таймера
+  // Update page title with timer time
   useEffect(() => {
     if (isRunning && currentSession && timeRemaining > 0) {
       const timeStr = formatTime(timeRemaining)
@@ -359,13 +359,13 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     }
   }, [isRunning, currentSession, timeRemaining])
 
-  // Локальный таймер для плавного обновления UI
+  // Local timer for smooth UI updates
   useEffect(() => {
     let localInterval: NodeJS.Timeout | undefined
     let syncInterval: NodeJS.Timeout | undefined
 
     if (isRunning && currentSession) {
-      // Локальное обновление каждую секунду для плавности
+      // Local update every second for smoothness
       localInterval = setInterval(() => {
         const session = useTimerStore.getState().currentSession
         const running = useTimerStore.getState().isRunning
@@ -377,7 +377,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           const totalDuration = session.duration * 60
           const actualTimeRemaining = Math.max(0, totalDuration - elapsed)
           
-          // Обновляем время каждую секунду
+          // Update time every second
           useTimerStore.setState({ timeRemaining: actualTimeRemaining })
           
           if (actualTimeRemaining === 0) {
@@ -386,7 +386,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         }
       }, 1000)
 
-      // Синхронизация с Service Worker каждые 5 секунд
+      // Synchronize with Service Worker every 5 seconds
       syncInterval = setInterval(() => {
         const session = useTimerStore.getState().currentSession
         const running = useTimerStore.getState().isRunning
@@ -398,7 +398,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           const totalDuration = session.duration * 60
           const actualTimeRemaining = Math.max(0, totalDuration - elapsed)
           
-          // Синхронизируем Service Worker
+          // Synchronize Service Worker
           sendMessageToServiceWorker({
             type: 'SYNC_TIME',
             payload: {

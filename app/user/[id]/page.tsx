@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useThemeStore } from '@/store/useThemeStore'
@@ -70,6 +70,7 @@ export default function UserProfilePage() {
 
   const userId = params?.id as string
   const isDark = theme === 'dark'
+  const isOwnProfile = currentUser?.id === userId
 
   useEffect(() => {
     if (typeof window === 'undefined' || isHeatmapInitialized) {
@@ -401,7 +402,19 @@ export default function UserProfilePage() {
                 </div>
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">{profile.user.username}</h1>
+                <div className="flex items-center gap-2 mb-2">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{profile.user.username}</h1>
+                  {isOwnProfile && (
+                    <button
+                      type="button"
+                      onClick={() => router.push('/settings')}
+                      aria-label="Edit profile"
+                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
                 <p className="text-lg text-gray-600 dark:text-slate-300 mb-3">Pomodoro User</p>
                 <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-slate-400">
                   <div className="flex items-center space-x-2">
@@ -411,7 +424,6 @@ export default function UserProfilePage() {
                 </div>
               </div>
             </div>
-
             {/* Current Status */}
             <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 min-w-[280px]">
               <div className="flex items-center justify-between mb-3">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { 
   Settings as SettingsIcon, 
@@ -20,6 +21,7 @@ import AvatarUploader from '@/components/AvatarUploader'
 import { playEndSound, disposeNotificationSound } from '@/lib/notificationSound'
 
 export default function SettingsPage() {
+  const router = useRouter()
   const { user, isAuthenticated } = useAuthStore()
   const { setTimerSettings } = useTimerStore()
   
@@ -39,6 +41,8 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [testMessage, setTestMessage] = useState('')
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
   const handleTestNotification = async () => {
     setTestMessage('')
@@ -105,11 +109,48 @@ export default function SettingsPage() {
     setTestMessage('')
   }
 
+  const handleAvatarSelect = (file: File | null) => {
+    setAvatarFile(file)
+    if (file) {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    } else {
+      setAvatarPreview(null)
+    }
+  }
+
   const handleSave = async () => {
     setIsSaving(true)
     
     try {
       const token = localStorage.getItem('token')
+      
+      // First, upload avatar if selected
+      let newAvatarUrl = user?.avatarUrl
+      if (avatarFile) {
+        const formData = new FormData()
+        formData.append('avatar', avatarFile)
+
+        const uploadResponse = await fetch('/api/upload/avatar', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        })
+
+        if (uploadResponse.ok) {
+          const userData = await uploadResponse.json()
+          newAvatarUrl = userData.avatarUrl
+        } else {
+          throw new Error('Failed to upload avatar')
+        }
+      }
+
+      // Then save settings
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
@@ -137,6 +178,7 @@ export default function SettingsPage() {
             ...state,
             user: {
               ...state.user,
+              avatarUrl: newAvatarUrl,
               settings: {
                 ...state.user.settings,
                 ...settings
@@ -145,8 +187,12 @@ export default function SettingsPage() {
           }
         })
         
-        setSaveMessage('Settings saved!')
-        setTimeout(() => setSaveMessage(''), 3000)
+        // Clear temporary avatar data
+        setAvatarFile(null)
+        setAvatarPreview(null)
+        
+        // Редирект на главную
+        router.push('/')
       } else {
         setSaveMessage('Failed to save settings')
       }
@@ -325,12 +371,8 @@ export default function SettingsPage() {
               <div className="grid gap-8 lg:grid-cols-[320px,1fr]">
                 <AvatarUploader
                   currentAvatar={user?.avatarUrl}
-                  onUploadComplete={(avatarUrl) => {
-                    useAuthStore.setState((state) => ({
-                      ...state,
-                      user: state.user ? { ...state.user, avatarUrl } : null,
-                    }))
-                  }}
+                  onFileSelect={handleAvatarSelect}
+                  previewUrl={avatarPreview}
                 />
 
                 <div className="flex flex-col gap-5">

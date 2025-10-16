@@ -45,10 +45,10 @@ export async function generatePresignedUrl({ userId, fileType }: GeneratePresign
   })
 
   const presignedUrl = await getSignedUrl(s3Client, command, {
-    expiresIn: 3600, // 1 час
+    expiresIn: 3600, // 1 hour
   })
 
-  // Используем CloudFront URL для публичного доступа
+  // Use CloudFront URL for public access
   const fileUrl = `${CLOUDFRONT_URL}/${fileName}`
 
   return {

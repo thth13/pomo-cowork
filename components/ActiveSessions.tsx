@@ -102,7 +102,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
     }
   }
 
-  // Если время истекло, не показываем карточку
+  // If time has run out, don't show the card
   if (currentTimeRemaining <= 0) {
     return null
   }

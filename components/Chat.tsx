@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SendHorizonal, Loader2 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSocket } from '@/hooks/useSocket'
 import type { ChatMessage } from '@/types'
@@ -16,6 +17,7 @@ interface ChatProps {
 }
 
 export default function Chat({ matchHeightSelector }: ChatProps) {
+  const router = useRouter()
   const { user } = useAuthStore()
   const {
     sendChatMessage,
@@ -274,6 +276,28 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
 
   const meName = useMemo(() => user?.username ?? 'Guest', [user])
 
+  // Группируем сообщения по датам
+  const messagesWithDates = useMemo(() => {
+    const result: Array<ChatMessage | { type: 'date'; date: string }> = []
+    let lastDate: string | null = null
+
+    messages.forEach((msg) => {
+      const msgDate = new Date(msg.timestamp).toLocaleDateString('en-US', {
+        day: 'numeric',
+        month: 'short'
+      })
+
+      if (msgDate !== lastDate) {
+        result.push({ type: 'date', date: msgDate })
+        lastDate = msgDate
+      }
+
+      result.push(msg)
+    })
+
+    return result
+  }, [messages])
+
   return (
     <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 h-[600px] flex flex-col">
       {/* Header */}
@@ -313,59 +337,84 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
         ) : messages.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-slate-400 py-6">No messages. Be the first!</div>
         ) : (
-          messages.map((m) => (
-            <div key={m.id}>
-              {m.type === 'system' ? (
-                <div className="flex justify-center">
-                  <div className={`text-xs px-3 py-1 rounded-full ${
-                    m.action?.type === 'work_start' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
-                    m.action?.type === 'break_start' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
-                    m.action?.type === 'long_break_start' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
-                    m.action?.type === 'session_complete' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' :
-                    'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
-                  }`}>
-                    {m.username} {
-                      m.action?.type === 'work_start' 
-                        ? `started a focus session${m.action.task ? ` "${m.action.task}"` : ''}${m.action.duration ? ` for ${m.action.duration} min` : ''}`
-                        : m.action?.type === 'break_start' 
-                        ? 'started a short break' 
-                        : m.action?.type === 'long_break_start' 
-                        ? 'started a long break' 
-                        : m.action?.type === 'session_complete'
-                        ? `completed${m.action.task ? ` "${m.action.task}"` : ' a focus session'} 🎉`
-                        : formatActionMessage(m.action)
-                    }
+          messagesWithDates.map((item, idx) => {
+            // Date separator
+            if ('type' in item && item.type === 'date') {
+              return (
+                <div key={`date-${idx}`} className="flex justify-center my-4">
+                  <div className="px-3 py-1 bg-gray-100 dark:bg-slate-700 rounded-full text-xs font-medium text-gray-600 dark:text-slate-300">
+                    {item.date}
                   </div>
                 </div>
-              ) : (
-                <div className="flex items-start space-x-3">
-                  {m.avatarUrl ? (
-                    <img 
-                      src={m.avatarUrl} 
-                      alt={m.username}
-                      className="w-8 h-8 rounded-full object-cover flex-shrink-0"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0">
-                      {m.username.charAt(0).toUpperCase()}
+              )
+            }
+
+            // Message (system or regular)
+            const m = item as ChatMessage
+            
+            return (
+              <div key={m.id}>
+                {m.type === 'system' ? (
+                  <div className="flex justify-center">
+                    <div className={`text-xs px-3 py-1 rounded-full ${
+                      m.action?.type === 'work_start' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
+                      m.action?.type === 'break_start' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
+                      m.action?.type === 'long_break_start' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
+                      m.action?.type === 'session_complete' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' :
+                      'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
+                    }`}>
+                      {m.username} {
+                        m.action?.type === 'work_start' 
+                          ? `started a focus session${m.action.task ? ` "${m.action.task}"` : ''}${m.action.duration ? ` for ${m.action.duration} min` : ''}`
+                          : m.action?.type === 'break_start' 
+                          ? 'started a short break' 
+                          : m.action?.type === 'long_break_start' 
+                          ? 'started a long break' 
+                          : m.action?.type === 'session_complete'
+                          ? `completed${m.action.task ? ` "${m.action.task}"` : ' a focus session'} 🎉`
+                          : formatActionMessage(m.action)
+                      }
                     </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-sm font-medium text-gray-900 dark:text-white">{m.username}</span>
-                      <span className="text-xs text-gray-500 dark:text-slate-400">
-                        {new Date(m.timestamp).toLocaleTimeString('ru-RU', {
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-700 dark:text-slate-300">{m.text}</div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))
+                ) : (
+                  <div className="flex items-start space-x-3">
+                    {m.avatarUrl ? (
+                      <img 
+                        src={m.avatarUrl} 
+                        alt={m.username}
+                        onClick={() => m.userId && router.push(`/user/${m.userId}`)}
+                        className="w-8 h-8 rounded-full object-cover flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                      />
+                    ) : (
+                      <div 
+                        onClick={() => m.userId && router.push(`/user/${m.userId}`)}
+                        className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                      >
+                        {m.username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span 
+                          onClick={() => m.userId && router.push(`/user/${m.userId}`)}
+                          className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                        >
+                          {m.username}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-slate-400">
+                          {new Date(m.timestamp).toLocaleTimeString('ru-RU', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-700 dark:text-slate-300">{m.text}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })
         )}
 
         {typing && (

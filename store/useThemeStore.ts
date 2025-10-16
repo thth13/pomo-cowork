@@ -26,7 +26,7 @@ export const useThemeStore = create<ThemeStore>()(
     {
       name: 'theme-storage',
       onRehydrateStorage: () => (state) => {
-        // Применяем тему после гидратации
+        // Apply theme after hydration
         if (state?.theme) {
           applyTheme(state.theme)
         }

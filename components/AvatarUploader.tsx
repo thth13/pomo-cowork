@@ -1,22 +1,27 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, X, User } from 'lucide-react'
 
 interface AvatarUploaderProps {
   currentAvatar?: string
-  onUploadComplete: (avatarUrl: string) => void
+  onFileSelect: (file: File | null) => void
+  previewUrl?: string | null
 }
 
-export default function AvatarUploader({ currentAvatar, onUploadComplete }: AvatarUploaderProps) {
-  const [preview, setPreview] = useState<string | null>(currentAvatar || null)
-  const [isUploading, setIsUploading] = useState(false)
+export default function AvatarUploader({ currentAvatar, onFileSelect, previewUrl }: AvatarUploaderProps) {
+  const [preview, setPreview] = useState<string | null>(previewUrl || currentAvatar || null)
   const [isDragging, setIsDragging] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const handleFileSelect = async (file: File) => {
+  // Синхронизируем превью с пропсами
+  useEffect(() => {
+    setPreview(previewUrl || currentAvatar || null)
+  }, [previewUrl, currentAvatar])
+
+  const handleFileSelect = (file: File) => {
     setError(null)
 
     // Валидация
@@ -30,51 +35,15 @@ export default function AvatarUploader({ currentAvatar, onUploadComplete }: Avat
       return
     }
 
-    // Preview
+    // Создаём локальное превью
     const reader = new FileReader()
     reader.onloadend = () => {
       setPreview(reader.result as string)
     }
     reader.readAsDataURL(file)
 
-    // Upload
-    await uploadFile(file)
-  }
-
-  const uploadFile = async (file: File) => {
-    setIsUploading(true)
-    setError(null)
-
-    try {
-      const token = localStorage.getItem('token')
-
-      // Создаём FormData для отправки файла
-      const formData = new FormData()
-      formData.append('avatar', file)
-
-      // Загружаем файл через backend
-      const response = await fetch('/api/upload/avatar', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || 'Ошибка загрузки файла')
-      }
-
-      const userData = await response.json()
-      onUploadComplete(userData.avatarUrl)
-    } catch (err) {
-      console.error('Upload error:', err)
-      setError(err instanceof Error ? err.message : 'Ошибка загрузки')
-      setPreview(currentAvatar || null)
-    } finally {
-      setIsUploading(false)
-    }
+    // Передаём файл наверх
+    onFileSelect(file)
   }
 
   const handleDrop = (e: React.DragEvent) => {
@@ -105,6 +74,7 @@ export default function AvatarUploader({ currentAvatar, onUploadComplete }: Avat
 
   const handleRemove = () => {
     setPreview(null)
+    onFileSelect(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -141,7 +111,7 @@ export default function AvatarUploader({ currentAvatar, onUploadComplete }: Avat
             )}
           </div>
 
-          {preview && !isUploading && (
+          {preview && (
             <button
               type="button"
               onClick={handleRemove}
@@ -149,12 +119,6 @@ export default function AvatarUploader({ currentAvatar, onUploadComplete }: Avat
             >
               <X className="h-4 w-4" />
             </button>
-          )}
-
-          {isUploading && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-slate-900/50 backdrop-blur-sm">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/70 border-t-transparent" />
-            </div>
           )}
         </div>
 
@@ -177,7 +141,6 @@ export default function AvatarUploader({ currentAvatar, onUploadComplete }: Avat
             accept="image/*"
             onChange={handleFileInput}
             className="hidden"
-            disabled={isUploading}
           />
 
           <div className="flex items-center gap-3">
@@ -196,10 +159,9 @@ export default function AvatarUploader({ currentAvatar, onUploadComplete }: Avat
 
           <button
             type="button"
-            className="inline-flex items-center justify-center rounded-full bg-primary-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70 disabled:cursor-not-allowed disabled:bg-primary-400/70"
-            disabled={isUploading}
+            className="inline-flex items-center justify-center rounded-full bg-primary-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
           >
-            {isUploading ? 'Uploading…' : 'Choose a file'}
+            Choose a file
           </button>
         </motion.div>
 

@@ -53,7 +53,7 @@ export default function WorkHistory() {
 
     fetchTodaySessions()
 
-    // Обновляем каждые 30 секунд
+    // Update every 30 seconds
     const interval = setInterval(fetchTodaySessions, 30000)
     return () => clearInterval(interval)
   }, [user])
@@ -61,13 +61,13 @@ export default function WorkHistory() {
   const getSessionTypeLabel = (type: string): string => {
     switch (type) {
       case 'WORK':
-        return 'Фокус'
+        return 'Focus'
       case 'SHORT_BREAK':
-        return 'Короткий перерыв'
+        return 'Short break'
       case 'LONG_BREAK':
-        return 'Длинный перерыв'
+        return 'Long break'
       default:
-        return 'Фокус'
+        return 'Focus'
     }
   }
 
@@ -87,11 +87,11 @@ export default function WorkHistory() {
   const getStatusLabel = (status: string): string => {
     switch (status) {
       case 'COMPLETED':
-        return 'Завершен'
+        return 'Completed'
       case 'CANCELLED':
-        return 'Прерван'
+        return 'Cancelled'
       default:
-        return 'Активен'
+        return 'Active'
     }
   }
 
@@ -124,16 +124,16 @@ export default function WorkHistory() {
     if (session.type === 'WORK') {
       if (session.status === 'COMPLETED') {
         const notes = [
-          'Отличная продуктивность',
-          'Хорошая концентрация',
-          'Отличная работа'
+          'Excellent productivity',
+          'Good concentration',
+          'Great work'
         ]
         return notes[Math.floor(Math.random() * notes.length)]
       } else {
-        return 'Внешние помехи'
+        return 'External interruptions'
       }
     } else {
-      return 'Отдых'
+      return 'Rest'
     }
   }
 
@@ -202,24 +202,24 @@ export default function WorkHistory() {
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700">
       <div className="p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">История работы</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">Work History</h3>
           <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-400">
             <Calendar size={16} />
-            <span>Сегодня</span>
+            <span>Today</span>
           </div>
         </div>
         <div className="flex items-center space-x-6 mt-3">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-red-500 rounded-full" />
-            <span className="text-sm text-gray-600 dark:text-slate-400">{stats.work} фокус</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">{stats.work} focus</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-blue-500 rounded-full" />
-            <span className="text-sm text-gray-600 dark:text-slate-400">{stats.shortBreak} перерыва</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">{stats.shortBreak} short</span>
           </div>
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 bg-green-500 rounded-full" />
-            <span className="text-sm text-gray-600 dark:text-slate-400">{stats.longBreak} длинный</span>
+            <span className="text-sm text-gray-600 dark:text-slate-400">{stats.longBreak} long</span>
           </div>
         </div>
       </div>
@@ -227,7 +227,7 @@ export default function WorkHistory() {
       <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
         {sessions.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-slate-400">
-            Сегодня еще нет завершенных сессий
+            No completed sessions today yet
           </div>
         ) : (
           sessions.map(session => (
@@ -278,7 +278,7 @@ export default function WorkHistory() {
                       <div className="text-sm text-gray-600 dark:text-slate-300 mb-1">{session.task}</div>
                     )}
                   <div className="text-xs text-gray-500 dark:text-slate-400">
-                    {session.duration} минут • {getProductivityNote(session)}
+                    {session.duration} minutes • {getProductivityNote(session)}
                   </div>
                   </div>
                 </div>

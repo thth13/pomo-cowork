@@ -32,7 +32,7 @@ export default function TaskList() {
   const { selectedTask, setSelectedTask } = useTimerStore()
   const { user } = useAuthStore()
 
-  // Загрузка задач при монтировании
+  // Load tasks on mount
   useEffect(() => {
     if (user) {
       loadTasks()
@@ -100,7 +100,7 @@ export default function TaskList() {
     )))
 
     if (!task.backendId) {
-      // Пока задача не синхронизирована с сервером, просто обновляем UI
+      // While task is not synced with server, just update UI
       return
     }
 
@@ -141,7 +141,7 @@ export default function TaskList() {
     setTasks(prev => prev.filter(t => t.id !== id))
 
     if (!task.backendId) {
-      // Задача ещё не синхронизирована, достаточно удалить локально
+      // Task not yet synced, just delete locally
       return
     }
 
