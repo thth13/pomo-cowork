@@ -103,6 +103,7 @@ model ChatMessage {
   type           String   @default("message") // "message" or "system"
   actionType     String? // "work_start", "break_start", "long_break_start", "timer_stop"
   actionDuration Int? // duration in minutes for work sessions
+  actionTask     String?
   createdAt      DateTime @default(now())
 
   @@index([createdAt])

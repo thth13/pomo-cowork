@@ -32,11 +32,14 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [hasMore, setHasMore] = useState(true)
   const [typing, setTyping] = useState<TypingState | null>(null)
   const listRef = useRef<HTMLDivElement | null>(null)
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [matchedHeight, setMatchedHeight] = useState<number | undefined>(undefined)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const [oldestMessageId, setOldestMessageId] = useState<string | null>(null)
 
   const getActionColor = (actionType?: string) => {
     switch (actionType) {
@@ -120,19 +123,22 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     onChatHistory(handleHistory)
     onChatMessage(handleNew)
     onChatTyping(handleTyping)
-      // Try fetch via API first
-      fetch('/api/chat/messages?take=50')
-        .then((r) => r.ok ? r.json() : null)
-        .then((data: { items: ChatMessage[] } | null) => {
-          if (data?.items) {
-            setMessages(data.items)
-            setLoading(false)
-            scrollToBottom()
-          } else {
-            requestChatHistory()
-          }
-        })
-        .catch(() => requestChatHistory())
+    
+    // Загружаем последние 20 сообщений
+    fetch('/api/chat/messages?take=20')
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } | null) => {
+        if (data?.items) {
+          setMessages(data.items)
+          setHasMore(data.hasMore)
+          setOldestMessageId(data.nextCursor)
+          setLoading(false)
+          scrollToBottom()
+        } else {
+          requestChatHistory()
+        }
+      })
+      .catch(() => requestChatHistory())
 
     return () => {
       offChatHistory(handleHistory)
@@ -157,6 +163,59 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       }
     })
   }
+
+  const loadMoreMessages = async () => {
+    if (!hasMore || loadingMore || !oldestMessageId) return
+
+    setLoadingMore(true)
+    
+    try {
+      const response = await fetch(`/api/chat/messages?take=20&cursor=${oldestMessageId}`)
+      if (!response.ok) throw new Error('Failed to load messages')
+      
+      const data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } = await response.json()
+      
+      // Сохраняем текущую высоту скролла
+      const scrollContainer = listRef.current
+      if (!scrollContainer) return
+      
+      const oldScrollHeight = scrollContainer.scrollHeight
+      const oldScrollTop = scrollContainer.scrollTop
+      
+      // Добавляем старые сообщения в начало
+      setMessages(prev => [...data.items, ...prev])
+      setHasMore(data.hasMore)
+      setOldestMessageId(data.nextCursor)
+      
+      // Восстанавливаем позицию скролла после добавления новых сообщений
+      requestAnimationFrame(() => {
+        if (scrollContainer) {
+          const newScrollHeight = scrollContainer.scrollHeight
+          scrollContainer.scrollTop = oldScrollTop + (newScrollHeight - oldScrollHeight)
+        }
+      })
+    } catch (error) {
+      console.error('Error loading more messages:', error)
+    } finally {
+      setLoadingMore(false)
+    }
+  }
+
+  // Обработчик скролла для определения когда загружать старые сообщения
+  useEffect(() => {
+    const scrollContainer = listRef.current
+    if (!scrollContainer) return
+
+    const handleScroll = () => {
+      // Если прокрутили близко к верху (в пределах 100px)
+      if (scrollContainer.scrollTop < 100 && hasMore && !loadingMore) {
+        loadMoreMessages()
+      }
+    }
+
+    scrollContainer.addEventListener('scroll', handleScroll)
+    return () => scrollContainer.removeEventListener('scroll', handleScroll)
+  }, [hasMore, loadingMore, oldestMessageId])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -230,6 +289,11 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
 
       {/* Messages */}
       <div ref={listRef} className="chat-messages flex-1 p-4 space-y-4">
+        {loadingMore && (
+          <div className="flex justify-center py-2">
+            <Loader2 className="w-5 h-5 animate-spin text-gray-400 dark:text-slate-500" />
+          </div>
+        )}
         {loading ? (
           <div className="space-y-4">
             {[1, 2, 3, 4, 5].map((i) => (
