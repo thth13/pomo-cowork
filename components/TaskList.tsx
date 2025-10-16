@@ -267,60 +267,54 @@ export default function TaskList() {
         </div>
         
         <div className="space-y-2">
-          <input
-            type="text"
-            placeholder="Add new task..."
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white"
-          />
-          
-          {/* <div className="flex flex-col space-y-1">
-            <span className="text-xs text-gray-500 dark:text-gray-400">Приоритет:</span>
-            <div className="grid grid-cols-4 gap-1">
+          <div className="relative flex items-center">
+            <input
+              type="text"
+              placeholder="Add new task..."
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              onKeyPress={handleKeyPress}
+              className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg pl-3 pr-24 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:text-white"
+            />
+            <div className="absolute right-2 flex gap-1">
               <button
-                onClick={() => setNewTaskPriority('Критичный')}
-                className={`px-2 py-1 text-xs rounded-md transition-colors whitespace-nowrap ${
-                  newTaskPriority === 'Критичный'
-                    ? 'bg-red-500 text-white'
-                    : 'bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/30'
+                onClick={() => setNewTaskPriority('Critical')}
+                className={`w-5 h-5 rounded transition-all ${
+                  newTaskPriority === 'Critical'
+                    ? 'bg-red-500 ring-2 ring-red-300 dark:ring-red-700'
+                    : 'bg-red-300 dark:bg-red-700 opacity-40 hover:opacity-70'
                 }`}
-              >
-                Критичный
-              </button>
+                title="Critical"
+              />
               <button
-                onClick={() => setNewTaskPriority('Высокий')}
-                className={`px-2 py-1 text-xs rounded-md transition-colors whitespace-nowrap ${
-                  newTaskPriority === 'Высокий'
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300 hover:bg-orange-100 dark:hover:bg-orange-900/30'
+                onClick={() => setNewTaskPriority('High')}
+                className={`w-5 h-5 rounded transition-all ${
+                  newTaskPriority === 'High'
+                    ? 'bg-orange-500 ring-2 ring-orange-300 dark:ring-orange-700'
+                    : 'bg-orange-300 dark:bg-orange-700 opacity-40 hover:opacity-70'
                 }`}
-              >
-                Высокий
-              </button>
+                title="High"
+              />
               <button
-                onClick={() => setNewTaskPriority('Средний')}
-                className={`px-2 py-1 text-xs rounded-md transition-colors whitespace-nowrap ${
-                  newTaskPriority === 'Средний'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900/30'
+                onClick={() => setNewTaskPriority('Medium')}
+                className={`w-5 h-5 rounded transition-all ${
+                  newTaskPriority === 'Medium'
+                    ? 'bg-green-500 ring-2 ring-green-300 dark:ring-green-700'
+                    : 'bg-green-300 dark:bg-green-700 opacity-40 hover:opacity-70'
                 }`}
-              >
-                Средний
-              </button>
+                title="Medium"
+              />
               <button
-                onClick={() => setNewTaskPriority('Низкий')}
-                className={`px-2 py-1 text-xs rounded-md transition-colors whitespace-nowrap ${
-                  newTaskPriority === 'Низкий'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 dark:bg-slate-600 text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                onClick={() => setNewTaskPriority('Low')}
+                className={`w-5 h-5 rounded transition-all ${
+                  newTaskPriority === 'Low'
+                    ? 'bg-blue-500 ring-2 ring-blue-300 dark:ring-blue-700'
+                    : 'bg-blue-300 dark:bg-blue-700 opacity-40 hover:opacity-70'
                 }`}
-              >
-                Низкий
-              </button>
+                title="Low"
+              />
             </div>
-          </div> */}
+          </div>
         </div>
       </div>
 
@@ -376,23 +370,24 @@ export default function TaskList() {
                 </button>
                 
                 <div className="flex-1">
-                  <div className={`text-sm font-medium mb-1 ${
-                    task.completed
-                      ? 'text-gray-500 dark:text-slate-400 line-through'
-                      : 'text-gray-900 dark:text-white'
-                  }`}>
-                    {task.title}
-                  </div>
-                  
-                  {task.description && (
-                    <div className={`text-xs mb-2 ${
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`text-sm font-medium ${
                       task.completed
-                        ? 'text-gray-400 dark:text-slate-500'
-                        : 'text-gray-500 dark:text-slate-400'
+                        ? 'text-gray-500 dark:text-slate-400 line-through'
+                        : 'text-gray-900 dark:text-white'
                     }`}>
-                      {task.description}
+                      {task.title}
                     </div>
-                  )}
+                    <div 
+                      className={`w-2 h-2 rounded-full ${
+                        task.priority === 'Critical' ? 'bg-red-500' :
+                        task.priority === 'High' ? 'bg-orange-500' :
+                        task.priority === 'Medium' ? 'bg-green-500' :
+                        'bg-blue-500'
+                      }`}
+                      title={task.priority}
+                    />
+                  </div>
                   
                   <div className="flex items-center space-x-2">
                     <div className={`flex items-center space-x-1 text-xs ${

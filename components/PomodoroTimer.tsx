@@ -522,11 +522,6 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     
     lastActionTimeRef.current = now
     
-    if (!selectedTask && sessionType === SessionType.WORK) {
-      alert('Select a task from the list on the right')
-      return
-    }
-
     setIsStarting(true)
 
     try {
