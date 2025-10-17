@@ -31,7 +31,6 @@ export async function GET(request: NextRequest) {
     // Получаем все завершенные сессии за сегодня
     const sessions = await prisma.pomodoroSession.findMany({
       where: {
-        userId: payload.userId,
         status: {
           in: ['COMPLETED', 'CANCELLED']
         },
