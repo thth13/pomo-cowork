@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { uploadFileToS3, deleteFileFromS3 } from '@/lib/s3'
+import sharp from 'sharp'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,7 +40,12 @@ export async function POST(request: NextRequest) {
 
     // Конвертируем файл в Buffer
     const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    const originalBuffer = Buffer.from(bytes)
+
+    // Сжимаем изображение в WebP с качеством 50
+    const buffer = await sharp(originalBuffer)
+      .webp({ quality: 50 })
+      .toBuffer()
 
     // Получаем текущего пользователя для проверки старого аватара
     const currentUser = await prisma.user.findUnique({
@@ -52,8 +58,8 @@ export async function POST(request: NextRequest) {
       await deleteFileFromS3(currentUser.avatarUrl)
     }
 
-    // Загружаем новый файл в S3
-    const avatarUrl = await uploadFileToS3(buffer, payload.userId, file.type)
+    // Загружаем новый файл в S3 как WebP
+    const avatarUrl = await uploadFileToS3(buffer, payload.userId, 'image/webp')
 
     // Обновляем URL аватара в БД
     const user = await prisma.user.update({

@@ -26,12 +26,12 @@ export default function AvatarUploader({ currentAvatar, onFileSelect, previewUrl
 
     // Валидация
     if (!file.type.startsWith('image/')) {
-      setError('Пожалуйста, выберите изображение')
+      setError('Please select an image file')
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Файл слишком большой (макс. 5MB)')
+    if (file.size > 20 * 1024 * 1024) {
+      setError('File is too large (max 20MB)')
       return
     }
 
@@ -152,7 +152,7 @@ export default function AvatarUploader({ currentAvatar, onFileSelect, previewUrl
                 Drag & drop your avatar
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                PNG, JPG, GIF up to 5MB
+                PNG, JPG, GIF up to 20MB
               </p>
             </div>
           </div>
