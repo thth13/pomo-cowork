@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
-import { uploadFileToS3, deleteFileFromS3 } from '@/lib/s3'
+import { deleteFileFromS3 } from '@/lib/s3'
+import { deleteAvatarFromBlob, uploadAvatarToBlob } from '@/lib/vercelBlob'
 import sharp from 'sharp'
 
 export const dynamic = 'force-dynamic'
@@ -54,12 +55,21 @@ export async function POST(request: NextRequest) {
     })
 
     // Удаляем старый аватар из S3, если он существует
-    if (currentUser?.avatarUrl) {
-      await deleteFileFromS3(currentUser.avatarUrl)
+    const lastAvatarUrl = currentUser?.avatarUrl
+    if (lastAvatarUrl) {
+      if (lastAvatarUrl.includes('vercel-storage.com')) {
+        await deleteAvatarFromBlob(lastAvatarUrl)
+      } else {
+        await deleteFileFromS3(lastAvatarUrl)
+      }
     }
 
-    // Загружаем новый файл в S3 как WebP
-    const avatarUrl = await uploadFileToS3(buffer, payload.userId, 'image/webp')
+    // Загружаем новый файл в Vercel Blob как WebP
+    const avatarUrl = await uploadAvatarToBlob({
+      buffer,
+      userId: payload.userId,
+      contentType: 'image/webp',
+    })
 
     // Обновляем URL аватара в БД
     const user = await prisma.user.update({
