@@ -826,6 +826,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     // Prevent multiple rapid clicks (debounce 1 second)
     if (isStopping || now - lastActionTimeRef.current < 1000) return
     
+    const previousSessionType = currentSession?.type ?? sessionType
+
     lastActionTimeRef.current = now
     setIsStopping(true)
 
@@ -875,6 +877,11 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         cancelSession()
       }
     } finally {
+      if (previousSessionType !== SessionType.WORK) {
+        setSessionType(SessionType.WORK)
+        previewSessionType(SessionType.WORK)
+      }
+
       // Add minimum delay to prevent too rapid clicks
       setTimeout(() => {
         setIsStopping(false)

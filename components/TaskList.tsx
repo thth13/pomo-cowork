@@ -17,6 +17,8 @@ interface Task {
   isPending?: boolean
 }
 
+const getTaskCanonicalId = (task: Task): string => task.backendId ?? task.id
+
 const priorityColors = {
   'Critical': 'text-red-600',
   'High': 'text-orange-600',
@@ -29,7 +31,7 @@ export default function TaskList() {
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskPriority, setNewTaskPriority] = useState<'Critical' | 'High' | 'Medium' | 'Low'>('Medium')
   const [isLoading, setIsLoading] = useState(true)
-  const { selectedTask, setSelectedTask, setTaskOptions } = useTimerStore()
+  const { selectedTask, setSelectedTask, setTaskOptions, isRunning } = useTimerStore()
   const { user } = useAuthStore()
 
   // Load tasks on mount
@@ -46,7 +48,7 @@ export default function TaskList() {
 
   useEffect(() => {
     setTaskOptions(tasks.map((task) => ({
-      id: task.id,
+      id: getTaskCanonicalId(task),
       title: task.title,
       description: task.description,
       completed: task.completed,
@@ -54,10 +56,34 @@ export default function TaskList() {
   }, [tasks, setTaskOptions])
 
   useEffect(() => {
-    if (selectedTask && !tasks.some((task) => task.id === selectedTask.id)) {
+    if (!selectedTask) {
+      return
+    }
+
+    const matchingTask = tasks.find((task) => getTaskCanonicalId(task) === selectedTask.id)
+
+    if (matchingTask) {
+      const canonicalId = getTaskCanonicalId(matchingTask)
+      const nextDescription = matchingTask.description ?? undefined
+
+      if (
+        selectedTask.id !== canonicalId ||
+        selectedTask.title !== matchingTask.title ||
+        (selectedTask.description ?? undefined) !== nextDescription
+      ) {
+        setSelectedTask({
+          id: canonicalId,
+          title: matchingTask.title,
+          description: nextDescription,
+        })
+      }
+      return
+    }
+
+    if (!isLoading) {
       setSelectedTask(null)
     }
-  }, [tasks, selectedTask, setSelectedTask])
+  }, [tasks, selectedTask, setSelectedTask, isLoading])
 
   const loadTasks = async () => {
     try {
@@ -93,15 +119,22 @@ export default function TaskList() {
   }
 
   const selectTask = (task: Task) => {
-    if (selectedTask?.id === task.id) {
-      setSelectedTask(null)
-    } else {
-      setSelectedTask({
-        id: task.id,
-        title: task.title,
-        description: task.description,
-      })
+    if (isRunning) {
+      return
     }
+
+    const canonicalId = getTaskCanonicalId(task)
+
+    if (selectedTask?.id === canonicalId) {
+      setSelectedTask(null)
+      return
+    }
+
+    setSelectedTask({
+      id: canonicalId,
+      title: task.title,
+      description: task.description,
+    })
   }
 
   const toggleTask = async (id: string) => {
@@ -152,7 +185,7 @@ export default function TaskList() {
 
     const originalIndex = tasks.findIndex(t => t.id === id)
 
-    if (selectedTask?.id === id) {
+    if (selectedTask?.id === getTaskCanonicalId(task)) {
       setSelectedTask(null)
     }
 
@@ -361,101 +394,109 @@ export default function TaskList() {
           </div>
         ) : (
           <AnimatePresence mode="popLayout" initial={false}>
-            {tasks.map((task) => (
-            <motion.div
-              key={task.id}
-              layout
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: -10 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => selectTask(task)}
-              className={`bg-gray-50 dark:bg-slate-700 rounded-lg p-4 transition-colors cursor-pointer ${
-                task.completed ? 'opacity-60' : ''
-              } ${
-                selectedTask?.id === task.id 
-                  ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20' 
+            {tasks.map((task) => {
+              const canonicalId = getTaskCanonicalId(task)
+              const isActive = selectedTask?.id === canonicalId
+              const isSelectionLocked = isRunning
+
+              const hoverState = isActive
+                ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                : isSelectionLocked
+                  ? ''
                   : 'hover:bg-gray-100 dark:hover:bg-slate-600'
-              }`}
-            >
-              <motion.div layout className="flex items-start space-x-3">
-                <button
-                  disabled={task.isPending}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleTask(task.id)
-                  }}
-                  className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                    task.completed
-                      ? 'border-blue-500 bg-blue-500'
-                      : 'border-gray-300 dark:border-slate-500 hover:border-blue-500'
-                  } ${task.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  aria-label={task.completed ? 'Uncheck' : 'Mark as completed'}
+
+              return (
+                <motion.div
+                  key={task.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => selectTask(task)}
+                  className={`bg-gray-50 dark:bg-slate-700 rounded-lg p-4 transition-colors ${
+                    task.completed ? 'opacity-60' : ''
+                  } ${hoverState} ${isSelectionLocked ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                 >
-                  <svg
-                    className={`w-3 h-3 text-white transition-opacity ${
-                      task.completed ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                </button>
-                
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`text-sm font-medium ${
-                      task.completed
-                        ? 'text-gray-500 dark:text-slate-400 line-through'
-                        : 'text-gray-900 dark:text-white'
-                    }`}>
-                      {task.title}
-                    </div>
-                    <div 
-                      className={`w-2 h-2 rounded-full ${
-                        task.priority === 'Critical' ? 'bg-red-500' :
-                        task.priority === 'High' ? 'bg-orange-500' :
-                        task.priority === 'Medium' ? 'bg-green-500' :
-                        'bg-blue-500'
-                      }`}
-                      title={task.priority}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    <div className={`flex items-center space-x-1 text-xs ${
-                      task.completed
-                        ? 'text-gray-400 dark:text-slate-500'
-                        : 'text-gray-500 dark:text-slate-400'
-                    }`}>
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <motion.div layout className="flex items-start space-x-3">
+                    <button
+                      disabled={task.isPending}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        toggleTask(task.id)
+                      }}
+                      className={`mt-1 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                        task.completed
+                          ? 'border-blue-500 bg-blue-500'
+                          : 'border-gray-300 dark:border-slate-500 hover:border-blue-500'
+                      } ${task.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      aria-label={task.completed ? 'Uncheck' : 'Mark as completed'}
+                    >
+                      <svg
+                        className={`w-3 h-3 text-white transition-opacity ${
+                          task.completed ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                       </svg>
-                      <span>{task.completedPomodoros} {task.completedPomodoros === 1 ? 'pomodoro' : 'pomodoros'}</span>
+                    </button>
+
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className={`text-sm font-medium ${
+                          task.completed
+                            ? 'text-gray-500 dark:text-slate-400 line-through'
+                            : 'text-gray-900 dark:text-white'
+                        }`}>
+                          {task.title}
+                        </div>
+                        <div 
+                          className={`w-2 h-2 rounded-full ${
+                            task.priority === 'Critical' ? 'bg-red-500' :
+                            task.priority === 'High' ? 'bg-orange-500' :
+                            task.priority === 'Medium' ? 'bg-green-500' :
+                            'bg-blue-500'
+                          }`}
+                          title={task.priority}
+                        />
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        <div className={`flex items-center space-x-1 text-xs ${
+                          task.completed
+                            ? 'text-gray-400 dark:text-slate-500'
+                            : 'text-gray-500 dark:text-slate-400'
+                        }`}>
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>{task.completedPomodoros} {task.completedPomodoros === 1 ? 'pomodoro' : 'pomodoros'}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                
-                <button
-                  disabled={task.isPending}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    deleteTask(task.id)
-                  }}
-                  className={`text-gray-400 hover:text-red-500 transition-colors ${
-                    task.isPending ? 'opacity-50 cursor-not-allowed hover:text-gray-400' : ''
-                  }`}
-                  aria-label="Delete task"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              </motion.div>
-            </motion.div>
-            ))}
+
+                    <button
+                      disabled={task.isPending}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        deleteTask(task.id)
+                      }}
+                      className={`text-gray-400 hover:text-red-500 transition-colors ${
+                        task.isPending ? 'opacity-50 cursor-not-allowed hover:text-gray-400' : ''
+                      }`}
+                      aria-label="Delete task"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </button>
+                  </motion.div>
+                </motion.div>
+              )
+            })}
           </AnimatePresence>
         )}
         
