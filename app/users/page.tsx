@@ -74,8 +74,14 @@ export default function UsersPage() {
       const response = await fetch('/api/stats/leaderboard')
       if (response.ok) {
         const data = await response.json()
-        setLeaderboard(data.topUsers || [])
-        setCurrentUserRank(data.currentUser || null)
+        const eligibleTopUsers = (data.topUsers || []).filter((user: LeaderboardUser) =>
+          user.totalPomodoros > 0 || user.totalHours > 0
+        )
+        const eligibleCurrentUser = data.currentUser && (data.currentUser.totalPomodoros > 0 || data.currentUser.totalHours > 0)
+          ? data.currentUser
+          : null
+        setLeaderboard(eligibleTopUsers)
+        setCurrentUserRank(eligibleCurrentUser)
       }
     } catch (error) {
       console.error('Error loading leaderboard:', error)
@@ -90,8 +96,11 @@ export default function UsersPage() {
       const response = await fetch('/api/users/search?q=')
       if (response.ok) {
         const data = await response.json()
-        setAllUsers(data.users || [])
-        setUsers(data.users || [])
+        const eligibleUsers = (data.users || []).filter((user: UserSearchResult) =>
+          user.stats.totalPomodoros > 0 || user.stats.totalHours > 0
+        )
+        setAllUsers(eligibleUsers)
+        setUsers(eligibleUsers)
       }
     } catch (error) {
       console.error('Error loading users:', error)
