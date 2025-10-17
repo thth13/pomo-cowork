@@ -141,33 +141,33 @@ function SessionCard({ session, index, isCurrentUser = false }: {
 
   return (
     <div 
-      className="bg-gray-50 dark:bg-slate-700 rounded-xl p-6 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors cursor-pointer"
+      className="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 sm:p-6 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors cursor-pointer"
       onClick={handleClick}
     >
-      <div className="flex items-start justify-between">
-        <div className="flex items-center space-x-4 flex-1">
-          <div className="relative">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+          <div className="relative flex-shrink-0">
             {session.avatarUrl ? (
               <img 
                 src={session.avatarUrl} 
                 alt={session.username}
-                className="w-12 h-12 rounded-full object-cover"
+                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
               />
             ) : (
-              <div className="w-12 h-12 rounded-full bg-gray-300 dark:bg-slate-500 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-300 dark:bg-slate-500 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold text-sm sm:text-base">
                 {session.username.charAt(0).toUpperCase()}
               </div>
             )}
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-slate-700"></div>
+            <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full border-2 border-white dark:border-slate-700"></div>
           </div>
-          <div className="flex-1">
-            <div className="flex items-center space-x-3 mb-2">
-              <h3 className="font-semibold text-gray-900 dark:text-white">{session.username}</h3>
-              <span className={`text-xs px-2 py-1 rounded-full font-medium ${getBadgeColor(session.type)}`}>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1 sm:mb-2 flex-wrap">
+              <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">{session.username}</h3>
+              <span className={`text-xs px-2 py-0.5 sm:py-1 rounded-full font-medium ${getBadgeColor(session.type)} whitespace-nowrap`}>
                 {getSessionTypeLabel(session.type)}
               </span>
             </div>
-            <div className="text-sm text-gray-600 dark:text-slate-300 mb-1">
+            <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300 mb-1 truncate">
               Task: {session.task}
             </div>
             <div className="text-xs text-gray-500 dark:text-slate-400">
@@ -178,11 +178,11 @@ function SessionCard({ session, index, isCurrentUser = false }: {
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+        <div className="text-right flex-shrink-0">
+          <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1">
             {formatTime(currentTimeRemaining)}
           </div>
-          <div className="w-24 bg-gray-200 dark:bg-slate-600 rounded-full h-2 mb-1">
+          <div className="w-16 sm:w-24 bg-gray-200 dark:bg-slate-600 rounded-full h-2 mb-1">
             <div 
               className={`h-2 rounded-full progress-bar ${getProgressColor(session.type)}`} 
               style={{ width: `${progressPercent}%` }}
@@ -259,7 +259,7 @@ export default function ActiveSessions() {
 
   if (allActiveSessions.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-8">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
         <div className="text-center py-8">
           <User className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-300 mb-2">
@@ -273,9 +273,9 @@ export default function ActiveSessions() {
     )
   }
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-8">
-      <div className="flex items-center justify-between mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Currently Working</h2>
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Currently Working</h2>
         <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">
           <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
           <span>{allActiveSessions.length} online</span>

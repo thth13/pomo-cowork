@@ -1,6 +1,13 @@
 import { create } from 'zustand'
 import { PomodoroSession, SessionType, SessionStatus, ActiveSession } from '@/types'
 
+interface TimerTaskOption {
+  id: string
+  title: string
+  description?: string
+  completed?: boolean
+}
+
 interface TimerState {
   // Timer state
   isRunning: boolean
@@ -18,6 +25,7 @@ interface TimerState {
     title: string
     description?: string
   } | null
+  taskOptions: TimerTaskOption[]
 
   // Actions
   startSession: (task: string, duration: number, type: SessionType, sessionId?: string) => void
@@ -31,6 +39,7 @@ interface TimerState {
   restoreSession: (session: PomodoroSession) => void
   previewSessionType: (type: SessionType) => void
   setSelectedTask: (task: { id: string; title: string; description?: string } | null) => void
+  setTaskOptions: (tasks: TimerTaskOption[]) => void
 
   // Settings
   workDuration: number
@@ -60,6 +69,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   pausedAt: null,
   activeSessions: [],
   selectedTask: null,
+  taskOptions: [],
 
   // Default settings (25 min work, 5 min short break, 15 min long break)
   workDuration: 25,
@@ -222,6 +232,10 @@ export const useTimerStore = create<TimerState>((set, get) => ({
 
   setSelectedTask: (task) => {
     set({ selectedTask: task })
+  },
+
+  setTaskOptions: (tasks) => {
+    set({ taskOptions: tasks })
   },
 }))
 

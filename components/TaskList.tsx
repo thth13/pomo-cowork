@@ -29,7 +29,7 @@ export default function TaskList() {
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskPriority, setNewTaskPriority] = useState<'Critical' | 'High' | 'Medium' | 'Low'>('Medium')
   const [isLoading, setIsLoading] = useState(true)
-  const { selectedTask, setSelectedTask } = useTimerStore()
+  const { selectedTask, setSelectedTask, setTaskOptions } = useTimerStore()
   const { user } = useAuthStore()
 
   // Load tasks on mount
@@ -37,9 +37,27 @@ export default function TaskList() {
     if (user) {
       loadTasks()
     } else {
+      setTasks([])
+      setTaskOptions([])
+      setSelectedTask(null)
       setIsLoading(false)
     }
-  }, [user])
+  }, [user, setSelectedTask, setTaskOptions])
+
+  useEffect(() => {
+    setTaskOptions(tasks.map((task) => ({
+      id: task.id,
+      title: task.title,
+      description: task.description,
+      completed: task.completed,
+    })))
+  }, [tasks, setTaskOptions])
+
+  useEffect(() => {
+    if (selectedTask && !tasks.some((task) => task.id === selectedTask.id)) {
+      setSelectedTask(null)
+    }
+  }, [tasks, selectedTask, setSelectedTask])
 
   const loadTasks = async () => {
     try {
@@ -250,9 +268,9 @@ export default function TaskList() {
       className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 shadow-sm"
     >
       {/* Header */}
-      <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">
             My Tasks
           </h3>
           <button

@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
-import { Play, Pause, Square, RotateCcw, Settings } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Play, Pause, Square, RotateCcw, Settings, ChevronDown, Search, Check } from 'lucide-react'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSocket } from '@/hooks/useSocket'
@@ -39,6 +39,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     longBreak,
     longBreakAfter,
     selectedTask,
+    setSelectedTask,
     startSession,
     pauseSession,
     resumeSession,
@@ -48,13 +49,13 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     restoreSession,
     previewSessionType,
     initializeWithSettings,
-    setTimerSettings
+    setTimerSettings,
+    taskOptions,
   } = useTimerStore()
 
   const { user } = useAuthStore()
   const { emitSessionStart, emitSessionSync, emitSessionPause, emitSessionEnd, emitTimerTick } = useSocket()
 
-  const [task, setTask] = useState('')
   const [sessionType, setSessionType] = useState<SessionType>(SessionType.WORK)
   const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null)
   const [notificationEnabled, setNotificationEnabled] = useState(true)
@@ -62,8 +63,11 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   const [soundVolume, setSoundVolume] = useState(0.5)
   const [isStarting, setIsStarting] = useState(false)
   const [isStopping, setIsStopping] = useState(false)
+  const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
+  const [taskSearch, setTaskSearch] = useState('')
   const completedSessionIdRef = useRef<string | null>(null)
   const lastActionTimeRef = useRef<number>(0)
+  const taskPickerRef = useRef<HTMLDivElement | null>(null)
 
   interface TimerSettingsForm {
     workDuration: number
@@ -78,6 +82,34 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     longBreak,
   }))
 
+  const isTaskPickerDisabled = !!currentSession
+
+  const filteredTaskOptions = useMemo(() => {
+    const query = taskSearch.trim().toLowerCase()
+    if (!query) {
+      return taskOptions
+    }
+
+    return taskOptions.filter((taskOption) => {
+      const haystack = `${taskOption.title} ${taskOption.description ?? ''}`.toLowerCase()
+      return haystack.includes(query)
+    })
+  }, [taskOptions, taskSearch])
+
+  const handleTaskSelect = (taskOption: { id: string; title: string; description?: string } | null) => {
+    if (taskOption) {
+      setSelectedTask({
+        id: taskOption.id,
+        title: taskOption.title,
+        description: taskOption.description,
+      })
+    } else {
+      setSelectedTask(null)
+    }
+
+    setIsTaskMenuOpen(false)
+  }
+
   useEffect(() => {
     setSettingsForm({
       workDuration,
@@ -89,6 +121,39 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   useEffect(() => {
     completedSessionIdRef.current = null
   }, [currentSession?.id])
+
+  useEffect(() => {
+    if (!isTaskMenuOpen) {
+      setTaskSearch('')
+      return
+    }
+
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (taskPickerRef.current && !taskPickerRef.current.contains(event.target as Node)) {
+        setIsTaskMenuOpen(false)
+      }
+    }
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsTaskMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutsideClick)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isTaskMenuOpen])
+
+  useEffect(() => {
+    if (isTaskPickerDisabled && isTaskMenuOpen) {
+      setIsTaskMenuOpen(false)
+    }
+  }, [isTaskPickerDisabled, isTaskMenuOpen])
 
   // Restore active session on component mount - ONLY ONCE
   useEffect(() => {
@@ -151,7 +216,6 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             
             // Restore session state if not expired
             restoreSession(activeSession)
-            setTask(activeSession.task)
             setSessionType(activeSession.type as SessionType)
             
             // Emit to WebSocket to sync with others (without system message)
@@ -771,7 +835,6 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         
         // Optimistically stop timer immediately
         cancelSession()
-        setTask('')
         
         // Stop Service Worker timer
         sendMessageToServiceWorker({
@@ -810,7 +873,6 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         }
       } else {
         cancelSession()
-        setTask('')
       }
     } finally {
       // Add minimum delay to prevent too rapid clicks
@@ -902,10 +964,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     
     // Clear task if we're going to a break
     if (nextType === SessionType.SHORT_BREAK || nextType === SessionType.LONG_BREAK) {
-      setTask('')
     } else if (nextType === SessionType.WORK) {
       // Set default task for auto-started work sessions
-      setTask('Work Session')
     }
 
     if (onSessionComplete) {
@@ -1019,20 +1079,6 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     }, 1000) // 1 second delay to show notification
   }
 
-  const handleReset = () => {
-    if (currentSession) {
-      // Stop Service Worker timer
-      sendMessageToServiceWorker({
-        type: 'STOP_TIMER',
-      })
-      
-  emitSessionEnd(currentSession.id, 'reset')
-    }
-    cancelSession()
-    setTask('')
-    setSessionType(SessionType.WORK)
-  }
-
   const getSessionTypeLabel = (type: SessionType): string => {
     switch (type) {
       case SessionType.WORK:
@@ -1072,38 +1118,166 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     <div className="flex flex-col items-center" data-timer-panel>
       {/* Current Task Display */}
       {sessionType === SessionType.WORK && (
-        <div className="mb-8 w-full max-w-md">
+        <div className="mb-6 sm:mb-8 w-full max-w-md px-4 sm:px-0">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
             Current Task
           </label>
-          <div className={`w-full bg-white dark:bg-slate-800 border rounded-xl px-4 py-3 min-h-[60px] flex flex-col justify-center ${
-            selectedTask 
-              ? 'border-blue-500 dark:border-blue-400' 
-              : 'border-gray-300 dark:border-slate-600'
-          }`}>
-            {selectedTask ? (
-              <>
-                <div className="text-gray-900 dark:text-white font-medium mb-1">
-                  {selectedTask.title}
-                </div>
-                {selectedTask.description && (
-                  <div className="text-sm text-gray-500 dark:text-gray-400">
-                    {selectedTask.description}
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="text-gray-500 dark:text-gray-400 text-center">
-                Select a task from the list on the right
+          <div className="relative" ref={taskPickerRef}>
+            <button
+              type="button"
+              onClick={() => !isTaskPickerDisabled && setIsTaskMenuOpen((state) => !state)}
+              disabled={isTaskPickerDisabled}
+              className={`group w-full rounded-xl border px-4 py-3 text-left text-sm transition focus:outline-none focus:ring-0 ${
+                isTaskPickerDisabled
+                  ? 'cursor-not-allowed opacity-70 border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500'
+                  : `border-gray-200 dark:border-slate-700 ${
+                      isTaskMenuOpen
+                        ? 'shadow-sm shadow-blue-500/10 dark:shadow-blue-900/20 border-blue-400 dark:border-blue-500'
+                        : 'hover:border-blue-300 dark:hover:border-blue-500'
+                    }`
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span className="truncate text-gray-700 dark:text-slate-200">
+                  {selectedTask ? selectedTask.title : 'Select a task from the list'}
+                </span>
+                <motion.span
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 transition group-hover:bg-blue-100 group-hover:text-blue-600 dark:bg-slate-700 dark:text-slate-300 dark:group-hover:bg-blue-900/40 dark:group-hover:text-blue-300"
+                  animate={{ rotate: isTaskMenuOpen ? 180 : 0 }}
+                  transition={{ duration: 0.18, ease: 'easeOut' }}
+                >
+                  <ChevronDown size={16} />
+                </motion.span>
               </div>
-            )}
+              <motion.div
+                className={`absolute inset-x-4 bottom-0 h-0.5 rounded-full ${
+                  isTaskMenuOpen
+                    ? 'bg-blue-500/70 dark:bg-blue-400/70'
+                    : selectedTask
+                      ? 'bg-gray-200 dark:bg-slate-700'
+                      : 'bg-transparent'
+                }`}
+                layoutId="taskHighlight"
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+              />
+            </button>
+
+            <AnimatePresence>
+              {isTaskMenuOpen && !isTaskPickerDisabled && (
+                <motion.div
+                  key="task-dropdown"
+                  initial={{ opacity: 0, y: -8, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -4, scale: 0.98 }}
+                  transition={{ duration: 0.16, ease: 'easeOut' }}
+                  className="absolute z-30 mt-3 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900"
+                >
+                  {/* <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-3 text-xs text-gray-400 dark:border-slate-800 dark:text-slate-500">
+                    <Search size={14} />
+                    <input
+                      autoFocus
+                      value={taskSearch}
+                      onChange={(event) => setTaskSearch(event.target.value)}
+                      placeholder="Find task..."
+                      className="w-full bg-transparent text-sm text-gray-600 outline-none placeholder:text-gray-400 dark:text-slate-200 dark:placeholder:text-slate-500"
+                    />
+                  </div> */}
+
+                  <div className="max-h-64 overflow-y-auto py-2">
+                    <button
+                      type="button"
+                      onClick={() => handleTaskSelect(null)}
+                      className={`flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition ${
+                        !selectedTask
+                          ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300'
+                          : 'text-gray-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {/* <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full border border-dashed border-current text-[10px] font-medium uppercase">
+                        Any
+                      </span> */}
+                      <div className="flex flex-col">
+                        <span className="font-medium">No task selected</span>
+                        <span className="text-xs text-gray-400 dark:text-slate-500">Timer will run without task binding</span>
+                      </div>
+                    </button>
+
+                    {filteredTaskOptions.length ? (
+                      filteredTaskOptions.map((taskOption) => {
+                        const isActive = selectedTask?.id === taskOption.id
+                        return (
+                          <button
+                            type="button"
+                            key={taskOption.id}
+                            onClick={() => handleTaskSelect(taskOption)}
+                            className={`flex w-full items-start gap-3 px-4 py-3 text-left transition ${
+                              isActive
+                                ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300'
+                                : 'hover:bg-gray-50 dark:hover:bg-slate-800'
+                            }`}
+                          >
+                            {/* <span className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
+                              taskOption.completed
+                                ? 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-300'
+                            }`}>
+                              {taskOption.completed ? <Check size={14} /> : taskOption.title.slice(0, 1).toUpperCase()}
+                            </span> */}
+                            <div className="flex flex-1 flex-col">
+                              <span className="truncate text-sm font-medium">
+                                {taskOption.title}
+                              </span>
+                              {taskOption.description && (
+                                <span className="line-clamp-2 text-xs text-gray-400 dark:text-slate-400">
+                                  {taskOption.description}
+                                </span>
+                              )}
+                            </div>
+                            {isActive && (
+                              <span className="mt-1 shrink-0 rounded-full bg-blue-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600 dark:bg-blue-900/40 dark:text-blue-200">
+                                Active
+                              </span>
+                            )}
+                          </button>
+                        )
+                      })
+                    ) : (
+                      <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-slate-500">
+                        No tasks match your search.
+                      </div>
+                    )}
+                  </div>
+
+                  {!taskOptions.length && (
+                    <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
+                      Add tasks in the list to populate this menu.
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {selectedTask?.description && (
+                <motion.div
+                  key="task-description"
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.18 }}
+                  className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-600 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-300"
+                >
+                  {selectedTask.description}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       )}
 
       {/* Timer Container */}
-      <div className="relative mb-8">
-        <svg className="w-80 h-80 timer-ring" viewBox="0 0 120 120">
+      <div className="relative mb-6 sm:mb-8">
+        <svg className="w-64 h-64 sm:w-80 sm:h-80 timer-ring" viewBox="0 0 120 120">
           <circle 
             cx="60" 
             cy="60" 
@@ -1133,7 +1307,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         </svg>
         
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className={`text-6xl font-bold mb-2 ${
+          <div className={`text-4xl sm:text-6xl font-bold mb-2 ${
             activeSessionType === SessionType.WORK 
               ? 'text-red-500 dark:text-red-400' 
               : activeSessionType === SessionType.SHORT_BREAK 
@@ -1142,19 +1316,19 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           }`}>
             {formatTime(timeRemaining)}
           </div>
-          <div className="text-lg font-medium text-gray-600 dark:text-slate-300">
+          <div className="text-base sm:text-lg font-medium text-gray-600 dark:text-slate-300">
             {getSessionTypeLabel(activeSessionType)}
           </div>
         </div>
       </div>
       
       {/* Timer Controls */}
-      <div className="flex items-center space-x-6 mb-8">
+      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 mb-6 sm:mb-8 px-4 sm:px-0 w-full sm:w-auto">
         {!currentSession ? (
           <button 
             onClick={handleStart}
             disabled={isStarting}
-            className={`bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 ${
+            className={`w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-6 sm:px-8 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
               isStarting ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -1165,7 +1339,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           <button 
             onClick={handleStop}
             disabled={isStopping}
-            className={`bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 ${
+            className={`w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
               isStopping ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -1177,7 +1351,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         <button
           type="button"
           onClick={openSettings}
-          className="inline-flex items-center space-x-2 px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           <Settings size={20} />
           <span>Adjust time</span>
@@ -1185,11 +1359,11 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       </div>
       
       {/* Timer Tabs */}
-      <div className="flex bg-white dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mb-8">
+      <div className="flex bg-white dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mb-6 sm:mb-8 mx-4 sm:mx-0">
         <button 
           onClick={() => handleSessionTypeChange(SessionType.WORK)}
           disabled={!!currentSession}
-          className={`px-6 py-2 rounded-lg font-medium ${
+          className={`flex-1 sm:flex-none sm:px-6 px-3 py-2 rounded-lg font-medium text-sm sm:text-base ${
             sessionType === SessionType.WORK
               ? 'bg-red-500 text-white'
               : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
@@ -1200,7 +1374,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         <button 
           onClick={() => handleSessionTypeChange(SessionType.SHORT_BREAK)}
           disabled={!!currentSession}
-          className={`px-6 py-2 rounded-lg font-medium ${
+          className={`flex-1 sm:flex-none sm:px-6 px-3 py-2 rounded-lg font-medium text-sm sm:text-base ${
             sessionType === SessionType.SHORT_BREAK
               ? 'bg-red-500 text-white'
               : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
@@ -1211,7 +1385,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         <button 
           onClick={() => handleSessionTypeChange(SessionType.LONG_BREAK)}
           disabled={!!currentSession}
-          className={`px-6 py-2 rounded-lg font-medium ${
+          className={`flex-1 sm:flex-none sm:px-6 px-3 py-2 rounded-lg font-medium text-sm sm:text-base ${
             sessionType === SessionType.LONG_BREAK
               ? 'bg-red-500 text-white'
               : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'

@@ -365,10 +365,81 @@ export default function UserProfilePage() {
 
   if (loading || !chartReady) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-slate-400">Loading profile...</p>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Profile Header Skeleton */}
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 animate-pulse">
+            <div className="flex flex-col lg:flex-row items-start gap-6 lg:justify-between">
+              <div className="flex items-start space-x-4 sm:space-x-6">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl bg-gray-200 dark:bg-slate-700"></div>
+                <div className="space-y-3 flex-1 min-w-0">
+                  <div className="h-6 sm:h-8 w-32 sm:w-48 bg-gray-200 dark:bg-slate-700 rounded"></div>
+                  <div className="h-4 sm:h-5 w-full max-w-xs bg-gray-200 dark:bg-slate-700 rounded"></div>
+                  <div className="h-3 sm:h-4 w-24 sm:w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
+                </div>
+              </div>
+              <div className="w-full lg:w-[280px] h-32 bg-gray-200 dark:bg-slate-700 rounded-xl"></div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+            {/* Main Stats Skeleton */}
+            <div className="lg:col-span-2 space-y-8">
+              {/* Stats Overview Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-xl"></div>
+                      <div className="w-12 h-4 bg-gray-200 dark:bg-slate-700 rounded"></div>
+                    </div>
+                    <div className="h-8 w-16 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+                    <div className="h-4 w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Heatmap Skeleton */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8 animate-pulse">
+                <div className="h-6 w-48 bg-gray-200 dark:bg-slate-700 rounded mb-8"></div>
+                <div className="h-40 bg-gray-200 dark:bg-slate-700 rounded"></div>
+              </div>
+
+              {/* Weekly Chart Skeleton */}
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8 animate-pulse">
+                <div className="h-6 w-48 bg-gray-200 dark:bg-slate-700 rounded mb-8"></div>
+                <div className="h-80 bg-gray-200 dark:bg-slate-700 rounded"></div>
+              </div>
+            </div>
+
+            {/* Recent Sessions Sidebar Skeleton */}
+            <div className="lg:col-span-1">
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="h-6 w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
+                  <div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
+                </div>
+                <div className="space-y-4">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-gray-200 dark:bg-slate-600 rounded-lg"></div>
+                        <div className="space-y-2">
+                          <div className="h-4 w-20 bg-gray-200 dark:bg-slate-600 rounded"></div>
+                          <div className="h-3 w-32 bg-gray-200 dark:bg-slate-600 rounded"></div>
+                        </div>
+                      </div>
+                      <div className="space-y-2 text-right">
+                        <div className="h-4 w-12 bg-gray-200 dark:bg-slate-600 rounded ml-auto"></div>
+                        <div className="h-3 w-16 bg-gray-200 dark:bg-slate-600 rounded ml-auto"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -396,24 +467,24 @@ export default function UserProfilePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
       <Navbar />
 
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Profile Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-8 mb-8"
+          className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8"
         >
-          <div className="flex items-start justify-between">
-            <div className="flex items-start space-x-6">
-              <div className="relative">
+          <div className="flex flex-col lg:flex-row items-start gap-6 lg:justify-between">
+            <div className="flex items-start space-x-4 sm:space-x-6">
+              <div className="relative flex-shrink-0">
                 {profile.user.avatarUrl ? (
                   <img 
                     src={profile.user.avatarUrl} 
                     alt={profile.user.username}
-                    className="w-24 h-24 rounded-2xl object-cover"
+                    className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl object-cover"
                   />
                 ) : (
-                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-3xl font-bold">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
                     {profile.user.username.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -421,9 +492,9 @@ export default function UserProfilePage() {
                   <div className="w-3 h-3 bg-white rounded-full"></div>
                 </div>
               </div>
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{profile.user.username}</h1>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-2 flex-wrap">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white break-words">{profile.user.username}</h1>
                   {isOwnProfile && (
                     <>
                       <button
@@ -446,9 +517,9 @@ export default function UserProfilePage() {
                   )}
                 </div>
                 {profile.user.description && (
-                  <p className="text-lg text-gray-600 dark:text-slate-300 mb-3">{profile.user.description}</p>
+                  <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-slate-300 mb-3 break-words">{profile.user.description}</p>
                 )}
-                <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-slate-400">
+                <div className="flex items-center flex-wrap gap-4 text-xs sm:text-sm text-gray-500 dark:text-slate-400">
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4" />
                     <span>Joined {formatDate(profile.user.createdAt)}</span>
@@ -457,7 +528,7 @@ export default function UserProfilePage() {
               </div>
             </div>
             {/* Current Status */}
-            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 min-w-[280px]">
+            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 w-full lg:w-auto lg:min-w-[280px] lg:max-w-[280px]">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <div className={`w-2 h-2 ${isUserOnline ? 'bg-green-400' : 'bg-gray-400'} rounded-full ${isUserOnline ? 'pulse-dot' : ''}`}></div>
@@ -495,60 +566,60 @@ export default function UserProfilePage() {
           </div>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Main Stats */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
             {/* Stats Overview */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="grid grid-cols-1 md:grid-cols-4 gap-6"
+              className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
             >
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
-                    <Clock className="w-6 h-6 text-red-500 dark:text-red-400" />
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
+                    <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 dark:text-red-400" />
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">Total</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Total</span>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.completedSessions}</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Pomodoros Completed</div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.completedSessions}</div>
+                <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Pomodoros Completed</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                    <Flame className="w-6 h-6 text-green-500 dark:text-green-400" />
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
+                    <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 dark:text-green-400" />
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">Streak</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Streak</span>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{userStats?.currentStreak || 0}</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Days in a row</div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{userStats?.currentStreak || 0}</div>
+                <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Days in a row</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                    <BarChart3 className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
+                    <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 dark:text-blue-400" />
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">Average</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Average</span>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
                   {profile.stats.totalSessions > 0 ? Math.round(profile.stats.completedSessions / Math.max(1, Math.ceil((Date.now() - new Date(profile.user.createdAt).getTime()) / (1000 * 60 * 60 * 24)))) : 0}
                 </div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Pomodoros per day</div>
+                <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Pomodoros per day</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-purple-500 dark:text-purple-400" />
+              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-4 lg:p-6">
+                <div className="flex items-center justify-between mb-3 sm:mb-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500 dark:text-purple-400" />
                   </div>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">Total</span>
+                  <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Total</span>
                 </div>
-                <div className="text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.totalWorkHours}h</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Work Time</div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.totalWorkHours}h</div>
+                <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Work Time</div>
               </div>
             </motion.div>
 

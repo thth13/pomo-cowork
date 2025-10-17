@@ -303,9 +303,9 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
   return (
     <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 h-[600px] flex flex-col">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200 dark:border-slate-700">
+      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">General Chat</h3>
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">General Chat</h3>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
             {/* <span className="text-sm text-gray-600 dark:text-slate-300">online participants</span> */}

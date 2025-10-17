@@ -206,7 +206,7 @@ export default function SettingsPage() {
         setAvatarPreview(null)
         
         // Мгновенный редирект на страницу профиля
-        router.push('/profile')
+        router.push('/')
       } else {
         const error = await response.json()
         setSaveMessage(error.error || 'Failed to save settings')

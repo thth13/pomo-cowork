@@ -50,8 +50,8 @@ export default function HomePage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-8 py-12">
-        <div className="grid grid-cols-12 gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+        <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
           {/* Левая колонка - Таймер и Активные сессии */}
           <div className="col-span-12 lg:col-span-8">
             {/* Timer Section */}
@@ -59,7 +59,7 @@ export default function HomePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="mb-16"
+              className="mb-8 sm:mb-12 lg:mb-16"
             >
               <PomodoroTimer />
             </motion.section>
@@ -75,7 +75,7 @@ export default function HomePage() {
           </div>
 
           {/* Правая колонка - Список задач, Чат и История */}
-          <div className="col-span-12 lg:col-span-4 space-y-8">
+          <div className="col-span-12 lg:col-span-4 space-y-4 sm:space-y-6 lg:space-y-8">
             <TaskList />
             <Chat />
             <WorkHistory />
