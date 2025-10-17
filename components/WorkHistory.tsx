@@ -27,17 +27,16 @@ export default function WorkHistory() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!user) return
-
     const fetchTodaySessions = async () => {
       try {
         const token = localStorage.getItem('token')
-        if (!token) return
+        const headers: Record<string, string> = {}
+        if (token) {
+          headers.Authorization = `Bearer ${token}`
+        }
 
         const response = await fetch('/api/sessions/today', {
-          headers: {
-            Authorization: `Bearer ${token}`
-          }
+          headers
         })
 
         if (response.ok) {
@@ -148,8 +147,6 @@ export default function WorkHistory() {
       longBreak: longBreaks.length
     }
   }
-
-  if (!user) return null
 
   if (loading) {
     return (
