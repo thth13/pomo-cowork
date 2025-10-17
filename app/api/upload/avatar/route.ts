@@ -5,7 +5,6 @@ import { uploadFileToS3, deleteFileFromS3 } from '@/lib/s3'
 import sharp from 'sharp'
 
 export const dynamic = 'force-dynamic'
-export const runtime = 'nodejs'
 
 // POST /api/upload/avatar - Upload avatar through backend
 export async function POST(request: NextRequest) {
