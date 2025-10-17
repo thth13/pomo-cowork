@@ -22,7 +22,7 @@ import { playEndSound, disposeNotificationSound } from '@/lib/notificationSound'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuthStore()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const { setTimerSettings } = useTimerStore()
   
   const [settings, setSettings] = useState<UserSettings>({
@@ -36,8 +36,13 @@ export default function SettingsPage() {
     soundVolume: 0.5,
     notificationsEnabled: true,
   })
+
+  const [profileData, setProfileData] = useState({
+    username: '',
+    email: '',
+    description: ''
+  })
   
-  const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [testMessage, setTestMessage] = useState('')
@@ -96,8 +101,12 @@ export default function SettingsPage() {
         longBreak: user.settings.longBreak,
         longBreakAfter: user.settings.longBreakAfter,
       })
+      setProfileData({
+        username: user.username || '',
+        email: user.email || '',
+        description: user.description || ''
+      })
     }
-    setIsLoading(false)
   }, [user, isAuthenticated, setTimerSettings])
 
   const handleSettingChange = (key: keyof UserSettings, value: any) => {
@@ -124,6 +133,7 @@ export default function SettingsPage() {
 
   const handleSave = async () => {
     setIsSaving(true)
+    setSaveMessage('')
     
     try {
       const token = localStorage.getItem('token')
@@ -150,17 +160,24 @@ export default function SettingsPage() {
         }
       }
 
-      // Then save settings
+      // Then save settings and profile data
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify(settings)
+        body: JSON.stringify({
+          ...settings,
+          username: profileData.username,
+          email: profileData.email,
+          description: profileData.description
+        })
       })
 
       if (response.ok) {
+        const updatedUser = await response.json()
+        
         // Update timer store with new settings
         setTimerSettings({
           workDuration: settings.workDuration,
@@ -178,11 +195,8 @@ export default function SettingsPage() {
             ...state,
             user: {
               ...state.user,
+              ...updatedUser,
               avatarUrl: newAvatarUrl,
-              settings: {
-                ...state.user.settings,
-                ...settings
-              }
             }
           }
         })
@@ -191,10 +205,11 @@ export default function SettingsPage() {
         setAvatarFile(null)
         setAvatarPreview(null)
         
-        // Редирект на главную
-        router.push('/')
+        // Мгновенный редирект на страницу профиля
+        router.push('/profile')
       } else {
-        setSaveMessage('Failed to save settings')
+        const error = await response.json()
+        setSaveMessage(error.error || 'Failed to save settings')
       }
     } catch (error) {
       console.error('Failed to save settings:', error)
@@ -249,6 +264,19 @@ export default function SettingsPage() {
     },
   ]
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
+        <Navbar />
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center">
+            <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
@@ -261,19 +289,6 @@ export default function SettingsPage() {
             <p className="text-slate-600 dark:text-slate-300">
               Please log in to change your settings.
             </p>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
           </div>
         </div>
       </div>
@@ -376,44 +391,60 @@ export default function SettingsPage() {
                 />
 
                 <div className="flex flex-col gap-5">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-sm dark:border-slate-700/60 dark:bg-slate-900/70">
-                      <div className="flex items-start gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500/10 text-primary-600 dark:bg-primary-400/10 dark:text-primary-300">
-                          <User className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Username
-                          </p>
-                          <p className="text-base font-semibold text-slate-900 dark:text-white">
-                            {user?.username || 'Not set'}
-                          </p>
-                        </div>
-                      </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        value={profileData.username}
+                        onChange={(e) => {
+                          setProfileData(prev => ({ ...prev, username: e.target.value }))
+                          setSaveMessage('')
+                        }}
+                        className="w-full rounded-2xl border border-slate-300/80 bg-white/90 px-4 py-3 text-base font-medium text-slate-900 shadow-sm transition focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:border-slate-700 dark:bg-slate-900/70 dark:text-white dark:focus:border-primary-300 dark:focus:ring-primary-500/40"
+                        placeholder="Your username"
+                      />
                     </div>
 
-                    <div className="rounded-2xl border border-slate-200/80 bg-white/80 p-5 shadow-sm dark:border-slate-700/60 dark:bg-slate-900/70">
-                      <div className="flex items-start gap-3">
-                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-500/10 text-primary-600 dark:bg-primary-400/10 dark:text-primary-300">
-                          <Mail className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                            Email
-                          </p>
-                          <p className="text-base font-semibold text-slate-900 dark:text-white">
-                            {user?.email || 'Not provided'}
-                          </p>
-                        </div>
-                      </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        Email
+                      </label>
+                      <input
+                        type="email"
+                        value={profileData.email}
+                        onChange={(e) => {
+                          setProfileData(prev => ({ ...prev, email: e.target.value }))
+                          setSaveMessage('')
+                        }}
+                        className="w-full rounded-2xl border border-slate-300/80 bg-white/90 px-4 py-3 text-base font-medium text-slate-900 shadow-sm transition focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:border-slate-700 dark:bg-slate-900/70 dark:text-white dark:focus:border-primary-300 dark:focus:ring-primary-500/40"
+                        placeholder="your.email@example.com"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-semibold text-slate-700 dark:text-slate-200">
+                        Description
+                      </label>
+                      <textarea
+                        value={profileData.description}
+                        onChange={(e) => {
+                          setProfileData(prev => ({ ...prev, description: e.target.value }))
+                          setSaveMessage('')
+                        }}
+                        rows={3}
+                        className="w-full rounded-2xl border border-slate-300/80 bg-white/90 px-4 py-3 text-base font-medium text-slate-900 shadow-sm transition focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:border-slate-700 dark:bg-slate-900/70 dark:text-white dark:focus:border-primary-300 dark:focus:ring-primary-500/40"
+                        placeholder="Tell us about yourself..."
+                      />
                     </div>
                   </div>
 
                   <div className="flex items-start gap-3 rounded-2xl border border-primary-200/60 bg-primary-50/70 p-5 text-sm text-slate-600 shadow-sm dark:border-primary-400/40 dark:bg-primary-900/30 dark:text-slate-200">
                     <Shield className="mt-1 h-5 w-5 text-primary-500 dark:text-primary-300" />
                     <p>
-                      Username and email are verified through workspace admin. Ping the core team if you need to update them or switch to an anonymous profile.
+                      Your profile information will be visible to other users in the workspace.
                     </p>
                   </div>
                 </div>

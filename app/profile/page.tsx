@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { useRouter } from 'next/navigation'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,7 +16,7 @@ import {
   ArcElement,
 } from 'chart.js'
 import { Bar, Line, Doughnut } from 'react-chartjs-2'
-import { Calendar, Clock, Target, TrendingUp, Award, Flame } from 'lucide-react'
+import { Calendar, Clock, Target, TrendingUp, Award, Flame, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { SessionStats } from '@/types'
 import Navbar from '@/components/Navbar'
@@ -34,9 +35,15 @@ ChartJS.register(
 )
 
 export default function ProfilePage() {
-  const { user, isAuthenticated } = useAuthStore()
+  const router = useRouter()
+  const { user, isAuthenticated, logout } = useAuthStore()
   const [stats, setStats] = useState<SessionStats | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  const handleLogout = () => {
+    logout()
+    router.push('/')
+  }
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -228,12 +235,39 @@ export default function ProfilePage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">
-            Hi, {user?.username}! 👋
-          </h1>
-          <p className="text-slate-600">
-            Here&apos;s your productivity statistics
-          </p>
+          <div className="card">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start space-x-6">
+                {user?.avatarUrl && (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.username}
+                    className="w-24 h-24 rounded-full object-cover border-4 border-primary-100"
+                  />
+                )}
+                <div>
+                  <h1 className="text-3xl font-bold text-slate-800 dark:text-white mb-2">
+                    {user?.username} 👋
+                  </h1>
+                  {user?.description && (
+                    <p className="text-slate-600 dark:text-slate-400 mb-4 max-w-2xl">
+                      {user.description}
+                    </p>
+                  )}
+                  <p className="text-sm text-slate-500 dark:text-slate-500">
+                    {user?.email}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium transition-colors"
+              >
+                <LogOut className="w-4 h-4" />
+                <span>Logout</span>
+              </button>
+            </div>
+          </div>
         </motion.div>
 
         {/* Stats Cards */}

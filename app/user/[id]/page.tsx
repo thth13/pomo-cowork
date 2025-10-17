@@ -3,21 +3,24 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil } from 'lucide-react'
+import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useThemeStore } from '@/store/useThemeStore'
 import Navbar from '@/components/Navbar'
-import Highcharts from 'highcharts'
-import HighchartsReact from 'highcharts-react-official'
-import heatmapModule from 'highcharts/modules/heatmap'
+import dynamic from 'next/dynamic'
 
+const HighchartsReact = dynamic(() => import('highcharts-react-official'), { ssr: false })
+
+let Highcharts: any = null
 let isHeatmapInitialized = false
 
 interface UserProfile {
   user: {
     id: string
     username: string
+    avatarUrl?: string
+    description?: string
     createdAt: string
     totalSessions: number
   }
@@ -59,7 +62,7 @@ interface UserStats {
 export default function UserProfilePage() {
   const params = useParams()
   const router = useRouter()
-  const { user: currentUser } = useAuthStore()
+  const { user: currentUser, logout } = useAuthStore()
   const { activeSessions } = useTimerStore()
   const { theme } = useThemeStore()
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -72,28 +75,37 @@ export default function UserProfilePage() {
   const isDark = theme === 'dark'
   const isOwnProfile = currentUser?.id === userId
 
+  const handleLogout = () => {
+    logout()
+    router.push('/')
+  }
+
   useEffect(() => {
     if (typeof window === 'undefined' || isHeatmapInitialized) {
       return
     }
 
-    const initHeatmap = () => {
-      const heatmapFactory =
-        typeof heatmapModule === 'function'
-          ? heatmapModule
-          : (heatmapModule as unknown as { default?: (hc: typeof Highcharts) => void }).default
-
-      if (typeof heatmapFactory === 'function') {
-        heatmapFactory(Highcharts)
-        isHeatmapInitialized = true
-      } else {
-        console.error('Highcharts heatmap module failed to initialize')
+    const initHighcharts = async () => {
+      try {
+        const HighchartsModule = await import('highcharts')
+        Highcharts = HighchartsModule.default || HighchartsModule
+        
+        const heatmapModule = await import('highcharts/modules/heatmap')
+        const heatmapInit = heatmapModule.default || heatmapModule
+        
+        if (Highcharts && heatmapInit) {
+          (heatmapInit as any)(Highcharts)
+          isHeatmapInitialized = true
+        }
+        
+        setChartReady(true)
+      } catch (error) {
+        console.error('Failed to initialize Highcharts:', error)
+        setChartReady(true) // Still set ready to show the rest of the page
       }
-
-      setChartReady(true)
     }
 
-    initHeatmap()
+    initHighcharts()
   }, [])
 
   useEffect(() => {
@@ -392,11 +404,19 @@ export default function UserProfilePage() {
           className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-8 mb-8"
         >
           <div className="flex items-start justify-between">
-            <div className="flex items-center space-x-6">
+            <div className="flex items-start space-x-6">
               <div className="relative">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-3xl font-bold">
-                  {profile.user.username.charAt(0).toUpperCase()}
-                </div>
+                {profile.user.avatarUrl ? (
+                  <img 
+                    src={profile.user.avatarUrl} 
+                    alt={profile.user.username}
+                    className="w-24 h-24 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-3xl font-bold">
+                    {profile.user.username.charAt(0).toUpperCase()}
+                  </div>
+                )}
                 <div className={`absolute -top-1 -right-1 w-8 h-8 ${isUserOnline ? 'bg-green-400' : 'bg-gray-400'} rounded-full border-4 border-white dark:border-slate-800 flex items-center justify-center`}>
                   <div className="w-3 h-3 bg-white rounded-full"></div>
                 </div>
@@ -405,17 +425,29 @@ export default function UserProfilePage() {
                 <div className="flex items-center gap-2 mb-2">
                   <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{profile.user.username}</h1>
                   {isOwnProfile && (
-                    <button
-                      type="button"
-                      onClick={() => router.push('/settings')}
-                      aria-label="Edit profile"
-                      className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </button>
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => router.push('/settings')}
+                        aria-label="Edit profile"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        aria-label="Logout"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition-colors hover:bg-red-100 hover:text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
+                      >
+                        <LogOut className="h-4 w-4" />
+                      </button>
+                    </>
                   )}
                 </div>
-                <p className="text-lg text-gray-600 dark:text-slate-300 mb-3">Pomodoro User</p>
+                {profile.user.description && (
+                  <p className="text-lg text-gray-600 dark:text-slate-300 mb-3">{profile.user.description}</p>
+                )}
                 <div className="flex items-center space-x-6 text-sm text-gray-500 dark:text-slate-400">
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4" />

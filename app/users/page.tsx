@@ -4,6 +4,16 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import Navbar from '@/components/Navbar'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faClock,
+  faCrown,
+  faFire,
+  faMedal,
+  faSearch,
+  faTrophy,
+  faUsers
+} from '@fortawesome/free-solid-svg-icons'
 
 interface UserSearchResult {
   id: string
@@ -113,9 +123,9 @@ export default function UsersPage() {
   }
 
   const getLeaderboardItemStyle = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200'
-    if (rank === 2) return 'bg-gradient-to-r from-gray-50 to-gray-100 border-gray-200'
-    if (rank === 3) return 'bg-gradient-to-r from-orange-50 to-orange-100 border-orange-200'
+    if (rank === 1) return 'bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-800/50'
+    if (rank === 2) return 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-700/30 border-gray-200 dark:border-gray-700/50'
+    if (rank === 3) return 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800/50'
     return ''
   }
 
@@ -127,9 +137,9 @@ export default function UsersPage() {
   }
 
   const getLeaderboardIcon = (rank: number) => {
-    if (rank === 1) return <i className="fa-solid fa-crown text-yellow-500"></i>
-    if (rank === 2) return <i className="fa-solid fa-medal text-gray-500"></i>
-    if (rank === 3) return <i className="fa-solid fa-medal text-orange-500"></i>
+    if (rank === 1) return <FontAwesomeIcon icon={faCrown} className="text-yellow-500" />
+    if (rank === 2) return <FontAwesomeIcon icon={faMedal} className="text-gray-500" />
+    if (rank === 3) return <FontAwesomeIcon icon={faMedal} className="text-orange-500" />
     return null
   }
 
@@ -170,7 +180,7 @@ export default function UsersPage() {
             <div className="mb-8">
               <div className="relative max-w-md mx-auto">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <i className="fa-solid fa-search text-gray-400 dark:text-slate-500"></i>
+                  <FontAwesomeIcon icon={faSearch} className="text-gray-400 dark:text-slate-500" />
                 </div>
                 <input 
                   type="text" 
@@ -222,11 +232,11 @@ export default function UsersPage() {
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{user.username}</h3>
                         <div className="flex items-center justify-center gap-3 text-sm text-gray-500 dark:text-slate-400 mb-4">
                           <div className="flex items-center space-x-1 whitespace-nowrap">
-                            <i className="fa-solid fa-clock"></i>
+                            <FontAwesomeIcon icon={faClock} />
                             <span>{user.stats.totalHours}h</span>
                           </div>
                           <div className="flex items-center space-x-1 whitespace-nowrap">
-                            <i className="fa-solid fa-fire text-red-500"></i>
+                            <FontAwesomeIcon icon={faFire} className="text-red-500" />
                             <span>{user.stats.totalPomodoros}p</span>
                           </div>
                         </div>
@@ -245,7 +255,7 @@ export default function UsersPage() {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <i className="fa-solid fa-users text-gray-300 dark:text-slate-600 text-6xl mb-4"></i>
+                  <FontAwesomeIcon icon={faUsers} className="text-gray-300 dark:text-slate-600 text-6xl mb-4" />
                   <p className="text-gray-500 dark:text-slate-400">No users found</p>
                 </div>
               )}
@@ -257,8 +267,8 @@ export default function UsersPage() {
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">Top by Hours</h3>
               <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-slate-400">
-                <i className="fa-solid fa-trophy text-yellow-500"></i>
-                <span>Week</span>
+                <FontAwesomeIcon icon={faTrophy} className="text-yellow-500" />
+                <span className="text-gray-500 dark:text-slate-400">Week</span>
               </div>
             </div>
 

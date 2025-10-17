@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { SendHorizonal, Loader2 } from 'lucide-react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSocket } from '@/hooks/useSocket'
@@ -447,7 +449,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
               type="submit"
               className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             >
-              <i className="fa-solid fa-paper-plane"></i>
+              <FontAwesomeIcon icon={faPaperPlane} />
             </button>
           </div>
         </div>

@@ -31,6 +31,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (response.ok) {
         const { user, token } = await response.json()
         localStorage.setItem('token', token)
+        
+        // Clear anonymous ID after successful login
+        const anonymousId = localStorage.getItem('anonymous_user_id')
+        if (anonymousId) {
+          localStorage.removeItem('anonymous_user_id')
+        }
+        
         set({ user, token, isAuthenticated: true })
         return true
       }
@@ -43,17 +50,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   register: async (email: string, username: string, password: string) => {
     try {
+      // Get anonymous ID if it exists
+      const anonymousId = localStorage.getItem('anonymous_user_id')
+      
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, username, password }),
+        body: JSON.stringify({ email, username, password, anonymousId }),
       })
 
       if (response.ok) {
         const { user, token } = await response.json()
         localStorage.setItem('token', token)
+        
+        // Clear anonymous ID after successful registration
+        if (anonymousId) {
+          localStorage.removeItem('anonymous_user_id')
+        }
+        
         set({ user, token, isAuthenticated: true })
         return true
       }

@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/useAuthStore'
-import { useSocket } from '@/hooks/useSocket'
 import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
@@ -18,9 +17,6 @@ export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [mounted, setMounted] = useState(false)
-
-  // Initialize socket connection for all users
-  useSocket()
 
   useEffect(() => {
     setMounted(true)

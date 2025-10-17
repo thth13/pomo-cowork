@@ -4,7 +4,7 @@ import { hashPassword, generateToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, username, password } = await request.json()
+    const { email, username, password, anonymousId } = await request.json()
 
     if (!email || !username || !password) {
       return NextResponse.json(
@@ -20,12 +20,17 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Check if user already exists
+    // Check if user already exists (excluding the current anonymous user)
     const existingUser = await prisma.user.findFirst({
       where: {
-        OR: [
-          { email },
-          { username }
+        AND: [
+          {
+            OR: [
+              { email },
+              { username }
+            ]
+          },
+          anonymousId ? { id: { not: anonymousId } } : {}
         ]
       }
     })
@@ -37,40 +42,119 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new user
     const hashedPassword = await hashPassword(password)
-    const user = await prisma.user.create({
-      data: {
-        email,
-        username,
-        password: hashedPassword,
-        settings: {
-          create: {
-            workDuration: 25,
-            shortBreak: 5,
-            longBreak: 15,
-            longBreakAfter: 4,
-            soundEnabled: true,
-            soundVolume: 0.5,
-            notificationsEnabled: true,
+    let user
+
+    // If there's an anonymous user, update it
+    if (anonymousId) {
+      const anonymousUser = await prisma.user.findUnique({
+        where: { id: anonymousId },
+        include: { settings: true }
+      })
+
+      if (anonymousUser && anonymousUser.isAnonymous) {
+        console.log(`Converting anonymous user ${anonymousId} to registered user`)
+        
+        user = await prisma.user.update({
+          where: { id: anonymousId },
+          data: {
+            email,
+            username,
+            password: hashedPassword,
+            isAnonymous: false,
+          },
+          include: { settings: true }
+        })
+
+        // Create settings if they don't exist
+        if (!user.settings) {
+          await prisma.userSettings.create({
+            data: {
+              userId: user.id,
+              workDuration: 25,
+              shortBreak: 5,
+              longBreak: 15,
+              longBreakAfter: 4,
+              soundEnabled: true,
+              soundVolume: 0.5,
+              notificationsEnabled: true,
+            }
+          })
+        }
+
+        // Update chat messages with new username
+        await prisma.chatMessage.updateMany({
+          where: { userId: user.id },
+          data: { username: user.username }
+        })
+
+        console.log(`Successfully converted anonymous user to ${username}`)
+      } else {
+        // Anonymous user not found, create new user
+        user = await prisma.user.create({
+          data: {
+            email,
+            username,
+            password: hashedPassword,
+            settings: {
+              create: {
+                workDuration: 25,
+                shortBreak: 5,
+                longBreak: 15,
+                longBreakAfter: 4,
+                soundEnabled: true,
+                soundVolume: 0.5,
+                notificationsEnabled: true,
+              }
+            },
+            tasks: {
+              create: [
+                {
+                  title: 'Welcome to Pomodoro Timer!',
+                  description: 'This is your first task. You can edit or delete it, and add new tasks.',
+                  pomodoros: 1,
+                  priority: 'Средний',
+                  completed: false
+                }
+              ]
+            }
+          },
+          include: { settings: true }
+        })
+      }
+    } else {
+      // No anonymous user, create new user
+      user = await prisma.user.create({
+        data: {
+          email,
+          username,
+          password: hashedPassword,
+          settings: {
+            create: {
+              workDuration: 25,
+              shortBreak: 5,
+              longBreak: 15,
+              longBreakAfter: 4,
+              soundEnabled: true,
+              soundVolume: 0.5,
+              notificationsEnabled: true,
+            }
+          },
+          tasks: {
+            create: [
+              {
+                title: 'Welcome to Pomodoro Timer!',
+                description: 'This is your first task. You can edit or delete it, and add new tasks.',
+                pomodoros: 1,
+                priority: 'Средний',
+                completed: false
+              }
+            ]
           }
         },
-        tasks: {
-          create: [
-            {
-              title: 'Welcome to Pomodoro Timer!',
-              description: 'This is your first task. You can edit or delete it, and add new tasks.',
-              pomodoros: 1,
-              priority: 'Средний',
-              completed: false
-            }
-          ]
-        }
-      },
-      include: {
-        settings: true
-      }
-    })
+        include: { settings: true }
+      })
+    }
 
     // Generate JWT token
     const token = generateToken({

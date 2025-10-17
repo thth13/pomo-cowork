@@ -18,6 +18,8 @@ export async function GET(
         id: true,
         username: true,
         email: true,
+        avatarUrl: true,
+        description: true,
         createdAt: true,
         _count: {
           select: {
@@ -100,6 +102,8 @@ export async function GET(
       user: {
         id: user.id,
         username: user.username,
+        avatarUrl: user.avatarUrl,
+        description: user.description,
         createdAt: user.createdAt,
         totalSessions: user._count.sessions
       },

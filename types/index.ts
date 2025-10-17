@@ -3,6 +3,7 @@ export interface User {
   email: string
   username: string
   avatarUrl?: string
+  description?: string
   createdAt: string
   isAnonymous?: boolean
   settings?: UserSettings

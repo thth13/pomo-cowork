@@ -293,6 +293,60 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Статистика по задачам
+    const allUserTasks = await prisma.task.findMany({
+      where: {
+        userId: payload.userId
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    const completedTasks = allUserTasks.filter(t => t.completed)
+    const pendingTasks = allUserTasks.filter(t => !t.completed)
+    
+    // Группировка задач по приоритету
+    const tasksByPriority = {
+      critical: allUserTasks.filter(t => t.priority === 'Критичный').length,
+      high: allUserTasks.filter(t => t.priority === 'Высокий').length,
+      medium: allUserTasks.filter(t => t.priority === 'Средний').length,
+      low: allUserTasks.filter(t => t.priority === 'Низкий').length
+    }
+
+    // Топ-5 задач по затраченным помодоро
+    const topTasksByPomodoros = allUserTasks
+      .sort((a, b) => b.completedPomodoros - a.completedPomodoros)
+      .slice(0, 5)
+      .map(task => ({
+        id: task.id,
+        title: task.title,
+        completedPomodoros: task.completedPomodoros,
+        plannedPomodoros: task.pomodoros,
+        completed: task.completed,
+        priority: task.priority
+      }))
+
+    // Эффективность выполнения задач (сколько задач выполнено в пределах запланированного времени)
+    const tasksWithinEstimate = completedTasks.filter(t => t.completedPomodoros <= t.pomodoros).length
+    const estimationAccuracy = completedTasks.length > 0 
+      ? Math.round((tasksWithinEstimate / completedTasks.length) * 100)
+      : 0
+
+    const taskStats = {
+      total: allUserTasks.length,
+      completed: completedTasks.length,
+      pending: pendingTasks.length,
+      completionRate: allUserTasks.length > 0 
+        ? Math.round((completedTasks.length / allUserTasks.length) * 100)
+        : 0,
+      byPriority: tasksByPriority,
+      topByPomodoros: topTasksByPomodoros,
+      estimationAccuracy,
+      totalPlannedPomodoros: allUserTasks.reduce((sum, t) => sum + t.pomodoros, 0),
+      totalCompletedPomodoros: allUserTasks.reduce((sum, t) => sum + t.completedPomodoros, 0)
+    }
+
     const stats = {
       // Верхний блок
       totalPomodoros,
@@ -311,7 +365,10 @@ export async function GET(request: NextRequest) {
       monthlyBreakdown,
       
       // Тренды продуктивности
-      productivityTrends
+      productivityTrends,
+      
+      // Статистика по задачам
+      taskStats
     }
 
     return NextResponse.json(stats)

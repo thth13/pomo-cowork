@@ -37,6 +37,29 @@ interface Stats {
     avgSessionDuration: number
     weeklyTasks: { completed: number; total: number }
   }
+  taskStats: {
+    total: number
+    completed: number
+    pending: number
+    completionRate: number
+    byPriority: {
+      critical: number
+      high: number
+      medium: number
+      low: number
+    }
+    topByPomodoros: Array<{
+      id: string
+      title: string
+      completedPomodoros: number
+      plannedPomodoros: number
+      completed: boolean
+      priority: string
+    }>
+    estimationAccuracy: number
+    totalPlannedPomodoros: number
+    totalCompletedPomodoros: number
+  }
 }
 
 export default function StatsPage() {
@@ -353,7 +376,6 @@ export default function StatsPage() {
               <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faClock} className="text-red-600 text-lg" />
               </div>
-              <span className="text-sm text-green-600 font-medium">+12%</span>
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalPomodoros.toLocaleString()}</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Total Pomodoros</div>
@@ -364,7 +386,6 @@ export default function StatsPage() {
               <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faStopwatch} className="text-blue-600 text-lg" />
               </div>
-              <span className="text-sm text-green-600 font-medium">+8%</span>
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalHours}h {totalMinutesRemainder}m</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Total Focus Time</div>
@@ -375,7 +396,6 @@ export default function StatsPage() {
               <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faCalendarCheck} className="text-orange-600 text-lg" />
               </div>
-              <span className="text-sm text-green-600 font-medium">+2 days</span>
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
@@ -387,7 +407,6 @@ export default function StatsPage() {
               <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faCalendarDays} className="text-purple-600 text-lg" />
               </div>
-              <span className="text-sm text-green-600 font-medium">+3%</span>
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{avgTimePerDay}m</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Average Daily Time</div>
@@ -399,7 +418,6 @@ export default function StatsPage() {
               <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                 <FontAwesomeIcon icon={faFire} className="text-green-600 text-lg" />
               </div>
-              <span className="text-sm text-green-600 font-medium">+18%</span>
             </div>
             <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{focusTimeThisMonth}h {focusTimeThisMonthMinutes}m</div>
             <div className="text-sm text-gray-600 dark:text-slate-300">Focus Time</div>
@@ -483,18 +501,24 @@ export default function StatsPage() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">87%</div>
-              <div className="text-sm text-gray-600 dark:text-slate-300">Best Week</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">May 15-21</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                {stats?.weeklyActivity && stats.weeklyActivity.length > 0 
+                  ? Math.max(...stats.weeklyActivity.map(w => w.pomodoros))
+                  : 0}
+              </div>
+              <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">Pomodoros</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">234</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                {stats?.yearlyHeatmap ? stats.yearlyHeatmap.filter(d => d.pomodoros > 0).length : 0}
+              </div>
               <div className="text-sm text-gray-600 dark:text-slate-300">Active Days</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">of 365 days</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">This year</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">18</div>
-              <div className="text-sm text-gray-600 dark:text-slate-300">Longest Streak</div>
+              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
+              <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
               <div className="text-xs text-gray-500 dark:text-slate-400">days in a row</div>
             </div>
           </div>
@@ -579,6 +603,9 @@ export default function StatsPage() {
             <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
           </div>
         </div>
+
+            {/* Task Statistics */}
+
           </>
         )}
 
