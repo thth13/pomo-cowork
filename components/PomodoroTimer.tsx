@@ -38,6 +38,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     shortBreak,
     longBreak,
     longBreakAfter,
+    selectedTask,
     startSession,
     pauseSession,
     resumeSession,
@@ -161,6 +162,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
               type: activeSession.type,
               userId: user.id,
               username: user.username,
+              avatarUrl: user.avatarUrl,
               timeRemaining: currentTimeRemaining,
               startedAt: activeSession.startedAt
             }
@@ -300,7 +302,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
 
       switch (type) {
         case 'TIMER_TICK':
-          // Обновляем время из Service Worker
+          // Update time from Service Worker
           if (currentSession && payload.sessionId === currentSession.id) {
             useTimerStore.setState({ timeRemaining: payload.timeRemaining })
             
@@ -318,7 +320,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           break
         
         case 'TIMER_STATE':
-          // Синхронизация состояния при подключении
+          // State synchronization on connection
           if (payload.isRunning && payload.sessionId === currentSession?.id) {
             useTimerStore.setState({ 
               timeRemaining: payload.timeRemaining,
@@ -332,17 +334,17 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     return unsubscribe
   }, [currentSession, emitTimerTick])
 
-  // Синхронизация с Service Worker при изменении состояния
+  // Synchronize with Service Worker on state change
   useEffect(() => {
     if (!currentSession) return
 
-    // Запрашиваем текущее состояние из Service Worker
+    // Request current state from Service Worker
     sendMessageToServiceWorker({
       type: 'GET_STATE',
     })
   }, [currentSession])
 
-  // Обновление title страницы с временем таймера
+  // Update page title with timer time
   useEffect(() => {
     if (isRunning && currentSession && timeRemaining > 0) {
       const timeStr = formatTime(timeRemaining)
@@ -357,13 +359,13 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     }
   }, [isRunning, currentSession, timeRemaining])
 
-  // Локальный таймер для плавного обновления UI
+  // Local timer for smooth UI updates
   useEffect(() => {
     let localInterval: NodeJS.Timeout | undefined
     let syncInterval: NodeJS.Timeout | undefined
 
     if (isRunning && currentSession) {
-      // Локальное обновление каждую секунду для плавности
+      // Local update every second for smoothness
       localInterval = setInterval(() => {
         const session = useTimerStore.getState().currentSession
         const running = useTimerStore.getState().isRunning
@@ -375,7 +377,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           const totalDuration = session.duration * 60
           const actualTimeRemaining = Math.max(0, totalDuration - elapsed)
           
-          // Обновляем время каждую секунду
+          // Update time every second
           useTimerStore.setState({ timeRemaining: actualTimeRemaining })
           
           if (actualTimeRemaining === 0) {
@@ -384,7 +386,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         }
       }, 1000)
 
-      // Синхронизация с Service Worker каждые 5 секунд
+      // Synchronize with Service Worker every 5 seconds
       syncInterval = setInterval(() => {
         const session = useTimerStore.getState().currentSession
         const running = useTimerStore.getState().isRunning
@@ -396,7 +398,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           const totalDuration = session.duration * 60
           const actualTimeRemaining = Math.max(0, totalDuration - elapsed)
           
-          // Синхронизируем Service Worker
+          // Synchronize Service Worker
           sendMessageToServiceWorker({
             type: 'SYNC_TIME',
             payload: {
@@ -521,11 +523,6 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     
     lastActionTimeRef.current = now
     
-    // if (!task.trim() && sessionType === SessionType.WORK) {
-    //   alert('Please specify what you\'re working on')
-    //   return
-    // }
-
     setIsStarting(true)
 
     try {
@@ -575,7 +572,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       }
 
       const duration = getSessionDuration(sessionType)
-      const taskName = task.trim() || getSessionTypeLabel(sessionType)
+      const taskName = selectedTask?.title || getSessionTypeLabel(sessionType)
 
       // Get user ID or anonymous ID
       const userId = user?.id || getOrCreateAnonymousId()
@@ -633,6 +630,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             type: sessionType,
             userId,
             username,
+            avatarUrl: user?.avatarUrl,
             timeRemaining: duration * 60,
             startedAt: dbSession.startedAt
           }
@@ -724,7 +722,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         ...currentSession,
         duration: currentSession.duration,
         timeRemaining,
-        username
+        username,
+        avatarUrl: user?.avatarUrl
       })
       
       // Update session in database
@@ -863,6 +862,30 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           headers,
           body: JSON.stringify(body)
         })
+
+        // Increment task pomodoro counter if it's a work session and a task is selected
+        if (
+          completedType === SessionType.WORK &&
+          selectedTask &&
+          selectedTask.id &&
+          token
+        ) {
+          try {
+            await fetch(`/api/tasks/${selectedTask.id}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({ 
+                incrementPomodoro: true 
+              })
+            })
+            console.log('Pomodoro counter incremented for task:', selectedTask.id)
+          } catch (error) {
+            console.error('Failed to increment task pomodoro:', error)
+          }
+        }
       } catch (error) {
         console.error('Failed to update session:', error)
       }
@@ -980,6 +1003,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
             type: nextType,
             userId,
             username,
+            avatarUrl: user?.avatarUrl,
             timeRemaining: duration * 60,
             startedAt: dbSession.startedAt
           }
@@ -1041,216 +1065,240 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     ? ((currentSession.duration * 60 - timeRemaining) / (currentSession.duration * 60)) * 100
     : 0
 
+  const circumference = 2 * Math.PI * 54
+  const offset = circumference * (1 - progress / 100)
+
   return (
-    <div className="card max-w-md mx-auto relative" data-timer-panel>
-      <div className="text-center space-y-6">
-        {/* Session Type Selector */}
-        <div className="flex justify-center space-x-2">
-          {Object.values(SessionType).map((type) => (
-            <button
-              key={type}
-              onClick={() => handleSessionTypeChange(type)}
-              disabled={!!currentSession}
-              className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                sessionType === type
-                  ? 'bg-primary-100 text-primary-700'
-                  : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-              } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {getSessionTypeLabel(type)}
-            </button>
-          ))}
-        </div>
-
-        {/* Timer Display */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={openSettings}
-            className="absolute -top-2 -right-2 rounded-full bg-white dark:bg-slate-800 shadow-sm border border-slate-200 dark:border-slate-700 p-2 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300 dark:hover:border-slate-600 transition"
-            aria-label="Timer settings"
-          >
-            <Settings size={16} />
-          </button>
-          <motion.div
-            className="relative w-48 h-48 mx-auto"
-            initial={{ scale: 0.9 }}
-            animate={{ scale: isRunning ? 1.05 : 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            {/* Progress Ring */}
-            <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="transparent"
-                className="text-slate-200 dark:text-slate-300"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="45"
-                stroke="currentColor"
-                strokeWidth="2"
-                fill="transparent"
-                strokeDasharray={`${2 * Math.PI * 45}`}
-                strokeDashoffset={`${2 * Math.PI * 45 * (1 - progress / 100)}`}
-                className={`transition-all duration-1000 ${
-                  activeSessionType === SessionType.WORK
-                    ? 'text-primary-500'
-                    : activeSessionType === SessionType.SHORT_BREAK
-                    ? 'text-secondary-500'
-                    : 'text-blue-500'
-                }`}
-                strokeLinecap="round"
-              />
-            </svg>
-            
-            {/* Time Display */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="text-center">
-                <div className={`text-4xl font-bold ${getSessionTypeColor(activeSessionType)}`}>
-                  {formatTime(timeRemaining)}
+    <div className="flex flex-col items-center" data-timer-panel>
+      {/* Current Task Display */}
+      {sessionType === SessionType.WORK && (
+        <div className="mb-8 w-full max-w-md">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+            Current Task
+          </label>
+          <div className={`w-full bg-white dark:bg-slate-800 border rounded-xl px-4 py-3 min-h-[60px] flex flex-col justify-center ${
+            selectedTask 
+              ? 'border-blue-500 dark:border-blue-400' 
+              : 'border-gray-300 dark:border-slate-600'
+          }`}>
+            {selectedTask ? (
+              <>
+                <div className="text-gray-900 dark:text-white font-medium mb-1">
+                  {selectedTask.title}
                 </div>
-                <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                  {getSessionTypeLabel(activeSessionType)}
-                </div>
+                {selectedTask.description && (
+                  <div className="text-sm text-gray-500 dark:text-gray-400">
+                    {selectedTask.description}
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="text-gray-500 dark:text-gray-400 text-center">
+                Select a task from the list on the right
               </div>
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Task Input */}
-        {sessionType === SessionType.WORK && (
-          <div>
-            <input
-              type="text"
-              placeholder="What are you working on?"
-              value={task}
-              onChange={(e) => setTask(e.target.value)}
-              disabled={!!currentSession}
-              className="input w-full"
-              maxLength={100}
-            />
+            )}
           </div>
+        </div>
+      )}
+
+      {/* Timer Container */}
+      <div className="relative mb-8">
+        <svg className="w-80 h-80 timer-ring" viewBox="0 0 120 120">
+          <circle 
+            cx="60" 
+            cy="60" 
+            r="54" 
+            fill="none" 
+            className="stroke-gray-200 dark:stroke-slate-700"
+            strokeWidth="8"
+          />
+          <circle 
+            cx="60" 
+            cy="60" 
+            r="54" 
+            fill="none" 
+            stroke={
+              activeSessionType === SessionType.WORK 
+                ? '#ef4444' 
+                : activeSessionType === SessionType.SHORT_BREAK 
+                ? '#22c55e' 
+                : '#3b82f6'
+            }
+            strokeWidth="8" 
+            strokeDasharray={circumference}
+            strokeDashoffset={offset}
+            strokeLinecap="round"
+            style={{ transition: 'stroke-dashoffset 1s linear' }}
+          />
+        </svg>
+        
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <div className={`text-6xl font-bold mb-2 ${
+            activeSessionType === SessionType.WORK 
+              ? 'text-red-500 dark:text-red-400' 
+              : activeSessionType === SessionType.SHORT_BREAK 
+              ? 'text-green-500 dark:text-green-400' 
+              : 'text-blue-500 dark:text-blue-400'
+          }`}>
+            {formatTime(timeRemaining)}
+          </div>
+          <div className="text-lg font-medium text-gray-600 dark:text-slate-300">
+            {getSessionTypeLabel(activeSessionType)}
+          </div>
+        </div>
+      </div>
+      
+      {/* Timer Controls */}
+      <div className="flex items-center space-x-6 mb-8">
+        {!currentSession ? (
+          <button 
+            onClick={handleStart}
+            disabled={isStarting}
+            className={`bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 ${
+              isStarting ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            <Play size={20} />
+            <span>{isStarting ? 'Starting...' : 'Start'}</span>
+          </button>
+        ) : (
+          <button 
+            onClick={handleStop}
+            disabled={isStopping}
+            className={`bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors flex items-center space-x-2 ${
+              isStopping ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            <Square size={20} />
+            <span>{isStopping ? 'Stopping...' : 'Stop'}</span>
+          </button>
         )}
 
-        {/* Controls */}
-        <div className="flex justify-center space-x-3">
-          {!currentSession ? (
-            <motion.button
-              onClick={handleStart}
-              disabled={isStarting}
-              className={`btn-primary flex items-center space-x-2 px-6 py-3 ${
-                isStarting ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              whileHover={!isStarting ? { scale: 1.05 } : {}}
-              whileTap={!isStarting ? { scale: 0.95 } : {}}
-            >
-              <Play size={20} />
-              <span>{isStarting ? 'Starting...' : 'Start'}</span>
-            </motion.button>
-          ) : (
-            <>
-              {/* <motion.button
-                onClick={isRunning ? handlePause : handleResume}
-                className="btn-secondary flex items-center space-x-2"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                {isRunning ? <Pause size={20} /> : <Play size={20} />}
-                <span>{isRunning ? 'Pause' : 'Resume'}</span>
-              </motion.button> */}
-              
-              <motion.button
-                onClick={handleStop}
-                disabled={isStopping}
-                className={`btn-secondary flex items-center space-x-2 ${
-                  isStopping ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-                whileHover={!isStopping ? { scale: 1.05 } : {}}
-                whileTap={!isStopping ? { scale: 0.95 } : {}}
-              >
-                <Square size={20} />
-                <span>{isStopping ? 'Stopping...' : 'Stop'}</span>
-              </motion.button>
-            </>
-          )}
-          
-          {/* <motion.button
-            onClick={handleReset}
-            className="btn-secondary flex items-center space-x-2"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <RotateCcw size={20} />
-            <span>Reset</span>
-          </motion.button> */}
-        </div>
-
-        {/* Session Counter */}
-        <div className="text-center">
-          <div className="text-2xl font-bold text-slate-700 dark:text-slate-300">{completedSessions}</div>
-          <div className="text-sm text-slate-500 dark:text-slate-400">completed sessions</div>
-        </div>
+        <button
+          type="button"
+          onClick={openSettings}
+          className="inline-flex items-center space-x-2 px-4 py-3 rounded-xl border border-gray-200 bg-white text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+        >
+          <Settings size={20} />
+          <span>Adjust time</span>
+        </button>
+      </div>
+      
+      {/* Timer Tabs */}
+      <div className="flex bg-white dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mb-8">
+        <button 
+          onClick={() => handleSessionTypeChange(SessionType.WORK)}
+          disabled={!!currentSession}
+          className={`px-6 py-2 rounded-lg font-medium ${
+            sessionType === SessionType.WORK
+              ? 'bg-red-500 text-white'
+              : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
+          } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          Focus
+        </button>
+        <button 
+          onClick={() => handleSessionTypeChange(SessionType.SHORT_BREAK)}
+          disabled={!!currentSession}
+          className={`px-6 py-2 rounded-lg font-medium ${
+            sessionType === SessionType.SHORT_BREAK
+              ? 'bg-red-500 text-white'
+              : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
+          } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          Short Break
+        </button>
+        <button 
+          onClick={() => handleSessionTypeChange(SessionType.LONG_BREAK)}
+          disabled={!!currentSession}
+          className={`px-6 py-2 rounded-lg font-medium ${
+            sessionType === SessionType.LONG_BREAK
+              ? 'bg-red-500 text-white'
+              : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
+          } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          Long Break
+        </button>
       </div>
 
       {isSettingsOpen && (
-        <div className="absolute top-4 right-4 z-20 w-64 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 shadow-xl">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">Timer durations (min)</span>
-            <button
-              type="button"
-              onClick={() => setIsSettingsOpen(false)}
-              className="text-xs text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
-            >
-              Close
-            </button>
-          </div>
-          <div className="space-y-3">
-            <label className="flex flex-col text-left text-xs font-medium text-slate-500 dark:text-slate-400">
-              Work
-              <input
-                type="number"
-                min={1}
-                value={settingsForm.workDuration}
-                onChange={(event) => handleSettingsChange('workDuration', Number(event.target.value))}
-                className="input mt-1"
-              />
-            </label>
-            <label className="flex flex-col text-left text-xs font-medium text-slate-500 dark:text-slate-400">
-              Short break
-              <input
-                type="number"
-                min={1}
-                value={settingsForm.shortBreak}
-                onChange={(event) => handleSettingsChange('shortBreak', Number(event.target.value))}
-                className="input mt-1"
-              />
-            </label>
-            <label className="flex flex-col text-left text-xs font-medium text-slate-500 dark:text-slate-400">
-              Long break
-              <input
-                type="number"
-                min={1}
-                value={settingsForm.longBreak}
-                onChange={(event) => handleSettingsChange('longBreak', Number(event.target.value))}
-                className="input mt-1"
-              />
-            </label>
-          </div>
-          <button
-            type="button"
-            onClick={handleSettingsSave}
-            className="btn-primary mt-4 w-full"
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+          onClick={() => setIsSettingsOpen(false)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-gray-200 dark:border-slate-700 p-6 space-y-6"
+            onClick={(event) => event.stopPropagation()}
           >
-            Apply
-          </button>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Timer settings</h3>
+                <p className="text-sm text-gray-500 dark:text-slate-400">Adjust durations in minutes for each session type</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(false)}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                Close
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <label className="block">
+                <span className="text-sm font-medium text-gray-700 dark:text-slate-200">Focus length</span>
+                <input
+                  type="number"
+                  min={1}
+                  className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  value={settingsForm.workDuration}
+                  onChange={(event) => handleSettingsChange('workDuration', Number(event.target.value))}
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-gray-700 dark:text-slate-200">Short break</span>
+                <input
+                  type="number"
+                  min={1}
+                  className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  value={settingsForm.shortBreak}
+                  onChange={(event) => handleSettingsChange('shortBreak', Number(event.target.value))}
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-gray-700 dark:text-slate-200">Long break</span>
+                <input
+                  type="number"
+                  min={1}
+                  className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  value={settingsForm.longBreak}
+                  onChange={(event) => handleSettingsChange('longBreak', Number(event.target.value))}
+                />
+              </label>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setIsSettingsOpen(false)}
+                className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleSettingsSave}
+                className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
+              >
+                Save changes
+              </button>
+            </div>
+          </div>
         </div>
       )}
+
     </div>
   )
 }

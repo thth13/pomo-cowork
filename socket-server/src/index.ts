@@ -12,6 +12,7 @@ interface PomodoroSession {
   id: string
   userId: string
   username: string
+  avatarUrl?: string
   task: string
   type: string
   timeRemaining: number
@@ -27,12 +28,14 @@ interface ChatMessage {
   id: string
   userId: string | null
   username: string
+  avatarUrl?: string
   text: string
   timestamp: number
   type?: 'message' | 'system'
   action?: {
-    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop'
+    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop' | 'session_complete'
     duration?: number
+    task?: string
   }
 }
 
@@ -56,11 +59,12 @@ const userConnectionCounts = new Map<string, number>()
 const anonymousSockets = new Map<string, string>()
 const anonymousConnectionCounts = new Map<string, number>()
 const userNames = new Map<string, string>()
+const userAvatars = new Map<string, string>()
 const chatMessages: ChatMessage[] = []
 
 const MAX_CHAT_HISTORY = 100
 
-// URL к Next.js API
+// URL to Next.js API
 const API_URL = process.env.API_URL || 'http://localhost:3000'
 
 // Function to save system messages to database via API
@@ -148,7 +152,7 @@ const removeAnonymousConnectionBySocket = (socketId: string) => {
   }
 }
 
-// Функция для загрузки активных сессий из БД
+// Function to load active sessions from DB
 const loadActiveSessionsFromDB = async () => {
   try {
     const response = await axios.get(`${API_URL}/api/sessions/active`)
@@ -163,13 +167,13 @@ const loadActiveSessionsFromDB = async () => {
       startedAt: string
     }>
 
-    // Обновляем локальный кэш сессий
+    // Update local session cache
     for (const dbSession of dbSessions) {
-      // Проверяем, есть ли уже эта сессия в памяти
+      // Check if this session already exists in memory
       const existingSession = sessions.get(dbSession.id)
       
       if (!existingSession) {
-        // Добавляем новую сессию из БД
+        // Add new session from DB
         const startTime = new Date(dbSession.startedAt).getTime()
         const now = Date.now()
         const elapsed = Math.floor((now - startTime) / 1000)
@@ -188,17 +192,17 @@ const loadActiveSessionsFromDB = async () => {
           lastUpdate: now
         })
       } else {
-        // Обновляем существующую сессию с данными из БД
+        // Update existing session with data from DB
         existingSession.timeRemaining = dbSession.timeRemaining
         existingSession.lastUpdate = Date.now()
       }
     }
 
-    // Удаляем сессии, которых больше нет в БД
+    // Remove sessions that are no longer in DB
     const dbSessionIds = new Set(dbSessions.map(s => s.id))
     for (const [sessionId, session] of sessions.entries()) {
       if (!dbSessionIds.has(sessionId)) {
-        // Проверяем, не устарела ли сессия (более 5 минут без обновления)
+        // Check if session is outdated (more than 5 minutes without update)
         if (session.lastUpdate && Date.now() - session.lastUpdate > 5 * 60 * 1000) {
           sessions.delete(sessionId)
         }
@@ -218,6 +222,7 @@ const serializeSessions = () =>
     id: session.id,
     userId: session.userId,
     username: session.username,
+    avatarUrl: session.avatarUrl,
     task: session.task,
     type: session.type,
     duration: session.duration,
@@ -226,16 +231,16 @@ const serializeSessions = () =>
     status: session.status
   }))
 
-// // Периодическое обновление времени для сессий (каждые 5 секунд)
+// // Periodic time update for sessions (every 5 seconds)
 // setInterval(() => {
 //   let updated = false
 //   sessions.forEach((session) => {
-//     // Рассчитываем актуальное оставшееся время на основе startTime
+//     // Calculate actual remaining time based on startTime
 //     const elapsed = (Date.now() - session.startTime) / 1000
 //     const totalDuration = session.duration * 60
 //     const calculatedTimeRemaining = Math.max(0, totalDuration - elapsed)
     
-//     // Обновляем только если изменилось
+//     // Update only if changed
 //     if (Math.abs(session.timeRemaining - calculatedTimeRemaining) > 1) {
 //       session.timeRemaining = calculatedTimeRemaining
 //       session.lastUpdate = Date.now()
@@ -248,13 +253,14 @@ const serializeSessions = () =>
 //   }
 // }, 5000)
 
-// Периодическая синхронизация с БД (каждые 30 секунд)
+
+// Periodic DB synchronization (every 30 seconds)
 setInterval(async () => {
   await loadActiveSessionsFromDB()
   io.emit('session-update', serializeSessions())
 }, 30000)
 
-// Периодическая очистка устаревших сессий (каждую минуту)
+// Periodic cleanup of outdated sessions (every minute)
 setInterval(() => {
   let cleaned = 0
   sessions.forEach((session, sessionId) => {
@@ -270,9 +276,9 @@ setInterval(() => {
   }
 }, 60000)
 
-// Периодическая очистка "призрачных" соединений
+// Periodic cleanup of "ghost" connections
 setInterval(() => {
-  // Проверяем, есть ли активные сокеты для каждого пользователя
+  // Check if there are active sockets for each user
   const activeSockets = new Set<string>()
   io.sockets.sockets.forEach(socket => {
     const userId = socketUserMap.get(socket.id)
@@ -281,7 +287,7 @@ setInterval(() => {
     }
   })
 
-  // Удаляем пользователей без активных сокетов
+  // Remove users without active sockets
   let cleaned = false
   onlineUsers.forEach((_, userId) => {
     if (!activeSockets.has(userId)) {
@@ -291,7 +297,7 @@ setInterval(() => {
     }
   })
 
-  // Очищаем анонимные соединения
+  // Clean anonymous connections
   const activeAnonymousSockets = new Set<string>()
   io.sockets.sockets.forEach(socket => {
     const anonId = anonymousSockets.get(socket.id)
@@ -310,7 +316,7 @@ setInterval(() => {
   if (cleaned) {
     emitPresenceSnapshot()
   }
-}, 30000) // Каждые 30 секунд
+}, 30000) // Every 30 seconds
 
 const emitPresenceSnapshot = () => {
   // Count unique anonymous users (by anonymousId), not connections
@@ -326,20 +332,24 @@ const emitPresenceSnapshot = () => {
 io.on('connection', async (socket) => {
   emitPresenceSnapshot()
   
-  // При подключении загружаем актуальные сессии из БД и отправляем клиенту
+  // On connection, load actual sessions from DB and send to client
   await loadActiveSessionsFromDB()
   socket.emit('session-update', serializeSessions())
 
-  socket.on('join-presence', (payload?: { userId: string | null; anonymousId?: string | null; username?: string | null }) => {
+  socket.on('join-presence', (payload?: { userId: string | null; anonymousId?: string | null; username?: string | null; avatarUrl?: string | null }) => {
     const userId = payload?.userId ?? null
     const anonymousId = payload?.anonymousId ?? null
     const username = payload?.username ?? null
+    const avatarUrl = payload?.avatarUrl ?? null
 
     if (userId) {
       socket.join(`user-${userId}`)
       socketUserMap.set(socket.id, userId)
       if (username) {
         userNames.set(userId, username)
+      }
+      if (avatarUrl) {
+        userAvatars.set(userId, avatarUrl)
       }
       incrementUserConnection(userId)
     }
@@ -361,8 +371,10 @@ io.on('connection', async (socket) => {
     const anonymousId = anonymousSockets.get(socket.id)
 
     let username = 'Guest'
+    let avatarUrl: string | undefined
     if (userId) {
       username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+      avatarUrl = userAvatars.get(userId)
     } else if (anonymousId) {
       username = `Guest-${anonymousId.slice(-4)}`
     }
@@ -371,6 +383,7 @@ io.on('connection', async (socket) => {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       userId,
       username,
+      avatarUrl,
       text: rawText,
       timestamp: Date.now()
     }
@@ -427,8 +440,10 @@ io.on('connection', async (socket) => {
 
     // Send system message about session start
     let username = 'Guest'
+    let avatarUrl: string | undefined
     if (userId) {
       username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+      avatarUrl = userAvatars.get(userId)
     } else if (anonymousId) {
       username = `Guest-${anonymousId.slice(-4)}`
     }
@@ -452,12 +467,16 @@ io.on('connection', async (socket) => {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       userId,
       username,
+      avatarUrl,
       text: '',
       timestamp: Date.now(),
       type: 'system',
       action: {
         type: actionType,
-        ...(actionType === 'work_start' && { duration: sessionData.duration })
+        ...(actionType === 'work_start' && { 
+          duration: sessionData.duration,
+          task: sessionData.task 
+        })
       }
     }
 
@@ -522,14 +541,15 @@ io.on('connection', async (socket) => {
       return // Session doesn't exist, nothing to do
     }
 
-    // Only send chat messages for manual stops, not for resets or automatic transitions
-    if (reason === 'manual') {
-      // Send system message about timer stop
+    // Send system message only when session is completed (timer finished)
+    if (reason === 'completed' && session.type === 'WORK') {
       const userId = socketUserMap.get(socket.id) ?? null
       const anonymousId = anonymousSockets.get(socket.id)
       let username = 'Guest'
+      let avatarUrl: string | undefined
       if (userId) {
         username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+        avatarUrl = userAvatars.get(userId)
       } else if (anonymousId) {
         username = `Guest-${anonymousId.slice(-4)}`
       }
@@ -538,11 +558,14 @@ io.on('connection', async (socket) => {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
         userId,
         username,
+        avatarUrl,
         text: '',
         timestamp: Date.now(),
         type: 'system',
         action: {
-          type: 'timer_stop'
+          type: 'session_complete',
+          task: session.task,
+          duration: session.duration
         }
       }
 
@@ -572,7 +595,7 @@ io.on('connection', async (socket) => {
       return
     }
 
-    // Обновляем время и привязываем к текущему сокету (если пользователь вернулся)
+    // Update time and bind to current socket (if user returned)
     session.timeRemaining = Number(payload.timeRemaining) || 0
     session.lastUpdate = Date.now()
     session.socketId = socket.id
@@ -583,7 +606,7 @@ io.on('connection', async (socket) => {
   })
 
   socket.on('get-active-sessions', async () => {
-    // Загружаем свежие данные из БД перед отправкой
+    // Load fresh data from DB before sending
     await loadActiveSessionsFromDB()
     socket.emit('session-update', serializeSessions())
   })

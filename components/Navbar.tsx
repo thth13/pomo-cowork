@@ -1,193 +1,184 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
-import {
-  User,
-  Settings,
-  BarChart3,
-  LogOut,
-  Menu,
-  X,
-  Users,
-  Timer
-} from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
-import ThemeToggle from './ThemeToggle'
-import Image from 'next/image'
 import { useConnectionStore } from '@/store/useConnectionStore'
+import ThemeToggle from './ThemeToggle'
+import { User } from 'lucide-react'
+import { useSocket } from '@/hooks/useSocket'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faArrowRightFromBracket,
+  faArrowUpRightFromSquare,
+  faChartLine,
+  faClock,
+  faCog,
+  faUsers
+} from '@fortawesome/free-solid-svg-icons'
 
 export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement | null>(null)
+  const router = useRouter()
   const { user, isAuthenticated, logout } = useAuthStore()
+  const { totalOnlineCount } = useConnectionStore()
+  const pathname = usePathname()
+  
+  // Initialize socket connection globally
+  useSocket()
 
-  const { isConnected, isChecking, onlineUserCount, anonymousOnlineCount, totalOnlineCount } = useConnectionStore()
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false)
+      }
+    }
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isMenuOpen])
 
   const handleLogout = () => {
     logout()
     setIsMenuOpen(false)
+    router.push('/')
   }
-  const statusColor = isChecking ? 'bg-amber-400' : isConnected ? 'bg-emerald-500' : 'bg-red-500'
-  const statusTitle = isChecking ? 'Checking connection...' : isConnected ? 'Online' : 'Offline'
-  const statusLabel = isChecking
-    ? 'Checking...'
-    : isConnected
-      && `${totalOnlineCount} online`
-
-
-  const navigation = isAuthenticated
-    ? [
-        { name: 'Timer', href: '/', icon: Timer },
-        { name: 'Statistics', href: '/profile', icon: BarChart3 },
-        // { name: 'Users', href: '/users', icon: Users },
-        { name: 'Settings', href: '/settings', icon: Settings },
-      ]
-    : []
 
   return (
     <>
-      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            {/* Logo */}
-            <Link href="/" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg flex items-center justify-center">
-                <Timer className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold text-xl text-slate-800 dark:text-slate-200">Pomo Cowork</span>
-            </Link>
-
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className="flex items-center space-x-1 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-                >
-                  <item.icon className="w-4 h-4" />
-                  <span>{item.name}</span>
-                </Link>
-              ))}
+      <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-8 py-4">
+        <div className="flex items-center justify-between max-w-7xl mx-auto">
+          <Link href="/" className="flex items-center space-x-3">
+            <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
+              <FontAwesomeIcon icon={faClock} className="text-white text-lg" />
             </div>
-
-            {/* Desktop Auth */}
-            <div className="hidden md:flex items-center space-x-4">
-              <ThemeToggle />
-              <div className="flex items-center" title={statusTitle}>
-                <span
-                  aria-hidden
-                  className={`h-2.5 w-2.5 rounded-full transition-colors duration-300 ${statusColor}`}
-                />
-                <span className="sr-only">{statusTitle}</span>
-                {!isChecking && (
-                  <span className="ml-2 text-sm text-slate-500 dark:text-slate-400">{statusLabel}</span>
-                )}
-              </div>
+            <div>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">Pomo Cowork</h1>
+              {/* <p className="text-sm text-gray-500 dark:text-slate-400">Pomodoro Coworking</p> */}
+            </div>
+          </Link>
+          
+          <nav className="flex items-center space-x-2">
+            <Link 
+              href="/" 
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                pathname === '/' 
+                  ? 'bg-red-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
+              }`}
+            >
+              <FontAwesomeIcon icon={faClock} className="mr-2" />Timer
+            </Link>
+            <Link 
+              href="/users" 
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                pathname === '/users' 
+                  ? 'bg-red-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
+              }`}
+            >
+              <FontAwesomeIcon icon={faUsers} className="mr-2" />Search
+            </Link>
+            <Link
+              href="/stats"
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                pathname === '/stats'
+                  ? 'bg-red-500 text-white'
+                  : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
+              }`}
+            >
+              <FontAwesomeIcon icon={faChartLine} className="mr-2 text-xs" />Stats
+            </Link>
+          </nav>
+          
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">
+              <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
+              <span>{totalOnlineCount} online</span>
+            </div>
+            
+            <div className="flex items-center space-x-3">
               {isAuthenticated && user ? (
-                <>
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center">
-                      <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                    </div>
-                    <span className="text-slate-700 dark:text-slate-300 font-medium">{user.username}</span>
-                  </div>
+                <div className="relative" ref={menuRef}>
                   <button
-                    onClick={handleLogout}
-                    className="btn-secondary flex items-center space-x-1"
+                    type="button"
+                    onClick={() => setIsMenuOpen(prev => !prev)}
+                    className="w-9 h-9 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold overflow-hidden hover:ring-2 hover:ring-primary-500 transition-all"
+                    aria-haspopup="true"
+                    aria-expanded={isMenuOpen}
                   >
-                    <LogOut className="w-4 h-4" />
-                    <span>Logout</span>
+                    {user.avatarUrl ? (
+                      <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+                    ) : (
+                      <User className="w-4 h-4" />
+                    )}
                   </button>
-                </>
+
+                  {isMenuOpen && (
+                    <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-gray-200 bg-white/95 shadow-lg ring-1 ring-black/5 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 z-50">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user.username}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{user.email}</p>
+                      </div>
+                      <div className="py-2">
+                        <Link
+                          href={`/user/${user.id}`}
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                          <span>Profile</span>
+                          <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xs" />
+                        </Link>
+                        {/* Stats link перенесён во внешний nav-bar */}
+                        <Link
+                          href="/settings"
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                        >
+                          <FontAwesomeIcon icon={faCog} className="text-xs" />
+                          <span>Settings</span>
+                        </Link>
+                        <div className="px-4 py-3 border-t border-gray-100 dark:border-slate-700">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400">Theme</span>
+                            <ThemeToggle />
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
+                        >
+                          <FontAwesomeIcon icon={faArrowRightFromBracket} className="text-xs" />
+                          <span>Log out</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <button
                   onClick={() => setIsAuthModalOpen(true)}
-                  className="btn-primary"
+                  className="btn-primary text-sm px-4 py-2"
                 >
                   Login
                 </button>
               )}
             </div>
-
-            {/* Mobile menu button */}
-            <div className="md:hidden flex items-center space-x-2">
-              <ThemeToggle />
-              <button
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-                className="p-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 transition-colors"
-              >
-                {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-              </button>
-            </div>
           </div>
-
-          {/* Mobile Navigation */}
-          {isMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="md:hidden border-t border-slate-200 dark:border-slate-700"
-            >
-              <div className="py-4 space-y-2">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    onClick={() => setIsMenuOpen(false)}
-                    className="flex items-center space-x-2 px-4 py-2 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg transition-colors"
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.name}</span>
-                  </Link>
-                ))}
-                
-                <div className="px-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center mb-3" title={statusTitle}>
-                    <span
-                      aria-hidden
-                      className={`h-2.5 w-2.5 rounded-full transition-colors duration-300 ${statusColor}`}
-                    />
-                    <span className="sr-only">{statusTitle}</span>
-                    <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">{statusLabel}</span>
-                  </div>
-                  {isAuthenticated && user ? (
-                    <>
-                      <div className="flex items-center space-x-3 mb-3">
-                        <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center">
-                          <User className="w-4 h-4 text-slate-600 dark:text-slate-300" />
-                        </div>
-                        <span className="text-slate-700 dark:text-slate-300 font-medium">{user.username}</span>
-                      </div>
-                      <button
-                        onClick={handleLogout}
-                        className="w-full btn-secondary flex items-center justify-center space-x-1"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        <span>Logout</span>
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        setIsAuthModalOpen(true)
-                        setIsMenuOpen(false)
-                      }}
-                      className="w-full btn-primary"
-                    >
-                      Login
-                    </button>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-          )}
         </div>
-      </nav>
+      </header>
 
       <AuthModal
         isOpen={isAuthModalOpen}

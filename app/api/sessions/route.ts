@@ -4,6 +4,8 @@ import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { ensureAnonymousUser } from '@/lib/anonymousServer'
 import { SessionType, SessionStatus } from '@/types'
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/sessions - Get user's sessions
 export async function GET(request: NextRequest) {
   try {

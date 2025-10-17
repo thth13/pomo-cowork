@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import ConnectionDebug from '@/components/ConnectionDebug'
+import AuthProvider from '@/components/AuthProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -51,33 +52,27 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <head>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              (function() {
-                try {
-                  const savedTheme = localStorage.getItem('theme-storage');
-                  if (savedTheme) {
-                    const theme = JSON.parse(savedTheme).state?.theme || 'light';
-                    document.documentElement.classList.add(theme);
-                  } else {
-                    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                    document.documentElement.classList.add(systemTheme);
-                  }
-                } catch (e) {
-                  document.documentElement.classList.add('light');
-                }
-              })();
+              try {
+                const stored = localStorage.getItem('theme-storage');
+                const theme = stored ? JSON.parse(stored).state.theme : 'light';
+                document.documentElement.classList.add(theme);
+              } catch (e) {
+                document.documentElement.classList.add('light');
+              }
             `,
           }}
         />
       </head>
       <body className={inter.className}>
         <ThemeProvider>
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+          <AuthProvider>
             {children}
             <ConnectionDebug />
-          </div>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

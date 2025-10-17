@@ -1,146 +1,356 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Search, User, Clock, TrendingUp } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
+import Navbar from '@/components/Navbar'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import {
+  faClock,
+  faCrown,
+  faFire,
+  faMedal,
+  faSearch,
+  faTrophy,
+  faUsers
+} from '@fortawesome/free-solid-svg-icons'
 
-interface User {
+interface UserSearchResult {
   id: string
   username: string
+  avatarUrl?: string
   createdAt: string
-  _count: {
-    sessions: number
+  isOnline: boolean
+  rank: number
+  stats: {
+    totalHours: number
+    totalPomodoros: number
   }
+}
+
+interface LeaderboardUser {
+  id: string
+  username: string
+  avatarUrl?: string
+  totalHours: number
+  totalPomodoros: number
+  rank: number
 }
 
 export default function UsersPage() {
   const router = useRouter()
   const { user: currentUser } = useAuthStore()
-  const [users, setUsers] = useState<User[]>([])
+  const [users, setUsers] = useState<UserSearchResult[]>([])
+  const [allUsers, setAllUsers] = useState<UserSearchResult[]>([])
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
+  const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true)
+  const [page, setPage] = useState(1)
 
-  const searchUsers = async (query: string) => {
-    if (query.length < 2) {
-      setUsers([])
-      return
-    }
+  // Загрузка всех пользователей и топа при монтировании
+  useEffect(() => {
+    loadLeaderboard()
+    loadAllUsers()
+  }, [])
 
-    setLoading(true)
+  // Поиск с дебаунсом
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.length >= 1) {
+        searchUsers(searchQuery)
+      } else {
+        setUsers(allUsers)
+      }
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery, allUsers])
+
+  const loadLeaderboard = async () => {
+    setLeaderboardLoading(true)
     try {
-      const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`)
+      const response = await fetch('/api/stats/leaderboard')
       if (response.ok) {
         const data = await response.json()
-        setUsers(data.users)
+        setLeaderboard(data.topUsers || [])
+        setCurrentUserRank(data.currentUser || null)
       }
     } catch (error) {
-      console.error('Error searching users:', error)
+      console.error('Error loading leaderboard:', error)
+    } finally {
+      setLeaderboardLoading(false)
+    }
+  }
+
+  const loadAllUsers = async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/users/search?q=')
+      if (response.ok) {
+        const data = await response.json()
+        setAllUsers(data.users || [])
+        setUsers(data.users || [])
+      }
+    } catch (error) {
+      console.error('Error loading users:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      searchUsers(searchQuery)
-    }, 300) // Debounce search
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery])
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
+  const searchUsers = async (query: string) => {
+    if (!query) {
+      setUsers(allUsers)
+      return
+    }
+    
+    // Фильтруем локально для мгновенного отклика
+    const filtered = allUsers.filter(user => 
+      user.username.toLowerCase().includes(query.toLowerCase())
+    )
+    setUsers(filtered)
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-800 mb-2">Users</h1>
-          <p className="text-slate-600">Find and view profiles of other users</p>
+  const getRankBadgeColor = (rank: number) => {
+    if (rank === 1) return 'bg-gradient-to-r from-yellow-400 to-yellow-500'
+    if (rank === 2) return 'bg-gradient-to-r from-red-500 to-red-600'
+    if (rank === 3) return 'bg-gradient-to-r from-yellow-400 to-yellow-500'
+    if (rank <= 5) return 'bg-gradient-to-r from-orange-400 to-orange-500'
+    if (rank <= 10) return 'bg-gradient-to-r from-blue-500 to-blue-600'
+    return 'bg-gradient-to-r from-purple-500 to-purple-600'
+  }
+
+  const getLeaderboardItemStyle = (rank: number) => {
+    if (rank === 1) return 'bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-800/50'
+    if (rank === 2) return 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-700/30 border-gray-200 dark:border-gray-700/50'
+    if (rank === 3) return 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800/50'
+    return ''
+  }
+
+  const getLeaderboardBadgeColor = (rank: number) => {
+    if (rank === 1) return 'bg-gradient-to-r from-yellow-400 to-yellow-500'
+    if (rank === 2) return 'bg-gradient-to-r from-gray-400 to-gray-500'
+    if (rank === 3) return 'bg-gradient-to-r from-orange-400 to-orange-500'
+    return 'text-gray-600'
+  }
+
+  const getLeaderboardIcon = (rank: number) => {
+    if (rank === 1) return <FontAwesomeIcon icon={faCrown} className="text-yellow-500" />
+    if (rank === 2) return <FontAwesomeIcon icon={faMedal} className="text-gray-500" />
+    if (rank === 3) return <FontAwesomeIcon icon={faMedal} className="text-orange-500" />
+    return null
+  }
+
+  const SkeletonUserCard = () => (
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 min-w-[280px] animate-pulse">
+      <div className="flex flex-col items-center text-center">
+        <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-slate-700 mb-4"></div>
+        <div className="h-5 w-32 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+        <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
+          <div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
         </div>
-
-        {/* Search */}
-        <div className="card mb-8">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search users by name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-            />
-          </div>
-        </div>
-
-        {/* Results */}
-        {searchQuery.length >= 2 && (
-          <div className="space-y-4">
-            {loading ? (
-              <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto mb-4"></div>
-                <p className="text-slate-600">Searching...</p>
-              </div>
-            ) : users.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {users.map((user, index) => (
-                  <motion.div
-                    key={user.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="card hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => router.push(`/user/${user.id}`)}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                        <User className="w-6 h-6 text-primary-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-slate-800">{user.username}</h3>
-                        <div className="flex items-center gap-4 text-sm text-slate-500 mt-1">
-                          <div className="flex items-center gap-1">
-                            <TrendingUp className="w-4 h-4" />
-                            <span>{user._count.sessions} sessions</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Clock className="w-4 h-4" />
-                            <span>{formatDate(user.createdAt)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <User className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-500">No users found</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Instructions */}
-        {searchQuery.length < 2 && (
-          <div className="text-center py-12">
-            <Search className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h2 className="text-xl font-semibold text-slate-700 mb-2">Find Users</h2>
-            <p className="text-slate-500 max-w-md mx-auto">
-              Enter a username in the search field above to find and view their profiles
-            </p>
-          </div>
-        )}
+        <div className="h-10 w-full bg-gray-200 dark:bg-slate-700 rounded-lg"></div>
       </div>
     </div>
+  )
+
+  const SkeletonLeaderboardItem = () => (
+    <div className="flex items-center space-x-3 p-3 rounded-lg border dark:border-slate-700 animate-pulse">
+      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700"></div>
+      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-slate-700"></div>
+      <div className="flex-1">
+        <div className="h-4 w-24 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+        <div className="h-3 w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
+      </div>
+    </div>
+  )
+
+  return (
+    <>
+      <Navbar />
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
+        <main className="max-w-7xl mx-auto px-8 py-8">
+        <div className="flex gap-8">
+          {/* Основная область поиска */}
+          <div className="flex-1">
+            {/* Поиск */}
+            <div className="mb-8">
+              <div className="relative max-w-md mx-auto">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <FontAwesomeIcon icon={faSearch} className="text-gray-400 dark:text-slate-500" />
+                </div>
+                <input 
+                  type="text" 
+                  placeholder="Search users..." 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
+                />
+              </div>
+            </div>
+
+            {/* Search Results */}
+            <div className="search-results" style={{ height: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
+                  <SkeletonUserCard />
+                </div>
+              ) : users.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {users.map((user) => (
+                    <div 
+                      key={user.id}
+                      className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all cursor-pointer min-w-[280px]"
+                      onClick={() => router.push(`/user/${user.id}`)}
+                    >
+                      <div className="flex flex-col items-center text-center">
+                        <div className="relative mb-4">
+                          {user.avatarUrl ? (
+                            <img 
+                              src={user.avatarUrl} 
+                              alt={user.username}
+                              className="w-20 h-20 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                              {user.username.charAt(0).toUpperCase()}
+                            </div>
+                          )}
+                          <div className={`absolute -top-1 -right-1 w-6 h-6 ${user.isOnline ? 'bg-green-400' : 'bg-gray-400 dark:bg-slate-600'} rounded-full border-2 border-white dark:border-slate-800`}></div>
+                          <div className={`absolute -top-2 -right-2 min-w-[24px] h-6 rounded-xl flex items-center justify-center text-xs font-semibold border-2 border-white dark:border-slate-800 text-white ${getRankBadgeColor(user.rank)}`}>
+                            #{user.rank}
+                          </div>
+                        </div>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{user.username}</h3>
+                        <div className="flex items-center justify-center gap-3 text-sm text-gray-500 dark:text-slate-400 mb-4">
+                          <div className="flex items-center space-x-1 whitespace-nowrap">
+                            <FontAwesomeIcon icon={faClock} />
+                            <span>{user.stats.totalHours}h</span>
+                          </div>
+                          <div className="flex items-center space-x-1 whitespace-nowrap">
+                            <FontAwesomeIcon icon={faFire} className="text-red-500" />
+                            <span>{user.stats.totalPomodoros}p</span>
+                          </div>
+                        </div>
+                        <button 
+                          className="bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 px-6 py-2 rounded-lg font-medium transition-colors w-full"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            router.push(`/user/${user.id}`)
+                          }}
+                        >
+                          Profile
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12">
+                  <FontAwesomeIcon icon={faUsers} className="text-gray-300 dark:text-slate-600 text-6xl mb-4" />
+                  <p className="text-gray-500 dark:text-slate-400">No users found</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Leaderboard Sidebar */}
+          <div className="w-80 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 h-fit sticky top-8">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Top by Hours</h3>
+              <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-slate-400">
+                <FontAwesomeIcon icon={faTrophy} className="text-yellow-500" />
+                <span className="text-gray-500 dark:text-slate-400">Week</span>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {leaderboardLoading ? (
+                <>
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                  <SkeletonLeaderboardItem />
+                </>
+              ) : leaderboard.slice(0, 7).map((user) => (
+                <div 
+                  key={user.id}
+                  className={`flex items-center space-x-3 p-3 rounded-lg border dark:border-slate-700 cursor-pointer transition-all hover:shadow-md ${getLeaderboardItemStyle(user.rank)}`}
+                  onClick={() => router.push(`/user/${user.id}`)}
+                >
+                  <div className={`flex items-center justify-center w-8 h-8 text-white rounded-full text-sm font-bold ${user.rank <= 3 ? getLeaderboardBadgeColor(user.rank) : 'bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300'}`}>
+                    {user.rank}
+                  </div>
+                  {user.avatarUrl ? (
+                    <img 
+                      src={user.avatarUrl} 
+                      alt={user.username}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
+                      {user.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 dark:text-white">{user.username}</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">{user.totalHours}h / {user.totalPomodoros} pomodoros</p>
+                  </div>
+                  {getLeaderboardIcon(user.rank)}
+                </div>
+              ))}
+            </div>
+
+            {currentUserRank && !leaderboardLoading && (
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
+                <div 
+                  className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 cursor-pointer"
+                  onClick={() => router.push(`/profile`)}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white rounded-full text-sm font-bold">
+                    {currentUserRank.rank}
+                  </div>
+                  {currentUser?.avatarUrl ? (
+                    <img 
+                      src={currentUser.avatarUrl} 
+                      alt={currentUser.username}
+                      className="w-10 h-10 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
+                      {currentUser?.username.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900 dark:text-white">You</p>
+                    <p className="text-sm text-gray-600 dark:text-slate-400">{currentUserRank.totalHours}h / {currentUserRank.totalPomodoros} pomodoros</p>
+                  </div>
+                  <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">Your rank</span>
+                </div>
+              </div>
+            )}
+
+            {/* <button 
+              className="w-full mt-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all"
+              onClick={() => router.push('/stats')}
+            >
+              Полный рейтинг
+            </button> */}
+          </div>
+        </div>
+      </main>
+    </div>
+    </>
   )
 }

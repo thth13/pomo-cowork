@@ -3,6 +3,8 @@ import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import ActiveSessions from '@/components/ActiveSessions'
 
+export const dynamic = 'force-dynamic'
+
 type ActiveSession = Prisma.PomodoroSessionGetPayload<{
   include: {
     user: {
@@ -39,7 +41,8 @@ export async function GET(request: NextRequest) {
         user: {
           select: {
             id: true,
-            username: true
+            username: true,
+            avatarUrl: true
           }
         }
       },
@@ -57,6 +60,7 @@ export async function GET(request: NextRequest) {
         id: session.id,
         userId: session.userId,
         username: session.user.username,
+        avatarUrl: session.user.avatarUrl,
         task: session.task,
         type: session.type,
         duration: session.duration,

@@ -12,6 +12,13 @@ interface TimerState {
   // Active sessions from other users
   activeSessions: ActiveSession[]
 
+  // Selected task
+  selectedTask: {
+    id: string
+    title: string
+    description?: string
+  } | null
+
   // Actions
   startSession: (task: string, duration: number, type: SessionType, sessionId?: string) => void
   pauseSession: () => void
@@ -23,6 +30,7 @@ interface TimerState {
   updateActiveSessionTime: (sessionId: string, timeRemaining: number) => void
   restoreSession: (session: PomodoroSession) => void
   previewSessionType: (type: SessionType) => void
+  setSelectedTask: (task: { id: string; title: string; description?: string } | null) => void
 
   // Settings
   workDuration: number
@@ -51,6 +59,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   completedSessions: 0,
   pausedAt: null,
   activeSessions: [],
+  selectedTask: null,
 
   // Default settings (25 min work, 5 min short break, 15 min long break)
   workDuration: 25,
@@ -209,6 +218,10 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       longBreakAfter: settings.longBreakAfter,
       timeRemaining: settings.workDuration * 60, // Initialize timeRemaining with workDuration
     })
+  },
+
+  setSelectedTask: (task) => {
+    set({ selectedTask: task })
   },
 }))
 

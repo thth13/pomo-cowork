@@ -12,6 +12,8 @@ model User {
   email       String   @unique
   username    String   @unique
   password    String
+  avatarUrl   String?
+  description String?
   isAnonymous Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -23,8 +25,10 @@ model User {
   longBreakAfter Int @default(4) // sessions
 
   // Relations
-  sessions PomodoroSession[]
-  settings UserSettings?
+  sessions     PomodoroSession[]
+  settings     UserSettings?
+  tasks        Task[]
+  chatMessages ChatMessage[]     @relation("ChatMessages")
 
   @@map("users")
 }
@@ -53,6 +57,24 @@ model UserSettings {
   @@map("user_settings")
 }
 
+model Task {
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  title              String
+  description        String  @default("")
+  pomodoros          Int     @default(1) // Планируемое количество
+  completedPomodoros Int     @default(0) // Фактически потраченное количество
+  priority           String  @default("Средний") // "Критичный", "Высокий", "Средний", "Низкий"
+  completed          Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tasks")
+}
+
 model PomodoroSession {
   id     String @id @default(cuid())
   userId String
@@ -76,11 +98,13 @@ model PomodoroSession {
 model ChatMessage {
   id             String   @id @default(cuid())
   userId         String?
+  user           User?    @relation("ChatMessages", fields: [userId], references: [id], onDelete: SetNull)
   username       String
   text           String
   type           String   @default("message") // "message" or "system"
   actionType     String? // "work_start", "break_start", "long_break_start", "timer_stop"
   actionDuration Int? // duration in minutes for work sessions
+  actionTask     String?
   createdAt      DateTime @default(now())
 
   @@index([createdAt])

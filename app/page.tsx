@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/useAuthStore'
-import { useSocket } from '@/hooks/useSocket'
 import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
@@ -11,19 +10,17 @@ import AuthModal from '@/components/AuthModal'
 import { registerServiceWorker } from '@/lib/serviceWorker'
 import dynamic from 'next/dynamic'
 const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => null })
+import TaskList from '@/components/TaskList'
+import WorkHistory from '@/components/WorkHistory'
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
+  const { isAuthenticated, isLoading } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [mounted, setMounted] = useState(false)
 
-  // Initialize socket connection for all users
-  useSocket()
-
   useEffect(() => {
     setMounted(true)
-    checkAuth()
-  }, [checkAuth])
+  }, [])
 
   useEffect(() => {
     // Request notification permission
@@ -50,116 +47,42 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Hero Section */}
-        {/* <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center mb-12"
-        >
-          <h1 className="text-4xl md:text-6xl font-bold text-slate-800 dark:text-slate-200 mb-4">
-            Pomodoro Timer
-          </h1>
-          <p className="text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
-            Boost your productivity with the Pomodoro Technique.
-            See what other users are working on in real-time.
-          </p>
-        </motion.div> */}
-
-        {/* Main Content */}
-        <div className="space-y-12">
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <PomodoroTimer />
-          </motion.section>
-
-          {/* Active Sessions Section - показываем всем */}
-          <motion.section
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <ActiveSessions />
-          </motion.section>
-
-          {/* Guest Call to Action */}
-          {!isAuthenticated && (
-            <motion.div
+      <main className="max-w-7xl mx-auto px-8 py-12">
+        <div className="grid grid-cols-12 gap-8">
+          {/* Левая колонка - Таймер и Активные сессии */}
+          <div className="col-span-12 lg:col-span-8">
+            {/* Timer Section */}
+            <motion.section
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="text-center space-y-8"
+              transition={{ delay: 0.1 }}
+              className="mb-16"
             >
-              {/* Call to Action */}
-              <div className="card max-w-md mx-auto">
-                <div className="text-center space-y-4">
-                  <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-                    Save Your Progress
-                  </h2>
-                  <p className="text-slate-600 dark:text-slate-400">
-                    Create an account to save your session history, view detailed statistics
-                    and track your progress over time.
-                  </p>
-                  <motion.button
-                    onClick={() => setShowAuthModal(true)}
-                    className="btn-primary px-8 py-3 text-lg"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Create Account
-                  </motion.button>
-                </div>
-              </div>
+              <PomodoroTimer />
+            </motion.section>
 
-              {/* Features */}
-              <div className="grid md:grid-cols-3 gap-6 mt-12">
-                {[
-                  {
-                    title: 'Pomodoro Technique',
-                    description: 'Work for 25 minutes, rest for 5. A proven method for boosting productivity.',
-                    icon: '⏰'
-                  },
-                  {
-                    title: 'Real-time Activity',
-                    description: 'See what other users are working on right now.',
-                    icon: '👥'
-                  },
-                  {
-                    title: 'Statistics',
-                    description: 'Track your progress with detailed charts and metrics.',
-                    icon: '📊'
-                  }
-                ].map((feature, index) => (
-                  <motion.div
-                    key={feature.title}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.4 + index * 0.1 }}
-                    className="card text-center"
-                  >
-                    <div className="text-4xl mb-4">{feature.icon}</div>
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">
-                      {feature.title}
-                    </h3>
-                    <p className="text-slate-600 dark:text-slate-400">
-                      {feature.description}
-                    </p>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </div>
-        <div className="mt-12">
-          <Chat matchHeightSelector="[data-timer-panel]" />
+            {/* Active Sessions Section */}
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <ActiveSessions />
+            </motion.section>
+          </div>
+
+          {/* Правая колонка - Список задач, Чат и История */}
+          <div className="col-span-12 lg:col-span-4 space-y-8">
+            <TaskList />
+            <Chat />
+            <WorkHistory />
+          </div>
         </div>
       </main>
+      
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}

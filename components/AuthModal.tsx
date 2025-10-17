@@ -1,9 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
+import { getAnonymousProfile } from '@/lib/anonymousUser'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -22,6 +23,21 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [isLoading, setIsLoading] = useState(false)
 
   const { login, register } = useAuthStore()
+
+  // // Pre-fill registration form with anonymous user data
+  // useEffect(() => {
+  //   if (!isLogin && isOpen) {
+  //     const anonymousId = localStorage.getItem('anonymous_user_id')
+  //     if (anonymousId) {
+  //       const profile = getAnonymousProfile()
+  //       setFormData(prev => ({
+  //         ...prev,
+  //         username: profile.username,
+  //         email: profile.email
+  //       }))
+  //     }
+  //   }
+  // }, [isLogin, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
