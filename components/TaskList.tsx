@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -26,13 +26,21 @@ const priorityColors = {
   'Low': 'text-blue-600',
 }
 
-export default function TaskList() {
+export interface TaskListRef {
+  refreshTasks: () => Promise<void>
+}
+
+const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskPriority, setNewTaskPriority] = useState<'Critical' | 'High' | 'Medium' | 'Low'>('Medium')
   const [isLoading, setIsLoading] = useState(true)
   const { selectedTask, setSelectedTask, setTaskOptions, isRunning } = useTimerStore()
   const { user } = useAuthStore()
+
+  useImperativeHandle(ref, () => ({
+    refreshTasks: loadTasks
+  }))
 
   // Load tasks on mount
   useEffect(() => {
@@ -86,9 +94,13 @@ export default function TaskList() {
   }, [tasks, selectedTask, setSelectedTask, isLoading])
 
   const loadTasks = async () => {
+    console.log('TaskList: Loading tasks...')
     try {
       const token = localStorage.getItem('token')
-      if (!token) return
+      if (!token) {
+        console.log('TaskList: No token found, skipping load')
+        return
+      }
 
       const response = await fetch('/api/tasks', {
         headers: {
@@ -98,6 +110,7 @@ export default function TaskList() {
 
       if (response.ok) {
         const data = await response.json()
+        console.log('TaskList: Received tasks from API:', data)
         const normalized: Task[] = data.map((task: any) => ({
           id: task.id,
           backendId: task.id,
@@ -110,6 +123,9 @@ export default function TaskList() {
           isPending: false,
         }))
         setTasks(normalized)
+        console.log('TaskList: Tasks updated in state')
+      } else {
+        console.error('TaskList: Failed to load tasks, status:', response.status)
       }
     } catch (error) {
       console.error('Failed to load tasks:', error)
@@ -508,4 +524,8 @@ export default function TaskList() {
       </div>
     </motion.div>
   )
-}
+})
+
+TaskList.displayName = 'TaskList'
+
+export default TaskList

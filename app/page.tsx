@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/useAuthStore'
 import Navbar from '@/components/Navbar'
@@ -10,13 +10,14 @@ import AuthModal from '@/components/AuthModal'
 import { registerServiceWorker } from '@/lib/serviceWorker'
 import dynamic from 'next/dynamic'
 const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => null })
-import TaskList from '@/components/TaskList'
+import TaskList, { TaskListRef } from '@/components/TaskList'
 import WorkHistory from '@/components/WorkHistory'
 
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const taskListRef = useRef<TaskListRef>(null)
 
   useEffect(() => {
     setMounted(true)
@@ -33,6 +34,13 @@ export default function HomePage() {
     // Регистрация Service Worker для фонового таймера
     registerServiceWorker()
   }, [])
+
+  const handleSessionComplete = async () => {
+    // Обновляем список задач после завершения сессии
+    if (taskListRef.current) {
+      await taskListRef.current.refreshTasks()
+    }
+  }
 
   // Show loading while checking auth
   if (!mounted || isLoading) {
@@ -61,7 +69,7 @@ export default function HomePage() {
               transition={{ delay: 0.1 }}
               className="mb-8 sm:mb-12 lg:mb-16"
             >
-              <PomodoroTimer />
+              <PomodoroTimer onSessionComplete={handleSessionComplete} />
             </motion.section>
 
             {/* Active Sessions Section */}
@@ -76,7 +84,7 @@ export default function HomePage() {
 
           {/* Правая колонка - Список задач, Чат и История */}
           <div className="col-span-12 lg:col-span-4 space-y-4 sm:space-y-6 lg:space-y-8">
-            <TaskList />
+            <TaskList ref={taskListRef} />
             <Chat />
             <WorkHistory />
           </div>

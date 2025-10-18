@@ -1047,6 +1047,13 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
         })
 
         // Increment task pomodoro counter if it's a work session and a task is selected
+        console.log('Checking pomodoro increment conditions:', {
+          completedType,
+          isWork: completedType === SessionType.WORK,
+          selectedTask,
+          hasToken: !!token
+        })
+        
         if (
           completedType === SessionType.WORK &&
           selectedTask &&
@@ -1054,7 +1061,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           token
         ) {
           try {
-            await fetch(`/api/tasks/${selectedTask.id}`, {
+            console.log('Incrementing pomodoro for task:', selectedTask.id)
+            const response = await fetch(`/api/tasks/${selectedTask.id}`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -1064,10 +1072,17 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
                 incrementPomodoro: true 
               })
             })
-            console.log('Pomodoro counter incremented for task:', selectedTask.id)
+            
+            if (!response.ok) {
+              throw new Error(`Server returned ${response.status}`)
+            }
+            
+            console.log('Pomodoro counter incremented successfully for task:', selectedTask.id)
           } catch (error) {
             console.error('Failed to increment task pomodoro:', error)
           }
+        } else {
+          console.log('Skipping pomodoro increment - conditions not met')
         }
       } catch (error) {
         console.error('Failed to update session:', error)
@@ -1098,7 +1113,9 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     }
 
     if (onSessionComplete) {
-      onSessionComplete()
+      console.log('Calling onSessionComplete callback')
+      await onSessionComplete()
+      console.log('onSessionComplete callback finished')
     }
 
     // Show notification
