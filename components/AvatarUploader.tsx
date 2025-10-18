@@ -30,8 +30,8 @@ export default function AvatarUploader({ currentAvatar, onFileSelect, previewUrl
       return
     }
 
-    if (file.size > 20 * 1024 * 1024) {
-      setError('File is too large (max 20MB)')
+    if (file.size > 4.5 * 1024 * 1024) {
+      setError('File is too large (max 4.5MB)')
       return
     }
 

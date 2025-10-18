@@ -65,9 +65,27 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   const [isStopping, setIsStopping] = useState(false)
   const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
   const [taskSearch, setTaskSearch] = useState('')
+  const [isAutoStartEnabled, setIsAutoStartEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('pomodoro:autoStartEnabled')
+      if (stored !== null) {
+        return stored === 'true'
+      }
+    }
+
+    return true
+  })
   const completedSessionIdRef = useRef<string | null>(null)
   const lastActionTimeRef = useRef<number>(0)
   const taskPickerRef = useRef<HTMLDivElement | null>(null)
+  const autoStartTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearAutoStartTimeout = () => {
+    if (autoStartTimeoutRef.current) {
+      clearTimeout(autoStartTimeoutRef.current)
+      autoStartTimeoutRef.current = null
+    }
+  }
 
   interface TimerSettingsForm {
     workDuration: number
@@ -117,6 +135,22 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       longBreak,
     })
   }, [workDuration, shortBreak, longBreak])
+
+  useEffect(() => {
+    localStorage.setItem('pomodoro:autoStartEnabled', String(isAutoStartEnabled))
+  }, [isAutoStartEnabled])
+
+  useEffect(() => {
+    if (!isAutoStartEnabled) {
+      clearAutoStartTimeout()
+    }
+  }, [isAutoStartEnabled])
+
+  useEffect(() => {
+    return () => {
+      clearAutoStartTimeout()
+    }
+  }, [])
 
   useEffect(() => {
     completedSessionIdRef.current = null
@@ -493,8 +527,81 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     }
   }
 
+  const initiateSession = async (type: SessionType): Promise<void> => {
+    const duration = getSessionDuration(type)
+    const taskName = type === SessionType.WORK
+      ? selectedTask?.title || 'Work Session'
+      : getSessionTypeLabel(type)
+
+    const userId = user?.id || getOrCreateAnonymousId()
+    const username = user?.username || getAnonymousUsername()
+
+    try {
+      const token = localStorage.getItem('token')
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json'
+      }
+
+      if (token) {
+        headers.Authorization = `Bearer ${token}`
+      }
+
+      const body: Record<string, any> = {
+        task: taskName,
+        duration,
+        type
+      }
+
+      if (!user) {
+        body.anonymousId = userId
+      }
+
+      const response = await fetch('/api/sessions', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body)
+      })
+
+      if (response.ok) {
+        const dbSession = await response.json()
+
+        startSession(taskName, duration, type, dbSession.id)
+
+        sendMessageToServiceWorker({
+          type: 'START_TIMER',
+          payload: {
+            sessionId: dbSession.id,
+            duration,
+            timeRemaining: duration * 60,
+            startedAt: dbSession.startedAt,
+          },
+        })
+
+        const sessionData = {
+          id: dbSession.id,
+          task: taskName,
+          duration,
+          type,
+          userId,
+          username,
+          avatarUrl: user?.avatarUrl,
+          timeRemaining: duration * 60,
+          startedAt: dbSession.startedAt
+        }
+
+        emitSessionStart(sessionData)
+      } else {
+        startSession(taskName, duration, type)
+      }
+    } catch (error) {
+      console.error('Failed to initiate session:', error)
+      startSession(taskName, duration, type)
+    }
+  }
+
   const handleSessionTypeChange = (type: SessionType) => {
     if (currentSession) return
+    clearAutoStartTimeout()
     setSessionType(type)
     previewSessionType(type)
   }
@@ -587,6 +694,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     
     lastActionTimeRef.current = now
     
+    clearAutoStartTimeout()
+
     setIsStarting(true)
 
     try {
@@ -728,6 +837,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const handlePause = async () => {
+    clearAutoStartTimeout()
     pauseSession()
     if (currentSession) {
       // Pause Service Worker timer
@@ -768,6 +878,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const handleResume = async () => {
+    clearAutoStartTimeout()
     resumeSession()
     if (currentSession) {
       const username = user?.username || getAnonymousUsername()
@@ -826,6 +937,8 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     // Prevent multiple rapid clicks (debounce 1 second)
     if (isStopping || now - lastActionTimeRef.current < 1000) return
     
+    clearAutoStartTimeout()
+
     const previousSessionType = currentSession?.type ?? sessionType
 
     lastActionTimeRef.current = now
@@ -890,6 +1003,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
   }
 
   const handleSessionComplete = async () => {
+    clearAutoStartTimeout()
     if (!currentSession) {
       return
     }
@@ -968,7 +1082,15 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
     // Auto-switch to next session type
     const nextType = getNextSessionType()
     setSessionType(nextType)
-    
+
+    const storeState = useTimerStore.getState()
+    const pendingSession = storeState.currentSession
+    const pendingTime = storeState.timeRemaining
+
+    if (!pendingSession && pendingTime !== getSessionDuration(nextType) * 60) {
+      previewSessionType(nextType)
+    }
+
     // Clear task if we're going to a break
     if (nextType === SessionType.SHORT_BREAK || nextType === SessionType.LONG_BREAK) {
     } else if (nextType === SessionType.WORK) {
@@ -1011,79 +1133,27 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       console.log('Sound is disabled')
     }
 
-    // Auto-start next session after a brief delay
-    setTimeout(async () => {
-      const duration = getSessionDuration(nextType)
-      const taskName = nextType === SessionType.WORK 
-        ? 'Work Session' 
-        : getSessionTypeLabel(nextType)
+    const scheduleAutoStart = () => {
+      clearAutoStartTimeout()
 
-      const userId = user?.id || getOrCreateAnonymousId()
-      const username = user?.username || getAnonymousUsername()
-
-      try {
-        const token = localStorage.getItem('token')
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json'
-        }
-        
-        if (token) {
-          headers.Authorization = `Bearer ${token}`
+      autoStartTimeoutRef.current = setTimeout(async () => {
+        if (!isAutoStartEnabled) {
+          clearAutoStartTimeout()
+          return
         }
 
-        const body: Record<string, any> = {
-          task: taskName,
-          duration,
-          type: nextType
-        }
-        
-        if (!user) {
-          body.anonymousId = userId
-        }
+        await initiateSession(nextType)
+      }, 1200)
+    }
 
-        const response = await fetch('/api/sessions', {
-          method: 'POST',
-          headers,
-          body: JSON.stringify(body)
-        })
+    if (isAutoStartEnabled) {
+      scheduleAutoStart()
+      return
+    }
 
-        if (response.ok) {
-          const dbSession = await response.json()
-          
-          startSession(taskName, duration, nextType, dbSession.id)
-          
-          // Start Service Worker timer
-          sendMessageToServiceWorker({
-            type: 'START_TIMER',
-            payload: {
-              sessionId: dbSession.id,
-              duration,
-              timeRemaining: duration * 60,
-              startedAt: dbSession.startedAt,
-            },
-          })
-          
-          const sessionData = {
-            id: dbSession.id,
-            task: taskName,
-            duration,
-            type: nextType,
-            userId,
-            username,
-            avatarUrl: user?.avatarUrl,
-            timeRemaining: duration * 60,
-            startedAt: dbSession.startedAt
-          }
-          
-          emitSessionStart(sessionData)
-        } else {
-          startSession(taskName, duration, nextType)
-        }
-      } catch (error) {
-        console.error('Failed to auto-start session:', error)
-        startSession(taskName, duration, nextType)
-      }
-    }, 1000) // 1 second delay to show notification
+    clearAutoStartTimeout()
+
+    previewSessionType(nextType)
   }
 
   const getSessionTypeLabel = (type: SessionType): string => {
@@ -1330,7 +1400,7 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
       </div>
       
       {/* Timer Controls */}
-      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-6 mb-6 sm:mb-8 px-4 sm:px-0 w-full sm:w-auto">
+      <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-6 sm:mb-8 px-4 sm:px-0 w-full sm:w-auto">
         {!currentSession ? (
           <button 
             onClick={handleStart}
@@ -1363,10 +1433,35 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           <Settings size={20} />
           <span>Adjust time</span>
         </button>
+
+        <button
+          type="button"
+          onClick={() => setIsAutoStartEnabled((prev) => !prev)}
+          className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+            isAutoStartEnabled
+              ? 'border-emerald-400 bg-emerald-600 text-white shadow-[0_8px_20px_-10px_rgba(16,185,129,0.7)] focus-visible:ring-emerald-500'
+              : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-100 focus-visible:ring-gray-400 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700'
+          }`}
+          aria-pressed={isAutoStartEnabled}
+          title={isAutoStartEnabled ? 'Автостарт включен' : 'Автостарт выключен'}
+        >
+          <span
+            className={`relative flex items-center justify-center w-7 h-7 rounded-full border text-[10px] font-bold ${
+              isAutoStartEnabled
+                ? 'border-emerald-300 bg-white text-emerald-600'
+                : 'border-gray-200 bg-white text-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-400'
+            }`}
+          >
+            {isAutoStartEnabled ? 'ON' : 'OFF'}
+          </span>
+          <span className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+            Auto Start
+          </span>
+        </button>
       </div>
       
       {/* Timer Tabs */}
-      <div className="flex bg-white dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mb-6 sm:mb-8 mx-4 sm:mx-0">
+      <div className="flex bg-white dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mb-4 sm:mb-6 mx-4 sm:mx-0">
         <button 
           onClick={() => handleSessionTypeChange(SessionType.WORK)}
           disabled={!!currentSession}
@@ -1401,6 +1496,9 @@ export default function PomodoroTimer({ onSessionComplete }: PomodoroTimerProps)
           Long Break
         </button>
       </div>
+
+      {/* Auto-start Toggle */}
+      <div className="hidden" />
 
       {isSettingsOpen && (
         <div

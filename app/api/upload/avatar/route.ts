@@ -34,8 +34,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Проверка размера (макс 20MB)
-    if (file.size > 20 * 1024 * 1024) {
-      return NextResponse.json({ error: 'File too large (max 20MB)' }, { status: 400 })
+    if (file.size > 4.5 * 1024 * 1024) {
+      return NextResponse.json({ error: 'File too large (max 4.5MB)' }, { status: 400 })
     }
 
     // Конвертируем файл в Buffer
