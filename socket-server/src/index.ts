@@ -71,7 +71,6 @@ const API_URL = process.env.API_URL || 'http://localhost:3000'
 const saveSystemMessageToDB = async (message: ChatMessage) => {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3000'
-    
     await axios.post(`${apiUrl}/api/chat/messages`, {
       userId: message.userId,
       username: message.username,
@@ -415,16 +414,16 @@ io.on('connection', async (socket) => {
 
   socket.on('session-start', (sessionData: PomodoroSession) => {
     // Remove any existing sessions for this user/socket to prevent duplicates
-    const userId = socketUserMap.get(socket.id) ?? null
+    const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
     const anonymousId = anonymousSockets.get(socket.id)
-    
+
     // Clean up any existing sessions for this user
     sessions.forEach((existingSession, existingSessionId) => {
       const isSameUser = (
         (userId && existingSession.userId === userId) ||
         (anonymousId && existingSession.socketId === socket.id)
       )
-      
+
       if (isSameUser && existingSessionId !== sessionData.id) {
         console.log(`Removing duplicate session ${existingSessionId} for user ${userId || anonymousId}`)
         sessions.delete(existingSessionId)
@@ -438,14 +437,18 @@ io.on('connection', async (socket) => {
       startTime: Date.now()
     })
 
-    // Send system message about session start
-    let username = 'Guest'
-    let avatarUrl: string | undefined
-    if (userId) {
-      username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
-      avatarUrl = userAvatars.get(userId)
-    } else if (anonymousId) {
-      username = `Guest-${anonymousId.slice(-4)}`
+    // Send system message about session start - use data from sessionData
+    let username = sessionData.username || 'Guest'
+    let avatarUrl = sessionData.avatarUrl
+
+    // Fallback to maps if sessionData doesn't have the info
+    if (!username || username === 'Guest') {
+      if (userId) {
+        username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+        avatarUrl = userAvatars.get(userId)
+      } else if (anonymousId) {
+        username = `Guest-${anonymousId.slice(-4)}`
+      }
     }
 
     let actionType: 'work_start' | 'break_start' | 'long_break_start'
@@ -496,7 +499,7 @@ io.on('connection', async (socket) => {
 
   socket.on('session-sync', (sessionData: PomodoroSession) => {
     // Remove any existing sessions for this user/socket to prevent duplicates
-    const userId = socketUserMap.get(socket.id) ?? null
+    const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
     const anonymousId = anonymousSockets.get(socket.id)
     
     // Clean up any existing sessions for this user (but don't remove the one we're syncing)
@@ -543,15 +546,19 @@ io.on('connection', async (socket) => {
 
     // Send system message only when session is completed (timer finished)
     if (reason === 'completed' && session.type === 'WORK') {
-      const userId = socketUserMap.get(socket.id) ?? null
+      const userId = session.userId || (socketUserMap.get(socket.id) ?? null)
       const anonymousId = anonymousSockets.get(socket.id)
-      let username = 'Guest'
-      let avatarUrl: string | undefined
-      if (userId) {
-        username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
-        avatarUrl = userAvatars.get(userId)
-      } else if (anonymousId) {
-        username = `Guest-${anonymousId.slice(-4)}`
+      let username = session.username || 'Guest'
+      let avatarUrl = session.avatarUrl
+
+      // Fallback to maps if session doesn't have the info
+      if (!username || username === 'Guest') {
+        if (userId) {
+          username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+          avatarUrl = userAvatars.get(userId)
+        } else if (anonymousId) {
+          username = `Guest-${anonymousId.slice(-4)}`
+        }
       }
 
       const systemMessage: ChatMessage = {
