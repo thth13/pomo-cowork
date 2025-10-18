@@ -27,8 +27,13 @@ export default function Navbar() {
   const mobileMenuRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
   const { user, isAuthenticated, logout } = useAuthStore()
-  const { totalOnlineCount } = useConnectionStore()
+  const { totalOnlineCount, isConnected, isChecking } = useConnectionStore()
   const pathname = usePathname()
+  const connectionStatusClass = isChecking
+    ? 'bg-yellow-400'
+    : isConnected
+      ? 'bg-green-400'
+      : 'bg-red-500'
   
   // Initialize socket connection globally
   useSocket()
@@ -113,9 +118,9 @@ export default function Navbar() {
           </nav>
           
           {/* Desktop Right Side */}
-          <div className="hidden lg:flex items-center space-x-6">
+            <div className="hidden lg:flex items-center space-x-6">
             <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">
-              <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
+              <div className={`w-2 h-2 rounded-full pulse-dot ${connectionStatusClass}`}></div>
               <span>{totalOnlineCount} online</span>
             </div>
             
@@ -191,7 +196,7 @@ export default function Navbar() {
           {/* Mobile Right Side */}
           <div className="flex lg:hidden items-center space-x-3">
             <div className="flex items-center space-x-2 text-xs text-gray-600 dark:text-slate-300">
-              <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
+              <div className={`w-2 h-2 rounded-full pulse-dot ${connectionStatusClass}`}></div>
               <span className="hidden sm:inline">{totalOnlineCount}</span>
             </div>
 
