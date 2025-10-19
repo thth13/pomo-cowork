@@ -215,7 +215,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     taskOptions,
   } = useTimerStore()
 
-  const { user } = useAuthStore()
+  const { user, updateUserSettings } = useAuthStore()
   const { emitSessionStart, emitSessionSync, emitSessionEnd, emitTimerTick } = useSocket()
 
   const [timerState, dispatchTimer] = useReducer(
@@ -527,6 +527,15 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       longBreak: normalized.longBreak,
       longBreakAfter,
     })
+
+    if (user) {
+      updateUserSettings({
+        workDuration: normalized.workDuration,
+        shortBreak: normalized.shortBreak,
+        longBreak: normalized.longBreak,
+        longBreakAfter,
+      })
+    }
 
     // Save to backend if user is authenticated
     if (user) {

@@ -1,6 +1,6 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, useRef, type MouseEvent } from 'react'
 
 interface TimerSettingsForm {
   workDuration: number
@@ -23,17 +23,30 @@ export const SettingsModal = memo(function SettingsModal({
   onSave,
   onClose,
 }: SettingsModalProps) {
+  const shouldCloseRef = useRef(false)
+
   if (!isOpen) {
     return null
   }
 
-  const handleWrapperClick = () => {
+  const handleWrapperMouseDown = (event: MouseEvent<HTMLDivElement>) => {
+    shouldCloseRef.current = event.target === event.currentTarget
+  }
+
+  const handleWrapperClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (!shouldCloseRef.current || event.target !== event.currentTarget) {
+      shouldCloseRef.current = false
+      return
+    }
+
+    shouldCloseRef.current = false
     onClose()
   }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+      onMouseDown={handleWrapperMouseDown}
       onClick={handleWrapperClick}
     >
       <div

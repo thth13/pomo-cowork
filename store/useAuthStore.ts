@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { User } from '@/types'
+import { User, UserSettings } from '@/types'
 
 interface AuthState {
   user: User | null
@@ -10,6 +10,7 @@ interface AuthState {
   register: (email: string, username: string, password: string) => Promise<boolean>
   logout: () => void
   checkAuth: () => Promise<void>
+  updateUserSettings: (settings: Partial<UserSettings>) => void
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -110,5 +111,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error('Auth check error:', error)
       set({ user: null, token: null, isAuthenticated: false, isLoading: false })
     }
+  },
+
+  updateUserSettings: (settings) => {
+    set((state) => {
+      if (!state.user) {
+        return {}
+      }
+
+      const existingSettings = state.user.settings
+
+      const nextSettings: UserSettings = existingSettings
+        ? { ...existingSettings, ...settings }
+        : {
+            id: settings.id ?? state.user.id,
+            userId: state.user.id,
+            workDuration: settings.workDuration ?? 25,
+            shortBreak: settings.shortBreak ?? 5,
+            longBreak: settings.longBreak ?? 15,
+            longBreakAfter: settings.longBreakAfter ?? 4,
+            soundEnabled: settings.soundEnabled ?? true,
+            soundVolume: settings.soundVolume ?? 0.5,
+            notificationsEnabled: settings.notificationsEnabled ?? true,
+          }
+
+      return {
+        user: {
+          ...state.user,
+          settings: nextSettings,
+        },
+      }
+    })
   },
 }))
