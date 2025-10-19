@@ -12,7 +12,7 @@ export async function fetcher<T = unknown>(input: string, init?: RequestInit): P
 
   if (!response.ok) {
     const error = new Error(`Request to ${input} failed with status ${response.status}`)
-    // eslint-disable-next-line @typescript-eslint/no-throw-literal
+
     throw error
   }
 

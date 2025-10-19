@@ -1,26 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { PrismaClient } from '@prisma/client'
-import { verifyToken } from '@/lib/auth'
 
 const prisma = new PrismaClient()
 
 export const dynamic = 'force-dynamic'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const authHeader = request.headers.get('Authorization')
-    
-    if (!authHeader?.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
-
-    const token = authHeader.substring(7)
-    const payload = await verifyToken(token)
-
-    if (!payload) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
-    }
-
     // Получаем начало и конец сегодняшнего дня
     const today = new Date()
     today.setHours(0, 0, 0, 0)
