@@ -125,8 +125,16 @@ export function useSocket() {
     sharedSocket?.emit('session-pause', sessionId)
   }
 
-  const emitSessionEnd = (sessionId: string, reason: 'manual' | 'completed' | 'reset' = 'manual') => {
-    sharedSocket?.emit('session-end', { sessionId, reason })
+  const emitSessionEnd = (
+    sessionId: string,
+    reason: 'manual' | 'completed' | 'reset' = 'manual',
+    options?: { removeActivity?: boolean }
+  ) => {
+    sharedSocket?.emit('session-end', {
+      sessionId,
+      reason,
+      ...(options?.removeActivity ? { removeActivity: true } : {}),
+    })
   }
 
   const emitTimerTick = (sessionId: string, timeRemaining: number) => {
@@ -158,6 +166,14 @@ export function useSocket() {
     sharedSocket?.off('chat-history', handler)
   }
 
+  const onChatRemove = (handler: (messageId: string) => void) => {
+    sharedSocket?.on('chat-remove', handler)
+  }
+
+  const offChatRemove = (handler: (messageId: string) => void) => {
+    sharedSocket?.off('chat-remove', handler)
+  }
+
   const emitChatTyping = (isTyping: boolean) => {
     sharedSocket?.emit('chat-typing', { isTyping })
   }
@@ -183,6 +199,8 @@ export function useSocket() {
     offChatMessage,
     onChatHistory,
     offChatHistory,
+    onChatRemove,
+    offChatRemove,
     emitChatTyping,
     onChatTyping,
     offChatTyping

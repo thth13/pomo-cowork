@@ -706,6 +706,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       if (currentSession) {
         const sessionId = currentSession.id
         lastStoppedSessionIdRef.current = sessionId
+        const startedAtMs = currentSession.startedAt ? new Date(currentSession.startedAt).getTime() : null
+        const isEarlyStop = startedAtMs ? Date.now() - startedAtMs < 60 * 1000 : false
         
         // Optimistically stop timer immediately
         cancelSession()
@@ -715,7 +717,9 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           type: 'STOP_TIMER',
         })
         
-        emitSessionEnd(sessionId, 'manual')
+        emitSessionEnd(sessionId, 'manual', {
+          removeActivity: isEarlyStop,
+        })
         
         // Update session in database in background
         try {

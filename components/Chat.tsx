@@ -28,6 +28,8 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     offChatMessage,
     onChatHistory,
     offChatHistory,
+    onChatRemove,
+    offChatRemove,
     emitChatTyping,
     onChatTyping,
     offChatTyping
@@ -114,6 +116,10 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
 
     }
 
+    const handleRemove = (messageId: string) => {
+      setMessages((prev) => prev.filter((msg) => msg.id !== messageId))
+    }
+
     const handleTyping = (payload: { username: string; isTyping: boolean }) => {
       if (!payload.isTyping) {
         setTyping(null)
@@ -126,6 +132,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
 
     onChatHistory(handleHistory)
     onChatMessage(handleNew)
+    onChatRemove(handleRemove)
     onChatTyping(handleTyping)
     
     // Загружаем последние 20 сообщений
@@ -147,6 +154,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     return () => {
       offChatHistory(handleHistory)
       offChatMessage(handleNew)
+      offChatRemove(handleRemove)
       offChatTyping(handleTyping)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

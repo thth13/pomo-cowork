@@ -22,6 +22,7 @@ interface PomodoroSession {
   socketId?: string
   lastUpdate?: number
   startTime: number
+  chatMessageId?: string
 }
 
 interface ChatMessage {
@@ -71,14 +72,30 @@ const API_URL = process.env.API_URL || 'http://localhost:3000'
 const saveSystemMessageToDB = async (message: ChatMessage) => {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3000'
-    await axios.post(`${apiUrl}/api/chat/messages`, {
+    const response = await axios.post(`${apiUrl}/api/chat/messages`, {
       userId: message.userId,
       username: message.username,
       type: 'system',
       action: message.action
     })
+    return response.data as { id: string } | null
   } catch (error) {
     console.error('Failed to save system message to database:', error)
+    return null
+  }
+}
+
+const deleteSystemMessageFromDB = async (messageId: string, sessionId?: string) => {
+  if (!messageId) return
+  try {
+    const apiUrl = process.env.API_URL || 'http://localhost:3000'
+    const url = new URL(`/api/chat/messages/${messageId}`, apiUrl)
+    if (sessionId) {
+      url.searchParams.set('sessionId', sessionId)
+    }
+    await axios.delete(url.toString())
+  } catch (error) {
+    console.error(`Failed to delete system message ${messageId} from database:`, error)
   }
 }
 
@@ -414,7 +431,7 @@ io.on('connection', async (socket) => {
     })
   })
 
-  socket.on('session-start', (sessionData: PomodoroSession) => {
+  socket.on('session-start', async (sessionData: PomodoroSession) => {
     // Remove any existing sessions for this user/socket to prevent duplicates
     const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
     const anonymousId = anonymousSockets.get(socket.id)
@@ -432,12 +449,12 @@ io.on('connection', async (socket) => {
       }
     })
 
-    // Add new session
-    sessions.set(sessionData.id, {
+    const startTime = Date.now()
+    const sessionRecord: PomodoroSession = {
       ...sessionData,
       socketId: socket.id,
-      startTime: Date.now()
-    })
+      startTime,
+    }
 
     // Send system message about session start - use data from sessionData
     let username = sessionData.username || 'Guest'
@@ -452,6 +469,9 @@ io.on('connection', async (socket) => {
         username = `Guest-${anonymousId.slice(-4)}`
       }
     }
+
+    sessionRecord.username = username
+    sessionRecord.avatarUrl = avatarUrl
 
     let actionType: 'work_start' | 'break_start' | 'long_break_start'
     switch (sessionData.type) {
@@ -492,7 +512,19 @@ io.on('connection', async (socket) => {
     }
     
     // Save to database
-    saveSystemMessageToDB(systemMessage)
+    const savedMessage = await saveSystemMessageToDB(systemMessage)
+    if (savedMessage?.id) {
+      systemMessage.id = savedMessage.id
+    }
+    sessionRecord.chatMessageId = systemMessage.id
+
+    // Replace message in history with persisted ID if needed
+    const lastIndex = chatMessages.length - 1
+    if (lastIndex >= 0) {
+      chatMessages[lastIndex] = systemMessage
+    }
+
+    sessions.set(sessionData.id, sessionRecord)
     
     io.emit('chat-new', systemMessage)
 
@@ -517,11 +549,16 @@ io.on('connection', async (socket) => {
       }
     })
 
+    const existingSession = sessions.get(sessionData.id)
+
     // Sync existing session without sending system message
     sessions.set(sessionData.id, {
       ...sessionData,
       socketId: socket.id,
-      startTime: Date.now() - (sessionData.duration * 60 * 1000 - sessionData.timeRemaining * 1000)
+      startTime: Date.now() - (sessionData.duration * 60 * 1000 - sessionData.timeRemaining * 1000),
+      chatMessageId: existingSession?.chatMessageId,
+      username: existingSession?.username || sessionData.username,
+      avatarUrl: existingSession?.avatarUrl || sessionData.avatarUrl,
     })
 
     io.emit('session-update', serializeSessions())
@@ -537,7 +574,7 @@ io.on('connection', async (socket) => {
     io.emit('session-update', serializeSessions())
   })
 
-  socket.on('session-end', (payload: { sessionId: string; reason?: 'manual' | 'completed' | 'reset' }) => {
+  socket.on('session-end', async (payload: { sessionId: string; reason?: 'manual' | 'completed' | 'reset'; removeActivity?: boolean }) => {
     const sessionId = payload?.sessionId
     const reason = payload?.reason ?? 'manual'
     const session = sessions.get(sessionId)
@@ -545,6 +582,11 @@ io.on('connection', async (socket) => {
     if (!session) {
       return // Session doesn't exist, nothing to do
     }
+
+    const shouldRemoveActivity = reason === 'manual' && (
+      payload?.removeActivity ||
+      (Date.now() - session.startTime < 60 * 1000)
+    )
 
     // Send system message only when session is completed (timer finished)
     if (reason === 'completed' && session.type === 'WORK') {
@@ -588,6 +630,15 @@ io.on('connection', async (socket) => {
       saveSystemMessageToDB(systemMessage)
       
       io.emit('chat-new', systemMessage)
+    }
+
+    if (shouldRemoveActivity && session.chatMessageId) {
+      const index = chatMessages.findIndex((message) => message.id === session.chatMessageId)
+      if (index !== -1) {
+        chatMessages.splice(index, 1)
+      }
+      io.emit('chat-remove', session.chatMessageId)
+      await deleteSystemMessageFromDB(session.chatMessageId, session.id)
     }
 
     // Only delete the specific session that belongs to this socket
