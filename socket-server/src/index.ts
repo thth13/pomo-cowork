@@ -318,13 +318,15 @@ setInterval(() => {
 }, 30000) // Every 30 seconds
 
 const emitPresenceSnapshot = () => {
+  const activeSocketCount = io.sockets.sockets.size
+
   // Count unique anonymous users (by anonymousId), not connections
   const anonymousCount = anonymousConnectionCounts.size
   io.emit('online-users', {
     userIds: Array.from(onlineUsers.keys()),
     userCount: onlineUsers.size,
     anonymousCount,
-    total: onlineUsers.size + anonymousCount
+    total: activeSocketCount
   })
 }
 
@@ -694,4 +696,3 @@ const port = Number(process.env.PORT) || 4000
 server.listen(port, () => {
   console.log(`Socket server listening on port ${port}`)
 })
-

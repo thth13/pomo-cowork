@@ -148,7 +148,7 @@ export default function AvatarUploader({ currentAvatar, onFileSelect, previewUrl
               <Upload className="h-5 w-5" />
             </span>
             <div className="text-left">
-              <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+              <p className="hidden text-sm font-medium text-slate-700 dark:text-slate-200 sm:block">
                 Drag & drop your avatar
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400">
