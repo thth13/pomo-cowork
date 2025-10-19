@@ -931,6 +931,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         filteredTaskOptions={filteredTaskOptions}
         taskSearch={taskSearch}
         onTaskSearchChange={setTaskSearch}
+        hasTaskOptions={taskOptions.length > 0}
       />
 
       {/* Timer Container */}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useImperativeHandle, forwardRef } from 'react'
+import { useState, useEffect, useImperativeHandle, forwardRef, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -18,6 +18,8 @@ interface Task {
 }
 
 const getTaskCanonicalId = (task: Task): string => task.backendId ?? task.id
+
+const SELECTED_TASK_STORAGE_KEY = 'selectedTask'
 
 const priorityColors = {
   'Critical': 'text-red-600',
@@ -37,10 +39,53 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const [isLoading, setIsLoading] = useState(true)
   const { selectedTask, setSelectedTask, setTaskOptions, isRunning } = useTimerStore()
   const { user } = useAuthStore()
+  const hasRestoredSelectedTask = useRef(false)
 
   useImperativeHandle(ref, () => ({
     refreshTasks: loadTasks
   }))
+
+  useEffect(() => {
+    if (hasRestoredSelectedTask.current) {
+      return
+    }
+
+    try {
+      const storedSelection = localStorage.getItem(SELECTED_TASK_STORAGE_KEY)
+      if (storedSelection) {
+        const parsedSelection = JSON.parse(storedSelection)
+
+        if (parsedSelection?.id) {
+          setSelectedTask({
+            id: parsedSelection.id,
+            title: parsedSelection.title ?? '',
+            description: parsedSelection.description ?? undefined,
+          })
+        }
+      }
+    } catch (error) {
+      console.error('TaskList: Failed to restore selected task from storage:', error)
+      localStorage.removeItem(SELECTED_TASK_STORAGE_KEY)
+    } finally {
+      hasRestoredSelectedTask.current = true
+    }
+  }, [setSelectedTask])
+
+  useEffect(() => {
+    if (!hasRestoredSelectedTask.current) {
+      return
+    }
+
+    try {
+      if (selectedTask) {
+        localStorage.setItem(SELECTED_TASK_STORAGE_KEY, JSON.stringify(selectedTask))
+      } else {
+        localStorage.removeItem(SELECTED_TASK_STORAGE_KEY)
+      }
+    } catch (error) {
+      console.error('TaskList: Failed to persist selected task to storage:', error)
+    }
+  }, [selectedTask])
 
   // Load tasks on mount
   useEffect(() => {

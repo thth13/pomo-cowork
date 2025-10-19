@@ -2,7 +2,7 @@
 
 import { RefObject, memo } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown, Check } from 'lucide-react'
+import { ChevronDown } from 'lucide-react'
 import { SessionType } from '@/types'
 import { TaskOption } from '@/types/task'
 
@@ -18,6 +18,7 @@ interface TaskPickerProps {
   filteredTaskOptions: TaskOption[]
   taskSearch: string
   onTaskSearchChange: (value: string) => void
+  hasTaskOptions: boolean
 }
 
 export const TaskPicker = memo(function TaskPicker({
@@ -32,6 +33,7 @@ export const TaskPicker = memo(function TaskPicker({
   filteredTaskOptions,
   taskSearch,
   onTaskSearchChange,
+  hasTaskOptions,
 }: TaskPickerProps) {
   if (sessionType !== SessionType.WORK) {
     return null
@@ -147,28 +149,19 @@ export const TaskPicker = memo(function TaskPicker({
                             : 'hover:bg-gray-50 dark:hover:bg-slate-800'
                         }`}
                       >
-                        <span
-                          className={`mt-0.5 flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
-                            isActive
-                              ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-200'
-                              : 'bg-gray-100 text-gray-500 dark:bg-slate-700 dark:text-slate-300'
-                          }`}
-                        >
-                          {taskOption.title.slice(0, 1).toUpperCase()}
-                        </span>
-                        <div className="flex flex-col">
-                          <span className="font-medium text-gray-700 dark:text-slate-200">
+                        <div className="flex flex-1 flex-col">
+                          <span className="truncate text-sm font-medium">
                             {taskOption.title}
                           </span>
                           {taskOption.description && (
-                            <span className="text-xs text-gray-400 dark:text-slate-500">
+                            <span className="line-clamp-2 text-xs text-gray-400 dark:text-slate-400">
                               {taskOption.description}
                             </span>
                           )}
                         </div>
                         {isActive && (
-                          <span className="ml-auto flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 text-white dark:bg-blue-400">
-                            <Check size={14} />
+                          <span className="mt-1 shrink-0 rounded-full bg-blue-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600 dark:bg-blue-900/40 dark:text-blue-200">
+                            Active
                           </span>
                         )}
                       </button>
@@ -181,7 +174,7 @@ export const TaskPicker = memo(function TaskPicker({
                 )}
               </div>
 
-              {!filteredTaskOptions.length && !taskSearch && (
+              {!hasTaskOptions && (
                 <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
                   Add tasks in the list to populate this menu.
                 </div>
