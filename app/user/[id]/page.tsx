@@ -49,6 +49,11 @@ interface UserProfile {
 }
 
 interface UserStats {
+  totalPomodoros: number
+  totalFocusMinutes: number
+  avgPomodorosPerDay: number
+  activeDays: number
+  focusTimeThisMonth: number
   currentStreak: number
   yearlyHeatmap: Array<{
     week: number
@@ -56,7 +61,10 @@ interface UserStats {
     pomodoros: number
     date: string
   }>
-  weeklyActivity: number[]
+  weeklyActivity: Array<{
+    date: string
+    pomodoros: number
+  }>
 }
 
 export default function UserProfilePage() {
@@ -156,14 +164,30 @@ export default function UserProfilePage() {
   const generateWeeklyData = () => {
     if (!userStats) return []
     
-    return userStats.weeklyActivity
+    return userStats.weeklyActivity.map(item => item.pomodoros)
   }
+
+  const totalPomodoros = userStats?.totalPomodoros || 0
+  const totalFocusMinutes = userStats?.totalFocusMinutes || 0
+  const totalFocusHours = Math.floor(totalFocusMinutes / 60)
+  const totalFocusMinutesRemainder = totalFocusMinutes % 60
+  const totalFocusDisplay = `${totalFocusHours}h ${totalFocusMinutesRemainder}m`
+  const avgPomodorosPerDay = userStats?.avgPomodorosPerDay || 0
+  const avgPomodorosDisplay = Number.isFinite(avgPomodorosPerDay)
+    ? (Number.isInteger(avgPomodorosPerDay) ? avgPomodorosPerDay.toString() : avgPomodorosPerDay.toFixed(1))
+    : '0'
+  const weekDayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const weeklyCategories = userStats?.weeklyActivity?.map(item => {
+    const [year, month, day] = item.date.split('-').map(Number)
+    const date = new Date(year, month - 1, day)
+    return weekDayLabels[date.getDay()]
+  }) || []
 
   const heatmapOptions: Highcharts.Options = {
     chart: { 
       type: 'heatmap', 
       backgroundColor: 'transparent',
-      height: 160,
+      height: 140,
       spacing: [0, 0, 0, 0]
     },
     title: { text: '' },
@@ -177,7 +201,7 @@ export default function UserProfilePage() {
     yAxis: {
       categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
       title: { text: '' },
-      reversed: false,
+      reversed: true,
       labels: {
         style: { 
           fontSize: '10px',
@@ -208,15 +232,9 @@ export default function UserProfilePage() {
     tooltip: {
       formatter: function() {
         const point = this as any
-        const dataPoint = userStats?.yearlyHeatmap?.find(item => {
-          const date = new Date(item.date)
-          const dayOfWeek = date.getDay()
-          const startDate = new Date(userStats.yearlyHeatmap[0].date)
-          const diffTime = date.getTime() - startDate.getTime()
-          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-          const weekNum = Math.floor(diffDays / 7)
-          return weekNum === point.x && dayOfWeek === point.y
-        })
+        const dataPoint = userStats?.yearlyHeatmap?.find(
+          item => item.week === point.x && item.dayOfWeek === point.y
+        )
         const dateStr = dataPoint?.date || ''
         return '<b>' + point.value + '</b> pomodoros<br>' + 
                (dateStr ? new Date(dateStr).toLocaleDateString('en-US') : '')
@@ -251,7 +269,7 @@ export default function UserProfilePage() {
       enabled: false,
     },
     xAxis: {
-      categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+      categories: weeklyCategories.length > 0 ? weeklyCategories : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
       lineColor: isDark ? '#475569' : '#e5e7eb',
       tickColor: isDark ? '#475569' : '#e5e7eb',
       lineWidth: 0,
@@ -283,7 +301,15 @@ export default function UserProfilePage() {
     },
     tooltip: {
       formatter: function(this: any) {
-        return `<b>${this.x}</b><br/>Sessions: ${this.y || 0}`
+        const index = this.point?.index ?? 0
+        const entry = userStats?.weeklyActivity?.[index]
+        if (!entry) {
+          return `<b>${this.x}</b><br/>Pomodoros: ${this.y || 0}`
+        }
+        const [year, month, day] = entry.date.split('-').map(Number)
+        const date = new Date(year, month - 1, day)
+        const label = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+        return `<b>${label}</b><br/>Pomodoros: ${this.y || 0}`
       }
     },
     series: [{
@@ -583,7 +609,7 @@ export default function UserProfilePage() {
                   </div>
                   <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Total</span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.completedSessions}</div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{totalPomodoros.toLocaleString()}</div>
                 <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Pomodoros Completed</div>
               </div>
 
@@ -606,7 +632,7 @@ export default function UserProfilePage() {
                   <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Average</span>
                 </div>
                 <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                  {profile.stats.totalSessions > 0 ? Math.round(profile.stats.completedSessions / Math.max(1, Math.ceil((Date.now() - new Date(profile.user.createdAt).getTime()) / (1000 * 60 * 60 * 24)))) : 0}
+                  {avgPomodorosDisplay}
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Pomodoros per day</div>
               </div>
@@ -618,7 +644,7 @@ export default function UserProfilePage() {
                   </div>
                   <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Total</span>
                 </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{profile.stats.totalWorkHours}h</div>
+                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{totalFocusDisplay}</div>
                 <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Work Time</div>
               </div>
             </motion.div>
@@ -698,15 +724,15 @@ export default function UserProfilePage() {
 
                   <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700">
                     <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 dark:text-slate-300">Всего времени:</span>
-                      <span className="font-bold text-gray-900 dark:text-white">{profile.stats.totalWorkHours}ч</span>
+                      <span className="text-gray-600 dark:text-slate-300">Total time:</span>
+                      <span className="font-bold text-gray-900 dark:text-white">{totalFocusDisplay}</span>
                     </div>
                   </div>
                 </>
               ) : (
                 <div className="text-center py-12 text-gray-500 dark:text-slate-400">
                   <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
-                  <p>Нет сессий</p>
+                  <p>No sessions</p>
                 </div>
               )}
             </motion.div>
