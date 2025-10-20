@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { Settings } from 'lucide-react'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSocket } from '@/hooks/useSocket'
@@ -1161,6 +1162,15 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
             {getSessionTypeLabel(activeSessionType)}
           </div>
         </div>
+        <button
+          type="button"
+          onClick={openSettings}
+          className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700"
+          aria-label="Adjust timer settings"
+          title="Adjust timer settings"
+        >
+          <Settings size={18} />
+        </button>
       </div>
       
       <TimerControls
@@ -1171,15 +1181,12 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         onPause={handlePause}
         onResume={handleResume}
         onStop={handleStop}
-        onOpenSettings={openSettings}
         isStarting={isStarting}
         isStopping={isStopping}
         isPausing={isPausing}
         isResuming={isResuming}
         isRunning={isRunning}
         isPaused={isPaused}
-        isAutoStartEnabled={isAutoStartEnabled}
-        onToggleAutoStart={() => setIsAutoStartEnabled((prev) => !prev)}
       />
 
       <SettingsModal
@@ -1188,6 +1195,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         onChange={handleSettingsChange}
         onSave={handleSettingsSave}
         onClose={() => setIsSettingsOpen(false)}
+        isAutoStartEnabled={isAutoStartEnabled}
+        onToggleAutoStart={() => setIsAutoStartEnabled((prev) => !prev)}
       />
 
     </div>
