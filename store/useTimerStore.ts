@@ -86,6 +86,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       type,
       status: SessionStatus.ACTIVE,
       startedAt: new Date().toISOString(),
+      timeRemaining: duration * 60,
     }
     
     set({
@@ -105,15 +106,19 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     
     if (remaining > 0) {
       set({
-        currentSession: session,
+        currentSession: {
+          ...session,
+          timeRemaining: remaining,
+        },
         timeRemaining: remaining,
         isRunning: session.status === SessionStatus.ACTIVE,
+        pausedAt: session.status === SessionStatus.PAUSED ? Date.now() : null,
       })
     }
   },
 
   pauseSession: () => {
-    const { currentSession } = get()
+    const { currentSession, timeRemaining } = get()
     if (currentSession) {
       set({
         isRunning: false,
@@ -121,6 +126,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         currentSession: {
           ...currentSession,
           status: SessionStatus.PAUSED,
+          timeRemaining,
         },
       })
     }
@@ -140,6 +146,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
           ...currentSession,
           status: SessionStatus.ACTIVE,
           startedAt: newStartedAt, // Update startedAt to compensate for pause
+          timeRemaining,
         },
       })
     }

@@ -18,7 +18,7 @@ interface PomodoroSession {
   timeRemaining: number
   startedAt: string
   duration: number
-  status?: 'paused'
+  status?: 'PAUSED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
   socketId?: string
   lastUpdate?: number
   startTime: number
@@ -452,6 +452,8 @@ io.on('connection', async (socket) => {
     const startTime = Date.now()
     const sessionRecord: PomodoroSession = {
       ...sessionData,
+      status: sessionData.status ?? 'ACTIVE',
+      timeRemaining: sessionData.timeRemaining ?? sessionData.duration * 60,
       socketId: socket.id,
       startTime,
     }
@@ -552,10 +554,18 @@ io.on('connection', async (socket) => {
     const existingSession = sessions.get(sessionData.id)
 
     // Sync existing session without sending system message
+    const effectiveTimeRemaining = typeof sessionData.timeRemaining === 'number'
+      ? sessionData.timeRemaining
+      : existingSession?.timeRemaining ?? sessionData.duration * 60
+
+    const syncStartTime = Date.now() - (sessionData.duration * 60 * 1000 - effectiveTimeRemaining * 1000)
+
     sessions.set(sessionData.id, {
       ...sessionData,
+      status: sessionData.status ?? existingSession?.status ?? 'ACTIVE',
+      timeRemaining: effectiveTimeRemaining,
       socketId: socket.id,
-      startTime: Date.now() - (sessionData.duration * 60 * 1000 - sessionData.timeRemaining * 1000),
+      startTime: syncStartTime,
       chatMessageId: existingSession?.chatMessageId,
       username: existingSession?.username || sessionData.username,
       avatarUrl: existingSession?.avatarUrl || sessionData.avatarUrl,
@@ -570,7 +580,7 @@ io.on('connection', async (socket) => {
       return
     }
 
-    session.status = 'paused'
+    session.status = 'PAUSED'
     io.emit('session-update', serializeSessions())
   })
 

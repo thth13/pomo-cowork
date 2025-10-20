@@ -206,6 +206,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     selectedTask,
     setSelectedTask,
     startSession,
+    pauseSession,
+    resumeSession,
     completeSession,
     cancelSession,
     restoreSession,
@@ -216,7 +218,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   } = useTimerStore()
 
   const { user, updateUserSettings } = useAuthStore()
-  const { emitSessionStart, emitSessionSync, emitSessionEnd, emitTimerTick } = useSocket()
+  const { emitSessionStart, emitSessionSync, emitSessionPause, emitSessionEnd, emitTimerTick } = useSocket()
 
   const [timerState, dispatchTimer] = useReducer(
     timerReducer,
@@ -238,6 +240,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   const startRequestIdRef = useRef(0)
   const lastStoppedSessionIdRef = useRef<string | null>(null)
   const canTriggerAction = useThrottle(1000)
+  const [isPausing, setIsPausing] = useState(false)
+  const [isResuming, setIsResuming] = useState(false)
 
   const setSessionType = useCallback(
     (type: SessionType) => dispatchTimer({ type: 'SET_SESSION_TYPE', payload: type }),
@@ -471,7 +475,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         username,
         avatarUrl: user?.avatarUrl,
         timeRemaining: duration * 60,
-        startedAt: dbSession.startedAt
+        startedAt: dbSession.startedAt,
+        status: SessionStatus.ACTIVE,
       }
 
       emitSessionStart(sessionData)
@@ -617,6 +622,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           await sessionService.update(sessionId, {
             status: SessionStatus.CANCELLED,
             endedAt: new Date().toISOString(),
+            pausedAt: null,
+            timeRemaining: 0,
           })
           void mutateSessions()
         } catch (error) {
@@ -670,7 +677,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           username,
           avatarUrl: user?.avatarUrl,
           timeRemaining: duration * 60,
-          startedAt: dbSession.startedAt
+          startedAt: dbSession.startedAt,
+          status: SessionStatus.ACTIVE,
         }
         
         emitSessionStart(sessionData)
@@ -698,6 +706,164 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       setTimeout(() => {
         setIsStarting(false)
       }, 500)
+    }
+  }
+
+  const handlePause = async () => {
+    if (!currentSession || currentSession.status === SessionStatus.PAUSED) {
+      return
+    }
+
+    if (isPausing || !canTriggerAction()) return
+
+    setIsPausing(true)
+    clearAutoStart()
+
+    const sessionSnapshot = currentSession
+    const sessionId = sessionSnapshot.id
+    const currentTimeRemaining = useTimerStore.getState().timeRemaining
+    const userId = user?.id || getOrCreateAnonymousId()
+    const username = user?.username || getAnonymousUsername()
+    const avatarUrl = user?.avatarUrl
+
+    try {
+      pauseSession()
+
+      sendMessageToServiceWorker({
+        type: 'PAUSE_TIMER',
+      })
+
+      emitSessionPause(sessionId)
+
+      const pausedSession = useTimerStore.getState().currentSession
+
+      emitSessionSync({
+        id: sessionId,
+        task: sessionSnapshot.task,
+        duration: sessionSnapshot.duration,
+        type: sessionSnapshot.type,
+        userId,
+        username,
+        avatarUrl,
+        timeRemaining: currentTimeRemaining,
+        startedAt: pausedSession?.startedAt ?? sessionSnapshot.startedAt,
+        status: SessionStatus.PAUSED,
+      })
+
+      await sessionService.update(sessionId, {
+        status: SessionStatus.PAUSED,
+        pausedAt: new Date().toISOString(),
+        timeRemaining: currentTimeRemaining,
+      })
+      void mutateSessions()
+    } catch (error) {
+      console.error('Failed to pause session:', error)
+      resumeSession()
+
+      const resumedSession = useTimerStore.getState().currentSession
+      const resumedStartedAt = resumedSession?.startedAt ?? sessionSnapshot.startedAt
+
+      sendMessageToServiceWorker({
+        type: 'RESUME_TIMER',
+        payload: {
+          timeRemaining: currentTimeRemaining,
+          startedAt: resumedStartedAt,
+        },
+      })
+
+      emitSessionSync({
+        id: sessionId,
+        task: sessionSnapshot.task,
+        duration: sessionSnapshot.duration,
+        type: sessionSnapshot.type,
+        userId,
+        username,
+        avatarUrl,
+        timeRemaining: currentTimeRemaining,
+        startedAt: resumedStartedAt,
+        status: SessionStatus.ACTIVE,
+      })
+    } finally {
+      setTimeout(() => {
+        setIsPausing(false)
+      }, 300)
+    }
+  }
+
+  const handleResume = async () => {
+    if (!currentSession || currentSession.status !== SessionStatus.PAUSED) {
+      return
+    }
+
+    if (isResuming || !canTriggerAction()) return
+
+    setIsResuming(true)
+
+    const sessionSnapshot = currentSession
+    const sessionId = sessionSnapshot.id
+    const currentTimeRemaining = useTimerStore.getState().timeRemaining
+    const userId = user?.id || getOrCreateAnonymousId()
+    const username = user?.username || getAnonymousUsername()
+    const avatarUrl = user?.avatarUrl
+
+    try {
+      resumeSession()
+
+      const resumedSession = useTimerStore.getState().currentSession
+      const resumedStartedAt = resumedSession?.startedAt ?? new Date().toISOString()
+
+      sendMessageToServiceWorker({
+        type: 'RESUME_TIMER',
+        payload: {
+          timeRemaining: currentTimeRemaining,
+          startedAt: resumedStartedAt,
+        },
+      })
+
+      emitSessionSync({
+        id: sessionId,
+        task: sessionSnapshot.task,
+        duration: sessionSnapshot.duration,
+        type: sessionSnapshot.type,
+        userId,
+        username,
+        avatarUrl,
+        timeRemaining: currentTimeRemaining,
+        startedAt: resumedStartedAt,
+        status: SessionStatus.ACTIVE,
+      })
+
+      await sessionService.update(sessionId, {
+        status: SessionStatus.ACTIVE,
+        pausedAt: null,
+        timeRemaining: currentTimeRemaining,
+        startedAt: resumedStartedAt,
+      })
+      void mutateSessions()
+    } catch (error) {
+      console.error('Failed to resume session:', error)
+      pauseSession()
+      sendMessageToServiceWorker({
+        type: 'PAUSE_TIMER',
+      })
+      const pausedSession = useTimerStore.getState().currentSession
+      emitSessionPause(sessionId)
+      emitSessionSync({
+        id: sessionId,
+        task: sessionSnapshot.task,
+        duration: sessionSnapshot.duration,
+        type: sessionSnapshot.type,
+        userId,
+        username,
+        avatarUrl,
+        timeRemaining: currentTimeRemaining,
+        startedAt: pausedSession?.startedAt ?? sessionSnapshot.startedAt,
+        status: SessionStatus.PAUSED,
+      })
+    } finally {
+      setTimeout(() => {
+        setIsResuming(false)
+      }, 300)
     }
   }
 
@@ -735,6 +901,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           await sessionService.update(sessionId, {
             status: SessionStatus.CANCELLED,
             endedAt: new Date().toISOString(),
+            pausedAt: null,
+            timeRemaining: 0,
           })
           void mutateSessions()
         } catch (error) {
@@ -922,6 +1090,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   }
 
   const activeSessionType = currentSession?.type ?? sessionType
+  const isPaused = currentSession?.status === SessionStatus.PAUSED
 
   const progress = currentSession 
     ? ((currentSession.duration * 60 - timeRemaining) / (currentSession.duration * 60)) * 100
@@ -999,10 +1168,16 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         sessionType={sessionType}
         onSessionTypeChange={handleSessionTypeChange}
         onStart={handleStart}
+        onPause={handlePause}
+        onResume={handleResume}
         onStop={handleStop}
         onOpenSettings={openSettings}
         isStarting={isStarting}
         isStopping={isStopping}
+        isPausing={isPausing}
+        isResuming={isResuming}
+        isRunning={isRunning}
+        isPaused={isPaused}
         isAutoStartEnabled={isAutoStartEnabled}
         onToggleAutoStart={() => setIsAutoStartEnabled((prev) => !prev)}
       />

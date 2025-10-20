@@ -33,6 +33,8 @@ export interface PomodoroSession {
   endedAt?: string
   completedAt?: string
   timeRemaining?: number
+  pausedAt?: string
+  remainingSeconds?: number
 }
 
 export enum SessionType {
@@ -65,6 +67,7 @@ export interface ActiveSession {
   timeRemaining: number
   type: SessionType
   startedAt: string
+  status?: SessionStatus
 }
 
 export interface SessionStats {

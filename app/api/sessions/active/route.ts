@@ -11,6 +11,7 @@ type ActiveSession = Prisma.PomodoroSessionGetPayload<{
       select: {
         id: true
         username: true
+        avatarUrl: true
       }
     }
   }
@@ -25,6 +26,8 @@ interface SessionWithTimeRemaining {
   duration: number
   timeRemaining: number
   startedAt: ActiveSession['startedAt']
+  status: ActiveSession['status']
+  avatarUrl?: ActiveSession['user']['avatarUrl']
 }
 
 // GET /api/sessions/active - Get all active sessions
@@ -32,7 +35,9 @@ export async function GET(request: NextRequest) {
   try {
     const activeSessions = await prisma.pomodoroSession.findMany({
       where: {
-        status: 'ACTIVE',
+        status: {
+          in: ['ACTIVE', 'PAUSED']
+        },
         startedAt: {
           gte: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
         }
@@ -50,11 +55,16 @@ export async function GET(request: NextRequest) {
     })
 
     const sessionsWithTimeRemaining = activeSessions.map<SessionWithTimeRemaining>((session) => {
-      const startTime = new Date(session.startedAt).getTime()
-      const now = Date.now()
-      const elapsed = Math.floor((now - startTime) / 1000) // seconds
-      const totalDuration = session.duration * 60 // convert to seconds
-      const timeRemaining = Math.max(0, totalDuration - elapsed)
+      let timeRemaining: number
+      if (session.status === 'PAUSED' && typeof session.remainingSeconds === 'number') {
+        timeRemaining = Math.max(0, session.remainingSeconds)
+      } else {
+        const startTime = new Date(session.startedAt).getTime()
+        const now = Date.now()
+        const elapsed = Math.floor((now - startTime) / 1000) // seconds
+        const totalDuration = session.duration * 60 // convert to seconds
+        timeRemaining = Math.max(0, totalDuration - elapsed)
+      }
 
       return {
         id: session.id,
@@ -65,7 +75,8 @@ export async function GET(request: NextRequest) {
         type: session.type,
         duration: session.duration,
         timeRemaining,
-        startedAt: session.startedAt
+        startedAt: session.startedAt,
+        status: session.status as ActiveSession['status'],
       }
     }).filter((session: SessionWithTimeRemaining) => session.timeRemaining > 0) // Only return sessions with time left
 

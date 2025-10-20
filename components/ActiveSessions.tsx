@@ -6,7 +6,7 @@ import { Clock, User, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
-import { SessionType, ActiveSession } from '@/types'
+import { SessionType, SessionStatus, ActiveSession } from '@/types'
 
 // Component for individual session with time updates
 function SessionCard({ session, index, isCurrentUser = false }: { 
@@ -16,14 +16,30 @@ function SessionCard({ session, index, isCurrentUser = false }: {
 }) {
   const router = useRouter()
   
-  // Calculate time remaining based on timestamp - always accurate
+  const sessionStatus = session.status ?? SessionStatus.ACTIVE
+
+  const statusDotClass = sessionStatus === SessionStatus.PAUSED ? 'bg-amber-400' : 'bg-green-400'
+
+  const fallbackDurationSeconds = (session.duration || 25) * 60
+  const storedRemainingSeconds = typeof session.timeRemaining === 'number'
+    ? session.timeRemaining
+    : fallbackDurationSeconds
+
   const getTimeRemaining = useCallback(() => {
-    const startTime = new Date(session.startedAt).getTime()
+    if (sessionStatus === SessionStatus.PAUSED) {
+      return Math.max(0, storedRemainingSeconds)
+    }
+
+    const startTime = session.startedAt ? new Date(session.startedAt).getTime() : Number.NaN
+    if (Number.isNaN(startTime)) {
+      return Math.max(0, storedRemainingSeconds)
+    }
+
     const now = Date.now()
     const elapsed = Math.floor((now - startTime) / 1000) // seconds
-    const totalDuration = (session.duration || 25) * 60 // minutes to seconds
+    const totalDuration = fallbackDurationSeconds
     return Math.max(0, totalDuration - elapsed)
-  }, [session.startedAt, session.duration])
+  }, [sessionStatus, storedRemainingSeconds, session.startedAt, fallbackDurationSeconds])
 
   const [currentTimeRemaining, setCurrentTimeRemaining] = useState(() => getTimeRemaining())
 
@@ -51,7 +67,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
 
   // Update time every second, but with periodic recalculation to avoid drift
   useEffect(() => {
-    if (currentTimeRemaining <= 0) return
+    if (sessionStatus === SessionStatus.PAUSED || currentTimeRemaining <= 0) return
 
     let tickCount = 0
     const interval = setInterval(() => {
@@ -68,7 +84,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
     }, 1000)
 
     return () => clearInterval(interval)
-  }, [currentTimeRemaining, getTimeRemaining])
+  }, [currentTimeRemaining, getTimeRemaining, sessionStatus])
 
   const formatTime = (seconds: number): string => {
     const mins = Math.floor(seconds / 60)
@@ -133,7 +149,8 @@ function SessionCard({ session, index, isCurrentUser = false }: {
     }
   }
 
-  const progressPercent = Math.max(0, ((currentTimeRemaining / ((session.duration || 25) * 60)) * 100))
+  const totalDurationForProgress = Math.max(1, fallbackDurationSeconds)
+  const progressPercent = Math.max(0, Math.min(100, (currentTimeRemaining / totalDurationForProgress) * 100))
 
   const handleClick = () => {
     router.push(`/user/${session.userId}`)
@@ -158,7 +175,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
                 {session.username.charAt(0).toUpperCase()}
               </div>
             )}
-            <div className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-green-400 rounded-full border-2 border-white dark:border-slate-700"></div>
+            <div className={`absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 ${statusDotClass} rounded-full border-2 border-white dark:border-slate-700`}></div>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 sm:mb-2 flex-wrap">
@@ -166,15 +183,22 @@ function SessionCard({ session, index, isCurrentUser = false }: {
               <span className={`text-xs px-2 py-0.5 sm:py-1 rounded-full font-medium ${getBadgeColor(session.type)} whitespace-nowrap`}>
                 {getSessionTypeLabel(session.type)}
               </span>
+              {sessionStatus === SessionStatus.PAUSED && (
+                <span className="text-xs px-2 py-0.5 sm:py-1 rounded-full font-medium bg-amber-100 text-amber-600">
+                  Paused
+                </span>
+              )}
             </div>
             <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300 mb-1 truncate">
               Task: {session.task}
             </div>
             <div className="text-xs text-gray-500 dark:text-slate-400">
-              Started: {new Date(session.startedAt).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit'
-              })}
+              {session.startedAt
+                ? `Started: ${new Date(session.startedAt).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}`
+                : 'Start time unavailable'}
             </div>
           </div>
         </div>
@@ -188,7 +212,9 @@ function SessionCard({ session, index, isCurrentUser = false }: {
               style={{ width: `${progressPercent}%` }}
             ></div>
           </div>
-          <div className="text-xs text-gray-500 dark:text-slate-400">remaining</div>
+          <div className="text-xs text-gray-500 dark:text-slate-400">
+            {sessionStatus === SessionStatus.PAUSED ? 'paused' : 'remaining'}
+          </div>
         </div>
       </div>
     </div>
@@ -249,10 +275,30 @@ export default function ActiveSessions() {
 
   // Filter out expired sessions
   const allActiveSessions = sessionsToShow.filter(session => {
+    const status = session.status ?? SessionStatus.ACTIVE
+
+    if (status === SessionStatus.PAUSED) {
+      const remaining = typeof session.timeRemaining === 'number'
+        ? session.timeRemaining
+        : (session.duration || 25) * 60
+      return remaining > 0
+    }
+
+    const fallbackSeconds = (session.duration || 25) * 60
+    const storedRemaining = typeof session.timeRemaining === 'number' ? session.timeRemaining : fallbackSeconds
+
+    if (!session.startedAt) {
+      return storedRemaining > 0
+    }
+
     const startTime = new Date(session.startedAt).getTime()
+    if (Number.isNaN(startTime)) {
+      return storedRemaining > 0
+    }
+
     const now = Date.now()
     const elapsed = Math.floor((now - startTime) / 1000)
-    const totalDuration = (session.duration || 25) * 60
+    const totalDuration = fallbackSeconds
     const timeRemaining = totalDuration - elapsed
     return timeRemaining > 0
   })

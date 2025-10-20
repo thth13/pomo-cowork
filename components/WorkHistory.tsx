@@ -211,11 +211,11 @@ export default function WorkHistory() {
             <span className="text-sm text-gray-600 dark:text-slate-400">{stats.work} focus</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-blue-500 rounded-full" />
+            <div className="w-3 h-3 bg-green-500 rounded-full" />
             <span className="text-sm text-gray-600 dark:text-slate-400">{stats.shortBreak} short</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-green-500 rounded-full" />
+            <div className="w-3 h-3 bg-blue-500 rounded-full" />
             <span className="text-sm text-gray-600 dark:text-slate-400">{stats.longBreak} long</span>
           </div>
         </div>

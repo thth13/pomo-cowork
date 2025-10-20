@@ -1,7 +1,7 @@
 'use client'
 
 import { memo } from 'react'
-import { Play, Square, Settings } from 'lucide-react'
+import { Play, Square, Settings, Pause } from 'lucide-react'
 import { PomodoroSession, SessionType } from '@/types'
 
 interface TimerControlsProps {
@@ -9,10 +9,16 @@ interface TimerControlsProps {
   sessionType: SessionType
   onSessionTypeChange: (type: SessionType) => void
   onStart: () => void | Promise<void>
+  onPause: () => void | Promise<void>
+  onResume: () => void | Promise<void>
   onStop: () => void | Promise<void>
   onOpenSettings: () => void
   isStarting: boolean
   isStopping: boolean
+  isPausing: boolean
+  isResuming: boolean
+  isRunning: boolean
+  isPaused: boolean
   isAutoStartEnabled: boolean
   onToggleAutoStart: () => void
 }
@@ -22,10 +28,16 @@ export const TimerControls = memo(function TimerControls({
   sessionType,
   onSessionTypeChange,
   onStart,
+  onPause,
+  onResume,
   onStop,
   onOpenSettings,
   isStarting,
   isStopping,
+  isPausing,
+  isResuming,
+  isRunning,
+  isPaused,
   isAutoStartEnabled,
   onToggleAutoStart,
 }: TimerControlsProps) {
@@ -44,16 +56,42 @@ export const TimerControls = memo(function TimerControls({
             <span>{isStarting ? 'Starting...' : 'Start'}</span>
           </button>
         ) : (
-          <button
-            onClick={onStop}
-            disabled={isStopping}
-            className={`w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
-              isStopping ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
-          >
-            <Square size={20} />
-            <span>{isStopping ? 'Stopping...' : 'Stop'}</span>
-          </button>
+          <div className="flex w-full sm:w-auto gap-3">
+            {!isPaused && (
+              <button
+                onClick={onPause}
+                disabled={!isRunning || isPausing}
+                className={`flex-1 sm:flex-none w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+                  (!isRunning || isPausing) ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <Pause size={20} />
+                <span>{isPausing ? 'Pausing...' : 'Pause'}</span>
+              </button>
+            )}
+            {isPaused && (
+              <button
+                onClick={onResume}
+                disabled={isResuming}
+                className={`flex-1 sm:flex-none w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+                  isResuming ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+              >
+                <Play size={20} />
+                <span>{isResuming ? 'Resuming...' : 'Resume'}</span>
+              </button>
+            )}
+            <button
+              onClick={onStop}
+              disabled={isStopping}
+              className={`flex-1 sm:flex-none w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+                isStopping ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              <Square size={20} />
+              <span>{isStopping ? 'Stopping...' : 'Stop'}</span>
+            </button>
+          </div>
         )}
 
         <button

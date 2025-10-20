@@ -108,7 +108,8 @@ export async function POST(request: NextRequest) {
         task,
         duration,
         type: type as string,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        remainingSeconds: duration * 60
       }
     })
 

@@ -75,6 +75,8 @@ export const sessionService = {
       status: 'COMPLETED',
       completedAt: new Date().toISOString(),
       endedAt: new Date().toISOString(),
+      pausedAt: null,
+      timeRemaining: 0,
     }
 
     if (!token) {

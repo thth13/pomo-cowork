@@ -14,7 +14,15 @@ export async function PUT(
   try {
     const authHeader = request.headers.get('authorization')
     const token = getTokenFromHeader(authHeader)
-    const { status, endedAt, completedAt, anonymousId } = await request.json()
+    const {
+      status,
+      endedAt,
+      completedAt,
+      anonymousId,
+      pausedAt,
+      timeRemaining,
+      startedAt,
+    } = await request.json()
 
     let userId: string | null = null
     
@@ -53,13 +61,35 @@ export async function PUT(
       )
     }
 
+    const updateData: Record<string, any> = {}
+
+    if (typeof status === 'string') {
+      updateData.status = status
+    }
+
+    if (endedAt !== undefined) {
+      updateData.endedAt = endedAt ? new Date(endedAt) : null
+    }
+
+    if (completedAt !== undefined) {
+      updateData.completedAt = completedAt ? new Date(completedAt) : null
+    }
+
+    if (pausedAt !== undefined) {
+      updateData.pausedAt = pausedAt ? new Date(pausedAt) : null
+    }
+
+    if (timeRemaining !== undefined) {
+      updateData.remainingSeconds = timeRemaining
+    }
+
+    if (startedAt !== undefined) {
+      updateData.startedAt = new Date(startedAt)
+    }
+
     const updatedSession = await prisma.pomodoroSession.update({
       where: { id: params.id },
-      data: {
-        status: status as string,
-        endedAt: endedAt ? new Date(endedAt) : undefined,
-        completedAt: completedAt ? new Date(completedAt) : undefined
-      }
+      data: updateData,
     })
 
     return NextResponse.json(updatedSession)
