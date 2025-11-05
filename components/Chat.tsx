@@ -375,17 +375,34 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
               <div key={m.id}>
                 {m.type === 'system' ? (
                   <div className="flex items-start space-x-3">
-                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0">
-                      {m.username.charAt(0).toUpperCase()}
-                    </div>
+                    {m.avatarUrl ? (
+                      <img
+                        src={m.avatarUrl}
+                        alt={m.username}
+                        onClick={() => m.userId && router.push(`/user/${m.userId}`)}
+                        className="w-8 h-8 rounded-full object-cover flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                      />
+                    ) : (
+                      <div
+                        onClick={() => m.userId && router.push(`/user/${m.userId}`)}
+                        className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                      >
+                        {m.username.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <span className="text-sm font-semibold text-gray-800 dark:text-slate-100">{m.username}</span>
-                        <span className="text-xs font-mono text-gray-500 dark:text-slate-400">
+                        <span
+                          onClick={() => m.userId && router.push(`/user/${m.userId}`)}
+                          className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                        >
+                          {m.username}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-slate-400">
                           {actionTime}
                         </span>
                       </div>
-                      <div className="text-sm font-semibold text-red-600 dark:text-red-300">
+                      <div className="text-sm text-red-600 dark:text-red-300 font-semibold">
                         started a <span className="font-bold">{taskLabel || 'focus'}</span> session{m.action?.duration ? ` for ${m.action.duration} min` : ''}
                       </div>
                     </div>
