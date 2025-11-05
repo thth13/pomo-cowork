@@ -361,29 +361,33 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
 
             // Message (system or regular)
             const m = item as ChatMessage
-            
+
+            if (m.type === 'system' && m.action?.type !== 'work_start') {
+              return null
+            }
+            const actionTime = new Date(m.timestamp).toLocaleTimeString('ru-RU', {
+              hour: '2-digit',
+              minute: '2-digit'
+            })
+            const taskLabel = m.action?.task?.trim()
+
             return (
               <div key={m.id}>
                 {m.type === 'system' ? (
-                  <div className="flex justify-center">
-                    <div className={`text-xs px-3 py-1 rounded-full ${
-                      m.action?.type === 'work_start' ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400' :
-                      m.action?.type === 'break_start' ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400' :
-                      m.action?.type === 'long_break_start' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400' :
-                      m.action?.type === 'session_complete' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400' :
-                      'bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300'
-                    }`}>
-                      {m.username} {
-                        m.action?.type === 'work_start' 
-                          ? `started a focus session${m.action.task ? ` "${m.action.task}"` : ''}${m.action.duration ? ` for ${m.action.duration} min` : ''}`
-                          : m.action?.type === 'break_start' 
-                          ? 'started a short break' 
-                          : m.action?.type === 'long_break_start' 
-                          ? 'started a long break' 
-                          : m.action?.type === 'session_complete'
-                          ? `completed${m.action.task ? ` "${m.action.task}"` : ' a focus session'} 🎉`
-                          : formatActionMessage(m.action)
-                      }
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0">
+                      {m.username.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="text-sm font-semibold text-gray-800 dark:text-slate-100">{m.username}</span>
+                        <span className="text-xs font-mono text-gray-500 dark:text-slate-400">
+                          {actionTime}
+                        </span>
+                      </div>
+                      <div className="text-sm font-semibold text-red-600 dark:text-red-300">
+                        started a <span className="font-bold">{taskLabel || 'focus'}</span> session{m.action?.duration ? ` for ${m.action.duration} min` : ''}
+                      </div>
                     </div>
                   </div>
                 ) : (
