@@ -103,13 +103,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (response.ok) {
         const user = await response.json()
         set({ user, token, isAuthenticated: true, isLoading: false })
-      } else {
+      } else if (response.status === 401) {
+        // Только при 401 (невалидный токен) разлогиниваем
         localStorage.removeItem('token')
         set({ user: null, token: null, isAuthenticated: false, isLoading: false })
+      } else {
+        // При других ошибках (403, 500, etc) просто помечаем загрузку завершённой
+        // но НЕ разлогиниваем - токен может быть валидным
+        set({ isLoading: false })
+        console.warn(`Auth check failed with status ${response.status}, but keeping user logged in`)
       }
     } catch (error) {
-      console.error('Auth check error:', error)
-      set({ user: null, token: null, isAuthenticated: false, isLoading: false })
+      // Сетевые ошибки, таймауты и т.д. - НЕ разлогиниваем
+      console.error('Auth check network error:', error)
+      set({ isLoading: false })
     }
   },
 
