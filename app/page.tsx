@@ -12,6 +12,7 @@ import dynamic from 'next/dynamic'
 const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => null })
 import TaskList, { TaskListRef } from '@/components/TaskList'
 import WorkHistory from '@/components/WorkHistory'
+import Image from 'next/image'
 
 export default function HomePage() {
   const { isAuthenticated, isLoading } = useAuthStore()
@@ -45,11 +46,15 @@ export default function HomePage() {
   // Show loading while checking auth
   if (!mounted || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin" />
-          <span className="text-lg text-slate-600 dark:text-slate-400">Loading...</span>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-900">
+        <Image
+          src="/loader.jpeg"
+          alt="Loading"
+          width={640}
+          height={640}
+          priority
+          className="max-w-[80vw] max-h-[80vh] w-full h-full object-contain"
+        />
       </div>
     )
   }
