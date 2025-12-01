@@ -159,11 +159,6 @@ export const TaskPicker = memo(function TaskPicker({
                             </span>
                           )}
                         </div>
-                        {isActive && (
-                          <span className="mt-1 shrink-0 rounded-full bg-blue-100 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-blue-600 dark:bg-blue-900/40 dark:text-blue-200">
-                            Active
-                          </span>
-                        )}
                       </button>
                     )
                   })
