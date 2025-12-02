@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
+import OfflineToast from '@/components/OfflineToast'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -72,6 +73,7 @@ export default function RootLayout({
           <AuthProvider>
             {children}
             <ConnectionDebug />
+            <OfflineToast />
           </AuthProvider>
         </ThemeProvider>
       </body>

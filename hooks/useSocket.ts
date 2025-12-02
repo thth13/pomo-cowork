@@ -33,7 +33,7 @@ const initSocketOnce = () => {
     timeout: 5000,
     autoConnect: true,
     reconnectionDelay: 2000,
-    reconnectionAttempts: 5,
+    reconnectionDelayMax: 10000,
     withCredentials: true
   })
 
