@@ -381,18 +381,33 @@ io.on('connection', async (socket) => {
     emitPresenceSnapshot()
   })
 
-  socket.on('chat-send', (payload: { text: string }) => {
+  socket.on('chat-send', (payload: { text: string; userId?: string | null; username?: string; avatarUrl?: string | null }) => {
     const rawText = (payload?.text ?? '').toString().slice(0, 1000)
     if (!rawText.trim()) return
 
-    const userId = socketUserMap.get(socket.id) ?? null
+    const userId = socketUserMap.get(socket.id) ?? payload?.userId ?? null
     const anonymousId = anonymousSockets.get(socket.id)
 
-    let username = 'Guest'
-    let avatarUrl: string | undefined
+    const payloadUsername = payload?.username?.toString().slice(0, 100) || undefined
+    const payloadAvatar = payload?.avatarUrl || undefined
+
+    let username = payloadUsername || 'Guest'
+    let avatarUrl: string | undefined = payloadAvatar || undefined
+
     if (userId) {
-      username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
-      avatarUrl = userAvatars.get(userId)
+      const mappedUsername = userNames.get(userId)
+      const mappedAvatar = userAvatars.get(userId)
+
+      username = mappedUsername || payloadUsername || `User-${userId.slice(0, 6)}`
+      avatarUrl = mappedAvatar || payloadAvatar || undefined
+
+      // Refresh maps if client sent updated data
+      if (payloadUsername) {
+        userNames.set(userId, payloadUsername)
+      }
+      if (payloadAvatar) {
+        userAvatars.set(userId, payloadAvatar)
+      }
     } else if (anonymousId) {
       username = `Guest-${anonymousId.slice(-4)}`
     }
@@ -416,12 +431,25 @@ io.on('connection', async (socket) => {
     socket.broadcast.emit('chat-new', localMessage)
   })
 
-  socket.on('chat-typing', (payload: { isTyping: boolean }) => {
-    const userId = socketUserMap.get(socket.id) ?? null
+  socket.on('chat-typing', (payload: { isTyping: boolean; userId?: string | null; username?: string; avatarUrl?: string | null }) => {
+    const userId = socketUserMap.get(socket.id) ?? payload?.userId ?? null
     const anonymousId = anonymousSockets.get(socket.id)
-    let username = 'Guest'
+    const payloadUsername = payload?.username?.toString().slice(0, 100) || undefined
+    const payloadAvatar = payload?.avatarUrl || undefined
+
+    let username = payloadUsername || 'Guest'
+
     if (userId) {
-      username = userNames.get(userId) ?? `User-${userId.slice(0, 6)}`
+      const mappedUsername = userNames.get(userId)
+      username = mappedUsername || payloadUsername || `User-${userId.slice(0, 6)}`
+
+      // Keep cache fresh if client sent data
+      if (payloadUsername) {
+        userNames.set(userId, payloadUsername)
+      }
+      if (payloadAvatar) {
+        userAvatars.set(userId, payloadAvatar)
+      }
     } else if (anonymousId) {
       username = `Guest-${anonymousId.slice(-4)}`
     }

@@ -142,8 +142,8 @@ export function useSocket() {
   }
 
   // Chat API
-  const sendChatMessage = (text: string) => {
-    sharedSocket?.emit('chat-send', { text })
+  const sendChatMessage = (payload: { text: string; username?: string; avatarUrl?: string | null; userId?: string | null }) => {
+    sharedSocket?.emit('chat-send', payload)
   }
 
   const requestChatHistory = () => {
@@ -174,8 +174,8 @@ export function useSocket() {
     sharedSocket?.off('chat-remove', handler)
   }
 
-  const emitChatTyping = (isTyping: boolean) => {
-    sharedSocket?.emit('chat-typing', { isTyping })
+  const emitChatTyping = (isTyping: boolean, meta?: { username?: string; avatarUrl?: string | null; userId?: string | null }) => {
+    sharedSocket?.emit('chat-typing', { isTyping, ...meta })
   }
 
   const onChatTyping = (handler: (payload: { username: string; isTyping: boolean }) => void) => {

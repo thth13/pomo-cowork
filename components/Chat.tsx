@@ -239,6 +239,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       id: `temp-${Date.now()}`,
       userId: user?.id || null,
       username: user?.username || 'Guest',
+      avatarUrl: user?.avatarUrl || undefined,
       text,
       timestamp: Date.now(),
       type: 'message'
@@ -262,11 +263,18 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       if (response.ok) {
         const savedMessage = await response.json() as ChatMessage
         // Replace optimistic message with real one
-        setMessages(prev => prev.map(m => 
-          m.id === optimisticMessage.id ? savedMessage : m
+        setMessages(prev => prev.map(m =>
+          m.id === optimisticMessage.id
+            ? { ...savedMessage, avatarUrl: savedMessage.avatarUrl ?? user?.avatarUrl }
+            : m
         ))
         // Send via socket for other users
-        sendChatMessage(text)
+        sendChatMessage({
+          text,
+          userId: user?.id || null,
+          username: user?.username || 'Guest',
+          avatarUrl: user?.avatarUrl ?? null
+        })
       } else {
         throw new Error('Failed to save message')
       }
@@ -275,13 +283,22 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       // Remove optimistic message on error
       setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id))
       // Still send via socket as fallback
-      sendChatMessage(text)
+      sendChatMessage({
+        text,
+        userId: user?.id || null,
+        username: user?.username || 'Guest',
+        avatarUrl: user?.avatarUrl ?? null
+      })
     }
   }
 
   const onInputChange = (v: string) => {
     setInput(v)
-    emitChatTyping(true)
+    emitChatTyping(true, {
+      userId: user?.id || null,
+      username: user?.username || 'Guest',
+      avatarUrl: user?.avatarUrl ?? null
+    })
   }
 
   const meName = useMemo(() => user?.username ?? 'Guest', [user])
