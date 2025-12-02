@@ -45,43 +45,12 @@ export default function HomePage() {
   // Show loading while checking auth
   if (!mounted || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 via-white to-gray-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900">
-        <div className="flex flex-col items-center gap-6">
-          <div className="relative w-28 h-28 sm:w-32 sm:h-32">
-            <motion.div
-              className="absolute inset-0 rounded-full bg-gradient-to-r from-rose-400 via-orange-400 to-red-500 blur-xl opacity-70"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-            />
-            <motion.div
-              className="absolute inset-[6%] rounded-full border border-white/50 dark:border-white/10 backdrop-blur"
-              animate={{ scale: [1, 1.06, 1] }}
-              transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-              className="absolute inset-[16%] rounded-full bg-white/80 dark:bg-slate-900/80 shadow-xl shadow-rose-400/30 dark:shadow-slate-900/60"
-              animate={{ scale: [1, 0.94, 1], opacity: [1, 0.85, 1] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <motion.div
-              className="absolute inset-[32%] rounded-full bg-gradient-to-br from-rose-400 via-orange-400 to-red-500"
-              animate={{ scale: [1, 1.2, 1], rotate: [0, 12, 0] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          </div>
-          <div className="flex items-center gap-2 text-sm font-medium text-slate-600 dark:text-slate-200 tracking-wide">
-            <span>Loading</span>
-            <div className="flex gap-1">
-              {[0, 1, 2].map((idx) => (
-                <motion.span
-                  key={idx}
-                  className="h-2 w-2 rounded-full bg-rose-400"
-                  animate={{ opacity: [0.4, 1, 0.4], y: [0, -4, 0] }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut', delay: idx * 0.15 }}
-                />
-              ))}
-            </div>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-12 w-12 rounded-full border-2 border-slate-200 dark:border-slate-800 border-t-rose-500 animate-spin" />
+          <span className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
+            Loading
+          </span>
         </div>
       </div>
     )
