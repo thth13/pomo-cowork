@@ -19,6 +19,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const { searchParams } = new URL(request.url)
+    const page = Math.max(parseInt(searchParams.get('page') || '1', 10), 1)
+    const limitParam = parseInt(searchParams.get('limit') || '50', 10)
+    const limit = Math.min(Math.max(limitParam, 1), 100)
+    const skip = (page - 1) * limit
+
     const payload = verifyToken(token)
     if (!payload) {
       return NextResponse.json(
@@ -27,13 +33,24 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const total = await prisma.pomodoroSession.count({
+      where: { userId: payload.userId },
+    })
+
     const sessions = await prisma.pomodoroSession.findMany({
       where: { userId: payload.userId },
       orderBy: { createdAt: 'desc' },
-      take: 50
+      skip,
+      take: limit
     })
 
-    return NextResponse.json(sessions)
+    return NextResponse.json(sessions, {
+      headers: {
+        'X-Total-Count': total.toString(),
+        'X-Page': page.toString(),
+        'X-Limit': limit.toString(),
+      }
+    })
 
   } catch (error) {
     console.error('Get sessions error:', error)

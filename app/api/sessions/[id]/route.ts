@@ -22,6 +22,9 @@ export async function PUT(
       pausedAt,
       timeRemaining,
       startedAt,
+      task,
+      duration,
+      type,
     } = await request.json()
 
     let userId: string | null = null
@@ -85,6 +88,18 @@ export async function PUT(
 
     if (startedAt !== undefined) {
       updateData.startedAt = new Date(startedAt)
+    }
+
+    if (typeof task === 'string') {
+      updateData.task = task
+    }
+
+    if (typeof duration === 'number') {
+      updateData.duration = duration
+    }
+
+    if (typeof type === 'string') {
+      updateData.type = type
     }
 
     const updatedSession = await prisma.pomodoroSession.update({
