@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
-import { Calendar } from 'lucide-react'
+import { Calendar, Trash2 } from 'lucide-react'
+import ConfirmModal from './ConfirmModal'
 
 interface Session {
   id: string
@@ -25,6 +26,8 @@ export default function WorkHistory() {
   const { user } = useAuthStore()
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchTodaySessions = async () => {
@@ -56,6 +59,40 @@ export default function WorkHistory() {
     const interval = setInterval(fetchTodaySessions, 30000)
     return () => clearInterval(interval)
   }, [user])
+
+  const handleDeleteConfirmed = async () => {
+    if (!confirmingId) return
+
+    setDeletingId(confirmingId)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        alert('Please sign in')
+        return
+      }
+
+      const response = await fetch(`/api/sessions/${confirmingId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        // Remove from local state
+        setSessions(prev => prev.filter(s => s.id !== confirmingId))
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to delete entry')
+      }
+    } catch (error) {
+      console.error('Failed to delete session:', error)
+      alert('An error occurred while deleting')
+    } finally {
+      setDeletingId(null)
+      setConfirmingId(null)
+    }
+  }
 
   const getSessionTypeLabel = (type: string): string => {
     switch (type) {
@@ -220,7 +257,6 @@ export default function WorkHistory() {
           </div>
         </div>
       </div>
-
       <div className="p-4 space-y-3 max-h-[500px] overflow-y-auto">
         {sessions.length === 0 ? (
           <div className="text-center py-8 text-gray-500 dark:text-slate-400">
@@ -228,7 +264,7 @@ export default function WorkHistory() {
           </div>
         ) : (
           sessions.map(session => (
-            <div key={session.id} className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4">
+            <div key={session.id} className="bg-gray-50 dark:bg-slate-700/50 rounded-lg p-4 relative group">
               <div className="flex items-start space-x-3">
                 <div className="flex-shrink-0">
                   {session.user && (
@@ -246,7 +282,7 @@ export default function WorkHistory() {
                   )}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-start justify-between gap-3 mb-2">
                     {session.user ? (
                       <Link 
                         href={`/user/${session.user.id}`}
@@ -257,12 +293,12 @@ export default function WorkHistory() {
                     ) : (
                       <span className="text-sm font-semibold text-gray-900 dark:text-white">Unknown user</span>
                     )}
-                    <span className="text-xs text-gray-500 dark:text-slate-400">
+                    <span className="text-xs text-gray-500 dark:text-slate-400 shrink-0">
                       {getTimeRange(session)}
                     </span>
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
+                    <div className="relative pr-8 flex items-center space-x-2 mb-1">
                       <div className={`w-3 h-3 ${getSessionTypeColor(session.type)} rounded-full`} />
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {getSessionTypeLabel(session.type)}
@@ -270,6 +306,16 @@ export default function WorkHistory() {
                       <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(session.status)}`}>
                         {getStatusLabel(session.status)}
                       </span>
+                      {user && session.user.id === user.id && (
+                        <button
+                          onClick={() => setConfirmingId(session.id)}
+                          disabled={deletingId === session.id}
+                          className="absolute right-0 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-50"
+                          title="Delete entry"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                     {session.type === 'WORK' && (
                       <div className="text-sm text-gray-600 dark:text-slate-300 mb-1">{session.task}</div>
@@ -284,6 +330,18 @@ export default function WorkHistory() {
           ))
         )}
       </div>
+
+      <ConfirmModal
+        open={Boolean(confirmingId)}
+        title="Delete entry?"
+        description="This session will be removed from history and chat."
+        cancelLabel="Cancel"
+        confirmLabel="Delete"
+        loadingLabel="Deleting..."
+        loading={deletingId === confirmingId}
+        onCancel={() => setConfirmingId(null)}
+        onConfirm={handleDeleteConfirmed}
+      />
     </div>
   )
 }

@@ -6,6 +6,25 @@ import { SessionStatus } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
+const getSocketServerUrl = () =>
+  process.env.NEXT_PUBLIC_SOCKET_URL ||
+  'http://localhost:4000'
+
+const notifyChatRemoval = async (messageIds: string[]) => {
+  if (!messageIds.length) return
+
+  try {
+    const endpoint = new URL('/chat/remove', getSocketServerUrl())
+    await fetch(endpoint.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: messageIds })
+    })
+  } catch (error) {
+    console.error('Failed to notify chat removal', error)
+  }
+}
+
 // PUT /api/sessions/[id] - Update session (supports anonymous users)
 export async function PUT(
   request: NextRequest,
@@ -118,7 +137,7 @@ export async function PUT(
   }
 }
 
-// DELETE /api/sessions/[id] - Cancel session
+// DELETE /api/sessions/[id] - Delete session and related chat message
 export async function DELETE(
   request: NextRequest,
   { params }: { params: { id: string } }
@@ -156,18 +175,46 @@ export async function DELETE(
       )
     }
 
-    const updatedSession = await prisma.pomodoroSession.update({
-      where: { id: params.id },
-      data: {
-        status: 'CANCELLED',
-        endedAt: new Date()
+    // Delete related chat messages (work_start and session_complete messages for this session)
+    // We'll delete messages that match the session's task and were created around the same time
+    const sessionStart = new Date(session.startedAt)
+    const timeBuffer = 10000 // 10 seconds buffer
+    const startTimeMin = new Date(sessionStart.getTime() - timeBuffer)
+    const startTimeMax = new Date(sessionStart.getTime() + timeBuffer)
+
+    const chatWhere = {
+      where: {
+        userId: payload.userId,
+        actionTask: session.task,
+        actionType: { in: ['work_start', 'session_complete'] },
+        createdAt: {
+          gte: startTimeMin,
+          lte: session.completedAt 
+            ? new Date(new Date(session.completedAt).getTime() + timeBuffer)
+            : startTimeMax
+        }
       }
+    }
+
+    const messagesToDelete = await prisma.chatMessage.findMany({
+      ...chatWhere,
+      select: { id: true }
     })
 
-    return NextResponse.json(updatedSession)
+    await prisma.chatMessage.deleteMany(chatWhere)
+
+    // Delete the session
+    await prisma.pomodoroSession.delete({
+      where: { id: params.id }
+    })
+
+    const removedMessageIds = messagesToDelete.map((m) => m.id)
+    await notifyChatRemoval(removedMessageIds)
+
+    return NextResponse.json({ success: true, removedMessageIds })
 
   } catch (error) {
-    console.error('Cancel session error:', error)
+    console.error('Delete session error:', error)
     return NextResponse.json(
       { error: 'Server error' },
       { status: 500 }

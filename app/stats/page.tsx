@@ -25,6 +25,7 @@ import {
   faPen,
   faEllipsisVertical
 } from '@fortawesome/free-solid-svg-icons'
+import ConfirmModal from '@/components/ConfirmModal'
 
 interface Stats {
   totalPomodoros: number
@@ -80,6 +81,7 @@ export default function StatsPage() {
   const [loadingMoreEntries, setLoadingMoreEntries] = useState(false)
   const [totalEntries, setTotalEntries] = useState<number | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmingId, setConfirmingId] = useState<string | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [savingEdit, setSavingEdit] = useState(false)
   const [editForm, setEditForm] = useState<{
@@ -541,13 +543,12 @@ export default function StatsPage() {
     })
   }
 
-  const handleDeleteEntry = async (id: string) => {
-    if (!token) return
-    if (!window.confirm('Удалить эту запись времени?')) return
+  const handleDeleteEntry = async () => {
+    if (!token || !confirmingId) return
 
-    setDeletingId(id)
+    setDeletingId(confirmingId)
     try {
-      const response = await fetch(`/api/sessions/${id}`, {
+      const response = await fetch(`/api/sessions/${confirmingId}`, {
         method: 'DELETE',
         headers: {
           Authorization: `Bearer ${token}`,
@@ -555,7 +556,7 @@ export default function StatsPage() {
       })
 
       if (response.ok) {
-        setTimeEntries(prev => prev.filter(entry => entry.id !== id))
+        setTimeEntries(prev => prev.filter(entry => entry.id !== confirmingId))
         setTotalEntries(prev => (prev !== null ? Math.max(prev - 1, 0) : prev))
         fetchStats()
       }
@@ -563,6 +564,7 @@ export default function StatsPage() {
       console.error('Failed to delete time entry:', error)
     } finally {
       setDeletingId(null)
+      setConfirmingId(null)
     }
   }
 
@@ -908,7 +910,7 @@ export default function StatsPage() {
                                             const nativeEvent = e.nativeEvent as MouseEvent
                                             nativeEvent.stopImmediatePropagation?.()
                                             setOpenEntryMenuId(null)
-                                            handleDeleteEntry(entry.id)
+                                            setConfirmingId(entry.id)
                                           }}
                                           disabled={deletingId === entry.id}
                                           className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 disabled:opacity-60 disabled:cursor-not-allowed flex items-center gap-2"
@@ -1169,6 +1171,18 @@ export default function StatsPage() {
             </div>
           </div>
         </motion.div> */}
+
+        <ConfirmModal
+          open={Boolean(confirmingId)}
+          title="Delete entry?"
+          description="This session will be removed from history and chat."
+          cancelLabel="Cancel"
+          confirmLabel="Delete"
+          loadingLabel="Deleting..."
+          loading={deletingId === confirmingId}
+          onCancel={() => setConfirmingId(null)}
+          onConfirm={handleDeleteEntry}
+        />
       </main>
     </div>
   )

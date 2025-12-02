@@ -43,6 +43,8 @@ interface ChatMessage {
 const app = express()
 const server: Server = http.createServer(app)
 
+app.use(express.json())
+
 const corsOrigin = process.env.CORS_ORIGIN?.split(',').map((origin) => origin.trim()) ?? '*' // eslint-disable-line @typescript-eslint/prefer-nullish-coalescing
 
 const io = new IOServer(server, {
@@ -744,6 +746,27 @@ io.on('connection', async (socket) => {
 })
 
 app.use(cors({ origin: corsOrigin, credentials: true }))
+
+app.post('/chat/remove', (req, res) => {
+  const ids: unknown = req.body?.ids
+  if (!Array.isArray(ids) || ids.length === 0) {
+    return res.status(400).json({ error: 'ids_required' })
+  }
+
+  const uniqueIds = Array.from(new Set(ids.filter((id): id is string => typeof id === 'string')))
+  const removedIds: string[] = []
+
+  uniqueIds.forEach((id) => {
+    const index = chatMessages.findIndex((message) => message.id === id)
+    if (index !== -1) {
+      chatMessages.splice(index, 1)
+    }
+    removedIds.push(id)
+    io.emit('chat-remove', id)
+  })
+
+  res.json({ removed: removedIds })
+})
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' })
