@@ -181,6 +181,40 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setFormData({ email: '', username: '', password: '' })
   }
 
+  const handlePromptNotification = (notification: any) => {
+    const momentType =
+      notification?.getMomentType?.() ??
+      notification?.momentType ??
+      (notification?.isDisplayMoment?.() ? 'display' : undefined)
+    const notDisplayedReason = notification?.getNotDisplayedReason?.() ?? notification?.notDisplayedReason
+    const skippedReason = notification?.getSkippedReason?.() ?? notification?.skippedReason
+    const dismissedReason = notification?.getDismissedReason?.() ?? notification?.dismissedReason
+
+    // FedCM prefers checking momentType instead of deprecated UI status helpers.
+    if (momentType && momentType !== 'display' && momentType !== 'displayed') {
+      if (momentType === 'not_displayed' && notDisplayedReason) {
+        console.warn('Google prompt not displayed:', notDisplayedReason)
+      }
+      if (momentType === 'skipped' && skippedReason) {
+        console.warn('Google prompt skipped:', skippedReason)
+      }
+      if (momentType === 'dismissed' && dismissedReason) {
+        console.warn('Google prompt dismissed:', dismissedReason)
+      }
+      setIsGoogleProcessing(false)
+      return
+    }
+
+    // Legacy fallback (pre-FedCM) so we still clear state if only old helpers exist.
+    if (
+      notification?.isNotDisplayed?.() ||
+      notification?.isSkippedMoment?.() ||
+      notification?.isDismissedMoment?.()
+    ) {
+      setIsGoogleProcessing(false)
+    }
+  }
+
   const handleGoogleLogin = () => {
     setError('')
 
@@ -202,13 +236,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         googleBtn.click()
       } else {
         window.google.accounts.id.prompt((notification: any) => {
-          if (
-            notification?.isNotDisplayed?.() ||
-            notification?.isSkippedMoment?.() ||
-            notification?.isDismissedMoment?.()
-          ) {
-            setIsGoogleProcessing(false)
-          }
+          handlePromptNotification(notification)
         })
       }
     } catch (googleError) {
