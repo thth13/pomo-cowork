@@ -116,7 +116,8 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
         setIsGoogleProcessing(false)
       },
       ux_mode: 'popup',
-      use_fedcm_for_prompt: false,
+      // Enable FedCM per Google migration guidance
+      use_fedcm_for_prompt: true,
     })
 
     googleButtonRef.current.innerHTML = ''
