@@ -31,10 +31,12 @@ export default function OfflineToast() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
           transition={{ duration: 0.2 }}
-          className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-xl bg-red-600 px-4 py-3 text-white shadow-lg shadow-red-900/30"
+          className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4"
         >
-          <WifiOff className="h-5 w-5" />
-          <span className="text-sm font-semibold">You are offline. Trying to reconnect...</span>
+          <div className="flex items-center gap-3 rounded-xl bg-red-600 px-4 py-3 text-white shadow-lg shadow-red-900/30">
+            <WifiOff className="h-5 w-5" />
+            <span className="text-sm font-semibold">You are offline. Trying to reconnect...</span>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
