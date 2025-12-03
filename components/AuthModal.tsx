@@ -371,7 +371,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     className="input pl-10 pr-10"
                     placeholder="Your password"
                     required
-                    minLength={6}
+                    minLength={4}
                   />
                   <button
                     type="button"
@@ -383,7 +383,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 </div>
                 {!isLogin && (
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Minimum 6 characters
+                    Minimum 4 characters
                   </p>
                 )}
               </div>
