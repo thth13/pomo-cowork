@@ -5,6 +5,7 @@ import { ThemeProvider } from '@/components/ThemeProvider'
 import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
+import InitialLoader from '@/components/InitialLoader'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -71,6 +72,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider>
           <AuthProvider>
+            <InitialLoader />
             {children}
             <ConnectionDebug />
             <OfflineToast />

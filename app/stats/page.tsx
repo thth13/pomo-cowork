@@ -61,7 +61,7 @@ interface Stats {
 }
 
 export default function StatsPage() {
-  const { isAuthenticated, token } = useAuthStore()
+  const { isAuthenticated, token, isLoading: authLoading } = useAuthStore()
   const { theme } = useThemeStore()
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -91,6 +91,8 @@ export default function StatsPage() {
       return
     }
 
+    setLoading(true)
+
     try {
       const response = await fetch(`/api/stats?period=${activityPeriod}`, {
         headers: {
@@ -109,12 +111,16 @@ export default function StatsPage() {
   }, [token, activityPeriod])
 
   useEffect(() => {
+    if (authLoading) {
+      return
+    }
+
     if (isAuthenticated && token) {
       fetchStats()
     } else if (!isAuthenticated) {
       setLoading(false)
     }
-  }, [fetchStats, isAuthenticated, token])
+  }, [authLoading, fetchStats, isAuthenticated, token])
 
   const generateYearlyHeatmapData = () => {
     if (!stats?.yearlyHeatmap) return []
