@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEllipsisVertical, faPen, faTrash } from '@fortawesome/free-solid-svg-icons'
+import { faEllipsisVertical, faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons'
 import ConfirmModal from '@/components/ConfirmModal'
 import { PomodoroSession, SessionStatus, SessionType } from '@/types'
 import { TaskOption } from '@/types/task'
@@ -11,6 +11,15 @@ type LatestActivityProps = {
   token: string | null
   isAuthenticated: boolean
   onChange?: () => void
+}
+
+type EntryFormState = {
+  task: string
+  duration: number
+  type: SessionType
+  status: SessionStatus
+  startTime: string
+  endTime: string
 }
 
 const ENTRIES_PAGE_SIZE = 20
@@ -28,16 +37,22 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
   const [savingEdit, setSavingEdit] = useState(false)
   const [tasksLoading, setTasksLoading] = useState(false)
   const [tasks, setTasks] = useState<TaskOption[]>([])
+  const [showNewEntry, setShowNewEntry] = useState(false)
+  const [creatingEntry, setCreatingEntry] = useState(false)
+  const [newEntryBaseDate, setNewEntryBaseDate] = useState<string>(() =>
+    formatDateOnly(new Date().toISOString())
+  )
+  const [newEntryForm, setNewEntryForm] = useState<EntryFormState>({
+    task: '',
+    duration: 25,
+    type: SessionType.WORK,
+    status: SessionStatus.COMPLETED,
+    startTime: '',
+    endTime: ''
+  })
   const [editBaseDate, setEditBaseDate] = useState<string>('')
   const [openEntryMenuId, setOpenEntryMenuId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<{
-    task: string
-    duration: number
-    type: SessionType
-    status: SessionStatus
-    startTime: string
-    endTime: string
-  }>({
+  const [editForm, setEditForm] = useState<EntryFormState>({
     task: '',
     duration: 0,
     type: SessionType.WORK,
@@ -183,9 +198,11 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
     })
   }
 
-  const pad = (n: number) => n.toString().padStart(2, '0')
+  function pad(n: number) {
+    return n.toString().padStart(2, '0')
+  }
 
-  const formatDateOnly = (value: string) => {
+  function formatDateOnly(value: string) {
     const d = new Date(value)
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
   }
@@ -211,55 +228,73 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
     return Math.round(diff / 60000)
   }
 
+  const applyStartChange = (value: string, baseDate: string, form: EntryFormState) => {
+    const newStart = value
+    let newEnd = form.endTime
+    let newDuration = form.duration
+    const durationFromInputs = calcDurationMinutes(newStart, form.endTime, baseDate)
+    if (durationFromInputs !== null) {
+      newDuration = durationFromInputs
+    } else if (form.duration && newStart && form.endTime) {
+      newEnd = form.endTime
+    }
+
+    if (form.duration && newStart && !form.endTime && baseDate) {
+      const startDate = combineDateTime(baseDate, newStart)
+      if (startDate) {
+        const endDate = new Date(startDate.getTime() + form.duration * 60000)
+        newEnd = formatTimeOnly(endDate.toISOString())
+      }
+    }
+
+    return { ...form, startTime: newStart, endTime: newEnd, duration: newDuration }
+  }
+
+  const applyEndChange = (value: string, baseDate: string, form: EntryFormState) => {
+    const newEnd = value
+    const durationFromInputs = calcDurationMinutes(form.startTime, newEnd, baseDate)
+    return {
+      ...form,
+      endTime: newEnd,
+      duration: durationFromInputs !== null ? durationFromInputs : form.duration,
+    }
+  }
+
+  const applyDurationChange = (value: number, baseDate: string, form: EntryFormState) => {
+    const newDuration = value
+    let newEnd = form.endTime
+    if (baseDate && form.startTime && newDuration > 0) {
+      const startDate = combineDateTime(baseDate, form.startTime)
+      if (startDate) {
+        const endDate = new Date(startDate.getTime() + newDuration * 60000)
+        newEnd = formatTimeOnly(endDate.toISOString())
+      }
+    }
+    return { ...form, duration: newDuration, endTime: newEnd }
+  }
+
   const handleStartChange = (value: string) => {
-    setEditForm(prev => {
-      const newStart = value
-      let newEnd = prev.endTime
-      let newDuration = prev.duration
-      const durationFromInputs = calcDurationMinutes(newStart, prev.endTime, editBaseDate)
-      if (durationFromInputs !== null) {
-        newDuration = durationFromInputs
-      } else if (prev.duration && newStart && prev.endTime) {
-        newEnd = prev.endTime
-      }
-
-      if (prev.duration && newStart && !prev.endTime && editBaseDate) {
-        const startDate = combineDateTime(editBaseDate, newStart)
-        if (startDate) {
-          const endDate = new Date(startDate.getTime() + prev.duration * 60000)
-          newEnd = formatTimeOnly(endDate.toISOString())
-        }
-      }
-
-      return { ...prev, startTime: newStart, endTime: newEnd, duration: newDuration }
-    })
+    setEditForm(prev => applyStartChange(value, editBaseDate, prev))
   }
 
   const handleEndChange = (value: string) => {
-    setEditForm(prev => {
-      const newEnd = value
-      const durationFromInputs = calcDurationMinutes(prev.startTime, newEnd, editBaseDate)
-      return {
-        ...prev,
-        endTime: newEnd,
-        duration: durationFromInputs !== null ? durationFromInputs : prev.duration,
-      }
-    })
+    setEditForm(prev => applyEndChange(value, editBaseDate, prev))
   }
 
   const handleDurationChange = (value: number) => {
-    setEditForm(prev => {
-      const newDuration = value
-      let newEnd = prev.endTime
-      if (editBaseDate && prev.startTime && newDuration > 0) {
-        const startDate = combineDateTime(editBaseDate, prev.startTime)
-        if (startDate) {
-          const endDate = new Date(startDate.getTime() + newDuration * 60000)
-          newEnd = formatTimeOnly(endDate.toISOString())
-        }
-      }
-      return { ...prev, duration: newDuration, endTime: newEnd }
-    })
+    setEditForm(prev => applyDurationChange(value, editBaseDate, prev))
+  }
+
+  const handleNewStartChange = (value: string) => {
+    setNewEntryForm(prev => applyStartChange(value, newEntryBaseDate, prev))
+  }
+
+  const handleNewEndChange = (value: string) => {
+    setNewEntryForm(prev => applyEndChange(value, newEntryBaseDate, prev))
+  }
+
+  const handleNewDurationChange = (value: number) => {
+    setNewEntryForm(prev => applyDurationChange(value, newEntryBaseDate, prev))
   }
 
   const handleDeleteEntry = async () => {
@@ -318,6 +353,111 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
     setOpenEntryMenuId(null)
   }
 
+  const resetNewEntryForm = () => {
+    const today = formatDateOnly(new Date().toISOString())
+    setNewEntryBaseDate(today)
+    setNewEntryForm({
+      task: '',
+      duration: 25,
+      type: SessionType.WORK,
+      status: SessionStatus.COMPLETED,
+      startTime: '',
+      endTime: '',
+    })
+  }
+
+  const handleCreateEntry = async () => {
+    if (!token || !newEntryForm.task.trim() || !newEntryForm.duration || !newEntryBaseDate || !newEntryForm.startTime) {
+      return
+    }
+    setCreatingEntry(true)
+
+    const startedAt =
+      newEntryBaseDate && newEntryForm.startTime
+        ? combineDateTime(newEntryBaseDate, newEntryForm.startTime)?.toISOString()
+        : undefined
+
+    let endedAt =
+      newEntryBaseDate && newEntryForm.endTime
+        ? combineDateTime(newEntryBaseDate, newEntryForm.endTime)?.toISOString()
+        : undefined
+
+    if (!endedAt && startedAt && newEntryForm.duration) {
+      const startDate = new Date(startedAt)
+      endedAt = new Date(startDate.getTime() + newEntryForm.duration * 60000).toISOString()
+    }
+
+    try {
+      const createResponse = await fetch('/api/sessions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          task: newEntryForm.task.trim(),
+          duration: Number(newEntryForm.duration),
+          type: newEntryForm.type,
+        }),
+      })
+
+      if (!createResponse.ok) {
+        throw new Error('Failed to create session')
+      }
+
+      const created = await createResponse.json()
+
+      const updatePayload: Record<string, any> = {
+        task: newEntryForm.task.trim(),
+        duration: Number(newEntryForm.duration),
+        type: newEntryForm.type,
+        status: newEntryForm.status,
+      }
+
+      if (startedAt) {
+        updatePayload.startedAt = startedAt
+      }
+      if (endedAt) {
+        updatePayload.endedAt = endedAt
+      }
+      updatePayload.completedAt =
+        newEntryForm.status === SessionStatus.COMPLETED && endedAt ? endedAt : null
+
+      let finalSession = created
+
+      const updateResponse = await fetch(`/api/sessions/${created.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatePayload),
+      })
+
+      if (updateResponse.ok) {
+        finalSession = await updateResponse.json()
+      }
+
+      const nextTotal = totalEntries !== null ? totalEntries + 1 : null
+
+      setTimeEntries(prev => {
+        const updated = [finalSession, ...prev]
+        if (nextTotal !== null) {
+          setHasMoreEntries(updated.length < nextTotal)
+        }
+        return updated
+      })
+      setTotalEntries(nextTotal)
+      onChange?.()
+      resetNewEntryForm()
+      setShowNewEntry(false)
+    } catch (error) {
+      console.error('Failed to create time entry:', error)
+    } finally {
+      setCreatingEntry(false)
+    }
+  }
+
   const handleSaveEntry = async () => {
     if (!editingId || !token) return
     setSavingEdit(true)
@@ -373,16 +513,135 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
     return options
   }, [tasks, editForm.task])
 
+  const canCreateNewEntry = Boolean(
+    token &&
+    newEntryForm.task.trim() &&
+    newEntryForm.duration > 0 &&
+    newEntryBaseDate &&
+    newEntryForm.startTime
+  )
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 flex flex-col max-h-[640px]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">Latest activity</h3>
         </div>
-        <div className="text-sm text-gray-500 dark:text-slate-400">
-          {totalEntries ?? timeEntries.length} entries
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gray-500 dark:text-slate-400">
+            {totalEntries ?? timeEntries.length} entries
+          </div>
+          {isAuthenticated && (
+            <button
+              onClick={() => {
+                setShowNewEntry(prev => {
+                  if (prev) {
+                    resetNewEntryForm()
+                  }
+                  return !prev
+                })
+              }}
+              aria-label={showNewEntry ? 'Close add activity form' : 'Add activity'}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-blue-100 dark:border-blue-900/40 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-200 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
+            >
+              <FontAwesomeIcon icon={faPlus} className={`h-4 w-4 transition-transform ${showNewEntry ? 'rotate-45' : ''}`} />
+            </button>
+          )}
         </div>
       </div>
+
+      {showNewEntry && (
+        <div className="mb-4 space-y-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/40 p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <input
+                type="text"
+                value={newEntryForm.task}
+                onChange={e => setNewEntryForm(prev => ({ ...prev, task: e.target.value }))}
+                list="latest-activity-tasks"
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2 text-gray-900 dark:text-white"
+                placeholder="Task name"
+                autoComplete="off"
+              />
+              <datalist id="latest-activity-tasks">
+                {tasks.map(task => (
+                  <option key={task.id} value={task.title} />
+                ))}
+              </datalist>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="number"
+                min={1}
+                value={newEntryForm.duration}
+                onChange={e => handleNewDurationChange(Number(e.target.value))}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2 text-gray-900 dark:text-white"
+                placeholder="Minutes"
+              />
+              <select
+                value={newEntryForm.type}
+                onChange={e => setNewEntryForm(prev => ({ ...prev, type: e.target.value as SessionType }))}
+                className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2 text-gray-900 dark:text-white"
+              >
+                <option value={SessionType.WORK}>Focus</option>
+                <option value={SessionType.SHORT_BREAK}>Short break</option>
+                <option value={SessionType.LONG_BREAK}>Long break</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input
+              type="date"
+              value={newEntryBaseDate}
+              onChange={e => setNewEntryBaseDate(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2 text-gray-900 dark:text-white"
+            />
+            <input
+              type="time"
+              value={newEntryForm.startTime}
+              onChange={e => handleNewStartChange(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2 text-gray-900 dark:text-white"
+            />
+            <input
+              type="time"
+              value={newEntryForm.endTime}
+              onChange={e => handleNewEndChange(e.target.value)}
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2 text-gray-900 dark:text-white"
+            />
+          </div>
+          <div className="flex items-center justify-between gap-3">
+            <select
+              value={newEntryForm.status}
+              onChange={e => setNewEntryForm(prev => ({ ...prev, status: e.target.value as SessionStatus }))}
+              className="w-full rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm px-3 py-2 text-gray-900 dark:text-white"
+            >
+              <option value={SessionStatus.ACTIVE}>Active</option>
+              <option value={SessionStatus.PAUSED}>Paused</option>
+              <option value={SessionStatus.COMPLETED}>Completed</option>
+              <option value={SessionStatus.CANCELLED}>Cancelled</option>
+            </select>
+            <div className="flex items-center gap-2 justify-end">
+              <button
+                onClick={() => {
+                  resetNewEntryForm()
+                  setShowNewEntry(false)
+                }}
+                disabled={creatingEntry}
+                className="px-3 py-2 text-xs font-medium text-gray-600 dark:text-slate-300 rounded-lg border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 disabled:opacity-60"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateEntry}
+                disabled={!canCreateNewEntry || creatingEntry}
+                className="px-3 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg disabled:opacity-60"
+              >
+                {creatingEntry ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="flex-1 overflow-y-auto pr-1 -mr-1 space-y-4">
         {entriesLoading ? (
