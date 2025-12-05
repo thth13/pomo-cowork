@@ -8,7 +8,6 @@ interface AuthState {
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
   register: (email: string, username: string, password: string) => Promise<boolean>
-  googleLogin: (token: string) => Promise<boolean>
   logout: () => void
   checkAuth: () => Promise<void>
   updateUserSettings: (settings: Partial<UserSettings>) => void
@@ -46,36 +45,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return false
     } catch (error) {
       console.error('Login error:', error)
-      return false
-    }
-  },
-
-  googleLogin: async (token: string) => {
-    try {
-      const anonymousId = localStorage.getItem('anonymous_user_id')
-
-      const response = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, anonymousId }),
-      })
-
-      if (response.ok) {
-        const { user, token: jwt } = await response.json()
-        localStorage.setItem('token', jwt)
-
-        if (anonymousId) {
-          localStorage.removeItem('anonymous_user_id')
-        }
-
-        set({ user, token: jwt, isAuthenticated: true })
-        return true
-      }
-      return false
-    } catch (error) {
-      console.error('Google login error:', error)
       return false
     }
   },

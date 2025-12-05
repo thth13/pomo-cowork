@@ -1,15 +1,9 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
-
-declare global {
-  interface Window {
-    google?: any
-  }
-}
 
 interface AuthModalProps {
   isOpen: boolean
@@ -27,57 +21,10 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
   const [error, setError] = useState('')
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const [isGoogleReady, setIsGoogleReady] = useState(false)
   const [isGoogleProcessing, setIsGoogleProcessing] = useState(false)
-  const googleButtonRef = useRef<HTMLDivElement | null>(null)
 
-  const { login, register, googleLogin } = useAuthStore()
+  const { login, register } = useAuthStore()
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-
-  // // Pre-fill registration form with anonymous user data
-  // useEffect(() => {
-  //   if (!isLogin && isOpen) {
-  //     const anonymousId = localStorage.getItem('anonymous_user_id')
-  //     if (anonymousId) {
-  //       const profile = getAnonymousProfile()
-  //       setFormData(prev => ({
-  //         ...prev,
-  //         username: profile.username,
-  //         email: profile.email
-  //       }))
-  //     }
-  //   }
-  // }, [isLogin, isOpen])
-
-  useEffect(() => {
-    if (!isOpen) return
-    if (typeof window === 'undefined') return
-    if (window.google) {
-      setIsGoogleReady(true)
-      return
-    }
-
-    const existingScript = document.getElementById('google-identity-script') as HTMLScriptElement | null
-    const handleScriptLoad = () => setIsGoogleReady(true)
-
-    if (existingScript) {
-      existingScript.addEventListener('load', handleScriptLoad)
-      return () => existingScript.removeEventListener('load', handleScriptLoad)
-    }
-
-    const script = document.createElement('script')
-    script.src = 'https://accounts.google.com/gsi/client'
-    script.async = true
-    script.defer = true
-    script.id = 'google-identity-script'
-    script.onload = handleScriptLoad
-    script.onerror = () => setError('Failed to load Google services. Please try again.')
-    document.head.appendChild(script)
-
-    return () => {
-      script.onload = null
-    }
-  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) {
@@ -88,48 +35,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setFormData({ email: '', username: '', password: '' })
     }
   }, [isOpen])
-
-  useEffect(() => {
-    if (!isOpen) return
-    if (!isGoogleReady || !googleClientId || typeof window === 'undefined') return
-    if (!window.google) return
-    if (!googleButtonRef.current) return
-
-    window.google.accounts.id.initialize({
-      client_id: googleClientId,
-      callback: async (response: any) => {
-        const credential = response?.credential
-        if (!credential) {
-          setError('Google authentication failed. Please try again.')
-          setIsGoogleProcessing(false)
-          return
-        }
-
-        setIsGoogleProcessing(true)
-        const success = await googleLogin(credential)
-        if (success) {
-          onClose()
-          setFormData({ email: '', username: '', password: '' })
-        } else {
-          setError('Google authentication failed. Please try again.')
-        }
-        setIsGoogleProcessing(false)
-      },
-      ux_mode: 'popup',
-      // Enable FedCM per Google migration guidance
-      use_fedcm_for_prompt: true,
-    })
-
-    googleButtonRef.current.innerHTML = ''
-    window.google.accounts.id.renderButton(googleButtonRef.current, {
-      type: 'standard',
-      theme: 'outline',
-      size: 'large',
-      text: 'continue_with',
-      shape: 'pill',
-      width: 360,
-    })
-  }, [isOpen, isGoogleReady, googleClientId, googleLogin, onClose])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -181,40 +86,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
     setFormData({ email: '', username: '', password: '' })
   }
 
-  const handlePromptNotification = (notification: any) => {
-    const momentType =
-      notification?.getMomentType?.() ??
-      notification?.momentType ??
-      (notification?.isDisplayMoment?.() ? 'display' : undefined)
-    const notDisplayedReason = notification?.getNotDisplayedReason?.() ?? notification?.notDisplayedReason
-    const skippedReason = notification?.getSkippedReason?.() ?? notification?.skippedReason
-    const dismissedReason = notification?.getDismissedReason?.() ?? notification?.dismissedReason
-
-    // FedCM prefers checking momentType instead of deprecated UI status helpers.
-    if (momentType && momentType !== 'display' && momentType !== 'displayed') {
-      if (momentType === 'not_displayed' && notDisplayedReason) {
-        console.warn('Google prompt not displayed:', notDisplayedReason)
-      }
-      if (momentType === 'skipped' && skippedReason) {
-        console.warn('Google prompt skipped:', skippedReason)
-      }
-      if (momentType === 'dismissed' && dismissedReason) {
-        console.warn('Google prompt dismissed:', dismissedReason)
-      }
-      setIsGoogleProcessing(false)
-      return
-    }
-
-    // Legacy fallback (pre-FedCM) so we still clear state if only old helpers exist.
-    if (
-      notification?.isNotDisplayed?.() ||
-      notification?.isSkippedMoment?.() ||
-      notification?.isDismissedMoment?.()
-    ) {
-      setIsGoogleProcessing(false)
-    }
-  }
-
   const handleGoogleLogin = () => {
     setError('')
 
@@ -223,27 +94,32 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       return
     }
 
-    if (!isGoogleReady || typeof window === 'undefined' || !window.google) {
-      setError('Google services are not ready. Please try again in a moment.')
-      return
-    }
-
     setIsGoogleProcessing(true)
 
-    try {
-      const googleBtn = googleButtonRef.current?.querySelector('[role=\"button\"]') as HTMLDivElement | null
-      if (googleBtn) {
-        googleBtn.click()
-      } else {
-        window.google.accounts.id.prompt((notification: any) => {
-          handlePromptNotification(notification)
-        })
-      }
-    } catch (googleError) {
-      console.error('Google login init error:', googleError)
-      setError('Unable to start Google login. Please try again.')
-      setIsGoogleProcessing(false)
+    // Сохраняем anonymous ID перед редиректом
+    const anonymousId = localStorage.getItem('anonymous_user_id')
+    if (anonymousId) {
+      sessionStorage.setItem('google_auth_anonymous_id', anonymousId)
     }
+
+    // OAuth 2.0 redirect flow
+    const redirectUri = `${window.location.origin}/api/auth/google/callback`
+    const scope = 'openid email profile'
+    const state = crypto.randomUUID()
+    sessionStorage.setItem('google_oauth_state', state)
+
+    console.log('Google OAuth redirect URI:', redirectUri)
+
+    const authUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth')
+    authUrl.searchParams.set('client_id', googleClientId)
+    authUrl.searchParams.set('redirect_uri', redirectUri)
+    authUrl.searchParams.set('response_type', 'code')
+    authUrl.searchParams.set('scope', scope)
+    authUrl.searchParams.set('state', state)
+    authUrl.searchParams.set('access_type', 'online')
+    authUrl.searchParams.set('prompt', 'select_account')
+
+    window.location.href = authUrl.toString()
   }
 
   if (!isOpen) return null
@@ -257,9 +133,6 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           exit={{ opacity: 0, scale: 0.9 }}
           className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl max-w-md w-full p-8 border border-slate-100/60 dark:border-slate-800"
         >
-          {/* Hidden Google button for native popup */}
-          <div ref={googleButtonRef} className="absolute opacity-0 -z-10" aria-hidden="true" />
-
           {/* Header */}
           <div className="flex items-start justify-between mb-8">
             <div className="space-y-1">
@@ -286,7 +159,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
             <button
               type="button"
               onClick={handleGoogleLogin}
-              disabled={isGoogleProcessing || !googleClientId || !isGoogleReady}
+              disabled={isGoogleProcessing || !googleClientId}
               className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-800 rounded-xl py-3 text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/70 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               <svg

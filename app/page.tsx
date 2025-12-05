@@ -14,7 +14,7 @@ import TaskList, { TaskListRef } from '@/components/TaskList'
 import WorkHistory from '@/components/WorkHistory'
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading } = useAuthStore()
+  const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [mounted, setMounted] = useState(false)
   const taskListRef = useRef<TaskListRef>(null)
@@ -22,6 +22,29 @@ export default function HomePage() {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    // Обработка OAuth callback токена
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const authToken = params.get('auth_token')
+      const authError = params.get('auth_error')
+
+      if (authToken) {
+        localStorage.setItem('token', authToken)
+        
+        // Очищаем URL от параметров
+        window.history.replaceState({}, '', '/')
+        
+        // Перепроверяем авторизацию
+        checkAuth()
+      } else if (authError) {
+        console.error('Auth error:', authError)
+        // Очищаем URL от параметров
+        window.history.replaceState({}, '', '/')
+      }
+    }
+  }, [checkAuth])
 
   useEffect(() => {
     // Request notification permission

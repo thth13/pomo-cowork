@@ -3,6 +3,8 @@
 /.pnp
 .pnp.js
 /socket-server/node_modules
+/socket-server/dist
+/temp
 
 # Testing
 /coverage
