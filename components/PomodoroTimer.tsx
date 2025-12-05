@@ -424,13 +424,13 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     if (isRunning && currentSession && timeRemaining > 0) {
       const timeStr = formatTime(timeRemaining)
       const sessionLabel = getSessionTypeLabel(currentSession.type as SessionType)
-      document.title = `${timeStr} - ${sessionLabel} | Pomodoro`
+      document.title = `${timeStr} - ${sessionLabel} | Pomo Cowork`
     } else {
-      document.title = 'Pomodoro Timer'
+      document.title = 'Pomo Cowork'
     }
 
     return () => {
-      document.title = 'Pomodoro Timer'
+      document.title = 'Pomo Cowork'
     }
   }, [getSessionTypeLabel, isRunning, currentSession, timeRemaining])
 
@@ -1006,10 +1006,25 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       console.log('onSessionComplete callback finished')
     }
 
-    showNotification(
-      'Pomodoro completed! 🍅',
-      `Starting ${getSessionTypeLabel(nextType).toLowerCase()}...`
-    )
+    const completionTitle = (() => {
+      switch (completedType) {
+        case SessionType.WORK:
+          return 'Pomodoro completed 🍅'
+        case SessionType.SHORT_BREAK:
+          return 'Short break completed'
+        case SessionType.LONG_BREAK:
+          return 'Long break completed'
+        default:
+          return `${getSessionTypeLabel(completedType)} completed`
+      }
+    })()
+
+    const nextLabel = getSessionTypeLabel(nextType)
+    const notificationBody = isAutoStartEnabled
+      ? `${nextLabel} up next.`
+      : 'Start the next session when you are ready.'
+
+    showNotification(completionTitle, notificationBody)
 
     if (nextType === SessionType.SHORT_BREAK || nextType === SessionType.LONG_BREAK) {
       playSound('start')

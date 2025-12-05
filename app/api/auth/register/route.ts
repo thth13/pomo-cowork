@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
             tasks: {
               create: [
                 {
-                  title: 'Welcome to Pomodoro Timer!',
+                  title: 'Welcome to Pomo Cowork!',
                   description: 'This is your first task. You can edit or delete it, and add new tasks.',
                   pomodoros: 1,
                   priority: 'Средний',
@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
           tasks: {
             create: [
               {
-                title: 'Welcome to Pomodoro Timer!',
+                title: 'Welcome to Pomo Cowork!',
                 description: 'This is your first task. You can edit or delete it, and add new tasks.',
                 pomodoros: 1,
                 priority: 'Средний',

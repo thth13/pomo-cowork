@@ -17,7 +17,7 @@ const DEFAULT_SETTINGS = {
 } as const
 
 const DEFAULT_TASK = {
-  title: 'Welcome to Pomodoro Timer!',
+  title: 'Welcome to Pomo Cowork!',
   description: 'This is your first task. You can edit or delete it, and add new tasks.',
   pomodoros: 1,
   priority: 'Средний',
