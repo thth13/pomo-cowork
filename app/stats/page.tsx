@@ -475,49 +475,52 @@ export default function StatsPage() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {lastSevenDays.map(day => (
-                      <div key={day.date} className="flex items-center">
-                        <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden">
-                          <div className="pointer-events-none absolute inset-0">
-                            {Array.from({ length: 25 }).map((_, idx) => {
-                              // Пропускаем первую (0) и последнюю (24) линии
-                              if (idx === 0 || idx === 24) return null
-                              
-                              const left = (idx / 24) * 100
-                              const isMajor = idx % 6 === 0
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`absolute ${isMajor ? 'h-full bg-gray-300 dark:bg-slate-600' : 'h-1/2 top-1/4 bg-gray-200 dark:bg-slate-700'}`}
-                                  style={{ width: '1px', left: `${left}%` }}
-                                />
-                              )
-                            })}
-                          </div>
+                    {lastSevenDays.map(day => {
+                      const workSessions = day.sessions.filter(session => session.type === 'WORK')
+                      return (
+                        <div key={day.date} className="flex items-center">
+                          <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden">
+                            <div className="pointer-events-none absolute inset-0">
+                              {Array.from({ length: 25 }).map((_, idx) => {
+                                // Пропускаем первую (0) и последнюю (24) линии
+                                if (idx === 0 || idx === 24) return null
+                                
+                                const left = (idx / 24) * 100
+                                const isMajor = idx % 6 === 0
+                                return (
+                                  <div
+                                    key={idx}
+                                    className={`absolute ${isMajor ? 'h-full bg-gray-300 dark:bg-slate-600' : 'h-1/2 top-1/4 bg-gray-200 dark:bg-slate-700'}`}
+                                    style={{ width: '1px', left: `${left}%` }}
+                                  />
+                                )
+                              })}
+                            </div>
 
-                          {day.sessions.length > 0 &&
-                            day.sessions.map(session => {
-                              const start = new Date(session.start)
-                              const end = new Date(session.end)
-                              const startMinutes = (start.getHours() * 60) + start.getMinutes()
-                              const endMinutes = Math.min(1440, (end.getHours() * 60) + end.getMinutes())
-                              const durationMinutes = Math.max(1, endMinutes - startMinutes || session.duration)
-                              const left = Math.max(0, (startMinutes / 1440) * 100)
-                              const width = Math.min(100 - left, (durationMinutes / 1440) * 100)
-                              return (
-                                <div
-                                  key={session.id}
-                                  className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${getSessionColor(session.type)} shadow-sm`}
-                                  style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
-                                  title={`${formatTimeRange(session.start, session.end)} · ${session.task}`}
-                                >
-                                  <span className="absolute inset-0 bg-white/10 dark:bg-slate-900/10 rounded-md" />
-                                </div>
-                              )
-                            })}
+                            {workSessions.length > 0 &&
+                              workSessions.map(session => {
+                                const start = new Date(session.start)
+                                const end = new Date(session.end)
+                                const startMinutes = (start.getHours() * 60) + start.getMinutes()
+                                const endMinutes = Math.min(1440, (end.getHours() * 60) + end.getMinutes())
+                                const durationMinutes = Math.max(1, endMinutes - startMinutes || session.duration)
+                                const left = Math.max(0, (startMinutes / 1440) * 100)
+                                const width = Math.min(100 - left, (durationMinutes / 1440) * 100)
+                                return (
+                                  <div
+                                    key={session.id}
+                                    className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${getSessionColor(session.type)} shadow-sm`}
+                                    style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
+                                    title={`${formatTimeRange(session.start, session.end)} · ${session.task}`}
+                                  >
+                                    <span className="absolute inset-0 bg-white/10 dark:bg-slate-900/10 rounded-md" />
+                                  </div>
+                                )
+                              })}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
 
