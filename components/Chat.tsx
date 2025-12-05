@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { SendHorizonal, Loader2 } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSocket } from '@/hooks/useSocket'
 import type { ChatMessage } from '@/types'
+import Image from 'next/image'
 
 interface TypingState {
   username: string
@@ -176,7 +177,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     })
   }
 
-  const loadMoreMessages = async () => {
+  const loadMoreMessages = useCallback(async () => {
     if (!hasMore || loadingMore || !oldestMessageId) return
 
     setLoadingMore(true)
@@ -211,7 +212,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     } finally {
       setLoadingMore(false)
     }
-  }
+  }, [hasMore, loadingMore, oldestMessageId])
 
   // Обработчик скролла для определения когда загружать старые сообщения
   useEffect(() => {
@@ -227,7 +228,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
 
     scrollContainer.addEventListener('scroll', handleScroll)
     return () => scrollContainer.removeEventListener('scroll', handleScroll)
-  }, [hasMore, loadingMore, oldestMessageId])
+  }, [hasMore, loadingMore, loadMoreMessages, oldestMessageId])
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -393,9 +394,11 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
                 {m.type === 'system' ? (
                   <div className="flex items-start space-x-3">
                     {m.avatarUrl ? (
-                      <img
+                      <Image
                         src={m.avatarUrl}
                         alt={m.username}
+                        width={32}
+                        height={32}
                         onClick={() => m.userId && router.push(`/user/${m.userId}`)}
                         className="w-8 h-8 rounded-full object-cover flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                       />
@@ -427,9 +430,11 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
                 ) : (
                   <div className="flex items-start space-x-3">
                     {m.avatarUrl ? (
-                      <img 
+                      <Image 
                         src={m.avatarUrl} 
                         alt={m.username}
+                        width={32}
+                        height={32}
                         onClick={() => m.userId && router.push(`/user/${m.userId}`)}
                         className="w-8 h-8 rounded-full object-cover flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
                       />
@@ -474,9 +479,11 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       <form onSubmit={onSubmit} className="p-4 border-t border-gray-200 dark:border-slate-700">
         <div className="flex items-center space-x-3">
           {user?.avatarUrl ? (
-            <img 
+            <Image 
               src={user.avatarUrl} 
               alt={meName}
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full object-cover flex-shrink-0"
             />
           ) : (

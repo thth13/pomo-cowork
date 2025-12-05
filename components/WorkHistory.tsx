@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
 import { Calendar, Trash2 } from 'lucide-react'
 import ConfirmModal from './ConfirmModal'
+import Image from 'next/image'
 
 interface Session {
   id: string
@@ -269,9 +270,11 @@ export default function WorkHistory() {
                 <div className="flex-shrink-0">
                   {session.user && (
                     session.user.avatarUrl ? (
-                      <img 
+                      <Image 
                         src={session.user.avatarUrl} 
                         alt={session.user.username}
+                        width={40}
+                        height={40}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (

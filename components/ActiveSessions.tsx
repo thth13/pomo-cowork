@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { SessionType, SessionStatus, ActiveSession } from '@/types'
+import Image from 'next/image'
 
 // Component for individual session with time updates
 function SessionCard({ session, index, isCurrentUser = false }: { 
@@ -165,9 +166,11 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
           <div className="relative flex-shrink-0">
             {session.avatarUrl ? (
-              <img 
+              <Image 
                 src={session.avatarUrl} 
                 alt={session.username}
+                width={48}
+                height={48}
                 className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
               />
             ) : (

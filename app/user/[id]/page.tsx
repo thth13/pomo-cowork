@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -504,9 +505,11 @@ export default function UserProfilePage() {
             <div className="flex items-start space-x-4 sm:space-x-6">
               <div className="relative flex-shrink-0">
                 {profile.user.avatarUrl ? (
-                  <img 
+                  <Image 
                     src={profile.user.avatarUrl} 
                     alt={profile.user.username}
+                    width={96}
+                    height={96}
                     className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl object-cover"
                   />
                 ) : (

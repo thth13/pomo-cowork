@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import { useRouter } from 'next/navigation'
 import {
@@ -239,9 +240,11 @@ export default function ProfilePage() {
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-6">
                 {user?.avatarUrl && (
-                  <img
+                  <Image
                     src={user.avatarUrl}
                     alt={user.username}
+                    width={96}
+                    height={96}
                     className="w-24 h-24 rounded-full object-cover border-4 border-primary-100"
                   />
                 )}

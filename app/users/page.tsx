@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import Navbar from '@/components/Navbar'
+import Image from 'next/image'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faClock,
@@ -49,24 +50,24 @@ export default function UsersPage() {
   const [leaderboardLoading, setLeaderboardLoading] = useState(true)
   const [page, setPage] = useState(1)
 
+  const searchUsers = useCallback(async (query: string) => {
+    if (!query) {
+      setUsers(allUsers)
+      return
+    }
+    
+    // Фильтруем локально для мгновенного отклика
+    const filtered = allUsers.filter(user => 
+      user.username.toLowerCase().includes(query.toLowerCase())
+    )
+    setUsers(filtered)
+  }, [allUsers])
+
   // Загрузка всех пользователей и топа при монтировании
   useEffect(() => {
     loadLeaderboard()
     loadAllUsers()
   }, [])
-
-  // Поиск с дебаунсом
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.length >= 1) {
-        searchUsers(searchQuery)
-      } else {
-        setUsers(allUsers)
-      }
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, allUsers])
 
   const loadLeaderboard = async () => {
     setLeaderboardLoading(true)
@@ -109,18 +110,18 @@ export default function UsersPage() {
     }
   }
 
-  const searchUsers = async (query: string) => {
-    if (!query) {
-      setUsers(allUsers)
-      return
-    }
-    
-    // Фильтруем локально для мгновенного отклика
-    const filtered = allUsers.filter(user => 
-      user.username.toLowerCase().includes(query.toLowerCase())
-    )
-    setUsers(filtered)
-  }
+  // Поиск с дебаунсом
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchQuery.length >= 1) {
+        searchUsers(searchQuery)
+      } else {
+        setUsers(allUsers)
+      }
+    }, 300)
+
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery, allUsers, searchUsers])
 
   const getRankBadgeColor = (rank: number) => {
     if (rank === 1) return 'bg-gradient-to-r from-yellow-400 to-yellow-500'
@@ -223,9 +224,11 @@ export default function UsersPage() {
                       <div className="flex flex-col items-center text-center">
                         <div className="relative mb-4">
                           {user.avatarUrl ? (
-                            <img 
+                            <Image 
                               src={user.avatarUrl} 
                               alt={user.username}
+                              width={80}
+                              height={80}
                               className="w-20 h-20 rounded-full object-cover"
                             />
                           ) : (
@@ -302,9 +305,11 @@ export default function UsersPage() {
                     {user.rank}
                   </div>
                   {user.avatarUrl ? (
-                    <img 
+                    <Image 
                       src={user.avatarUrl} 
                       alt={user.username}
+                      width={40}
+                      height={40}
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (
@@ -331,9 +336,11 @@ export default function UsersPage() {
                     {currentUserRank.rank}
                   </div>
                   {currentUser?.avatarUrl ? (
-                    <img 
+                    <Image 
                       src={currentUser.avatarUrl} 
                       alt={currentUser.username}
+                      width={40}
+                      height={40}
                       className="w-10 h-10 rounded-full object-cover"
                     />
                   ) : (

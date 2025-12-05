@@ -350,7 +350,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       shortBreak,
       longBreak,
     })
-  }, [workDuration, shortBreak, longBreak])
+  }, [workDuration, shortBreak, longBreak, setSettingsForm])
 
   useEffect(() => {
     completedSessionIdRef.current = null
@@ -400,10 +400,24 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     setSoundEnabled(true)
     setSoundVolume(0.5)
   }, [
-    user?.settings?.notificationsEnabled,
-    user?.settings?.soundEnabled,
-    user?.settings?.soundVolume
+    setNotificationEnabled,
+    setSoundEnabled,
+    setSoundVolume,
+    user?.settings,
   ])
+
+  const getSessionTypeLabel = useCallback((type: SessionType): string => {
+    switch (type) {
+      case SessionType.WORK:
+        return 'Work'
+      case SessionType.SHORT_BREAK:
+        return 'Short break'
+      case SessionType.LONG_BREAK:
+        return 'Long break'
+      default:
+        return 'Work'
+    }
+  }, [])
 
   // Update page title with timer time
   useEffect(() => {
@@ -418,7 +432,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     return () => {
       document.title = 'Pomodoro Timer'
     }
-  }, [isRunning, currentSession, timeRemaining])
+  }, [getSessionTypeLabel, isRunning, currentSession, timeRemaining])
 
   const getSessionDuration = useCallback((type: SessionType): number => {
     switch (type) {
@@ -492,11 +506,10 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     emitSessionStart,
     getSessionDuration,
     getSessionTypeLabel,
+    mutateSessions,
     selectedTask?.title,
     startSession,
-    user?.avatarUrl,
-    user?.id,
-    user?.username,
+    user,
   ])
 
   const handleSessionTypeChange = (type: SessionType) => {
@@ -1028,7 +1041,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     selectedTask,
     showNotification,
     setSessionType,
-    user,
+    mutateSessions,
   ])
 
   useTimerSync({
@@ -1063,19 +1076,6 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   }, [handleSessionComplete])
 
   usePageVisibility(handleVisibilityRecalculate)
-
-  function getSessionTypeLabel(type: SessionType): string {
-    switch (type) {
-      case SessionType.WORK:
-        return 'Work'
-      case SessionType.SHORT_BREAK:
-        return 'Short break'
-      case SessionType.LONG_BREAK:
-        return 'Long break'
-      default:
-        return 'Work'
-    }
-  }
 
   const getSessionTypeColor = (type: SessionType): string => {
     switch (type) {

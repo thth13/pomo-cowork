@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db'
 import { generateToken, hashPassword } from '@/lib/auth'
 import crypto from 'crypto'
 
+export const dynamic = 'force-dynamic'
+
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
 

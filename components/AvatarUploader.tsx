@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Upload, X, User } from 'lucide-react'
+import Image from 'next/image'
 
 interface AvatarUploaderProps {
   currentAvatar?: string
@@ -105,7 +106,7 @@ export default function AvatarUploader({ currentAvatar, onFileSelect, previewUrl
         <div className="relative">
           <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-inner transition-all duration-300 group-hover:shadow-xl dark:border-slate-700 dark:bg-slate-800">
             {preview ? (
-              <img src={preview} alt="Avatar preview" className="h-full w-full object-cover" />
+              <Image src={preview} alt="Avatar preview" width={128} height={128} className="h-full w-full object-cover" />
             ) : (
               <User className="h-14 w-14 text-slate-400 dark:text-slate-500" />
             )}

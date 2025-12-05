@@ -10,6 +10,7 @@ import ThemeToggle from './ThemeToggle'
 import { User, Menu, X } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import Image from 'next/image'
 import {
   faArrowRightFromBracket,
   faArrowUpRightFromSquare,
@@ -135,7 +136,7 @@ export default function Navbar() {
                     aria-expanded={isMenuOpen}
                   >
                     {user.avatarUrl ? (
-                      <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+                      <Image src={user.avatarUrl} alt={user.username} width={48} height={48} className="w-full h-full object-cover" />
                     ) : (
                       <User className="w-4 h-4" />
                     )}
@@ -230,7 +231,7 @@ export default function Navbar() {
               <div className="flex items-center space-x-3">
                 <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold overflow-hidden">
                   {user.avatarUrl ? (
-                    <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+                    <Image src={user.avatarUrl} alt={user.username} width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-5 h-5" />
                   )}
