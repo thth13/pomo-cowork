@@ -522,7 +522,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
   )
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 flex flex-col max-h-[640px]">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 flex flex-col max-h-[480px]">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
         <div>
           <h3 className="text-lg font-bold text-gray-900 dark:text-white">Latest activity</h3>

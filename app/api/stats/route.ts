@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
-import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, differenceInDays, format } from 'date-fns'
+import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, differenceInDays, format, addMinutes } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,6 +40,21 @@ export async function GET(request: NextRequest) {
         type: 'WORK'
       },
       orderBy: { completedAt: 'asc' }
+    })
+
+    // Сессии за последние 7 дней (для таймлайна)
+    const sevenDaysStart = startOfDay(subDays(now, 6))
+    const recentSessions = await prisma.pomodoroSession.findMany({
+      where: {
+        userId: payload.userId,
+        startedAt: { gte: sevenDaysStart },
+        status: {
+          not: 'CANCELLED'
+        }
+      },
+      orderBy: {
+        startedAt: 'asc'
+      }
     })
 
     // 1. Всего помодоро (только work)
@@ -333,6 +348,46 @@ export async function GET(request: NextRequest) {
       ? Math.round((tasksWithinEstimate / completedTasks.length) * 100)
       : 0
 
+    // Таймлайны за последние 7 дней
+    const lastSevenDaysTimeline = []
+    for (let i = 6; i >= 0; i--) {
+      const dayDate = subDays(now, i)
+      const dayStart = startOfDay(dayDate)
+      const dayEnd = endOfDay(dayDate)
+
+      const daySessions = recentSessions.filter(session => {
+        const sessionStart = session.startedAt || session.createdAt
+        return sessionStart >= dayStart && sessionStart <= dayEnd
+      })
+
+      const sessionsWithTiming = daySessions.map(session => {
+        const start = session.startedAt || session.createdAt
+        const end = session.completedAt || session.endedAt || addMinutes(start, session.duration)
+
+        return {
+          id: session.id,
+          type: session.type,
+          status: session.status,
+          task: session.task,
+          start: start.toISOString(),
+          end: end.toISOString(),
+          duration: Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000))
+        }
+      }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+
+      const totalFocusMinutesDay = sessionsWithTiming
+        .filter(s => s.type === 'WORK')
+        .reduce((sum, s) => sum + s.duration, 0)
+
+      lastSevenDaysTimeline.push({
+        date: format(dayDate, 'yyyy-MM-dd'),
+        dayLabel: format(dayDate, 'EEE'),
+        totalFocusMinutes: totalFocusMinutesDay,
+        totalPomodoros: sessionsWithTiming.filter(s => s.type === 'WORK').length,
+        sessions: sessionsWithTiming
+      })
+    }
+
     const taskStats = {
       total: allUserTasks.length,
       completed: completedTasks.length,
@@ -363,6 +418,9 @@ export async function GET(request: NextRequest) {
       
       // Разбивка по месяцам (последние 12 месяцев)
       monthlyBreakdown,
+
+      // Последние 7 дней с таймлайном
+      lastSevenDaysTimeline,
       
       // Тренды продуктивности
       productivityTrends,

@@ -29,6 +29,21 @@ interface Stats {
   weeklyActivity: Array<{ date: string; pomodoros: number }>
   yearlyHeatmap: Array<{ week: number; dayOfWeek: number; pomodoros: number; date: string }>
   monthlyBreakdown: Array<{ month: string; monthIndex: number; pomodoros: number }>
+  lastSevenDaysTimeline: Array<{
+    date: string
+    dayLabel: string
+    totalFocusMinutes: number
+    totalPomodoros: number
+    sessions: Array<{
+      id: string
+      type: string
+      status: string
+      task: string
+      start: string
+      end: string
+      duration: number
+    }>
+  }>
   productivityTrends: {
     bestTime: { start: string; end: string; efficiency: number }
     bestDay: { name: string; avgPomodoros: string }
@@ -308,6 +323,29 @@ export default function StatsPage() {
   const avgTimePerDay = stats?.avgMinutesPerDay || 0
   const focusTimeThisMonth = Math.floor((stats?.focusTimeThisMonth || 0) / 60)
   const focusTimeThisMonthMinutes = (stats?.focusTimeThisMonth || 0) % 60
+  const lastSevenDays = stats?.lastSevenDaysTimeline || []
+
+  const getSessionColor = (type: string) => {
+    switch (type) {
+      case 'WORK':
+        return 'bg-red-500'
+      case 'SHORT_BREAK':
+        return 'bg-emerald-500'
+      case 'LONG_BREAK':
+        return 'bg-blue-500'
+      default:
+        return 'bg-slate-500'
+    }
+  }
+
+  const formatTimeRange = (start: string, end: string) => {
+    const opts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }
+    const startStr = new Date(start).toLocaleTimeString('en-US', opts)
+    const endStr = new Date(end).toLocaleTimeString('en-US', opts)
+    return `${startStr} - ${endStr}`
+  }
+
+  const timeLabels = [0, 6, 12, 18, 24]
 
   const SkeletonCard = () => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
@@ -367,49 +405,48 @@ export default function StatsPage() {
         ) : (
           <>
             {/* Overview Stats */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                      <FontAwesomeIcon icon={faClock} className="text-red-600 text-lg" />
-                    </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
+                    <FontAwesomeIcon icon={faClock} className="text-red-600 text-lg" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalPomodoros.toLocaleString()}</div>
-                  <div className="text-sm text-gray-600 dark:text-slate-300">Total Pomodoros</div>
                 </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalPomodoros.toLocaleString()}</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Total Pomodoros</div>
+              </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                      <FontAwesomeIcon icon={faStopwatch} className="text-blue-600 text-lg" />
-                    </div>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <FontAwesomeIcon icon={faStopwatch} className="text-blue-600 text-lg" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalHours}h {totalMinutesRemainder}m</div>
-                  <div className="text-sm text-gray-600 dark:text-slate-300">Total Focus Time</div>
                 </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalHours}h {totalMinutesRemainder}m</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Total Focus Time</div>
+              </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                      <FontAwesomeIcon icon={faCalendarCheck} className="text-orange-600 text-lg" />
-                    </div>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
+                    <FontAwesomeIcon icon={faCalendarCheck} className="text-orange-600 text-lg" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
-                  <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">days in a row</div>
                 </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
+                <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">days in a row</div>
+              </div>
 
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                      <FontAwesomeIcon icon={faCalendarDays} className="text-purple-600 text-lg" />
-                    </div>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+                    <FontAwesomeIcon icon={faCalendarDays} className="text-purple-600 text-lg" />
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{avgTimePerDay}m</div>
-                  <div className="text-sm text-gray-600 dark:text-slate-300">Average Daily Time</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">On active days</div>
                 </div>
+                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{avgTimePerDay}m</div>
+                <div className="text-sm text-gray-600 dark:text-slate-300">Average Daily Time</div>
+                <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">On active days</div>
+              </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-4">
@@ -423,7 +460,83 @@ export default function StatsPage() {
               </div>
             </div>
 
-            <LatestActivity token={token} isAuthenticated={isAuthenticated} onChange={fetchStats} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <LatestActivity token={token} isAuthenticated={isAuthenticated} onChange={fetchStats} />
+
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Last 7 Days</h3>
+                  <span className="text-xs text-gray-500 dark:text-slate-400">Recent focus timelines</span>
+                </div>
+
+                {lastSevenDays.length === 0 ? (
+                  <div className="text-sm text-gray-500 dark:text-slate-400 text-center py-10">
+                    No sessions for the last week yet.
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {lastSevenDays.map(day => (
+                      <div key={day.date} className="flex items-center">
+                        <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden">
+                          <div className="pointer-events-none absolute inset-0">
+                            {Array.from({ length: 25 }).map((_, idx) => {
+                              // Пропускаем первую (0) и последнюю (24) линии
+                              if (idx === 0 || idx === 24) return null
+                              
+                              const left = (idx / 24) * 100
+                              const isMajor = idx % 6 === 0
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`absolute ${isMajor ? 'h-full bg-gray-300 dark:bg-slate-600' : 'h-1/2 top-1/4 bg-gray-200 dark:bg-slate-700'}`}
+                                  style={{ width: '1px', left: `${left}%` }}
+                                />
+                              )
+                            })}
+                          </div>
+
+                          {day.sessions.length > 0 &&
+                            day.sessions.map(session => {
+                              const start = new Date(session.start)
+                              const end = new Date(session.end)
+                              const startMinutes = (start.getHours() * 60) + start.getMinutes()
+                              const endMinutes = Math.min(1440, (end.getHours() * 60) + end.getMinutes())
+                              const durationMinutes = Math.max(1, endMinutes - startMinutes || session.duration)
+                              const left = Math.max(0, (startMinutes / 1440) * 100)
+                              const width = Math.min(100 - left, (durationMinutes / 1440) * 100)
+                              return (
+                                <div
+                                  key={session.id}
+                                  className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${getSessionColor(session.type)} shadow-sm`}
+                                  style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
+                                  title={`${formatTimeRange(session.start, session.end)} · ${session.task}`}
+                                >
+                                  <span className="absolute inset-0 bg-white/10 dark:bg-slate-900/10 rounded-md" />
+                                </div>
+                              )
+                            })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="relative mt-2 h-5 text-[11px] text-gray-500 dark:text-slate-400">
+                  {timeLabels.map((label, idx) => {
+                    const left = (label / 24) * 100
+                    const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
+                    return (
+                      <span
+                        key={label}
+                        className="absolute top-0"
+                        style={{ left: `${left}%`, transform: `translateX(${translateX})` }}
+                      >
+                        {String(label).padStart(2, '0')}:00
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
             </div>
 
         {/* Weekly Chart */}
