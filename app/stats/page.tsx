@@ -80,8 +80,11 @@ export default function StatsPage() {
   const { theme } = useThemeStore()
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [timelineLoading, setTimelineLoading] = useState(false)
+  const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
   const [chartReady, setChartReady] = useState(false)
   const [activityPeriod, setActivityPeriod] = useState<'7' | '30' | '365'>('7')
+  const [timelineOffset, setTimelineOffset] = useState(0)
   
   const isDark = theme === 'dark'
 
@@ -101,15 +104,20 @@ export default function StatsPage() {
     }
   }, [])
 
-  const fetchStats = useCallback(async () => {
+  const fetchStats = useCallback(async (options?: { preservePage?: boolean }) => {
+    const preservePage = options?.preservePage ?? false
     if (!token) {
       return
     }
 
-    setLoading(true)
+    if (preservePage) {
+      setTimelineLoading(true)
+    } else {
+      setLoading(true)
+    }
 
     try {
-      const response = await fetch(`/api/stats?period=${activityPeriod}`, {
+      const response = await fetch(`/api/stats?period=${activityPeriod}&timelineOffset=${timelineOffset}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -117,13 +125,18 @@ export default function StatsPage() {
       if (response.ok) {
         const data = await response.json()
         setStats(data)
+        setHasFetchedOnce(true)
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error)
     } finally {
-      setLoading(false)
+      if (preservePage) {
+        setTimelineLoading(false)
+      } else {
+        setLoading(false)
+      }
     }
-  }, [token, activityPeriod])
+  }, [token, activityPeriod, timelineOffset])
 
   useEffect(() => {
     if (authLoading) {
@@ -131,11 +144,11 @@ export default function StatsPage() {
     }
 
     if (isAuthenticated && token) {
-      fetchStats()
+      fetchStats({ preservePage: hasFetchedOnce })
     } else if (!isAuthenticated) {
       setLoading(false)
     }
-  }, [authLoading, fetchStats, isAuthenticated, token])
+  }, [authLoading, fetchStats, isAuthenticated, token, hasFetchedOnce])
 
   const generateYearlyHeatmapData = () => {
     if (!stats?.yearlyHeatmap) return []
@@ -347,6 +360,15 @@ export default function StatsPage() {
 
   const timeLabels = [0, 6, 12, 18, 24]
 
+  const getTimelineRangeLabel = () => {
+    if (!lastSevenDays.length) return ''
+    const timestamps = lastSevenDays.map(day => new Date(day.date).getTime())
+    const minDate = new Date(Math.min(...timestamps))
+    const maxDate = new Date(Math.max(...timestamps))
+    const formatOpts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
+    return `${minDate.toLocaleDateString('ru-RU', formatOpts)} — ${maxDate.toLocaleDateString('ru-RU', formatOpts)}`
+  }
+
   const SkeletonCard = () => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
       <div className="flex items-center justify-between mb-4">
@@ -463,10 +485,43 @@ export default function StatsPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
               <LatestActivity token={token} isAuthenticated={isAuthenticated} onChange={fetchStats} />
 
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Last 7 Days</h3>
-                  <span className="text-xs text-gray-500 dark:text-slate-400">Recent focus timelines</span>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 relative" aria-busy={timelineLoading}>
+                {timelineLoading && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+                    <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                )}
+                <div className="flex items-center justify-between mb-2">
+                  <div>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Last 7 Days</h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">Recent focus timelines</p>
+                  </div>
+                  <div className="flex items-center space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setTimelineOffset(timelineOffset + 7)}
+                      className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                      aria-label="Previous week"
+                    >
+                      &lt;
+                    </button>
+                    <div className="text-xs font-medium text-gray-700 dark:text-slate-200 min-w-[130px] text-center">
+                      {getTimelineRangeLabel() || '—'}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setTimelineOffset(Math.max(0, timelineOffset - 7))}
+                      disabled={timelineOffset === 0}
+                      className={`text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
+                        timelineOffset === 0
+                          ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
+                          : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                      }`}
+                      aria-label="Next week"
+                    >
+                      &gt;
+                    </button>
+                  </div>
                 </div>
 
                 {lastSevenDays.length === 0 ? (

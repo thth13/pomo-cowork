@@ -29,8 +29,14 @@ export async function GET(request: NextRequest) {
     // Получаем период из query параметров
     const { searchParams } = new URL(request.url)
     const period = searchParams.get('period') || '7' // 7, 30, 365
+    const timelineOffset = Math.max(
+      0,
+      parseInt(searchParams.get('timelineOffset') || '0', 10) || 0
+    )
 
     const now = new Date()
+    const timelineStart = startOfDay(subDays(now, 6 + timelineOffset))
+    const timelineEnd = endOfDay(subDays(now, timelineOffset))
 
     // Получаем все завершенные WORK сессии
     const allWorkSessions = await prisma.pomodoroSession.findMany({
@@ -43,11 +49,11 @@ export async function GET(request: NextRequest) {
     })
 
     // Сессии за последние 7 дней (для таймлайна)
-    const sevenDaysStart = startOfDay(subDays(now, 6))
+    const sevenDaysStart = timelineStart
     const recentSessions = await prisma.pomodoroSession.findMany({
       where: {
         userId: payload.userId,
-        startedAt: { gte: sevenDaysStart },
+        startedAt: { gte: sevenDaysStart, lte: timelineEnd },
         status: {
           not: 'CANCELLED'
         }
@@ -351,7 +357,7 @@ export async function GET(request: NextRequest) {
     // Таймлайны за последние 7 дней
     const lastSevenDaysTimeline = []
     for (let i = 6; i >= 0; i--) {
-      const dayDate = subDays(now, i)
+      const dayDate = subDays(now, i + timelineOffset)
       const dayStart = startOfDay(dayDate)
       const dayEnd = endOfDay(dayDate)
 
