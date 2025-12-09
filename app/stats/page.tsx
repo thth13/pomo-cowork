@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useThemeStore } from '@/store/useThemeStore'
@@ -81,12 +81,27 @@ export default function StatsPage() {
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [timelineLoading, setTimelineLoading] = useState(false)
+  const [activityLoading, setActivityLoading] = useState(false)
   const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
   const [chartReady, setChartReady] = useState(false)
   const [activityPeriod, setActivityPeriod] = useState<'7' | '30' | '365'>('7')
   const [timelineOffset, setTimelineOffset] = useState(0)
+  const activityPeriodRef = useRef(activityPeriod)
+  const timelineOffsetRef = useRef(timelineOffset)
   
   const isDark = theme === 'dark'
+
+  useEffect(() => {
+    activityPeriodRef.current = activityPeriod
+  }, [activityPeriod])
+
+  useEffect(() => {
+    timelineOffsetRef.current = timelineOffset
+  }, [timelineOffset])
+
+  useEffect(() => {
+    setHasFetchedOnce(false)
+  }, [token])
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -104,20 +119,27 @@ export default function StatsPage() {
     }
   }, [])
 
-  const fetchStats = useCallback(async (options?: { preservePage?: boolean }) => {
-    const preservePage = options?.preservePage ?? false
+  type FetchMode = 'full' | 'timeline' | 'activity' | 'silent'
+
+  const fetchStats = useCallback(async (options?: { mode?: FetchMode; period?: '7' | '30' | '365'; offset?: number }) => {
     if (!token) {
       return
     }
 
-    if (preservePage) {
+    const mode = options?.mode ?? 'full'
+    const period = options?.period ?? activityPeriodRef.current
+    const offset = Math.max(0, options?.offset ?? timelineOffsetRef.current)
+
+    if (mode === 'timeline') {
       setTimelineLoading(true)
-    } else {
+    } else if (mode === 'activity') {
+      setActivityLoading(true)
+    } else if (mode === 'full') {
       setLoading(true)
     }
 
     try {
-      const response = await fetch(`/api/stats?period=${activityPeriod}&timelineOffset=${timelineOffset}`, {
+      const response = await fetch(`/api/stats?period=${period}&timelineOffset=${offset}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -130,13 +152,15 @@ export default function StatsPage() {
     } catch (error) {
       console.error('Failed to fetch stats:', error)
     } finally {
-      if (preservePage) {
+      if (mode === 'timeline') {
         setTimelineLoading(false)
-      } else {
+      } else if (mode === 'activity') {
+        setActivityLoading(false)
+      } else if (mode === 'full') {
         setLoading(false)
       }
     }
-  }, [token, activityPeriod, timelineOffset])
+  }, [token])
 
   useEffect(() => {
     if (authLoading) {
@@ -144,11 +168,11 @@ export default function StatsPage() {
     }
 
     if (isAuthenticated && token) {
-      fetchStats({ preservePage: hasFetchedOnce })
+      fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })
     } else if (!isAuthenticated) {
       setLoading(false)
     }
-  }, [authLoading, fetchStats, isAuthenticated, token, hasFetchedOnce])
+  }, [authLoading, fetchStats, isAuthenticated, token])
 
   const generateYearlyHeatmapData = () => {
     if (!stats?.yearlyHeatmap) return []
@@ -370,6 +394,19 @@ export default function StatsPage() {
     return `${minDate.toLocaleDateString('en-US', formatOpts)} — ${maxDate.toLocaleDateString('en-US', formatOpts)}`
   }
 
+  const handleTimelineOffsetChange = (nextOffset: number) => {
+    const safeOffset = Math.max(0, nextOffset)
+    setTimelineOffset(safeOffset)
+    timelineOffsetRef.current = safeOffset
+    fetchStats({ mode: hasFetchedOnce ? 'timeline' : 'full', offset: safeOffset })
+  }
+
+  const handleActivityPeriodChange = (period: '7' | '30' | '365') => {
+    setActivityPeriod(period)
+    activityPeriodRef.current = period
+    fetchStats({ mode: hasFetchedOnce ? 'activity' : 'full', period })
+  }
+
   const SkeletonCard = () => (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
       <div className="flex items-center justify-between mb-4">
@@ -484,7 +521,11 @@ export default function StatsPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <LatestActivity token={token} isAuthenticated={isAuthenticated} onChange={fetchStats} />
+              <LatestActivity
+                token={token}
+                isAuthenticated={isAuthenticated}
+                onChange={() => fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })}
+              />
 
               <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 relative" aria-busy={timelineLoading}>
                 {timelineLoading && (
@@ -500,7 +541,7 @@ export default function StatsPage() {
                   <div className="flex items-center space-x-3">
                     <button
                       type="button"
-                      onClick={() => setTimelineOffset(timelineOffset + 7)}
+                      onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
                       className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                       aria-label="Previous week"
                     >
@@ -511,7 +552,7 @@ export default function StatsPage() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => setTimelineOffset(Math.max(0, timelineOffset - 7))}
+                      onClick={() => handleTimelineOffsetChange(Math.max(0, timelineOffset - 7))}
                       disabled={timelineOffset === 0}
                       className={`text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
                         timelineOffset === 0
@@ -600,7 +641,15 @@ export default function StatsPage() {
 
         {/* Weekly Chart */}
         <div className="mb-8">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6">
+          <div
+            className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
+            aria-busy={activityLoading}
+          >
+            {activityLoading && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+                <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+              </div>
+            )}
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                 {activityPeriod === '7' && 'Weekly Activity'}
@@ -609,7 +658,7 @@ export default function StatsPage() {
               </h3>
               <div className="flex items-center space-x-2">
                 <button 
-                  onClick={() => setActivityPeriod('7')}
+                  onClick={() => handleActivityPeriodChange('7')}
                   className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                     activityPeriod === '7' 
                       ? 'text-white bg-blue-500' 
@@ -619,7 +668,7 @@ export default function StatsPage() {
                   7d
                 </button>
                 <button 
-                  onClick={() => setActivityPeriod('30')}
+                  onClick={() => handleActivityPeriodChange('30')}
                   className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                     activityPeriod === '30' 
                       ? 'text-white bg-blue-500' 
@@ -629,7 +678,7 @@ export default function StatsPage() {
                   30d
                 </button>
                 <button 
-                  onClick={() => setActivityPeriod('365')}
+                  onClick={() => handleActivityPeriodChange('365')}
                   className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                     activityPeriod === '365' 
                       ? 'text-white bg-blue-500' 
