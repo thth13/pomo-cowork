@@ -192,7 +192,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
 
   const formatDateTime = (value?: string) => {
     if (!value) return '—'
-    return new Date(value).toLocaleString('ru-RU', {
+    return new Date(value).toLocaleString('en-US', {
       dateStyle: 'medium',
       timeStyle: 'short',
     })
@@ -769,7 +769,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
                             {entry.task || 'Без названия'}
                           </div>
                           <div className="text-xs text-gray-500 dark:text-slate-400">
-                            {formatDateTime(entry.startedAt)} · {entry.duration} мин
+                            {formatDateTime(entry.startedAt)} · {entry.duration} min
                           </div>
                         </div>
                       </div>

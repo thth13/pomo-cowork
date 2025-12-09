@@ -337,6 +337,7 @@ export default function StatsPage() {
   const focusTimeThisMonth = Math.floor((stats?.focusTimeThisMonth || 0) / 60)
   const focusTimeThisMonthMinutes = (stats?.focusTimeThisMonth || 0) % 60
   const lastSevenDays = stats?.lastSevenDaysTimeline || []
+  const bestDayName = stats?.productivityTrends?.bestDay?.name || 'No data'
 
   const getSessionColor = (type: string) => {
     switch (type) {
@@ -366,7 +367,7 @@ export default function StatsPage() {
     const minDate = new Date(Math.min(...timestamps))
     const maxDate = new Date(Math.max(...timestamps))
     const formatOpts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
-    return `${minDate.toLocaleDateString('ru-RU', formatOpts)} — ${maxDate.toLocaleDateString('ru-RU', formatOpts)}`
+    return `${minDate.toLocaleDateString('en-US', formatOpts)} — ${maxDate.toLocaleDateString('en-US', formatOpts)}`
   }
 
   const SkeletonCard = () => (
@@ -727,7 +728,7 @@ export default function StatsPage() {
                   </div>
                   <div>
                     <div className="text-sm font-medium text-gray-900 dark:text-white">Best Day</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400">{stats?.productivityTrends?.bestDay?.name || 'No data'}</div>
+                    <div className="text-xs text-gray-500 dark:text-slate-400">{bestDayName}</div>
                   </div>
                 </div>
                 <div className="text-right">

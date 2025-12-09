@@ -256,7 +256,7 @@ export async function GET(request: NextRequest) {
       }
     })
     
-    const daysNames = ['Воскресенье', 'Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота']
+    const daysNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     const bestDayName = daysNames[bestDayOfWeek]
     
     // Считаем количество уникальных дней для этого дня недели
