@@ -82,8 +82,11 @@ export const SettingsModal = memo(function SettingsModal({
               type="number"
               min={1}
               className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              value={settings.workDuration}
-              onChange={(event) => onChange('workDuration', Number(event.target.value))}
+              value={settings.workDuration === 0 ? '' : settings.workDuration}
+              onChange={(event) => {
+                const value = event.target.value
+                onChange('workDuration', value === '' ? 0 : Number(value))
+              }}
             />
           </label>
 
@@ -95,8 +98,11 @@ export const SettingsModal = memo(function SettingsModal({
               type="number"
               min={1}
               className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              value={settings.shortBreak}
-              onChange={(event) => onChange('shortBreak', Number(event.target.value))}
+              value={settings.shortBreak === 0 ? '' : settings.shortBreak}
+              onChange={(event) => {
+                const value = event.target.value
+                onChange('shortBreak', value === '' ? 0 : Number(value))
+              }}
             />
           </label>
 
@@ -108,8 +114,11 @@ export const SettingsModal = memo(function SettingsModal({
               type="number"
               min={1}
               className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-              value={settings.longBreak}
-              onChange={(event) => onChange('longBreak', Number(event.target.value))}
+              value={settings.longBreak === 0 ? '' : settings.longBreak}
+              onChange={(event) => {
+                const value = event.target.value
+                onChange('longBreak', value === '' ? 0 : Number(value))
+              }}
             />
           </label>
 
