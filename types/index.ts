@@ -40,7 +40,8 @@ export interface PomodoroSession {
 export enum SessionType {
   WORK = 'WORK',
   SHORT_BREAK = 'SHORT_BREAK',
-  LONG_BREAK = 'LONG_BREAK'
+  LONG_BREAK = 'LONG_BREAK',
+  TIME_TRACKING = 'TIME_TRACKING',
 }
 
 export enum SessionStatus {
@@ -96,7 +97,7 @@ export interface ChatMessage {
   timestamp: number
   type?: 'message' | 'system'
   action?: {
-    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop' | 'session_complete'
+    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop' | 'session_complete' | 'time_tracking_start'
     duration?: number
     task?: string
   }

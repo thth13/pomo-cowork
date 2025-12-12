@@ -367,6 +367,8 @@ export default function StatsPage() {
     switch (type) {
       case 'WORK':
         return 'bg-red-500'
+      case 'TIME_TRACKING':
+        return 'bg-indigo-500'
       case 'SHORT_BREAK':
         return 'bg-emerald-500'
       case 'LONG_BREAK':
@@ -573,7 +575,7 @@ export default function StatsPage() {
                 ) : (
                   <div className="space-y-4">
                     {lastSevenDays.map(day => {
-                      const workSessions = day.sessions.filter(session => session.type === 'WORK')
+                      const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
                       return (
                         <div key={day.date} className="flex items-center">
                           <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden">
@@ -594,8 +596,8 @@ export default function StatsPage() {
                               })}
                             </div>
 
-                            {workSessions.length > 0 &&
-                              workSessions.map(session => {
+                            {focusSessions.length > 0 &&
+                              focusSessions.map(session => {
                                 const start = new Date(session.start)
                                 const end = new Date(session.end)
                                 const startMinutes = (start.getHours() * 60) + start.getMinutes()

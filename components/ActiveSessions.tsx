@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Clock, User, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useTimerStore } from '@/store/useTimerStore'
+import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { SessionType, SessionStatus, ActiveSession } from '@/types'
 import Image from 'next/image'
@@ -18,10 +18,11 @@ function SessionCard({ session, index, isCurrentUser = false }: {
   const router = useRouter()
   
   const sessionStatus = session.status ?? SessionStatus.ACTIVE
+  const isTimeTracking = session.type === SessionType.TIME_TRACKING
 
   const statusDotClass = sessionStatus === SessionStatus.PAUSED ? 'bg-amber-400' : 'bg-green-400'
 
-  const fallbackDurationSeconds = (session.duration || 25) * 60
+  const fallbackDurationSeconds = (isTimeTracking ? TIME_TRACKER_DURATION_MINUTES : session.duration || 25) * 60
   const storedRemainingSeconds = typeof session.timeRemaining === 'number'
     ? session.timeRemaining
     : fallbackDurationSeconds
@@ -101,6 +102,8 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         return 'Short break'
       case SessionType.LONG_BREAK:
         return 'Long break'
+      case SessionType.TIME_TRACKING:
+        return 'Time tracking'
       default:
         return 'Working'
     }
@@ -114,6 +117,8 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         return 'bg-secondary-50 dark:bg-secondary-900/20 border-secondary-200 dark:border-secondary-800/50 text-secondary-700 dark:text-secondary-400'
       case SessionType.LONG_BREAK:
         return 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/50 text-blue-700 dark:text-blue-400'
+      case SessionType.TIME_TRACKING:
+        return 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-200 dark:border-indigo-800/50 text-indigo-700 dark:text-indigo-400'
       default:
         return 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800/50 text-primary-700 dark:text-primary-400'
     }
@@ -132,6 +137,8 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         return 'bg-green-100 text-green-600'
       case SessionType.LONG_BREAK:
         return 'bg-blue-100 text-blue-600'
+      case SessionType.TIME_TRACKING:
+        return 'bg-indigo-100 text-indigo-600'
       default:
         return 'bg-red-100 text-red-600'
     }
@@ -145,13 +152,21 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         return 'bg-green-500'
       case SessionType.LONG_BREAK:
         return 'bg-blue-500'
+      case SessionType.TIME_TRACKING:
+        return 'bg-indigo-500'
       default:
         return 'bg-red-500'
     }
   }
 
   const totalDurationForProgress = Math.max(1, fallbackDurationSeconds)
-  const progressPercent = Math.max(0, Math.min(100, (currentTimeRemaining / totalDurationForProgress) * 100))
+  const elapsedSeconds = isTimeTracking
+    ? Math.max(0, totalDurationForProgress - currentTimeRemaining)
+    : currentTimeRemaining
+
+  const progressPercent = isTimeTracking
+    ? Math.max(0, Math.min(100, (elapsedSeconds / totalDurationForProgress) * 100))
+    : Math.max(0, Math.min(100, (currentTimeRemaining / totalDurationForProgress) * 100))
 
   const handleClick = () => {
     router.push(`/user/${session.userId}`)
@@ -207,7 +222,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
         </div>
         <div className="text-right flex-shrink-0">
           <div className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1">
-            {formatTime(currentTimeRemaining)}
+            {formatTime(elapsedSeconds)}
           </div>
           <div className="w-16 sm:w-24 bg-gray-200 dark:bg-slate-600 rounded-full h-2 mb-1">
             <div 
@@ -216,7 +231,7 @@ function SessionCard({ session, index, isCurrentUser = false }: {
             ></div>
           </div>
           <div className="text-xs text-gray-500 dark:text-slate-400">
-            {sessionStatus === SessionStatus.PAUSED ? 'paused' : 'remaining'}
+            {sessionStatus === SessionStatus.PAUSED ? 'paused' : isTimeTracking ? 'elapsed' : 'remaining'}
           </div>
         </div>
       </div>

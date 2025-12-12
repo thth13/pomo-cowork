@@ -35,7 +35,7 @@ export const TaskPicker = memo(function TaskPicker({
   onTaskSearchChange,
   hasTaskOptions,
 }: TaskPickerProps) {
-  if (sessionType !== SessionType.WORK) {
+  if (sessionType !== SessionType.WORK && sessionType !== SessionType.TIME_TRACKING) {
     return null
   }
 

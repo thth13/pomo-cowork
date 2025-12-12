@@ -58,25 +58,10 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
         return 'text-blue-600 dark:text-blue-400'
       case 'session_complete':
         return 'text-emerald-600 dark:text-emerald-400'
+      case 'time_tracking_start':
+        return 'text-indigo-600 dark:text-indigo-400'
       default:
         return 'text-slate-600 dark:text-slate-400'
-    }
-  }
-
-  const formatActionMessage = (action?: { type: string; duration?: number; task?: string }) => {
-    if (!action) return 'performed an action'
-
-    switch (action.type) {
-      case 'work_start':
-        return action.duration ? `started working for ${action.duration} minutes` : 'started working'
-      case 'break_start':
-        return 'started a break'
-      case 'long_break_start':
-        return 'started a long break'
-      case 'session_complete':
-        return action.task ? `completed "${action.task}"` : 'completed a session'
-      default:
-        return 'performed an action'
     }
   }
 
@@ -380,7 +365,8 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
             // Message (system or regular)
             const m = item as ChatMessage
 
-            if (m.type === 'system' && m.action?.type !== 'work_start') {
+            const systemAllowedActions = ['work_start', 'time_tracking_start']
+            if (m.type === 'system' && (!m.action?.type || !systemAllowedActions.includes(m.action.type))) {
               return null
             }
             const actionTime = new Date(m.timestamp).toLocaleTimeString('ru-RU', {
@@ -422,8 +408,10 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
                           {actionTime}
                         </span>
                       </div>
-                      <div className="text-sm text-red-600 dark:text-red-300 font-semibold">
-                        started a <span className="font-bold">{taskLabel || 'focus'}</span> session{m.action?.duration ? ` for ${m.action.duration} min` : ''}
+                      <div className={`text-sm font-semibold ${getActionColor(m.action?.type)}`}>
+                        {m.action?.type === 'time_tracking_start'
+                          ? `started a time tracking session "${taskLabel || 'focus'}"`
+                          : `started a ${taskLabel || 'focus'} session${m.action?.duration ? ` for ${m.action.duration} min` : ''}`}
                       </div>
                     </div>
                   </div>

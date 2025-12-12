@@ -103,6 +103,8 @@ export default function WorkHistory() {
         return 'Short break'
       case 'LONG_BREAK':
         return 'Long break'
+      case 'TIME_TRACKING':
+        return 'Time tracking'
       default:
         return 'Focus'
     }
@@ -116,6 +118,8 @@ export default function WorkHistory() {
         return 'bg-blue-500'
       case 'LONG_BREAK':
         return 'bg-green-500'
+      case 'TIME_TRACKING':
+        return 'bg-indigo-500'
       default:
         return 'bg-red-500'
     }
@@ -306,9 +310,11 @@ export default function WorkHistory() {
                       <span className="text-sm font-medium text-gray-900 dark:text-white">
                         {getSessionTypeLabel(session.type)}
                       </span>
-                      <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(session.status)}`}>
-                        {getStatusLabel(session.status)}
-                      </span>
+                      {session.type !== 'TIME_TRACKING' && (
+                        <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(session.status)}`}>
+                          {getStatusLabel(session.status)}
+                        </span>
+                      )}
                       {user && session.user.id === user.id && (
                         <button
                           onClick={() => setConfirmingId(session.id)}

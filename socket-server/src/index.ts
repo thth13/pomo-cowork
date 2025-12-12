@@ -34,7 +34,7 @@ interface ChatMessage {
   timestamp: number
   type?: 'message' | 'system'
   action?: {
-    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop' | 'session_complete'
+    type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop' | 'session_complete' | 'time_tracking_start'
     duration?: number
     task?: string
   }
@@ -505,7 +505,7 @@ io.on('connection', async (socket) => {
     sessionRecord.username = username
     sessionRecord.avatarUrl = avatarUrl
 
-    let actionType: 'work_start' | 'break_start' | 'long_break_start'
+    let actionType: 'work_start' | 'break_start' | 'long_break_start' | 'time_tracking_start'
     switch (sessionData.type) {
       case 'WORK':
         actionType = 'work_start'
@@ -515,6 +515,9 @@ io.on('connection', async (socket) => {
         break
       case 'LONG_BREAK':
         actionType = 'long_break_start'
+        break
+      case 'TIME_TRACKING':
+        actionType = 'time_tracking_start'
         break
       default:
         actionType = 'work_start'
@@ -533,6 +536,9 @@ io.on('connection', async (socket) => {
         ...(actionType === 'work_start' && { 
           duration: sessionData.duration,
           task: sessionData.task 
+        }),
+        ...(actionType === 'time_tracking_start' && {
+          task: sessionData.task
         })
       }
     }

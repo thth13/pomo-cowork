@@ -158,6 +158,8 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
         return 'Short break'
       case SessionType.LONG_BREAK:
         return 'Long break'
+      case SessionType.TIME_TRACKING:
+        return 'Time tracking'
       default:
         return type
     }
@@ -171,6 +173,8 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
         return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-200'
       case SessionType.LONG_BREAK:
         return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200'
+      case SessionType.TIME_TRACKING:
+        return 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200'
       default:
         return 'bg-gray-100 text-gray-700 dark:bg-slate-700 dark:text-slate-200'
     }
@@ -586,6 +590,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
                 <option value={SessionType.WORK}>Focus</option>
                 <option value={SessionType.SHORT_BREAK}>Short break</option>
                 <option value={SessionType.LONG_BREAK}>Long break</option>
+                <option value={SessionType.TIME_TRACKING}>Time tracking</option>
               </select>
             </div>
           </div>
@@ -712,6 +717,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
                             <option value={SessionType.WORK}>Focus</option>
                             <option value={SessionType.SHORT_BREAK}>Short break</option>
                             <option value={SessionType.LONG_BREAK}>Long break</option>
+                            <option value={SessionType.TIME_TRACKING}>Time tracking</option>
                           </select>
                         </div>
                       </div>

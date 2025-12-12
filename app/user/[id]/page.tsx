@@ -358,6 +358,7 @@ export default function UserProfilePage() {
       case 'WORK': return 'Work'
       case 'SHORT_BREAK': return 'Short Break'
       case 'LONG_BREAK': return 'Long Break'
+      case 'TIME_TRACKING': return 'Time Tracking'
       default: return type
     }
   }
@@ -377,6 +378,7 @@ export default function UserProfilePage() {
       case 'WORK': return <Clock className="w-4 h-4 text-red-500" />
       case 'SHORT_BREAK': return <Coffee className="w-4 h-4 text-green-500" />
       case 'LONG_BREAK': return <Utensils className="w-4 h-4 text-blue-500" />
+      case 'TIME_TRACKING': return <Clock className="w-4 h-4 text-indigo-500" />
       default: return <Clock className="w-4 h-4 text-gray-500" />
     }
   }

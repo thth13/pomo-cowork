@@ -186,7 +186,7 @@ export async function DELETE(
       where: {
         userId: payload.userId,
         actionTask: session.task,
-        actionType: { in: ['work_start', 'session_complete'] },
+        actionType: { in: ['work_start', 'session_complete', 'time_tracking_start'] },
         createdAt: {
           gte: startTimeMin,
           lte: session.completedAt 

@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     text?: string;
     type?: 'message' | 'system';
     action?: {
-      type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop' | 'session_complete';
+      type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop' | 'session_complete' | 'time_tracking_start';
       duration?: number;
       task?: string;
     }
@@ -111,6 +111,12 @@ export async function POST(request: Request) {
         text = actionTask
           ? `${username} завершил сессию "${actionTask}"`
           : `${username} завершил сессию`
+        break
+      case 'time_tracking_start':
+        actionTask = actionTaskInput
+        text = actionTask
+          ? `${username} запустил тайм-трек сессию "${actionTask}"`
+          : `${username} запустил тайм-трек сессию`
         break
       case 'timer_stop':
         text = `${username} остановил таймер`

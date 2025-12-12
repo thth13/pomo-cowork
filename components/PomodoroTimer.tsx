@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Settings } from 'lucide-react'
-import { useTimerStore } from '@/store/useTimerStore'
+import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useSocket } from '@/hooks/useSocket'
 import { useWakeLock } from '@/hooks/useWakeLock'
@@ -38,6 +38,7 @@ interface TimerState {
   notificationEnabled: boolean
   soundEnabled: boolean
   soundVolume: number
+  isTimeTrackerMode: boolean
   isStarting: boolean
   isStopping: boolean
   isSettingsOpen: boolean
@@ -56,6 +57,7 @@ type TimerAction =
   | { type: 'SET_SETTINGS_FORM'; payload: TimerSettingsForm }
   | { type: 'UPDATE_SETTINGS_FORM'; payload: { field: keyof TimerSettingsForm; value: number } }
   | { type: 'SET_AUTO_START_ENABLED'; payload: boolean }
+  | { type: 'SET_TIME_TRACKER_MODE'; payload: boolean }
   | { type: 'SET_PREFERENCES'; payload: { notificationEnabled: boolean; soundEnabled: boolean; soundVolume: number } }
 
 const readBooleanFromLocalStorage = (key: string, fallback: boolean): boolean => {
@@ -95,15 +97,16 @@ const createInitialTimerState = (durations: TimerSettingsForm): TimerState => {
   const storedPreferences = readPreferencesFromLocalStorage()
 
   return {
-  sessionType: SessionType.WORK,
-  notificationEnabled: storedPreferences?.notificationEnabled ?? true,
-  soundEnabled: storedPreferences?.soundEnabled ?? true,
-  soundVolume: storedPreferences?.soundVolume ?? 0.5,
-  isStarting: false,
-  isStopping: false,
-  isSettingsOpen: false,
-  settingsForm: { ...durations },
-  isAutoStartEnabled: readBooleanFromLocalStorage('pomodoro:autoStartEnabled', true),
+    sessionType: SessionType.WORK,
+    notificationEnabled: storedPreferences?.notificationEnabled ?? true,
+    soundEnabled: storedPreferences?.soundEnabled ?? true,
+    soundVolume: storedPreferences?.soundVolume ?? 0.5,
+    isTimeTrackerMode: readBooleanFromLocalStorage('pomodoro:timeTrackerMode', false),
+    isStarting: false,
+    isStopping: false,
+    isSettingsOpen: false,
+    settingsForm: { ...durations },
+    isAutoStartEnabled: readBooleanFromLocalStorage('pomodoro:autoStartEnabled', true),
   }
 }
 
@@ -135,6 +138,8 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
       }
     case 'SET_AUTO_START_ENABLED':
       return { ...state, isAutoStartEnabled: action.payload }
+    case 'SET_TIME_TRACKER_MODE':
+      return { ...state, isTimeTrackerMode: action.payload }
     case 'SET_PREFERENCES':
       return {
         ...state,
@@ -236,6 +241,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     isSettingsOpen,
     settingsForm,
     isAutoStartEnabled,
+    isTimeTrackerMode,
   } = timerState
   const completedSessionIdRef = useRef<string | null>(null)
   const startRequestIdRef = useRef(0)
@@ -258,6 +264,10 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   )
   const setSoundVolume = useCallback(
     (value: number) => dispatchTimer({ type: 'SET_SOUND_VOLUME', payload: value }),
+    [dispatchTimer]
+  )
+  const setIsTimeTrackerMode = useCallback(
+    (value: boolean) => dispatchTimer({ type: 'SET_TIME_TRACKER_MODE', payload: value }),
     [dispatchTimer]
   )
   const setIsStarting = useCallback(
@@ -363,6 +373,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
     try {
       localStorage.setItem('pomodoro:autoStartEnabled', String(isAutoStartEnabled))
+      localStorage.setItem('pomodoro:timeTrackerMode', String(isTimeTrackerMode))
       const preferencesPayload = JSON.stringify({
         notificationEnabled,
         soundEnabled,
@@ -372,7 +383,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     } catch (error) {
       console.warn('Failed to persist Pomodoro preferences', error)
     }
-  }, [isAutoStartEnabled, notificationEnabled, soundEnabled, soundVolume])
+  }, [isAutoStartEnabled, isTimeTrackerMode, notificationEnabled, soundEnabled, soundVolume])
 
   useEffect(() => {
     if (!user?.settings || currentSession) {
@@ -414,16 +425,25 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         return 'Short break'
       case SessionType.LONG_BREAK:
         return 'Long break'
+      case SessionType.TIME_TRACKING:
+        return 'Time tracking'
       default:
         return 'Work'
     }
   }, [])
 
+  const timeTrackerDurationSeconds = TIME_TRACKER_DURATION_MINUTES * 60
+  const activeSessionType = currentSession?.type ?? (isTimeTrackerMode ? SessionType.TIME_TRACKING : sessionType)
+  const isTimeTrackingSession = activeSessionType === SessionType.TIME_TRACKING
+  const timerDisplaySeconds = isTimeTrackingSession
+    ? Math.max(0, currentSession ? timeTrackerDurationSeconds - timeRemaining : 0)
+    : timeRemaining
+
   // Update page title with timer time
   useEffect(() => {
-    if (isRunning && currentSession && timeRemaining > 0) {
-      const timeStr = formatTime(timeRemaining)
-      const sessionLabel = getSessionTypeLabel(currentSession.type as SessionType)
+    if (isRunning && currentSession && (timeRemaining > 0 || isTimeTrackingSession)) {
+      const timeStr = formatTime(timerDisplaySeconds)
+      const sessionLabel = getSessionTypeLabel(activeSessionType as SessionType)
       document.title = `${timeStr} - ${sessionLabel} | Pomo Cowork`
     } else {
       document.title = 'Pomo Cowork'
@@ -432,7 +452,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     return () => {
       document.title = 'Pomo Cowork'
     }
-  }, [getSessionTypeLabel, isRunning, currentSession, timeRemaining])
+  }, [getSessionTypeLabel, isRunning, currentSession, timeRemaining, timerDisplaySeconds, activeSessionType, isTimeTrackingSession])
 
   const getSessionDuration = useCallback((type: SessionType): number => {
     switch (type) {
@@ -442,6 +462,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         return shortBreak
       case SessionType.LONG_BREAK:
         return longBreak
+      case SessionType.TIME_TRACKING:
+        return TIME_TRACKER_DURATION_MINUTES
       default:
         return workDuration
     }
@@ -450,9 +472,12 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   const initiateSession = useCallback(async (type: SessionType): Promise<void> => {
     const requestId = ++startRequestIdRef.current
     const duration = getSessionDuration(type)
-    const taskName = type === SessionType.WORK
-      ? selectedTask?.title || 'Work Session'
-      : getSessionTypeLabel(type)
+    const taskName =
+      type === SessionType.TIME_TRACKING
+        ? selectedTask?.title || 'Time tracking'
+        : type === SessionType.WORK
+          ? selectedTask?.title || 'Work Session'
+          : getSessionTypeLabel(type)
 
     const userId = user?.id || getOrCreateAnonymousId()
     const username = user?.username || getAnonymousUsername()
@@ -616,6 +641,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     setIsStarting(true)
 
     try {
+      const startType = isTimeTrackerMode ? SessionType.TIME_TRACKING : sessionType
+
       // If there's already an active session, silently end it first
       if (currentSession) {
         const sessionId = currentSession.id
@@ -645,8 +672,11 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         }
       }
 
-      const duration = getSessionDuration(sessionType)
-      const taskName = selectedTask?.title || getSessionTypeLabel(sessionType)
+      const duration = getSessionDuration(startType)
+      const taskName =
+        startType === SessionType.TIME_TRACKING
+          ? selectedTask?.title || 'Time tracking'
+          : selectedTask?.title || getSessionTypeLabel(startType)
 
       // Get user ID or anonymous ID
       const userId = user?.id || getOrCreateAnonymousId()
@@ -657,7 +687,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         const sessionPayload: SessionData = {
           task: taskName,
           duration,
-          type: sessionType,
+          type: startType,
           anonymousId: user ? undefined : userId,
         }
 
@@ -668,7 +698,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         }
         
         // Start timer with real session ID
-        startSession(taskName, duration, sessionType, dbSession.id)
+        startSession(taskName, duration, startType, dbSession.id)
         
         // Start Service Worker timer with real ID
         sendMessageToServiceWorker({
@@ -686,7 +716,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           id: dbSession.id,
           task: taskName,
           duration,
-          type: sessionType,
+          type: startType,
           userId,
           username,
           avatarUrl: user?.avatarUrl,
@@ -703,7 +733,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         if (requestId !== startRequestIdRef.current) {
           return
         }
-        startSession(taskName, duration, sessionType, tempId)
+        startSession(taskName, duration, startType, tempId)
         
         sendMessageToServiceWorker({
           type: 'START_TIMER',
@@ -897,6 +927,10 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         lastStoppedSessionIdRef.current = sessionId
         const startedAtMs = currentSession.startedAt ? new Date(currentSession.startedAt).getTime() : null
         const isEarlyStop = startedAtMs ? Date.now() - startedAtMs < 60 * 1000 : false
+        const elapsedSeconds = startedAtMs
+          ? Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000))
+          : TIME_TRACKER_DURATION_MINUTES * 60 - timeRemaining
+        const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60))
         
         // Optimistically stop timer immediately
         cancelSession()
@@ -912,12 +946,18 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         
         // Update session in database in background
         try {
-          await sessionService.update(sessionId, {
+          const updatePayload: Record<string, any> = {
             status: SessionStatus.CANCELLED,
             endedAt: new Date().toISOString(),
             pausedAt: null,
             timeRemaining: 0,
-          })
+          }
+
+          if (currentSession.type === SessionType.TIME_TRACKING) {
+            updatePayload.duration = elapsedMinutes
+          }
+
+          await sessionService.update(sessionId, updatePayload)
           void mutateSessions()
         } catch (error) {
           console.error('Failed to update session:', error)
@@ -927,7 +967,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         cancelSession()
       }
     } finally {
-      if (previousSessionType !== SessionType.WORK) {
+      if (previousSessionType === SessionType.SHORT_BREAK || previousSessionType === SessionType.LONG_BREAK) {
         setSessionType(SessionType.WORK)
         previewSessionType(SessionType.WORK)
       }
@@ -1100,16 +1140,19 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         return 'text-secondary-600'
       case SessionType.LONG_BREAK:
         return 'text-blue-600'
+      case SessionType.TIME_TRACKING:
+        return 'text-indigo-600'
       default:
         return 'text-primary-600'
     }
   }
 
-  const activeSessionType = currentSession?.type ?? sessionType
   const isPaused = currentSession?.status === SessionStatus.PAUSED
 
   const progress = currentSession 
-    ? ((currentSession.duration * 60 - timeRemaining) / (currentSession.duration * 60)) * 100
+    ? isTimeTrackingSession
+      ? Math.min(100, (timerDisplaySeconds / timeTrackerDurationSeconds) * 100)
+      : ((currentSession.duration * 60 - timeRemaining) / (currentSession.duration * 60)) * 100
     : 0
 
   const circumference = 2 * Math.PI * 54
@@ -1118,7 +1161,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   return (
     <div className="flex flex-col items-center" data-timer-panel>
       <TaskPicker
-        sessionType={sessionType}
+        sessionType={activeSessionType}
         isDisabled={isTaskPickerDisabled}
         isOpen={isTaskMenuOpen}
         onToggle={() => setIsTaskMenuOpen((state) => !state)}
@@ -1153,6 +1196,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
                 ? '#ef4444' 
                 : activeSessionType === SessionType.SHORT_BREAK 
                 ? '#22c55e' 
+                : activeSessionType === SessionType.TIME_TRACKING
+                ? '#6366f1'
                 : '#3b82f6'
             }
             strokeWidth="8" 
@@ -1169,9 +1214,11 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
               ? 'text-red-500 dark:text-red-400' 
               : activeSessionType === SessionType.SHORT_BREAK 
               ? 'text-green-500 dark:text-green-400' 
+              : activeSessionType === SessionType.TIME_TRACKING
+              ? 'text-indigo-500 dark:text-indigo-400'
               : 'text-blue-500 dark:text-blue-400'
           }`}>
-            {formatTime(timeRemaining)}
+            {formatTime(timerDisplaySeconds)}
           </div>
           <div className="text-base sm:text-lg font-medium text-gray-600 dark:text-slate-300">
             {getSessionTypeLabel(activeSessionType)}
@@ -1190,7 +1237,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       
       <TimerControls
         currentSession={currentSession}
-        sessionType={sessionType}
+        sessionType={activeSessionType}
         onSessionTypeChange={handleSessionTypeChange}
         onStart={handleStart}
         onPause={handlePause}
@@ -1212,6 +1259,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         onClose={() => setIsSettingsOpen(false)}
         isAutoStartEnabled={isAutoStartEnabled}
         onToggleAutoStart={() => setIsAutoStartEnabled((prev) => !prev)}
+        isTimeTrackerMode={isTimeTrackerMode}
+        onToggleTimeTrackerMode={() => setIsTimeTrackerMode(!isTimeTrackerMode)}
       />
 
     </div>

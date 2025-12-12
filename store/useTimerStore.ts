@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 import { PomodoroSession, SessionType, SessionStatus, ActiveSession } from '@/types'
 
+export const TIME_TRACKER_DURATION_MINUTES = 24 * 60
+
 interface TimerTaskOption {
   id: string
   title: string
@@ -262,6 +264,8 @@ function getSessionDuration(type: SessionType, state: TimerState): number {
       return state.shortBreak
     case SessionType.LONG_BREAK:
       return state.longBreak
+    case SessionType.TIME_TRACKING:
+      return TIME_TRACKER_DURATION_MINUTES
     default:
       return state.workDuration
   }
