@@ -410,7 +410,7 @@ export default function StatsPage() {
   }
 
   const SkeletonCard = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 animate-pulse">
       <div className="flex items-center justify-between mb-4">
         <div className="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-xl"></div>
         <div className="h-4 w-12 bg-gray-200 dark:bg-slate-700 rounded"></div>
@@ -421,7 +421,7 @@ export default function StatsPage() {
   )
 
   const SkeletonChart = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 animate-pulse">
       <div className="h-6 w-40 bg-gray-200 dark:bg-slate-700 rounded mb-6"></div>
       <div className="h-64 bg-gray-200 dark:bg-slate-700 rounded"></div>
     </div>
@@ -431,7 +431,7 @@ export default function StatsPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
       <Navbar />
       
-      <main className="max-w-7xl mx-auto px-8 py-12">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Statistics</h1>
           <p className="text-gray-600 dark:text-slate-300">Track your productivity and progress</p>
@@ -467,8 +467,8 @@ export default function StatsPage() {
         ) : (
           <>
             {/* Overview Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
                     <FontAwesomeIcon icon={faClock} className="text-red-600 text-lg" />
@@ -478,7 +478,7 @@ export default function StatsPage() {
                 <div className="text-sm text-gray-600 dark:text-slate-300">Total Pomodoros</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
                     <FontAwesomeIcon icon={faStopwatch} className="text-blue-600 text-lg" />
@@ -488,7 +488,7 @@ export default function StatsPage() {
                 <div className="text-sm text-gray-600 dark:text-slate-300">Total Focus Time</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
                     <FontAwesomeIcon icon={faCalendarCheck} className="text-orange-600 text-lg" />
@@ -499,7 +499,7 @@ export default function StatsPage() {
                 <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">days in a row</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
                     <FontAwesomeIcon icon={faCalendarDays} className="text-purple-600 text-lg" />
@@ -510,7 +510,7 @@ export default function StatsPage() {
                 <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">On active days</div>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
                     <FontAwesomeIcon icon={faFire} className="text-green-600 text-lg" />
@@ -529,18 +529,18 @@ export default function StatsPage() {
                 onChange={() => fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })}
               />
 
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 relative" aria-busy={timelineLoading}>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 relative" aria-busy={timelineLoading}>
                 {timelineLoading && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
                     <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                   </div>
                 )}
-                <div className="flex items-center justify-between mb-2">
-                  <div>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+                  <div className="flex flex-col gap-1">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Last 7 Days</h3>
                     <p className="text-xs text-gray-500 dark:text-slate-400">Recent focus timelines</p>
                   </div>
-                  <div className="flex items-center space-x-3">
+                  <div className="flex flex-wrap items-center gap-3">
                     <button
                       type="button"
                       onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
@@ -578,7 +578,7 @@ export default function StatsPage() {
                       const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
                       return (
                         <div key={day.date} className="flex items-center">
-                          <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden">
+                          <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-[260px]">
                             <div className="pointer-events-none absolute inset-0">
                               {Array.from({ length: 25 }).map((_, idx) => {
                                 // Пропускаем первую (0) и последнюю (24) линии
@@ -644,7 +644,7 @@ export default function StatsPage() {
         {/* Weekly Chart */}
         <div className="mb-8">
           <div
-            className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
+            className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6"
             aria-busy={activityLoading}
           >
             {activityLoading && (
@@ -652,13 +652,13 @@ export default function StatsPage() {
                 <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
               </div>
             )}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                 {activityPeriod === '7' && 'Weekly Activity'}
                 {activityPeriod === '30' && 'Monthly Activity'}
                 {activityPeriod === '365' && 'Yearly Activity'}
               </h3>
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button 
                   onClick={() => handleActivityPeriodChange('7')}
                   className={`text-xs px-3 py-1 rounded-lg transition-colors ${
@@ -696,10 +696,10 @@ export default function StatsPage() {
         </div>
 
         {/* Yearly Heatmap */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
               <div className="text-sm text-gray-600 dark:text-slate-300">
                 <span className="font-medium">{totalPomodoros.toLocaleString()}</span> pomodoros in {new Date().getFullYear()}
               </div>
@@ -711,7 +711,7 @@ export default function StatsPage() {
           
           <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
           
-          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 mt-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 dark:text-slate-400 mt-4 gap-3 sm:gap-0">
             <span>Less</span>
             <div className="flex items-center space-x-1">
               <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
@@ -749,8 +749,8 @@ export default function StatsPage() {
         </div>
 
         {/* Productivity Trends & Monthly Breakdown */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Productivity Trends</h3>
             
             <div className="space-y-4">
@@ -822,7 +822,7 @@ export default function StatsPage() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Monthly Breakdown</h3>
             <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
           </div>

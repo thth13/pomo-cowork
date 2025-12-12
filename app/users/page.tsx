@@ -154,13 +154,13 @@ export default function UsersPage() {
   }
 
   const SkeletonUserCard = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 min-w-[280px] animate-pulse">
+    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-5 min-w-[0] animate-pulse">
       <div className="flex flex-col items-center text-center">
-        <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-slate-700 mb-4"></div>
-        <div className="h-5 w-32 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
-          <div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
+        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gray-200 dark:bg-slate-700 mb-3 sm:mb-4"></div>
+        <div className="h-5 w-24 sm:w-28 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
+        <div className="flex items-center justify-center gap-2.5 mb-3 sm:mb-4">
+          <div className="h-4 w-12 sm:w-14 bg-gray-200 dark:bg-slate-700 rounded"></div>
+          <div className="h-4 w-12 sm:w-14 bg-gray-200 dark:bg-slate-700 rounded"></div>
         </div>
         <div className="h-10 w-full bg-gray-200 dark:bg-slate-700 rounded-lg"></div>
       </div>
@@ -182,13 +182,13 @@ export default function UsersPage() {
     <>
       <Navbar />
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
-        <main className="max-w-7xl mx-auto px-8 py-8">
-        <div className="flex gap-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Основная область поиска */}
-          <div className="flex-1">
+          <div className="flex-1 order-2 lg:order-1">
             {/* Поиск */}
             <div className="mb-8">
-              <div className="relative max-w-md mx-auto">
+              <div className="relative max-w-2xl mx-auto">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <FontAwesomeIcon icon={faSearch} className="text-gray-400 dark:text-slate-500" />
                 </div>
@@ -203,9 +203,9 @@ export default function UsersPage() {
             </div>
 
             {/* Search Results */}
-            <div className="search-results" style={{ height: 'calc(100vh - 200px)', overflowY: 'auto' }}>
+            <div className="search-results md:max-h-[calc(100vh-200px)] md:overflow-y-auto">
               {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4">
                   <SkeletonUserCard />
                   <SkeletonUserCard />
                   <SkeletonUserCard />
@@ -214,35 +214,35 @@ export default function UsersPage() {
                   <SkeletonUserCard />
                 </div>
               ) : users.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4">
                   {users.map((user) => (
                     <div 
                       key={user.id}
-                      className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 hover:shadow-lg transition-all cursor-pointer min-w-[280px]"
+                      className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-2.5 sm:p-4 lg:p-5 hover:shadow-lg transition-all cursor-pointer min-w-[0]"
                       onClick={() => router.push(`/user/${user.id}`)}
                     >
                       <div className="flex flex-col items-center text-center">
-                        <div className="relative mb-4">
+                        <div className="relative mb-2.5 sm:mb-4">
                           {user.avatarUrl ? (
                             <Image 
                               src={user.avatarUrl} 
                               alt={user.username}
-                              width={80}
-                              height={80}
-                              className="w-20 h-20 rounded-full object-cover"
+                              width={64}
+                              height={64}
+                              className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-2xl font-bold">
+                            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl font-bold">
                               {user.username.charAt(0).toUpperCase()}
                             </div>
                           )}
-                          <div className={`absolute -top-1 -right-1 w-6 h-6 ${user.isOnline ? 'bg-green-400' : 'bg-gray-400 dark:bg-slate-600'} rounded-full border-2 border-white dark:border-slate-800`}></div>
-                          <div className={`absolute -top-2 -right-2 min-w-[24px] h-6 rounded-xl flex items-center justify-center text-xs font-semibold border-2 border-white dark:border-slate-800 text-white ${getRankBadgeColor(user.rank)}`}>
+                          <div className={`absolute -top-1 -right-1 w-4.5 h-4.5 sm:w-5 sm:h-5 lg:w-6 lg:h-6 ${user.isOnline ? 'bg-green-400' : 'bg-gray-400 dark:bg-slate-600'} rounded-full border-2 border-white dark:border-slate-800`}></div>
+                          <div className={`absolute -top-2 -right-2 min-w-[20px] sm:min-w-[22px] lg:min-w-[24px] h-5 sm:h-5 lg:h-6 rounded-xl flex items-center justify-center text-[10px] sm:text-[11px] lg:text-xs font-semibold border-2 border-white dark:border-slate-800 text-white ${getRankBadgeColor(user.rank)}`}>
                             #{user.rank}
                           </div>
                         </div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">{user.username}</h3>
-                        <div className="flex items-center justify-center gap-3 text-sm text-gray-500 dark:text-slate-400 mb-4">
+                        <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{user.username}</h3>
+                        <div className="flex items-center justify-center gap-2.5 text-[11px] sm:text-xs lg:text-sm text-gray-500 dark:text-slate-400 mb-3 sm:mb-4">
                           <div className="flex items-center space-x-1 whitespace-nowrap">
                             <FontAwesomeIcon icon={faClock} />
                             <span>{user.stats.totalHours}h</span>
@@ -253,7 +253,7 @@ export default function UsersPage() {
                           </div>
                         </div>
                         <button 
-                          className="bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 px-6 py-2 rounded-lg font-medium transition-colors w-full"
+                          className="bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 px-3 py-2 sm:px-5 rounded-lg font-medium transition-colors w-full text-xs sm:text-sm lg:text-base"
                           onClick={(e) => {
                             e.stopPropagation()
                             router.push(`/user/${user.id}`)
@@ -275,7 +275,7 @@ export default function UsersPage() {
           </div>
 
           {/* Leaderboard Sidebar */}
-          <div className="w-80 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 h-fit sticky top-8">
+          <div className="w-full lg:w-80 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 h-fit lg:sticky top-8 order-1 lg:order-2">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-lg font-bold text-gray-900 dark:text-white">Top by Hours</h3>
               <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-slate-400">
