@@ -28,7 +28,9 @@ export function useTimerSync({
           if (currentSession && payload.sessionId === currentSession.id) {
             useTimerStore.setState({ timeRemaining: payload.timeRemaining })
 
-            if (payload.timeRemaining % 30 === 0) {
+            const isTempSession = currentSession.id.startsWith('temp_')
+
+            if (!isTempSession && payload.timeRemaining % 30 === 0) {
               emitTimerTick(currentSession.id, payload.timeRemaining)
             }
           }

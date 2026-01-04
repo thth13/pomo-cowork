@@ -482,27 +482,54 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     const userId = user?.id || getOrCreateAnonymousId()
     const username = user?.username || getAnonymousUsername()
 
+    const optimisticStartedAt = new Date().toISOString()
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2)}`
+
     try {
+      // Optimistic local start (don't wait for network)
+      startSession(taskName, duration, type, tempId)
+
+      sendMessageToServiceWorker({
+        type: 'START_TIMER',
+        payload: {
+          sessionId: tempId,
+          duration,
+          timeRemaining: duration * 60,
+          startedAt: optimisticStartedAt,
+        },
+      })
+
       const dbSession = await sessionService.create({
         task: taskName,
         duration,
         type,
         anonymousId: user ? undefined : userId,
+        startedAt: optimisticStartedAt,
       })
       void mutateSessions()
       if (requestId !== startRequestIdRef.current) {
         return
       }
 
-      startSession(taskName, duration, type, dbSession.id)
+      // Swap temp sessionId -> real one (store + SW)
+      useTimerStore.setState((state) => {
+        if (state.currentSession?.id !== tempId) return state
+        return {
+          ...state,
+          currentSession: {
+            ...state.currentSession,
+            id: dbSession.id,
+            startedAt: optimisticStartedAt,
+          },
+        }
+      })
 
       sendMessageToServiceWorker({
-        type: 'START_TIMER',
+        type: 'UPDATE_SESSION_ID',
         payload: {
-          sessionId: dbSession.id,
-          duration,
-          timeRemaining: duration * 60,
-          startedAt: dbSession.startedAt,
+          oldSessionId: tempId,
+          newSessionId: dbSession.id,
+          startedAt: optimisticStartedAt,
         },
       })
 
@@ -515,7 +542,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         username,
         avatarUrl: user?.avatarUrl,
         timeRemaining: duration * 60,
-        startedAt: dbSession.startedAt,
+        startedAt: optimisticStartedAt,
         status: SessionStatus.ACTIVE,
       }
 
@@ -525,7 +552,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       if (requestId !== startRequestIdRef.current) {
         return
       }
-      startSession(taskName, duration, type)
+      // Already started optimistically; keep running.
     }
   }, [
     emitSessionStart,
@@ -663,6 +690,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       // If there's already an active session, silently end it first
       if (currentSession) {
         const sessionId = currentSession.id
+        const currentTimeRemaining = useTimerStore.getState().timeRemaining
         
         // Stop local timer
         cancelSession()
@@ -675,18 +703,18 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         // End session quietly (this will be replaced by new session immediately)
         emitSessionEnd(sessionId, 'reset')
         
-        // Update session in database to completed state
-        try {
-          await sessionService.update(sessionId, {
+        // Update session in database in background (don't block new start)
+        void sessionService
+          .update(sessionId, {
             status: SessionStatus.CANCELLED,
             endedAt: new Date().toISOString(),
             pausedAt: null,
-            timeRemaining: 0,
+            timeRemaining: currentTimeRemaining,
           })
-          void mutateSessions()
-        } catch (error) {
-          console.error('Failed to update previous session:', error)
-        }
+          .then(() => mutateSessions())
+          .catch((error) => {
+            console.error('Failed to update previous session:', error)
+          })
       }
 
       const duration = getSessionDuration(startType)
@@ -699,6 +727,22 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       const userId = user?.id || getOrCreateAnonymousId()
       const username = user?.username || getAnonymousUsername()
 
+      const optimisticStartedAt = new Date().toISOString()
+      const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2)}`
+
+      // Optimistic local start (don't wait for network)
+      startSession(taskName, duration, startType, tempId)
+
+      sendMessageToServiceWorker({
+        type: 'START_TIMER',
+        payload: {
+          sessionId: tempId,
+          duration,
+          timeRemaining: duration * 60,
+          startedAt: optimisticStartedAt,
+        },
+      })
+
       // Create session in database first
       try {
         const sessionPayload: SessionData = {
@@ -706,6 +750,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           duration,
           type: startType,
           anonymousId: user ? undefined : userId,
+          startedAt: optimisticStartedAt,
         }
 
         const dbSession = await sessionService.create(sessionPayload)
@@ -713,18 +758,26 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         if (requestId !== startRequestIdRef.current) {
           return
         }
-        
-        // Start timer with real session ID
-        startSession(taskName, duration, startType, dbSession.id)
-        
-        // Start Service Worker timer with real ID
+
+        // Swap temp sessionId -> real one (store + SW)
+        useTimerStore.setState((state) => {
+          if (state.currentSession?.id !== tempId) return state
+          return {
+            ...state,
+            currentSession: {
+              ...state.currentSession,
+              id: dbSession.id,
+              startedAt: optimisticStartedAt,
+            },
+          }
+        })
+
         sendMessageToServiceWorker({
-          type: 'START_TIMER',
+          type: 'UPDATE_SESSION_ID',
           payload: {
-            sessionId: dbSession.id,
-            duration,
-            timeRemaining: duration * 60,
-            startedAt: dbSession.startedAt,
+            oldSessionId: tempId,
+            newSessionId: dbSession.id,
+            startedAt: optimisticStartedAt,
           },
         })
         
@@ -738,29 +791,14 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           username,
           avatarUrl: user?.avatarUrl,
           timeRemaining: duration * 60,
-          startedAt: dbSession.startedAt,
+          startedAt: optimisticStartedAt,
           status: SessionStatus.ACTIVE,
         }
         
         emitSessionStart(sessionData)
       } catch (error) {
         console.error('Failed to create session:', error)
-        // Fallback: start with temporary ID
-        const tempId = `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        if (requestId !== startRequestIdRef.current) {
-          return
-        }
-        startSession(taskName, duration, startType, tempId)
-        
-        sendMessageToServiceWorker({
-          type: 'START_TIMER',
-          payload: {
-            sessionId: tempId,
-            duration,
-            timeRemaining: duration * 60,
-            startedAt: new Date().toISOString(),
-          },
-        })
+        // Already started optimistically; keep running.
       }
     } finally {
       // Add minimum delay to prevent too rapid clicks
@@ -944,10 +982,19 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         lastStoppedSessionIdRef.current = sessionId
         const startedAtMs = currentSession.startedAt ? new Date(currentSession.startedAt).getTime() : null
         const isEarlyStop = startedAtMs ? Date.now() - startedAtMs < 60 * 1000 : false
-        const elapsedSeconds = startedAtMs
-          ? Math.max(0, Math.floor((Date.now() - startedAtMs) / 1000))
-          : TIME_TRACKER_DURATION_MINUTES * 60 - timeRemaining
-        const elapsedMinutes = Math.max(1, Math.round(elapsedSeconds / 60))
+        const currentTimeRemaining = useTimerStore.getState().timeRemaining
+
+        const elapsedSeconds = (() => {
+          if (currentSession.type === SessionType.TIME_TRACKING) {
+            // Time tracking uses a long countdown; elapsed is derived from remaining (pause-safe).
+            return Math.max(0, timeTrackerDurationSeconds - currentTimeRemaining)
+          }
+
+          // Regular sessions: derive elapsed from remaining (pause-safe).
+          return Math.max(0, currentSession.duration * 60 - currentTimeRemaining)
+        })()
+
+        const elapsedMinutes = Math.max(0, Math.round(elapsedSeconds / 60))
         
         // Optimistically stop timer immediately
         cancelSession()
@@ -967,7 +1014,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
             status: SessionStatus.CANCELLED,
             endedAt: new Date().toISOString(),
             pausedAt: null,
-            timeRemaining: 0,
+            timeRemaining: currentTimeRemaining,
           }
 
           if (currentSession.type === SessionType.TIME_TRACKING) {

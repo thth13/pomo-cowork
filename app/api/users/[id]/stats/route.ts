@@ -31,6 +31,19 @@ export async function GET(
         status: { in: ['COMPLETED', 'CANCELLED'] },
         type: { in: ['WORK', 'TIME_TRACKING'] },
       },
+      select: {
+        id: true,
+        task: true,
+        type: true,
+        status: true,
+        duration: true,
+        startedAt: true,
+        endedAt: true,
+        completedAt: true,
+        pausedAt: true,
+        remainingSeconds: true,
+        createdAt: true,
+      },
       orderBy: { startedAt: 'asc' },
     })
 

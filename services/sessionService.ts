@@ -6,6 +6,7 @@ export interface SessionData {
   duration: number
   type: SessionType
   anonymousId?: string
+  startedAt?: string
 }
 
 const buildHeaders = (token?: string | null) => {
@@ -27,6 +28,10 @@ export const sessionService = {
       task: data.task,
       duration: data.duration,
       type: data.type,
+    }
+
+    if (data.startedAt) {
+      body.startedAt = data.startedAt
     }
 
     if (!token) {

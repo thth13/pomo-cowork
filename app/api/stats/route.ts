@@ -46,6 +46,19 @@ export async function GET(request: NextRequest) {
         status: { in: ['COMPLETED', 'CANCELLED'] },
         type: { in: ['WORK', 'TIME_TRACKING'] },
       },
+      select: {
+        id: true,
+        task: true,
+        type: true,
+        status: true,
+        duration: true,
+        startedAt: true,
+        endedAt: true,
+        completedAt: true,
+        pausedAt: true,
+        remainingSeconds: true,
+        createdAt: true,
+      },
       orderBy: { startedAt: 'asc' },
     })
 
@@ -58,6 +71,19 @@ export async function GET(request: NextRequest) {
         userId: payload.userId,
         startedAt: { gte: sevenDaysStart, lte: timelineEnd },
         status: { in: ['COMPLETED', 'CANCELLED'] },
+      },
+      select: {
+        id: true,
+        task: true,
+        type: true,
+        status: true,
+        duration: true,
+        startedAt: true,
+        endedAt: true,
+        completedAt: true,
+        pausedAt: true,
+        remainingSeconds: true,
+        createdAt: true,
       },
       orderBy: {
         startedAt: 'asc'
@@ -378,7 +404,7 @@ export async function GET(request: NextRequest) {
           task: session.task,
           start: start.toISOString(),
           end: end.toISOString(),
-          duration: Math.max(1, Math.round((end.getTime() - start.getTime()) / 60000))
+          duration: getEffectiveMinutes(session)
         }
       }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
 

@@ -46,6 +46,8 @@ export async function GET(
         endedAt: true,
         completedAt: true,
         duration: true,
+        remainingSeconds: true,
+        pausedAt: true,
       },
     })
 

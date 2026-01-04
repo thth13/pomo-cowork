@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const token = getTokenFromHeader(authHeader)
-    const { task, duration, type, anonymousId } = await request.json()
+    const { task, duration, type, anonymousId, startedAt } = await request.json()
 
     if (!task || !duration || !type) {
       return NextResponse.json(
@@ -119,6 +119,15 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    const normalizedStartedAt = (() => {
+      if (!startedAt) return null
+      const dt = new Date(startedAt)
+      if (Number.isNaN(dt.getTime())) {
+        return null
+      }
+      return dt
+    })()
+
     const session = await prisma.pomodoroSession.create({
       data: {
         userId,
@@ -126,7 +135,8 @@ export async function POST(request: NextRequest) {
         duration,
         type: type as string,
         status: 'ACTIVE',
-        remainingSeconds: duration * 60
+        remainingSeconds: duration * 60,
+        ...(normalizedStartedAt ? { startedAt: normalizedStartedAt } : {}),
       }
     })
 

@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
             endedAt: true,
             completedAt: true,
             duration: true,
+            remainingSeconds: true,
+            pausedAt: true,
             type: true,
           }
         }
@@ -55,6 +57,8 @@ export async function GET(request: NextRequest) {
             endedAt: true,
             completedAt: true,
             duration: true,
+            remainingSeconds: true,
+            pausedAt: true,
             type: true,
           }
         }
