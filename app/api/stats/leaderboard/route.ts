@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
+import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionStats'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
     const weekAgo = new Date()
     weekAgo.setDate(weekAgo.getDate() - 7)
 
-    // Получаем всех пользователей с их завершенными work сессиями за последнюю неделю
+    // Получаем всех пользователей с их фокус-сессиями за последнюю неделю
     const users = await prisma.user.findMany({
       select: {
         id: true,
@@ -30,14 +31,19 @@ export async function GET(request: NextRequest) {
         avatarUrl: true,
         sessions: {
           where: {
-            status: 'COMPLETED',
-            type: 'WORK',
-            completedAt: {
-              gte: weekAgo
-            }
+            status: { in: ['COMPLETED', 'CANCELLED'] },
+            type: { in: ['WORK', 'TIME_TRACKING'] },
+            OR: [
+              { completedAt: { gte: weekAgo } },
+              { endedAt: { gte: weekAgo } },
+            ],
           },
           select: {
-            duration: true
+            startedAt: true,
+            endedAt: true,
+            completedAt: true,
+            duration: true,
+            type: true,
           }
         }
       }
@@ -45,9 +51,9 @@ export async function GET(request: NextRequest) {
 
     // Вычисляем статистику для каждого пользователя за последнюю неделю (включая с нулевой активностью)
     const usersWithStats = users.map(user => {
-      const totalMinutes = user.sessions.reduce((sum, s) => sum + s.duration, 0)
+      const totalMinutes = user.sessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
       const totalHours = Math.round(totalMinutes / 60)
-      const totalPomodoros = user.sessions.length
+      const totalPomodoros = user.sessions.filter((session) => session.type === 'WORK').length
       
       return {
         id: user.id,

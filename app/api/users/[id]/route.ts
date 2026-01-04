@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken } from '@/lib/auth'
+import { getEffectiveMinutes } from '@/lib/sessionStats'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,15 +34,25 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    // Get user statistics
-    const stats = await prisma.pomodoroSession.aggregate({
-      where: { userId },
-      _sum: {
-        duration: true
+    // Get user statistics (focus time includes WORK + TIME_TRACKING, including manual stops)
+    const focusSessions = await prisma.pomodoroSession.findMany({
+      where: {
+        userId,
+        status: { in: ['COMPLETED', 'CANCELLED'] },
+        type: { in: ['WORK', 'TIME_TRACKING'] },
       },
-      _count: {
-        id: true
-      }
+      select: {
+        startedAt: true,
+        endedAt: true,
+        completedAt: true,
+        duration: true,
+      },
+    })
+
+    const totalFocusMinutes = focusSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
+
+    const totalSessions = await prisma.pomodoroSession.count({
+      where: { userId },
     })
 
     // Get completed sessions count
@@ -90,12 +101,10 @@ export async function GET(
       take: 10
     })
 
-    // Calculate total work time in hours
-    const totalWorkMinutes = stats._sum.duration || 0
-    const totalWorkHours = Math.round((totalWorkMinutes / 60) * 10) / 10
+    // Calculate total focus time in hours
+    const totalWorkHours = Math.round((totalFocusMinutes / 60) * 10) / 10
 
     // Calculate completion rate
-    const totalSessions = stats._count.id || 0
     const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0
 
     return NextResponse.json({

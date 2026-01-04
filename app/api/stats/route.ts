@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, differenceInDays, format, addMinutes } from 'date-fns'
+import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionStats'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,15 +39,17 @@ export async function GET(request: NextRequest) {
     const timelineStart = startOfDay(subDays(now, 6 + timelineOffset))
     const timelineEnd = endOfDay(subDays(now, timelineOffset))
 
-    // Получаем все завершенные WORK сессии
-    const allWorkSessions = await prisma.pomodoroSession.findMany({
+    // Вся фокус-активность пользователя: WORK + TIME_TRACKING (включая ручные остановки)
+    const allFocusSessions = await prisma.pomodoroSession.findMany({
       where: {
         userId: payload.userId,
-        status: 'COMPLETED',
-        type: 'WORK'
+        status: { in: ['COMPLETED', 'CANCELLED'] },
+        type: { in: ['WORK', 'TIME_TRACKING'] },
       },
-      orderBy: { completedAt: 'asc' }
+      orderBy: { startedAt: 'asc' },
     })
+
+    const allWorkSessions = allFocusSessions.filter((session) => session.type === 'WORK')
 
     // Сессии за последние 7 дней (для таймлайна)
     const sevenDaysStart = timelineStart
@@ -54,27 +57,25 @@ export async function GET(request: NextRequest) {
       where: {
         userId: payload.userId,
         startedAt: { gte: sevenDaysStart, lte: timelineEnd },
-        status: {
-          not: 'CANCELLED'
-        }
+        status: { in: ['COMPLETED', 'CANCELLED'] },
       },
       orderBy: {
         startedAt: 'asc'
       }
     })
 
-    // 1. Всего помодоро (только work)
+    // 1. Всего помодоро (work, включая ручные остановки)
     const totalPomodoros = allWorkSessions.length
 
-    // 2. Общее время фокуса (только work, в минутах)
-    const totalFocusMinutes = allWorkSessions.reduce((sum, session) => sum + session.duration, 0)
+    // 2. Общее время фокуса (work + time tracking, учитывая ручные остановки)
+    const totalFocusMinutes = allFocusSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
 
     // 3. Текущая серия дней подряд
     let currentStreak = 0
-    if (allWorkSessions.length > 0) {
+    if (allFocusSessions.length > 0) {
       const sessionsByDay = new Map<string, boolean>()
-      allWorkSessions.forEach(session => {
-        const day = format(new Date(session.completedAt || session.createdAt), 'yyyy-MM-dd')
+      allFocusSessions.forEach(session => {
+        const day = format(getSessionAttributionDate(session), 'yyyy-MM-dd')
         sessionsByDay.set(day, true)
       })
 
@@ -97,9 +98,9 @@ export async function GET(request: NextRequest) {
 
     // 4. Среднее время в день (считаем только дни когда были сессии)
     const sessionsByDay = new Map<string, number>()
-    allWorkSessions.forEach(session => {
-      const day = format(new Date(session.completedAt || session.createdAt), 'yyyy-MM-dd')
-      sessionsByDay.set(day, (sessionsByDay.get(day) || 0) + session.duration)
+    allFocusSessions.forEach(session => {
+      const day = format(getSessionAttributionDate(session), 'yyyy-MM-dd')
+      sessionsByDay.set(day, (sessionsByDay.get(day) || 0) + getEffectiveMinutes(session))
     })
     
     const activeDaysCount = sessionsByDay.size
@@ -108,11 +109,11 @@ export async function GET(request: NextRequest) {
     // 5. Время фокуса за текущий месяц
     const monthStart = startOfMonth(now)
     const monthEnd = endOfMonth(now)
-    const thisMonthSessions = allWorkSessions.filter(session => {
-      const date = new Date(session.completedAt || session.createdAt)
+    const thisMonthSessions = allFocusSessions.filter(session => {
+      const date = getSessionAttributionDate(session)
       return date >= monthStart && date <= monthEnd
     })
-    const focusTimeThisMonth = thisMonthSessions.reduce((sum, session) => sum + session.duration, 0)
+    const focusTimeThisMonth = thisMonthSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
 
     // Активность за выбранный период
     const daysCount = parseInt(period)
@@ -126,7 +127,7 @@ export async function GET(request: NextRequest) {
         const monthEndDate = endOfMonth(monthDate)
         
         const monthSessions = allWorkSessions.filter(session => {
-          const sessionDate = new Date(session.completedAt || session.createdAt)
+          const sessionDate = getSessionAttributionDate(session)
           return sessionDate >= monthStartDate && sessionDate <= monthEndDate
         })
         
@@ -143,7 +144,7 @@ export async function GET(request: NextRequest) {
         const dayEnd = endOfDay(date)
         
         const daySessions = allWorkSessions.filter(session => {
-          const sessionDate = new Date(session.completedAt || session.createdAt)
+          const sessionDate = getSessionAttributionDate(session)
           return sessionDate >= dayStart && sessionDate <= dayEnd
         })
         
@@ -175,7 +176,7 @@ export async function GET(request: NextRequest) {
       const dayEnd = endOfDay(currentDate)
       
       const daySessions = allWorkSessions.filter(session => {
-        const sessionDate = new Date(session.completedAt || session.createdAt)
+        const sessionDate = getSessionAttributionDate(session)
         return sessionDate >= dayStart && sessionDate <= dayEnd
       })
       
@@ -206,7 +207,7 @@ export async function GET(request: NextRequest) {
       const monthEndDate = endOfMonth(monthDate)
       
       const monthSessions = allWorkSessions.filter(session => {
-        const sessionDate = new Date(session.completedAt || session.createdAt)
+        const sessionDate = getSessionAttributionDate(session)
         return sessionDate >= monthStartDate && sessionDate <= monthEndDate
       })
       
@@ -220,8 +221,8 @@ export async function GET(request: NextRequest) {
     // Тренды продуктивности
     // 1. Лучшее время дня (по часам)
     const sessionsByHour = new Map<number, number>()
-    allWorkSessions.forEach(session => {
-      const hour = new Date(session.completedAt || session.createdAt).getHours()
+    allFocusSessions.forEach(session => {
+      const hour = getSessionAttributionDate(session).getHours()
       sessionsByHour.set(hour, (sessionsByHour.get(hour) || 0) + 1)
     })
     
@@ -236,14 +237,14 @@ export async function GET(request: NextRequest) {
     
     const bestTimeStart = `${bestHour.toString().padStart(2, '0')}:00`
     const bestTimeEnd = `${(bestHour + 2).toString().padStart(2, '0')}:00`
-    const bestTimeEfficiency = allWorkSessions.length > 0 
-      ? Math.round((maxSessions / allWorkSessions.length) * 100) 
+    const bestTimeEfficiency = allFocusSessions.length > 0 
+      ? Math.round((maxSessions / allFocusSessions.length) * 100) 
       : 0
 
     // 2. Лучший день недели
     const sessionsByDayOfWeek = new Map<number, number>()
-    allWorkSessions.forEach(session => {
-      const dayOfWeek = new Date(session.completedAt || session.createdAt).getDay()
+    allFocusSessions.forEach(session => {
+      const dayOfWeek = getSessionAttributionDate(session).getDay()
       sessionsByDayOfWeek.set(dayOfWeek, (sessionsByDayOfWeek.get(dayOfWeek) || 0) + 1)
     })
     
@@ -261,8 +262,8 @@ export async function GET(request: NextRequest) {
     
     // Считаем количество уникальных дней для этого дня недели
     const uniqueDaysOfWeek = new Set<string>()
-    allWorkSessions.forEach(session => {
-      const date = new Date(session.completedAt || session.createdAt)
+    allFocusSessions.forEach(session => {
+      const date = getSessionAttributionDate(session)
       if (date.getDay() === bestDayOfWeek) {
         uniqueDaysOfWeek.add(format(date, 'yyyy-MM-dd'))
       }
@@ -272,8 +273,8 @@ export async function GET(request: NextRequest) {
       : '0'
 
     // 3. Средняя длительность фокус-режима
-    const avgSessionDuration = allWorkSessions.length > 0 
-      ? Math.round(allWorkSessions.reduce((sum, s) => sum + s.duration, 0) / allWorkSessions.length) 
+    const avgSessionDuration = allFocusSessions.length > 0 
+      ? Math.round(allFocusSessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0) / allFocusSessions.length) 
       : 0
 
     // 4. Завершенные задачи за эту неделю
@@ -382,7 +383,7 @@ export async function GET(request: NextRequest) {
       }).sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
 
       const totalFocusMinutesDay = sessionsWithTiming
-        .filter(s => s.type === 'WORK')
+        .filter(s => s.type === 'WORK' || s.type === 'TIME_TRACKING')
         .reduce((sum, s) => sum + s.duration, 0)
 
       lastSevenDaysTimeline.push({

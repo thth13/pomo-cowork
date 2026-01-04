@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { startOfDay, endOfDay, subDays, format, startOfMonth, endOfMonth } from 'date-fns'
+import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionStats'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,22 +24,24 @@ export async function GET(
 
     const now = new Date()
 
-    // Получаем все завершенные WORK сессии
-    const allWorkSessions = await prisma.pomodoroSession.findMany({
+    // Вся фокус-активность пользователя: WORK + TIME_TRACKING (включая ручные остановки)
+    const allFocusSessions = await prisma.pomodoroSession.findMany({
       where: {
         userId,
-        status: 'COMPLETED',
-        type: 'WORK'
+        status: { in: ['COMPLETED', 'CANCELLED'] },
+        type: { in: ['WORK', 'TIME_TRACKING'] },
       },
-      orderBy: { completedAt: 'asc' }
+      orderBy: { startedAt: 'asc' },
     })
 
+    const allWorkSessions = allFocusSessions.filter((session) => session.type === 'WORK')
+
     const totalPomodoros = allWorkSessions.length
-    const totalFocusMinutes = allWorkSessions.reduce((sum, session) => sum + session.duration, 0)
+    const totalFocusMinutes = allFocusSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
 
     const sessionsCountByDay = new Map<string, number>()
     allWorkSessions.forEach(session => {
-      const day = format(new Date(session.completedAt || session.createdAt), 'yyyy-MM-dd')
+      const day = format(getSessionAttributionDate(session), 'yyyy-MM-dd')
       sessionsCountByDay.set(day, (sessionsCountByDay.get(day) || 0) + 1)
     })
 
@@ -49,20 +52,20 @@ export async function GET(
 
     const monthStart = startOfMonth(now)
     const monthEnd = endOfMonth(now)
-    const focusTimeThisMonth = allWorkSessions.reduce((sum, session) => {
-      const date = new Date(session.completedAt || session.createdAt)
+    const focusTimeThisMonth = allFocusSessions.reduce((sum, session) => {
+      const date = getSessionAttributionDate(session)
       if (date >= monthStart && date <= monthEnd) {
-        return sum + session.duration
+        return sum + getEffectiveMinutes(session)
       }
       return sum
     }, 0)
 
     // 1. Текущая серия дней подряд
     let currentStreak = 0
-    if (allWorkSessions.length > 0) {
+    if (allFocusSessions.length > 0) {
       const sessionsByDay = new Map<string, boolean>()
-      allWorkSessions.forEach(session => {
-        const day = format(new Date(session.completedAt || session.createdAt), 'yyyy-MM-dd')
+      allFocusSessions.forEach(session => {
+        const day = format(getSessionAttributionDate(session), 'yyyy-MM-dd')
         sessionsByDay.set(day, true)
       })
 
@@ -101,7 +104,7 @@ export async function GET(
       const dayEnd = endOfDay(currentDate)
       
       const daySessions = allWorkSessions.filter(session => {
-        const sessionDate = new Date(session.completedAt || session.createdAt)
+        const sessionDate = getSessionAttributionDate(session)
         return sessionDate >= dayStart && sessionDate <= dayEnd
       })
       

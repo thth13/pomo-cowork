@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getEffectiveMinutes } from '@/lib/sessionStats'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,11 +26,15 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         sessions: {
           where: {
-            status: 'COMPLETED',
-            type: 'WORK'
+            status: { in: ['COMPLETED', 'CANCELLED'] },
+            type: { in: ['WORK', 'TIME_TRACKING'] },
           },
           select: {
-            duration: true
+            startedAt: true,
+            endedAt: true,
+            completedAt: true,
+            duration: true,
+            type: true,
           }
         }
       },
@@ -42,11 +47,15 @@ export async function GET(request: NextRequest) {
         id: true,
         sessions: {
           where: {
-            status: 'COMPLETED',
-            type: 'WORK'
+            status: { in: ['COMPLETED', 'CANCELLED'] },
+            type: { in: ['WORK', 'TIME_TRACKING'] },
           },
           select: {
-            duration: true
+            startedAt: true,
+            endedAt: true,
+            completedAt: true,
+            duration: true,
+            type: true,
           }
         }
       }
@@ -54,9 +63,9 @@ export async function GET(request: NextRequest) {
 
     // Вычисляем статистику и ранги за все время
     const usersWithStats = allUsers.map(user => {
-      const totalMinutes = user.sessions.reduce((sum: number, s: { duration: number }) => sum + s.duration, 0)
+      const totalMinutes = user.sessions.reduce((sum: number, session) => sum + getEffectiveMinutes(session), 0)
       const totalHours = Math.round(totalMinutes / 60)
-      const totalPomodoros = user.sessions.length
+      const totalPomodoros = user.sessions.filter((session) => session.type === 'WORK').length
       
       return {
         id: user.id,
@@ -75,9 +84,9 @@ export async function GET(request: NextRequest) {
     // Форматируем результаты поиска (всех пользователей, даже без активности)
     const formattedUsers = users
       .map(user => {
-        const totalMinutes = user.sessions.reduce((sum, s) => sum + s.duration, 0)
+        const totalMinutes = user.sessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
         const totalHours = Math.round(totalMinutes / 60)
-        const totalPomodoros = user.sessions.length
+        const totalPomodoros = user.sessions.filter((session) => session.type === 'WORK').length
         const rank = rankMap.get(user.id) || 999
 
         return {
