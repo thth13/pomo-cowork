@@ -67,6 +67,15 @@ export async function GET(request: NextRequest) {
       }
     })
 
+    const weekTotals = usersWithStats.reduce(
+      (acc, user) => {
+        acc.totalMinutes += user.totalMinutes
+        acc.totalPomodoros += user.totalPomodoros
+        return acc
+      },
+      { totalMinutes: 0, totalPomodoros: 0 }
+    )
+
     // Сортируем по минутам для точности (пользователи без активности будут внизу)
     const sortedUsers = usersWithStats.sort((a, b) => b.totalMinutes - a.totalMinutes)
 
@@ -88,7 +97,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       topUsers,
       currentUser,
-      totalUsers: leaderboard.length
+      totalUsers: leaderboard.length,
+      weekTotals: {
+        ...weekTotals,
+        totalHours: Math.round(weekTotals.totalMinutes / 60),
+      },
     })
 
   } catch (error) {

@@ -35,7 +35,14 @@ interface LeaderboardUser {
   avatarUrl?: string
   totalHours: number
   totalPomodoros: number
+  totalMinutes?: number
   rank: number
+}
+
+interface WeekTotals {
+  totalMinutes: number
+  totalHours: number
+  totalPomodoros: number
 }
 
 export default function UsersPage() {
@@ -45,10 +52,17 @@ export default function UsersPage() {
   const [allUsers, setAllUsers] = useState<UserSearchResult[]>([])
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
   const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null)
+  const [weekTotals, setWeekTotals] = useState<WeekTotals | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [leaderboardLoading, setLeaderboardLoading] = useState(true)
   const [page, setPage] = useState(1)
+
+  const formatHours = (hours: number) => {
+    if (!Number.isFinite(hours)) return '0'
+    if (Number.isInteger(hours)) return String(hours)
+    return hours.toFixed(1)
+  }
 
   const searchUsers = useCallback(async (query: string) => {
     if (!query) {
@@ -75,6 +89,7 @@ export default function UsersPage() {
       const response = await fetch('/api/stats/leaderboard')
       if (response.ok) {
         const data = await response.json()
+        setWeekTotals(data.weekTotals ?? null)
         const eligibleTopUsers = (data.topUsers || []).filter((user: LeaderboardUser) =>
           user.totalPomodoros > 0 || user.totalHours > 0
         )
@@ -281,6 +296,29 @@ export default function UsersPage() {
               <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-slate-400">
                 <FontAwesomeIcon icon={faTrophy} className="text-yellow-500" />
                 <span className="text-gray-500 dark:text-slate-400">Week</span>
+              </div>
+            </div>
+
+            <div className="mb-4 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/30 px-3 py-2">
+              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-slate-400">
+                <div className="flex items-center space-x-2">
+                  <FontAwesomeIcon icon={faUsers} className="text-gray-400 dark:text-slate-500" />
+                  <span>Total across all users</span>
+                </div>
+                {leaderboardLoading ? (
+                  <div className="h-4 w-28 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center space-x-1 whitespace-nowrap">
+                      <FontAwesomeIcon icon={faClock} />
+                      <span>{formatHours((weekTotals?.totalMinutes ?? 0) / 60)}h</span>
+                    </span>
+                    <span className="flex items-center space-x-1 whitespace-nowrap">
+                      <FontAwesomeIcon icon={faFire} className="text-red-500" />
+                      <span>{weekTotals?.totalPomodoros ?? 0}p</span>
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
