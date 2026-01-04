@@ -178,6 +178,7 @@ const loadActiveSessionsFromDB = async () => {
       id: string
       userId: string
       username: string
+      avatarUrl?: string
       task: string
       type: string
       duration: number
@@ -201,6 +202,7 @@ const loadActiveSessionsFromDB = async () => {
           id: dbSession.id,
           userId: dbSession.userId,
           username: dbSession.username,
+          avatarUrl: dbSession.avatarUrl ?? userAvatars.get(dbSession.userId),
           task: dbSession.task,
           type: dbSession.type,
           duration: dbSession.duration,
@@ -213,6 +215,14 @@ const loadActiveSessionsFromDB = async () => {
         // Update existing session with data from DB
         existingSession.timeRemaining = dbSession.timeRemaining
         existingSession.lastUpdate = Date.now()
+
+        if (!existingSession.avatarUrl && dbSession.avatarUrl) {
+          existingSession.avatarUrl = dbSession.avatarUrl
+        }
+      }
+
+      if (dbSession.avatarUrl) {
+        userAvatars.set(dbSession.userId, dbSession.avatarUrl)
       }
     }
 

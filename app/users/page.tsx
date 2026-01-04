@@ -303,7 +303,7 @@ export default function UsersPage() {
               <div className="flex items-center justify-between text-xs text-gray-600 dark:text-slate-400">
                 <div className="flex items-center space-x-2">
                   <FontAwesomeIcon icon={faUsers} className="text-gray-400 dark:text-slate-500" />
-                  <span>Total across all users</span>
+                  <span>Total</span>
                 </div>
                 {leaderboardLoading ? (
                   <div className="h-4 w-28 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />

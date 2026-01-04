@@ -10,12 +10,17 @@ export async function GET(request: NextRequest) {
     const query = searchParams.get('q')
 
     // Поиск пользователей (если query пустой, возвращаем всех)
-    const whereClause = query ? {
-      username: {
-        contains: query,
-        mode: 'insensitive' as const
-      }
-    } : undefined
+    const whereClause = {
+      isAnonymous: false,
+      ...(query
+        ? {
+            username: {
+              contains: query,
+              mode: 'insensitive' as const,
+            },
+          }
+        : {}),
+    }
 
     const users = await prisma.user.findMany({
       where: whereClause,
@@ -45,6 +50,7 @@ export async function GET(request: NextRequest) {
 
     // Получаем всех пользователей для расчета рангов (за все время)
     const allUsers = await prisma.user.findMany({
+      where: { isAnonymous: false },
       select: {
         id: true,
         sessions: {
