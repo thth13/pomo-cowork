@@ -22,6 +22,12 @@ type EntryFormState = {
   endTime: string
 }
 
+interface OpenEntryMenuState {
+  id: string
+  left: number
+  top: number
+}
+
 const ENTRIES_PAGE_SIZE = 20
 
 export default function LatestActivity({ token, isAuthenticated, onChange }: LatestActivityProps) {
@@ -51,7 +57,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
     endTime: ''
   })
   const [editBaseDate, setEditBaseDate] = useState<string>('')
-  const [openEntryMenuId, setOpenEntryMenuId] = useState<string | null>(null)
+  const [openEntryMenu, setOpenEntryMenu] = useState<OpenEntryMenuState | null>(null)
   const [editForm, setEditForm] = useState<EntryFormState>({
     task: '',
     duration: 0,
@@ -62,7 +68,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
   })
 
   useEffect(() => {
-    const closeMenu = () => setOpenEntryMenuId(null)
+    const closeMenu = () => setOpenEntryMenu(null)
     document.addEventListener('click', closeMenu)
     return () => document.removeEventListener('click', closeMenu)
   }, [])
@@ -354,7 +360,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
   const cancelEdit = () => {
     setEditingId(null)
     setSavingEdit(false)
-    setOpenEntryMenuId(null)
+    setOpenEntryMenu(null)
   }
 
   const resetNewEntryForm = () => {
@@ -765,22 +771,22 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
                       </div>
                     </div>
                   ) : (
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                      <div className="flex items-start space-x-3 flex-1">
-                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${getSessionBadge(entry.type)}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        <span className={`shrink-0 whitespace-nowrap text-[11px] px-2 py-0.5 sm:text-xs sm:px-3 sm:py-1 rounded-full font-medium ${getSessionBadge(entry.type)}`}>
                           {getSessionTypeLabel(entry.type)}
                         </span>
-                        <div className="space-y-0.5">
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                        <div className="min-w-0 space-y-0.5">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                             {entry.task || 'Без названия'}
                           </div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">
+                          <div className="text-xs text-gray-500 dark:text-slate-400 truncate">
                             {formatDateTime(entry.startedAt)} · {entry.duration} min
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-1">
-                        <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${getStatusBadge(entry.status)}`}>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className={`whitespace-nowrap text-[11px] px-2 py-0.5 sm:text-xs sm:px-2.5 sm:py-1 rounded-full font-medium ${getStatusBadge(entry.status)}`}>
                           {entry.status === SessionStatus.COMPLETED && 'Completed'}
                           {entry.status === SessionStatus.CANCELLED && 'Cancelled'}
                           {entry.status === SessionStatus.ACTIVE && 'Active'}
@@ -793,21 +799,43 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
                               e.stopPropagation()
                               const nativeEvent = e.nativeEvent as MouseEvent
                               nativeEvent.stopImmediatePropagation?.()
-                              setOpenEntryMenuId(prev => prev === entry.id ? null : entry.id)
+                              const button = e.currentTarget as HTMLButtonElement
+                              const rect = button.getBoundingClientRect()
+
+                              const menuWidth = 144
+                              const padding = 8
+                              const left = Math.min(
+                                Math.max(rect.right - menuWidth, padding),
+                                window.innerWidth - menuWidth - padding
+                              )
+
+                              const estimatedMenuHeight = 92
+                              const preferBottom = rect.bottom + padding + estimatedMenuHeight <= window.innerHeight
+                              const unclampedTop = preferBottom
+                                ? rect.bottom + padding
+                                : Math.max(padding, rect.top - padding - estimatedMenuHeight)
+
+                              const top = Math.min(
+                                Math.max(unclampedTop, padding),
+                                window.innerHeight - estimatedMenuHeight - padding
+                              )
+
+                              setOpenEntryMenu(prev => (prev?.id === entry.id ? null : { id: entry.id, left, top }))
                             }}
                             aria-label="Entry actions"
                             className="inline-flex items-center justify-center h-8 w-8 text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-white"
                           >
                             <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
                           </button>
-                          {openEntryMenuId === entry.id && (
+                          {openEntryMenu?.id === entry.id && (
                             <div
                               onClick={e => {
                                 e.stopPropagation()
                                 const nativeEvent = e.nativeEvent as MouseEvent
                                 nativeEvent.stopImmediatePropagation?.()
                               }}
-                              className="absolute right-0 mt-2 w-36 rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg z-10 py-1"
+                              style={{ left: openEntryMenu.left, top: openEntryMenu.top }}
+                              className="fixed w-36 max-w-[calc(100vw-1rem)] rounded-lg border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-lg z-50 py-1"
                             >
                               <button
                                 onClick={e => {
@@ -815,7 +843,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
                                   e.stopPropagation()
                                   const nativeEvent = e.nativeEvent as MouseEvent
                                   nativeEvent.stopImmediatePropagation?.()
-                                  setOpenEntryMenuId(null)
+                                  setOpenEntryMenu(null)
                                   startEditEntry(entry)
                                 }}
                                 className="w-full px-3 py-2 text-left text-sm text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700 flex items-center gap-2"
@@ -829,7 +857,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
                                   e.stopPropagation()
                                   const nativeEvent = e.nativeEvent as MouseEvent
                                   nativeEvent.stopImmediatePropagation?.()
-                                  setOpenEntryMenuId(null)
+                                  setOpenEntryMenu(null)
                                   setConfirmingId(entry.id)
                                 }}
                                 disabled={deletingId === entry.id}
