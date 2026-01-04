@@ -615,14 +615,31 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     setIsSettingsOpen(false)
   }
 
-  const getNextSessionType = useCallback((): SessionType => {
-    // Calculate based on the number of completed sessions AFTER this one
-    const nextCompletedCount = completedSessions + 1
-    if (nextCompletedCount % longBreakAfter === 0) {
-      return SessionType.LONG_BREAK
+  const getNextSessionType = useCallback((completedType: SessionType): SessionType => {
+    // Get fresh state from store to avoid stale closures
+    const { completedSessions: currentCompletedSessions, longBreakAfter: currentLongBreakAfter } = useTimerStore.getState()
+    
+    // After work session → break (short or long depending on count)
+    if (completedType === SessionType.WORK) {
+      // Use current count from store (already incremented by completeSession)
+      // Long break after every N work sessions
+      if (currentCompletedSessions > 0 && currentCompletedSessions % currentLongBreakAfter === 0) {
+        return SessionType.LONG_BREAK
+      }
+      return SessionType.SHORT_BREAK
     }
-    return sessionType === SessionType.WORK ? SessionType.SHORT_BREAK : SessionType.WORK
-  }, [completedSessions, longBreakAfter, sessionType])
+    
+    // After any break → work
+    if (
+      completedType === SessionType.SHORT_BREAK || 
+      completedType === SessionType.LONG_BREAK
+    ) {
+      return SessionType.WORK
+    }
+    
+    // Default fallback (e.g., after time tracking)
+    return SessionType.WORK
+  }, []) // No dependencies - always reads fresh from store
 
   const formatTime = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60)
@@ -1029,7 +1046,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     
     completeSession()
 
-    const nextType = getNextSessionType()
+    const nextType = getNextSessionType(completedType)
     setSessionType(nextType)
 
     const storeState = useTimerStore.getState()

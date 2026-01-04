@@ -158,14 +158,20 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     const { currentSession, completedSessions } = get()
     
     if (currentSession) {
-      // Auto-suggest next session type
-      const nextType = getNextSessionType(completedSessions + 1, get().longBreakAfter)
+      const completedType = currentSession.type
+      // Increment only for work sessions (pomodoros)
+      const newCompletedCount = completedType === SessionType.WORK 
+        ? completedSessions + 1 
+        : completedSessions
+      
+      // Determine next session type based on what just completed
+      const nextType = getNextSessionType(completedType, newCompletedCount, get().longBreakAfter)
       const nextDuration = getSessionDuration(nextType, get())
       
       set({
         isRunning: false,
         currentSession: null,
-        completedSessions: completedSessions + 1,
+        completedSessions: newCompletedCount,
         timeRemaining: nextDuration * 60,
         pausedAt: null,
       })
@@ -249,11 +255,30 @@ export const useTimerStore = create<TimerState>((set, get) => ({
 }))
 
 // Helper functions
-function getNextSessionType(completedSessions: number, longBreakAfter: number): SessionType {
-  if (completedSessions % longBreakAfter === 0) {
-    return SessionType.LONG_BREAK
+function getNextSessionType(
+  completedType: SessionType, 
+  completedWorkSessions: number, 
+  longBreakAfter: number
+): SessionType {
+  // After work session → break (short or long depending on count)
+  if (completedType === SessionType.WORK) {
+    // Long break after every N work sessions
+    if (completedWorkSessions > 0 && completedWorkSessions % longBreakAfter === 0) {
+      return SessionType.LONG_BREAK
+    }
+    return SessionType.SHORT_BREAK
   }
-  return completedSessions % 2 === 0 ? SessionType.WORK : SessionType.SHORT_BREAK
+  
+  // After any break → work
+  if (
+    completedType === SessionType.SHORT_BREAK || 
+    completedType === SessionType.LONG_BREAK
+  ) {
+    return SessionType.WORK
+  }
+  
+  // Default fallback (e.g., after time tracking)
+  return SessionType.WORK
 }
 
 function getSessionDuration(type: SessionType, state: TimerState): number {
