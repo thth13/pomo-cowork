@@ -115,9 +115,9 @@ export default function WorkHistory() {
       case 'WORK':
         return 'bg-red-500'
       case 'SHORT_BREAK':
-        return 'bg-blue-500'
-      case 'LONG_BREAK':
         return 'bg-green-500'
+      case 'LONG_BREAK':
+        return 'bg-blue-500'
       case 'TIME_TRACKING':
         return 'bg-indigo-500'
       default:
