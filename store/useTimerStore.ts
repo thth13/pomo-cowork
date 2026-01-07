@@ -30,7 +30,7 @@ interface TimerState {
   taskOptions: TimerTaskOption[]
 
   // Actions
-  startSession: (task: string, duration: number, type: SessionType, sessionId?: string) => void
+  startSession: (task: string, duration: number, type: SessionType, sessionId?: string, roomId?: string | null) => void
   pauseSession: () => void
   resumeSession: () => void
   completeSession: () => void
@@ -79,10 +79,11 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   longBreak: 15,
   longBreakAfter: 4,
 
-  startSession: (task: string, duration: number, type: SessionType, sessionId?: string) => {
+  startSession: (task: string, duration: number, type: SessionType, sessionId?: string, roomId?: string | null) => {
     const session: PomodoroSession = {
       id: sessionId || Date.now().toString(),
       userId: 'current-user', // Will be replaced with actual user ID
+      roomId: roomId ?? null,
       task,
       duration,
       type,

@@ -25,6 +25,7 @@ export interface PomodoroSession {
   id: string
   userId: string
   user?: User
+  roomId?: string | null
   task: string
   duration: number
   type: SessionType
@@ -35,6 +36,20 @@ export interface PomodoroSession {
   timeRemaining?: number
   pausedAt?: string
   remainingSeconds?: number
+}
+
+export enum RoomPrivacy {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE',
+}
+
+export interface Room {
+  id: string
+  name: string
+  privacy: RoomPrivacy
+  ownerId: string
+  createdAt: string
+  updatedAt: string
 }
 
 export enum SessionType {
@@ -63,6 +78,7 @@ export interface ActiveSession {
   userId: string
   username: string
   avatarUrl?: string
+  roomId?: string | null
   task: string
   duration: number
   timeRemaining: number
@@ -93,6 +109,7 @@ export interface ChatMessage {
   userId: string | null
   username: string
   avatarUrl?: string
+  roomId?: string | null
   text: string
   timestamp: number
   type?: 'message' | 'system'

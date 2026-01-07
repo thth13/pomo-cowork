@@ -6,6 +6,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useRoomStore } from '@/store/useRoomStore'
 import { useSocket } from '@/hooks/useSocket'
 import type { ChatMessage } from '@/types'
 import Image from 'next/image'
@@ -22,6 +23,7 @@ interface ChatProps {
 export default function Chat({ matchHeightSelector }: ChatProps) {
   const router = useRouter()
   const { user } = useAuthStore()
+  const { currentRoomId } = useRoomStore()
   const {
     sendChatMessage,
     requestChatHistory,
@@ -47,6 +49,11 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
   const [matchedHeight, setMatchedHeight] = useState<number | undefined>(undefined)
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [oldestMessageId, setOldestMessageId] = useState<string | null>(null)
+  const currentRoomIdRef = useRef<string | null>(currentRoomId ?? null)
+
+  useEffect(() => {
+    currentRoomIdRef.current = currentRoomId ?? null
+  }, [currentRoomId])
 
   const getActionColor = (actionType?: string) => {
     switch (actionType) {
@@ -91,12 +98,15 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
 
   useEffect(() => {
     const handleHistory = (history: ChatMessage[]) => {
-      setMessages(history)
+      const roomId = currentRoomIdRef.current
+      setMessages(history.filter((m) => (m.roomId ?? null) === roomId))
       setLoading(false)
       scrollToBottom()
     }
 
     const handleNew = (msg: ChatMessage) => {
+      const roomId = currentRoomIdRef.current
+      if ((msg.roomId ?? null) !== roomId) return
       setMessages((prev) => [...prev.slice(-99), msg])
       scrollToBottomSmooth()
 
@@ -106,7 +116,9 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       setMessages((prev) => prev.filter((msg) => msg.id !== messageId))
     }
 
-    const handleTyping = (payload: { username: string; isTyping: boolean }) => {
+    const handleTyping = (payload: { username: string; isTyping: boolean; roomId?: string | null }) => {
+      const roomId = currentRoomIdRef.current
+      if ((payload.roomId ?? null) !== roomId) return
       if (!payload.isTyping) {
         setTyping(null)
         return
@@ -120,22 +132,6 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     onChatMessage(handleNew)
     onChatRemove(handleRemove)
     onChatTyping(handleTyping)
-    
-    // Загружаем последние 20 сообщений
-    fetch('/api/chat/messages?take=20')
-      .then((r) => r.ok ? r.json() : null)
-      .then((data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } | null) => {
-        if (data?.items) {
-          setMessages(data.items)
-          setHasMore(data.hasMore)
-          setOldestMessageId(data.nextCursor)
-          setLoading(false)
-          scrollToBottom()
-        } else {
-          requestChatHistory()
-        }
-      })
-      .catch(() => requestChatHistory())
 
     return () => {
       offChatHistory(handleHistory)
@@ -145,6 +141,31 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    // On room change: reset and reload history
+    setLoading(true)
+    setMessages([])
+    setHasMore(true)
+    setOldestMessageId(null)
+
+    const roomQuery = currentRoomId ? `&roomId=${encodeURIComponent(currentRoomId)}` : ''
+    fetch(`/api/chat/messages?take=20${roomQuery}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } | null) => {
+        if (data?.items) {
+          setMessages(data.items)
+          setHasMore(data.hasMore)
+          setOldestMessageId(data.nextCursor)
+          setLoading(false)
+          scrollToBottom()
+        } else {
+          requestChatHistory({ roomId: currentRoomId ?? null })
+        }
+      })
+      .catch(() => requestChatHistory({ roomId: currentRoomId ?? null }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentRoomId])
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
@@ -168,7 +189,8 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     setLoadingMore(true)
     
     try {
-      const response = await fetch(`/api/chat/messages?take=20&cursor=${oldestMessageId}`)
+      const roomQuery = currentRoomId ? `&roomId=${encodeURIComponent(currentRoomId)}` : ''
+      const response = await fetch(`/api/chat/messages?take=20&cursor=${oldestMessageId}${roomQuery}`)
       if (!response.ok) throw new Error('Failed to load messages')
       
       const data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } = await response.json()
@@ -197,7 +219,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     } finally {
       setLoadingMore(false)
     }
-  }, [hasMore, loadingMore, oldestMessageId])
+  }, [hasMore, loadingMore, oldestMessageId, currentRoomId])
 
   // Обработчик скролла для определения когда загружать старые сообщения
   useEffect(() => {
@@ -226,6 +248,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       userId: user?.id || null,
       username: user?.username || 'Guest',
       avatarUrl: user?.avatarUrl || undefined,
+      roomId: currentRoomId ?? null,
       text,
       timestamp: Date.now(),
       type: 'message'
@@ -242,6 +265,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
         body: JSON.stringify({
           userId: user?.id || null,
           username: user?.username || 'Guest',
+          roomId: currentRoomId ?? null,
           text
         })
       })
@@ -258,6 +282,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
         sendChatMessage({
           text,
           userId: user?.id || null,
+          roomId: currentRoomId ?? null,
           username: user?.username || 'Guest',
           avatarUrl: user?.avatarUrl ?? null
         })
@@ -272,6 +297,7 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
       sendChatMessage({
         text,
         userId: user?.id || null,
+        roomId: currentRoomId ?? null,
         username: user?.username || 'Guest',
         avatarUrl: user?.avatarUrl ?? null
       })
@@ -283,7 +309,8 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
     emitChatTyping(true, {
       userId: user?.id || null,
       username: user?.username || 'Guest',
-      avatarUrl: user?.avatarUrl ?? null
+      avatarUrl: user?.avatarUrl ?? null,
+      roomId: currentRoomId ?? null
     })
   }
 

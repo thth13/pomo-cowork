@@ -5,6 +5,7 @@ export interface SessionData {
   task: string
   duration: number
   type: SessionType
+  roomId?: string | null
   anonymousId?: string
   startedAt?: string
 }
@@ -28,6 +29,10 @@ export const sessionService = {
       task: data.task,
       duration: data.duration,
       type: data.type,
+    }
+
+    if (data.roomId) {
+      body.roomId = data.roomId
     }
 
     if (data.startedAt) {

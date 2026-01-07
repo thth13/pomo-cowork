@@ -142,12 +142,12 @@ export function useSocket() {
   }
 
   // Chat API
-  const sendChatMessage = (payload: { text: string; username?: string; avatarUrl?: string | null; userId?: string | null }) => {
+  const sendChatMessage = (payload: { text: string; username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
     sharedSocket?.emit('chat-send', payload)
   }
 
-  const requestChatHistory = () => {
-    sharedSocket?.emit('chat-history')
+  const requestChatHistory = (payload?: { roomId?: string | null }) => {
+    sharedSocket?.emit('chat-history', payload)
   }
 
   const onChatMessage = (handler: (message: ChatMessage) => void) => {
@@ -174,7 +174,7 @@ export function useSocket() {
     sharedSocket?.off('chat-remove', handler)
   }
 
-  const emitChatTyping = (isTyping: boolean, meta?: { username?: string; avatarUrl?: string | null; userId?: string | null }) => {
+  const emitChatTyping = (isTyping: boolean, meta?: { username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
     sharedSocket?.emit('chat-typing', { isTyping, ...meta })
   }
 

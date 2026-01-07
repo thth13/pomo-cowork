@@ -97,6 +97,16 @@ export default function Navbar() {
               <FontAwesomeIcon icon={faClock} className="mr-2" />Timer
             </Link>
             <Link 
+              href="/rooms" 
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                pathname === '/rooms' 
+                  ? 'bg-red-500 text-white' 
+                  : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
+              }`}
+            >
+              <FontAwesomeIcon icon={faUsers} className="mr-2" />Rooms
+            </Link>
+            <Link 
               href="/users" 
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname === '/users' 
@@ -256,6 +266,18 @@ export default function Navbar() {
               >
                 <FontAwesomeIcon icon={faClock} className="mr-3 w-4" />
                 Timer
+              </Link>
+              <Link 
+                href="/rooms" 
+                onClick={handleMobileLinkClick}
+                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
+                  pathname === '/rooms' 
+                    ? 'bg-red-500 text-white' 
+                    : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
+                }`}
+              >
+                <FontAwesomeIcon icon={faUsers} className="mr-3 w-4" />
+                Rooms
               </Link>
               <Link 
                 href="/users" 

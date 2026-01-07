@@ -185,6 +185,7 @@ export async function DELETE(
     const chatWhere = {
       where: {
         userId: payload.userId,
+        roomId: session.roomId ?? null,
         actionTask: session.task,
         actionType: { in: ['work_start', 'session_complete', 'time_tracking_start'] },
         createdAt: {

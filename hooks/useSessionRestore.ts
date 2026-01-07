@@ -11,6 +11,7 @@ interface UseSessionRestoreOptions {
   setSessionType: (type: SessionType) => void
   emitSessionSync: (session: {
     id: string
+    roomId?: string | null
     task: string
     duration: number
     type: SessionType
@@ -101,6 +102,7 @@ export function useSessionRestore({
 
         emitSessionSync({
           id: activeSession.id,
+          roomId: activeSession.roomId ?? null,
           task: activeSession.task,
           duration: activeSession.duration,
           type: activeSession.type,
