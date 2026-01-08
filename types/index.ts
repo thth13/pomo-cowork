@@ -124,3 +124,13 @@ export interface LeaderboardUser {
   totalPomodoros: number
   rank: number
 }
+
+export interface TomatoThrow {
+  id: string
+  fromUserId: string
+  toUserId: string
+  fromUsername: string
+  timestamp: number
+  x?: number
+  y?: number
+}

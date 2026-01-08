@@ -738,6 +738,19 @@ io.on('connection', async (socket) => {
     })
   })
 
+  socket.on('tomato-throw', (payload: { fromUserId: string; toUserId: string; fromUsername: string; x?: number; y?: number }) => {
+    // Broadcast tomato throw to all clients
+    io.emit('tomato-receive', {
+      id: `tomato-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      fromUserId: payload.fromUserId,
+      toUserId: payload.toUserId,
+      fromUsername: payload.fromUsername,
+      timestamp: Date.now(),
+      x: payload.x,
+      y: payload.y
+    })
+  })
+
   socket.on('disconnect', () => {
     const userId = socketUserMap.get(socket.id)
     if (userId) {

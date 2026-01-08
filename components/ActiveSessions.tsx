@@ -1,21 +1,57 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Clock, User, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
-import { SessionType, SessionStatus, ActiveSession } from '@/types'
+import { SessionType, SessionStatus, ActiveSession, TomatoThrow as TomatoThrowType } from '@/types'
 import Image from 'next/image'
+import TomatoThrow from './TomatoThrow'
+import { useSocket } from '@/hooks/useSocket'
+
+interface TomatoAnimation {
+  id: string
+  startX: number
+  startY: number
+  endX: number
+  endY: number
+}
+
+interface ContextMenuState {
+  show: boolean
+  x: number
+  y: number
+  targetUserId: string
+  targetElement: HTMLElement | null
+}
 
 // Component for individual session with time updates
-function SessionCard({ session, index, isCurrentUser = false }: { 
+function SessionCard({ 
+  session, 
+  index, 
+  isCurrentUser = false,
+  onContextMenu,
+  onElementMount
+}: { 
   session: ActiveSession; 
   index: number; 
   isCurrentUser?: boolean;
+  onContextMenu: (e: React.MouseEvent, userId: string, element: HTMLElement) => void;
+  onElementMount: (userId: string, element: HTMLElement | null) => void;
 }) {
   const router = useRouter()
+  const cardRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (cardRef.current) {
+      onElementMount(session.userId, cardRef.current)
+    }
+    return () => {
+      onElementMount(session.userId, null)
+    }
+  }, [session.userId, onElementMount])
   
   const sessionStatus = session.status ?? SessionStatus.ACTIVE
   const isTimeTracking = session.type === SessionType.TIME_TRACKING
@@ -172,10 +208,20 @@ function SessionCard({ session, index, isCurrentUser = false }: {
     router.push(`/user/${session.userId}`)
   }
 
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (!isCurrentUser) {
+      e.preventDefault()
+      e.stopPropagation()
+      onContextMenu(e, session.userId, e.currentTarget as HTMLElement)
+    }
+  }
+
   return (
     <div 
+      ref={cardRef}
       className="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 sm:p-6 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors cursor-pointer"
       onClick={handleClick}
+      onContextMenu={handleContextMenu}
     >
       <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
@@ -242,8 +288,19 @@ function SessionCard({ session, index, isCurrentUser = false }: {
 export default function ActiveSessions() {
   const { activeSessions } = useTimerStore()
   const { user } = useAuthStore()
+  const { emitTomatoThrow, onTomatoReceive, offTomatoReceive } = useSocket()
   const [localSessions, setLocalSessions] = useState<ActiveSession[]>([])
   const [hasSocketActivity, setHasSocketActivity] = useState(false)
+  const [contextMenu, setContextMenu] = useState<ContextMenuState>({
+    show: false,
+    x: 0,
+    y: 0,
+    targetUserId: '',
+    targetElement: null
+  })
+  const [tomatoThrows, setTomatoThrows] = useState<TomatoAnimation[]>([])
+  const contextMenuRef = useRef<HTMLDivElement>(null)
+  const sessionCardsRef = useRef<Map<string, HTMLElement>>(new Map())
 
   useEffect(() => {
     if (activeSessions.length > 0) {
@@ -251,6 +308,58 @@ export default function ActiveSessions() {
       setLocalSessions([])
     }
   }, [activeSessions.length])
+
+  // Close context menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(prev => ({ ...prev, show: false }))
+      }
+    }
+
+    const handleScroll = () => {
+      setContextMenu(prev => ({ ...prev, show: false }))
+    }
+
+    if (contextMenu.show) {
+      document.addEventListener('click', handleClickOutside)
+      document.addEventListener('scroll', handleScroll, true)
+      return () => {
+        document.removeEventListener('click', handleClickOutside)
+        document.removeEventListener('scroll', handleScroll, true)
+      }
+    }
+  }, [contextMenu.show])
+
+  // Listen for incoming tomato throws via WebSocket
+  useEffect(() => {
+    const handleTomatoReceive = (payload: TomatoThrowType) => {
+      // Find the target user's card element
+      const targetElement = sessionCardsRef.current.get(payload.toUserId)
+      if (!targetElement) return
+
+      const rect = targetElement.getBoundingClientRect()
+      const targetX = rect.left + rect.width / 2
+      const targetY = rect.top + rect.height / 2
+
+      const startX = window.innerWidth / 2
+      const startY = window.innerHeight / 2
+
+      setTomatoThrows(prev => [...prev, {
+        id: payload.id,
+        startX,
+        startY,
+        endX: targetX,
+        endY: targetY
+      }])
+    }
+
+    onTomatoReceive(handleTomatoReceive)
+    
+    return () => {
+      offTomatoReceive(handleTomatoReceive)
+    }
+  }, [onTomatoReceive, offTomatoReceive])
 
   // Load active sessions on mount for guests
   useEffect(() => {
@@ -287,6 +396,73 @@ export default function ActiveSessions() {
       if (interval) clearInterval(interval)
     }
   }, [activeSessions.length, hasSocketActivity])
+
+  const handleContextMenu = (e: React.MouseEvent, targetUserId: string, element: HTMLElement) => {
+    e.preventDefault()
+    
+    setContextMenu({
+      show: true,
+      x: e.clientX,
+      y: e.clientY,
+      targetUserId,
+      targetElement: element
+    })
+  }
+
+  const handleThrowTomato = async () => {
+    if (!user || !contextMenu.targetElement) {
+      setContextMenu(prev => ({ ...prev, show: false }))
+      return
+    }
+
+    try {
+      // Get element position for animation
+      const rect = contextMenu.targetElement.getBoundingClientRect()
+      const targetX = rect.left + rect.width / 2
+      const targetY = rect.top + rect.height / 2
+
+      // Emit via WebSocket
+      emitTomatoThrow({
+        fromUserId: user.id,
+        toUserId: contextMenu.targetUserId,
+        fromUsername: user.username,
+        x: targetX,
+        y: targetY
+      })
+
+      // Call API for persistence (optional)
+      const token = localStorage.getItem('token')
+      if (token) {
+        fetch('/api/tomato/throw', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            targetUserId: contextMenu.targetUserId
+          })
+        }).catch(error => console.error('Failed to save tomato throw:', error))
+      }
+
+      setContextMenu(prev => ({ ...prev, show: false }))
+    } catch (error) {
+      console.error('Failed to throw tomato:', error)
+      setContextMenu(prev => ({ ...prev, show: false }))
+    }
+  }
+
+  const handleTomatoAnimationComplete = (id: string) => {
+    setTomatoThrows(prev => prev.filter(t => t.id !== id))
+  }
+
+  const handleElementMount = useCallback((userId: string, element: HTMLElement | null) => {
+    if (element) {
+      sessionCardsRef.current.set(userId, element)
+    } else {
+      sessionCardsRef.current.delete(userId)
+    }
+  }, [])
 
   // Use sessions from WebSocket if available, otherwise from API
   const sessionsToShow = activeSessions.length > 0 ? activeSessions : localSessions
@@ -336,8 +512,34 @@ export default function ActiveSessions() {
       </div>
     )
   }
+  
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
+    <>
+      <TomatoThrow 
+        tomatoThrows={tomatoThrows}
+        onAnimationComplete={handleTomatoAnimationComplete}
+      />
+      
+      {contextMenu.show && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-50 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-1 min-w-[160px]"
+          style={{
+            left: `${contextMenu.x}px`,
+            top: `${contextMenu.y}px`
+          }}
+        >
+          <button
+            onClick={handleThrowTomato}
+            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 text-gray-700 dark:text-slate-200"
+          >
+            <span className="text-lg">🍅</span>
+            Бросить помидор
+          </button>
+        </div>
+      )}
+      
+      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Currently Working</h2>
         <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">
@@ -353,9 +555,12 @@ export default function ActiveSessions() {
             session={session} 
             index={index} 
             isCurrentUser={session.userId === user?.id}
+            onContextMenu={handleContextMenu}
+            onElementMount={handleElementMount}
           />
         ))}
       </div>
     </div>
+    </>
   )
 }
