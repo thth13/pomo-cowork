@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, User, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
@@ -217,11 +217,15 @@ function SessionCard({
   }
 
   return (
-    <div 
+    <motion.div 
       ref={cardRef}
       className="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 sm:p-6 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors cursor-pointer"
       onClick={handleClick}
       onContextMenu={handleContextMenu}
+      initial={{ opacity: 0, y: -20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.9 }}
+      transition={{ duration: 0.3 }}
     >
       <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
@@ -281,7 +285,7 @@ function SessionCard({
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -549,16 +553,18 @@ export default function ActiveSessions() {
       </div>
       
       <div className="space-y-4">
-        {allActiveSessions.map((session, index) => (
-          <SessionCard 
-            key={session.id} 
-            session={session} 
-            index={index} 
-            isCurrentUser={session.userId === user?.id}
-            onContextMenu={handleContextMenu}
-            onElementMount={handleElementMount}
-          />
-        ))}
+        <AnimatePresence mode="popLayout">
+          {allActiveSessions.map((session, index) => (
+            <SessionCard 
+              key={session.id} 
+              session={session} 
+              index={index} 
+              isCurrentUser={session.userId === user?.id}
+              onContextMenu={handleContextMenu}
+              onElementMount={handleElementMount}
+            />
+          ))}
+        </AnimatePresence>
       </div>
     </div>
     </>
