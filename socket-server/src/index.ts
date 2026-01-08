@@ -216,7 +216,8 @@ const loadActiveSessionsFromDB = async () => {
         existingSession.timeRemaining = dbSession.timeRemaining
         existingSession.lastUpdate = Date.now()
 
-        if (!existingSession.avatarUrl && dbSession.avatarUrl) {
+        // Always update avatarUrl from DB if available
+        if (dbSession.avatarUrl) {
           existingSession.avatarUrl = dbSession.avatarUrl
         }
       }
