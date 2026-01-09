@@ -545,6 +545,7 @@ export default function ActiveSessions() {
         isVisible={showToast}
         onClose={() => setShowToast(false)}
         type="warning"
+        duration={3000}
       />
       
       <TomatoThrow 
