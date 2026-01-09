@@ -28,6 +28,8 @@ export default function RoomsPage() {
     privacy: RoomPrivacy.PUBLIC,
   })
 
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
   const [editingRoomId, setEditingRoomId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState<RoomFormState>({
     name: '',
@@ -119,6 +121,8 @@ export default function RoomsPage() {
       setRooms((prev) => [created, ...prev])
       setCreateForm({ name: '', privacy: RoomPrivacy.PUBLIC })
 
+      setIsCreateModalOpen(false)
+
       setCurrentRoom({ id: created.id, name: created.name })
       router.push('/')
     } catch (e) {
@@ -207,13 +211,27 @@ export default function RoomsPage() {
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => router.push('/')}
-              className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-            >
-              Back
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={!user}
+                onClick={() => {
+                  setError(null)
+                  setIsCreateModalOpen(true)
+                }}
+                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
+              >
+                Create room
+              </button>
+
+              <button
+                type="button"
+                onClick={() => router.push('/')}
+                className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+              >
+                Back
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -340,30 +358,70 @@ export default function RoomsPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Create room</h3>
-            <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
-              {user ? 'Create your own room.' : 'Login required to create rooms.'}
-            </p>
+        </div>
+      </main>
 
-            <form onSubmit={onCreateRoom} className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <input
-                value={createForm.name}
-                onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))}
-                placeholder="Room name"
-                className="sm:col-span-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
-              />
-
-              <select
-                value={createForm.privacy}
-                onChange={(e) => setCreateForm((s) => ({ ...s, privacy: e.target.value as RoomPrivacy }))}
-                className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
+      {isCreateModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsCreateModalOpen(false)
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-gray-200 dark:border-slate-700 p-6 space-y-4"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Create room</h3>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                  Pick a name and privacy.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
               >
-                <option value={RoomPrivacy.PUBLIC}>Public</option>
-                <option value={RoomPrivacy.PRIVATE}>Private</option>
-              </select>
+                Close
+              </button>
+            </div>
 
-              <div className="sm:col-span-3 flex justify-end">
+            <form onSubmit={onCreateRoom} className="grid grid-cols-1 gap-3">
+              <label className="block">
+                <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Name</span>
+                <input
+                  value={createForm.name}
+                  onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))}
+                  placeholder="Room name"
+                  className="mt-1 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
+                  autoFocus
+                />
+              </label>
+
+              <label className="block">
+                <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Privacy</span>
+                <select
+                  value={createForm.privacy}
+                  onChange={(e) => setCreateForm((s) => ({ ...s, privacy: e.target.value as RoomPrivacy }))}
+                  className="mt-1 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
+                >
+                  <option value={RoomPrivacy.PUBLIC}>Public</option>
+                  <option value={RoomPrivacy.PRIVATE}>Private</option>
+                </select>
+              </label>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
                   disabled={!user || creating}
@@ -375,7 +433,7 @@ export default function RoomsPage() {
             </form>
           </div>
         </div>
-      </main>
+      )}
     </div>
   )
 }
