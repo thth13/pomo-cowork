@@ -10,11 +10,14 @@ interface TomatoAnimation {
   startY: number
   endX: number
   endY: number
+  fromUserId?: string
+  toUserId?: string
 }
 
 interface TomatoThrowProps {
   tomatoThrows: TomatoAnimation[]
   onAnimationComplete: (id: string) => void
+  currentUserId?: string
 }
 
 interface SplashEffect {
@@ -32,22 +35,18 @@ interface Particle {
   rotation: number
 }
 
-export default function TomatoThrow({ tomatoThrows, onAnimationComplete }: TomatoThrowProps) {
+export default function TomatoThrow({ tomatoThrows, onAnimationComplete, currentUserId }: TomatoThrowProps) {
   const [splashes, setSplashes] = useState<SplashEffect[]>([])
   const [particles, setParticles] = useState<Particle[]>([])
 
-  // Play throw sound when new tomato appears
-  useEffect(() => {
-    if (tomatoThrows.length > 0) {
-      const latestTomato = tomatoThrows[tomatoThrows.length - 1]
-      // Only play sound for newly added tomatoes
-      playTomatoThrowSound()
-    }
-  }, [tomatoThrows.length])
-
   const handleTomatoComplete = (tomato: TomatoAnimation) => {
-    // Play splash sound
-    playTomatoSplashSound()
+    // Play splash sound only for sender or receiver
+    const shouldPlaySound = currentUserId && 
+      (tomato.fromUserId === currentUserId || tomato.toUserId === currentUserId)
+    
+    if (shouldPlaySound) {
+      playTomatoSplashSound()
+    }
 
     // Create splash effect at end position
     setSplashes(prev => [...prev, {
@@ -90,7 +89,12 @@ export default function TomatoThrow({ tomatoThrows, onAnimationComplete }: Tomat
     <div className="fixed inset-0 pointer-events-none z-50">
       <AnimatePresence>
         {/* Flying tomatoes */}
-        {tomatoThrows.map((tomato) => (
+        {tomatoThrows.map((tomato) => {
+          // Play throw sound only for sender or receiver
+          const shouldPlaySound = currentUserId && 
+            (tomato.fromUserId === currentUserId || tomato.toUserId === currentUserId)
+          
+          return (
           <motion.div
             key={tomato.id}
             initial={{ 
@@ -99,6 +103,11 @@ export default function TomatoThrow({ tomatoThrows, onAnimationComplete }: Tomat
               scale: 0.3,
               rotate: 0,
               opacity: 0
+            }}
+            onAnimationStart={() => {
+              if (shouldPlaySound) {
+                playTomatoThrowSound()
+              }
             }}
             animate={{ 
               x: tomato.endX, 
@@ -128,7 +137,8 @@ export default function TomatoThrow({ tomatoThrows, onAnimationComplete }: Tomat
           >
             🍅
           </motion.div>
-        ))}
+          )
+        })}
         
         {/* Explosion effects */}
         {splashes.map((splash) => (

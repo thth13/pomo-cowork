@@ -354,7 +354,9 @@ export default function ActiveSessions() {
         startX,
         startY,
         endX: targetX,
-        endY: targetY
+        endY: targetY,
+        fromUserId: payload.fromUserId,
+        toUserId: payload.toUserId
       }])
     }
 
@@ -522,6 +524,7 @@ export default function ActiveSessions() {
       <TomatoThrow 
         tomatoThrows={tomatoThrows}
         onAnimationComplete={handleTomatoAnimationComplete}
+        currentUserId={user?.id}
       />
       
       {contextMenu.show && (
