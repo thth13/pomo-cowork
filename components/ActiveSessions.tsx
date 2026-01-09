@@ -10,6 +10,7 @@ import { SessionType, SessionStatus, ActiveSession, TomatoThrow as TomatoThrowTy
 import Image from 'next/image'
 import TomatoThrow from './TomatoThrow'
 import { useSocket } from '@/hooks/useSocket'
+import NotificationToast from './NotificationToast'
 
 interface TomatoAnimation {
   id: string
@@ -17,6 +18,8 @@ interface TomatoAnimation {
   startY: number
   endX: number
   endY: number
+  fromUserId: string
+  toUserId: string
 }
 
 interface ContextMenuState {
@@ -303,6 +306,8 @@ export default function ActiveSessions() {
     targetElement: null
   })
   const [tomatoThrows, setTomatoThrows] = useState<TomatoAnimation[]>([])
+  const [toastMessage, setToastMessage] = useState('')
+  const [showToast, setShowToast] = useState(false)
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const sessionCardsRef = useRef<Map<string, HTMLElement>>(new Map())
 
@@ -340,21 +345,24 @@ export default function ActiveSessions() {
     const handleTomatoReceive = (payload: TomatoThrowType) => {
       // Find the target user's card element
       const targetElement = sessionCardsRef.current.get(payload.toUserId)
-      if (!targetElement) return
+      const fromElement = sessionCardsRef.current.get(payload.fromUserId)
+      
+      if (!targetElement || !fromElement) return
 
-      const rect = targetElement.getBoundingClientRect()
-      const targetX = rect.left + rect.width / 2
-      const targetY = rect.top + rect.height / 2
-
-      const startX = window.innerWidth / 2
-      const startY = window.innerHeight / 2
+      const targetRect = targetElement.getBoundingClientRect()
+      const fromRect = fromElement.getBoundingClientRect()
+      
+      const startX = fromRect.left + fromRect.width / 2
+      const startY = fromRect.top + fromRect.height / 2
+      const endX = targetRect.left + targetRect.width / 2
+      const endY = targetRect.top + targetRect.height / 2
 
       setTomatoThrows(prev => [...prev, {
         id: payload.id,
         startX,
         startY,
-        endX: targetX,
-        endY: targetY,
+        endX,
+        endY,
         fromUserId: payload.fromUserId,
         toUserId: payload.toUserId
       }])
@@ -417,6 +425,17 @@ export default function ActiveSessions() {
 
   const handleThrowTomato = async () => {
     if (!user || !contextMenu.targetElement) {
+      setContextMenu(prev => ({ ...prev, show: false }))
+      return
+    }
+
+    // Проверка: пользователь должен быть в активной сессии работы
+    const userSession = sessionsToShow.find(s => s.userId === user.id)
+    const isInWorkSession = userSession && userSession.type === SessionType.WORK && userSession.status !== SessionStatus.PAUSED
+    
+    if (!isInWorkSession) {
+      setToastMessage('You can only throw tomatoes during an active work session!')
+      setShowToast(true)
       setContextMenu(prev => ({ ...prev, show: false }))
       return
     }
@@ -521,6 +540,13 @@ export default function ActiveSessions() {
   
   return (
     <>
+      <NotificationToast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={() => setShowToast(false)}
+        type="warning"
+      />
+      
       <TomatoThrow 
         tomatoThrows={tomatoThrows}
         onAnimationComplete={handleTomatoAnimationComplete}
@@ -541,7 +567,7 @@ export default function ActiveSessions() {
             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 text-gray-700 dark:text-slate-200"
           >
             <span className="text-lg">🍅</span>
-            Бросить помидор
+            Throw a tomato
           </button>
         </div>
       )}

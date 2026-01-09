@@ -1,7 +1,7 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { playTomatoThrowSound, playTomatoSplashSound } from '@/lib/tomatoSound'
 
 interface TomatoAnimation {
@@ -10,8 +10,8 @@ interface TomatoAnimation {
   startY: number
   endX: number
   endY: number
-  fromUserId?: string
-  toUserId?: string
+  fromUserId: string
+  toUserId: string
 }
 
 interface TomatoThrowProps {
@@ -38,11 +38,17 @@ interface Particle {
 export default function TomatoThrow({ tomatoThrows, onAnimationComplete, currentUserId }: TomatoThrowProps) {
   const [splashes, setSplashes] = useState<SplashEffect[]>([])
   const [particles, setParticles] = useState<Particle[]>([])
+  const completedTomatoes = useRef<Set<string>>(new Set())
 
   const handleTomatoComplete = (tomato: TomatoAnimation) => {
-    // Play splash sound only for sender or receiver
-    const shouldPlaySound = currentUserId && 
-      (tomato.fromUserId === currentUserId || tomato.toUserId === currentUserId)
+    // Prevent double calls
+    if (completedTomatoes.current.has(tomato.id)) {
+      return
+    }
+    completedTomatoes.current.add(tomato.id)
+    
+    // Play splash sound only for sender
+    const shouldPlaySound = currentUserId && tomato.fromUserId === currentUserId
     
     if (shouldPlaySound) {
       playTomatoSplashSound()
@@ -80,6 +86,7 @@ export default function TomatoThrow({ tomatoThrows, onAnimationComplete, current
     setTimeout(() => {
       setSplashes(prev => prev.filter(s => s.id !== `splash-${tomato.id}`))
       setParticles(prev => prev.filter(p => !p.id.startsWith(`particle-${tomato.id}`)))
+      completedTomatoes.current.delete(tomato.id)
     }, 1000)
 
     onAnimationComplete(tomato.id)
@@ -90,9 +97,8 @@ export default function TomatoThrow({ tomatoThrows, onAnimationComplete, current
       <AnimatePresence>
         {/* Flying tomatoes */}
         {tomatoThrows.map((tomato) => {
-          // Play throw sound only for sender or receiver
-          const shouldPlaySound = currentUserId && 
-            (tomato.fromUserId === currentUserId || tomato.toUserId === currentUserId)
+          // Play throw sound only for sender
+          const shouldPlaySound = currentUserId && tomato.fromUserId === currentUserId
           
           return (
           <motion.div
