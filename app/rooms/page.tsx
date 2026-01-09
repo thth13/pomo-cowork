@@ -71,14 +71,13 @@ export default function RoomsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const onJoinRoom = (room: { id: string; name: string }) => {
+  const onOpenRoom = (room: { id: string; name: string }) => {
     setCurrentRoom(room)
-    router.push('/')
+    router.push(`/rooms/${room.id}`)
   }
 
   const onJoinGlobal = () => {
     resetToGlobal()
-    router.push('/')
   }
 
   const onCreateRoom = async (e: React.FormEvent) => {
@@ -124,7 +123,7 @@ export default function RoomsPage() {
       setIsCreateModalOpen(false)
 
       setCurrentRoom({ id: created.id, name: created.name })
-      router.push('/')
+      router.push(`/rooms/${created.id}`)
     } catch (e) {
       console.error('Failed to create room:', e)
       setError('Failed to create room')
@@ -287,7 +286,9 @@ export default function RoomsPage() {
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-slate-400">id: {room.id}</div>
+                        <div className="text-xs text-gray-500 dark:text-slate-400">
+                          {room.memberCount ?? 0} {room.memberCount === 1 ? 'участник' : 'участников'}
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
@@ -303,14 +304,14 @@ export default function RoomsPage() {
 
                         <button
                           type="button"
-                          onClick={() => onJoinRoom({ id: room.id, name: room.name })}
+                          onClick={() => onOpenRoom({ id: room.id, name: room.name })}
                           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                             isSelected
                               ? 'bg-red-500 text-white'
                               : 'bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200'
                           }`}
                         >
-                          {isSelected ? 'Selected' : 'Join'}
+                          {isSelected ? 'Selected' : 'Open'}
                         </button>
                       </div>
                     </div>

@@ -47,10 +47,25 @@ export async function GET(request: NextRequest) {
         ownerId: true,
         createdAt: true,
         updatedAt: true,
+        _count: {
+          select: {
+            members: true,
+          },
+        },
       },
     })
 
-    return NextResponse.json(rooms)
+    const roomsWithCount = rooms.map(room => ({
+      id: room.id,
+      name: room.name,
+      privacy: room.privacy,
+      ownerId: room.ownerId,
+      createdAt: room.createdAt,
+      updatedAt: room.updatedAt,
+      memberCount: room._count.members,
+    }))
+
+    return NextResponse.json(roomsWithCount)
   } catch (error) {
     console.error('List rooms error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

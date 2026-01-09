@@ -33,12 +33,26 @@ model User {
   ownedRooms      Room[]       @relation("RoomOwner")
   roomMemberships RoomMember[]
 
+  invitesSent     RoomInvite[]   @relation("RoomInviteInviter")
+  invitesReceived RoomInvite[]   @relation("RoomInviteInvitee")
+  notifications   Notification[]
+
   @@map("users")
 }
 
 enum RoomPrivacy {
   PUBLIC
   PRIVATE
+}
+
+enum RoomInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum NotificationType {
+  ROOM_INVITE
 }
 
 model Room {
@@ -52,6 +66,7 @@ model Room {
   members      RoomMember[]
   sessions     PomodoroSession[]
   chatMessages ChatMessage[]
+  invites      RoomInvite[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -73,6 +88,45 @@ model RoomMember {
   @@unique([roomId, userId])
   @@index([userId])
   @@map("room_members")
+}
+
+model RoomInvite {
+  id        String           @id @default(cuid())
+  roomId    String
+  inviterId String
+  inviteeId String
+  status    RoomInviteStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  room    Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  inviter User @relation("RoomInviteInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee User @relation("RoomInviteInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+  notifications Notification[]
+
+  @@unique([roomId, inviteeId])
+  @@index([inviteeId])
+  @@index([roomId])
+  @@map("room_invites")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  roomInviteId String?
+  roomInvite   RoomInvite? @relation(fields: [roomInviteId], references: [id], onDelete: SetNull)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
 }
 
 model UserSettings {
