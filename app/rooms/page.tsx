@@ -12,6 +12,33 @@ interface RoomFormState {
   privacy: RoomPrivacy
 }
 
+const RoomsListSkeleton = () => (
+  <div className="space-y-3">
+    {Array.from({ length: 4 }).map((_, i) => (
+      <div
+        key={i}
+        className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 animate-pulse"
+      >
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-40 bg-gray-200 dark:bg-slate-700 rounded" />
+              <div className="h-5 w-16 bg-gray-200 dark:bg-slate-700 rounded-full" />
+              <div className="h-5 w-14 bg-gray-200 dark:bg-slate-700 rounded-full" />
+            </div>
+            <div className="mt-2 h-3 w-24 bg-gray-200 dark:bg-slate-700 rounded" />
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="h-10 w-24 bg-gray-200 dark:bg-slate-700 rounded-lg" />
+            <div className="h-10 w-24 bg-gray-200 dark:bg-slate-700 rounded-lg" />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+)
+
 export default function RoomsPage() {
   const router = useRouter()
   const { user } = useAuthStore()
@@ -20,7 +47,6 @@ export default function RoomsPage() {
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
-  const [savingId, setSavingId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const [createForm, setCreateForm] = useState<RoomFormState>({
@@ -29,12 +55,6 @@ export default function RoomsPage() {
   })
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
-
-  const [editingRoomId, setEditingRoomId] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<RoomFormState>({
-    name: '',
-    privacy: RoomPrivacy.PUBLIC,
-  })
 
   const getToken = (): string | null => {
     if (typeof window === 'undefined') return null
@@ -132,65 +152,6 @@ export default function RoomsPage() {
     }
   }
 
-  const openEdit = (room: Room) => {
-    setEditingRoomId(room.id)
-    setEditForm({ name: room.name, privacy: room.privacy })
-  }
-
-  const closeEdit = () => {
-    setEditingRoomId(null)
-  }
-
-  const onSaveRoom = async (roomId: string) => {
-    setError(null)
-
-    const token = getToken()
-    if (!token) {
-      setError('Login required')
-      return
-    }
-
-    const name = editForm.name.trim()
-    if (!name) {
-      setError('Room name is required')
-      return
-    }
-
-    setSavingId(roomId)
-    try {
-      const response = await fetch(`/api/rooms/${roomId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name,
-          privacy: editForm.privacy,
-        }),
-      })
-
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as { error?: string } | null
-        setError(data?.error ?? 'Failed to save room')
-        return
-      }
-
-      const updated = (await response.json()) as Room
-      setRooms((prev) => prev.map((r) => (r.id === updated.id ? updated : r)))
-
-      if (currentRoomId === updated.id) {
-        setCurrentRoom({ id: updated.id, name: updated.name })
-      }
-
-      closeEdit()
-    } catch (e) {
-      console.error('Failed to save room:', e)
-      setError('Failed to save room')
-    } finally {
-      setSavingId(null)
-    }
-  }
 
   const privacyLabel = (privacy: RoomPrivacy) => {
     return privacy === RoomPrivacy.PRIVATE ? 'Private' : 'Public'
@@ -240,7 +201,15 @@ export default function RoomsPage() {
           )}
 
           <div className="space-y-3 mb-8">
-            <div className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 px-4 py-3">
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={onJoinGlobal}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') onJoinGlobal()
+              }}
+              className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors"
+            >
               <div>
                 <div className="font-semibold text-gray-900 dark:text-white">Global</div>
                 <div className="text-xs text-gray-500 dark:text-slate-400">Default room</div>
@@ -248,6 +217,7 @@ export default function RoomsPage() {
               <button
                 type="button"
                 onClick={onJoinGlobal}
+                onClickCapture={(e) => e.stopPropagation()}
                 className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                   currentRoomId === null
                     ? 'bg-red-500 text-white'
@@ -259,19 +229,24 @@ export default function RoomsPage() {
             </div>
 
             {loading ? (
-              <div className="text-sm text-gray-500 dark:text-slate-400">Loading...</div>
+              <RoomsListSkeleton />
             ) : rooms.length === 0 ? (
               <div className="text-sm text-gray-500 dark:text-slate-400">No rooms yet</div>
             ) : (
               rooms.map((room) => {
                 const isOwner = user?.id && room.ownerId === user.id
                 const isSelected = currentRoomId === room.id
-                const isEditing = editingRoomId === room.id
 
                 return (
                   <div
                     key={room.id}
-                    className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onOpenRoom({ id: room.id, name: room.name })}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') onOpenRoom({ id: room.id, name: room.name })
+                    }}
+                    className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors"
                   >
                     <div className="flex items-center justify-between gap-4">
                       <div className="min-w-0">
@@ -292,19 +267,10 @@ export default function RoomsPage() {
                       </div>
 
                       <div className="flex items-center gap-2 shrink-0">
-                        {isOwner && (
-                          <button
-                            type="button"
-                            onClick={() => (isEditing ? closeEdit() : openEdit(room))}
-                            className="px-3 py-2 rounded-lg text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                          >
-                            {isEditing ? 'Close' : 'Settings'}
-                          </button>
-                        )}
-
                         <button
                           type="button"
                           onClick={() => onOpenRoom({ id: room.id, name: room.name })}
+                          onClickCapture={(e) => e.stopPropagation()}
                           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                             isSelected
                               ? 'bg-red-500 text-white'
@@ -315,44 +281,6 @@ export default function RoomsPage() {
                         </button>
                       </div>
                     </div>
-
-                    {isEditing && isOwner && (
-                      <div className="mt-4 border-t border-gray-200 dark:border-slate-700 pt-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <label className="block">
-                            <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Name</span>
-                            <input
-                              value={editForm.name}
-                              onChange={(e) => setEditForm((s) => ({ ...s, name: e.target.value }))}
-                              className="mt-1 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
-                            />
-                          </label>
-
-                          <label className="block">
-                            <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Privacy</span>
-                            <select
-                              value={editForm.privacy}
-                              onChange={(e) => setEditForm((s) => ({ ...s, privacy: e.target.value as RoomPrivacy }))}
-                              className="mt-1 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
-                            >
-                              <option value={RoomPrivacy.PUBLIC}>Public</option>
-                              <option value={RoomPrivacy.PRIVATE}>Private</option>
-                            </select>
-                          </label>
-                        </div>
-
-                        <div className="mt-3 flex justify-end">
-                          <button
-                            type="button"
-                            onClick={() => onSaveRoom(room.id)}
-                            disabled={savingId === room.id}
-                            className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
-                          >
-                            {savingId === room.id ? 'Saving...' : 'Save'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 )
               })

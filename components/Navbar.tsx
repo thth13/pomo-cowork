@@ -20,8 +20,21 @@ import {
   faClock,
   faCog,
   faUsers,
-  faBell
+  faEnvelope
 } from '@fortawesome/free-solid-svg-icons'
+
+const NotificationsSkeleton = () => (
+  <div className="px-4 py-3 space-y-3 animate-pulse">
+    <div className="rounded-xl border border-gray-100 dark:border-slate-700 px-3 py-2">
+      <div className="h-4 w-40 bg-gray-200 dark:bg-slate-700 rounded" />
+      <div className="mt-2 h-3 w-56 bg-gray-200 dark:bg-slate-700 rounded" />
+      <div className="mt-2 flex gap-2">
+        <div className="h-7 w-16 bg-gray-200 dark:bg-slate-700 rounded-lg" />
+        <div className="h-7 w-16 bg-gray-200 dark:bg-slate-700 rounded-lg" />
+      </div>
+    </div>
+  </div>
+)
 
 export default function Navbar() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
@@ -31,6 +44,7 @@ export default function Navbar() {
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsLoading, setNotificationsLoading] = useState(false)
+  const [inviteAction, setInviteAction] = useState<{ id: string; kind: 'accept' | 'decline' } | null>(null)
   const menuRef = useRef<HTMLDivElement | null>(null)
   const mobileMenuRef = useRef<HTMLDivElement | null>(null)
   const notificationsRef = useRef<HTMLDivElement | null>(null)
@@ -84,8 +98,10 @@ export default function Navbar() {
       const res = await fetch('/api/notifications', { headers: authHeaders })
       if (!res.ok) return
       const data = (await res.json()) as { unreadCount: number; notifications: NotificationItem[] }
-      setUnreadCount(typeof data.unreadCount === 'number' ? data.unreadCount : 0)
-      setNotifications(Array.isArray(data.notifications) ? data.notifications : [])
+      const all = Array.isArray(data.notifications) ? data.notifications : []
+      const visible = all.filter((n) => n.readAt === null)
+      setUnreadCount(visible.length)
+      setNotifications(visible)
     } finally {
       setNotificationsLoading(false)
     }
@@ -126,17 +142,22 @@ export default function Navbar() {
     const roomName = notification.roomInvite?.room?.name
     if (!inviteId || !roomId || !roomName) return
 
-    const res = await fetch(`/api/room-invites/${inviteId}/accept`, {
-      method: 'POST',
-      headers: authHeaders,
-    })
-    if (!res.ok) return
+    setInviteAction({ id: notification.id, kind: 'accept' })
+    try {
+      const res = await fetch(`/api/room-invites/${inviteId}/accept`, {
+        method: 'POST',
+        headers: authHeaders,
+      })
+      if (!res.ok) return
 
-    await markRead(notification.id)
-    await fetchNotifications()
-    setCurrentRoom({ id: roomId, name: roomName })
-    setIsNotificationsOpen(false)
-    router.push(`/rooms/${roomId}`)
+      await markRead(notification.id)
+      await fetchNotifications()
+      setCurrentRoom({ id: roomId, name: roomName })
+      setIsNotificationsOpen(false)
+      router.push(`/rooms/${roomId}`)
+    } finally {
+      setInviteAction(null)
+    }
   }
 
   const declineInvite = async (notification: NotificationItem) => {
@@ -144,14 +165,19 @@ export default function Navbar() {
     const inviteId = notification.roomInviteId
     if (!inviteId) return
 
-    const res = await fetch(`/api/room-invites/${inviteId}/decline`, {
-      method: 'POST',
-      headers: authHeaders,
-    })
-    if (!res.ok) return
+    setInviteAction({ id: notification.id, kind: 'decline' })
+    try {
+      const res = await fetch(`/api/room-invites/${inviteId}/decline`, {
+        method: 'POST',
+        headers: authHeaders,
+      })
+      if (!res.ok) return
 
-    await markRead(notification.id)
-    await fetchNotifications()
+      await markRead(notification.id)
+      await fetchNotifications()
+    } finally {
+      setInviteAction(null)
+    }
   }
 
   const handleLogout = () => {
@@ -245,9 +271,9 @@ export default function Navbar() {
                       aria-haspopup="true"
                       aria-expanded={isNotificationsOpen}
                     >
-                      <FontAwesomeIcon icon={faBell} className="text-base" />
+                      <FontAwesomeIcon icon={faEnvelope} className="text-base" />
                       {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] leading-[18px] text-center">
+                        <span className="absolute top-1 right-0 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] leading-[16px] text-center">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
                       )}
@@ -259,18 +285,28 @@ export default function Navbar() {
                           <p className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</p>
                         </div>
 
-                        {notificationsLoading ? (
-                          <div className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">Loading...</div>
+                        {notificationsLoading && notifications.length === 0 ? (
+                          <NotificationsSkeleton />
                         ) : notifications.length === 0 ? (
                           <div className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">No notifications</div>
                         ) : (
                           <div className="max-h-96 overflow-auto">
                             {notifications.map((n) => {
-                              const isInvite = n.type === 'ROOM_INVITE' && n.roomInvite && n.roomInvite.status === 'PENDING'
+                              const isInvite =
+                                n.readAt === null &&
+                                n.type === 'ROOM_INVITE' &&
+                                n.roomInvite &&
+                                n.roomInvite.status === 'PENDING'
+                              const isUnread = n.readAt === null
+                              const isAccepting = inviteAction?.id === n.id && inviteAction.kind === 'accept'
+                              const isDeclining = inviteAction?.id === n.id && inviteAction.kind === 'decline'
+                              const isInviteBusy = isAccepting || isDeclining
                               return (
                                 <div
                                   key={n.id}
-                                  className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 last:border-b-0"
+                                  className={`px-4 py-3 border-b border-gray-100 dark:border-slate-700 last:border-b-0 ${
+                                    isUnread ? 'bg-gray-50 dark:bg-slate-800/60' : 'bg-transparent'
+                                  }`}
                                 >
                                   <div className="text-sm font-medium text-gray-900 dark:text-white">{n.title}</div>
                                   <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{n.message}</div>
@@ -280,15 +316,23 @@ export default function Navbar() {
                                       <button
                                         type="button"
                                         onClick={() => acceptInvite(n)}
-                                        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+                                        disabled={isInviteBusy}
+                                        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center gap-2"
                                       >
+                                        {isAccepting && (
+                                          <span className="h-3.5 w-3.5 rounded-full border-2 border-white/50 border-t-white animate-spin" />
+                                        )}
                                         Accept
                                       </button>
                                       <button
                                         type="button"
                                         onClick={() => declineInvite(n)}
-                                        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                                        disabled={isInviteBusy}
+                                        className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-60 flex items-center gap-2"
                                       >
+                                        {isDeclining && (
+                                          <span className="h-3.5 w-3.5 rounded-full border-2 border-gray-400/50 dark:border-slate-400/50 border-t-gray-600 dark:border-t-slate-200 animate-spin" />
+                                        )}
                                         Decline
                                       </button>
                                     </div>
