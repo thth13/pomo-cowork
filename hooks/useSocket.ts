@@ -186,6 +186,19 @@ export function useSocket() {
     sharedSocket?.off('chat-typing', handler)
   }
 
+  // Tomato throw
+  const emitTomatoThrow = (payload: { fromUserId: string; toUserId: string; fromUsername: string; x?: number; y?: number }) => {
+    sharedSocket?.emit('tomato-throw', payload)
+  }
+
+  const onTomatoReceive = (handler: (payload: { id: string; fromUserId: string; toUserId: string; fromUsername: string; timestamp: number; x?: number; y?: number }) => void) => {
+    sharedSocket?.on('tomato-receive', handler)
+  }
+
+  const offTomatoReceive = (handler: (payload: { id: string; fromUserId: string; toUserId: string; fromUsername: string; timestamp: number; x?: number; y?: number }) => void) => {
+    sharedSocket?.off('tomato-receive', handler)
+  }
+
   return {
     emitSessionStart,
     emitSessionSync,
@@ -203,6 +216,10 @@ export function useSocket() {
     offChatRemove,
     emitChatTyping,
     onChatTyping,
-    offChatTyping
+    offChatTyping,
+    // tomato
+    emitTomatoThrow,
+    onTomatoReceive,
+    offTomatoReceive
   }
 }
