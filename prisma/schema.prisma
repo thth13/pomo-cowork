@@ -60,6 +60,8 @@ model Room {
   name    String
   privacy RoomPrivacy @default(PUBLIC)
 
+  backgroundGradientKey String? @db.VarChar(32)
+
   ownerId String
   owner   User   @relation("RoomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
 

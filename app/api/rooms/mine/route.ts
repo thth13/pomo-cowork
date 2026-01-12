@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
         name: true,
         privacy: true,
         ownerId: true,
+        backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
       },

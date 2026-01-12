@@ -48,6 +48,7 @@ export interface Room {
   name: string
   privacy: RoomPrivacy
   ownerId: string
+  backgroundGradientKey?: string | null
   createdAt: string
   updatedAt: string
   memberCount?: number

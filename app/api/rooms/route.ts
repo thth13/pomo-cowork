@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
         name: true,
         privacy: true,
         ownerId: true,
+        backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
         _count: {
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
       name: room.name,
       privacy: room.privacy,
       ownerId: room.ownerId,
+      backgroundGradientKey: room.backgroundGradientKey,
       createdAt: room.createdAt,
       updatedAt: room.updatedAt,
       memberCount: room._count.members,
@@ -112,6 +114,7 @@ export async function POST(request: NextRequest) {
         name: true,
         privacy: true,
         ownerId: true,
+        backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
       },

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
+import { isRoomGradientKey } from '@/lib/roomGradient'
 
 export const dynamic = 'force-dynamic'
 
 interface UpdateRoomBody {
   name?: string
   privacy?: 'PUBLIC' | 'PRIVATE'
+  backgroundGradientKey?: string | null
 }
 
 const normalizeName = (value: unknown): string | null => {
@@ -19,6 +21,13 @@ const normalizeName = (value: unknown): string | null => {
 const normalizePrivacy = (value: unknown): 'PUBLIC' | 'PRIVATE' | null => {
   if (value === 'PUBLIC' || value === 'PRIVATE') return value
   return null
+}
+
+const normalizeBackgroundGradientKey = (value: unknown): string | null | undefined => {
+  if (value === undefined) return undefined
+  if (value === null) return null
+  if (isRoomGradientKey(value)) return value
+  return undefined
 }
 
 // GET /api/rooms/[id] - Fetch a room (public or member/owner)
@@ -50,6 +59,7 @@ export async function GET(
         name: true,
         privacy: true,
         ownerId: true,
+        backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -109,17 +119,26 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid privacy' }, { status: 400 })
     }
 
+    const nextBackgroundGradientKey = normalizeBackgroundGradientKey(body?.backgroundGradientKey)
+    if (body?.backgroundGradientKey !== undefined && nextBackgroundGradientKey === undefined) {
+      return NextResponse.json({ error: 'Invalid background gradient' }, { status: 400 })
+    }
+
     const updated = await prisma.room.update({
       where: { id: params.id },
       data: {
         ...(nextName ? { name: nextName } : {}),
         ...(nextPrivacy ? { privacy: nextPrivacy } : {}),
+        ...(nextBackgroundGradientKey !== undefined
+          ? { backgroundGradientKey: nextBackgroundGradientKey }
+          : {}),
       },
       select: {
         id: true,
         name: true,
         privacy: true,
         ownerId: true,
+        backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
       },

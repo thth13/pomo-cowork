@@ -14,8 +14,9 @@ export interface RoomSummary {
 interface RoomStore {
   currentRoomId: string | null
   currentRoomName: string
+  currentRoomBackgroundGradientKey: string | null
 
-  setCurrentRoom: (room: { id: string; name: string } | null) => void
+  setCurrentRoom: (room: { id: string; name: string; backgroundGradientKey?: string | null } | null) => void
   resetToGlobal: () => void
 }
 
@@ -26,17 +27,22 @@ export const useRoomStore = create<RoomStore>()(
     (set) => ({
       currentRoomId: null,
       currentRoomName: GLOBAL_ROOM_NAME,
+      currentRoomBackgroundGradientKey: null,
 
       setCurrentRoom: (room) => {
         if (!room) {
-          set({ currentRoomId: null, currentRoomName: GLOBAL_ROOM_NAME })
+          set({ currentRoomId: null, currentRoomName: GLOBAL_ROOM_NAME, currentRoomBackgroundGradientKey: null })
           return
         }
-        set({ currentRoomId: room.id, currentRoomName: room.name })
+        set({
+          currentRoomId: room.id,
+          currentRoomName: room.name,
+          currentRoomBackgroundGradientKey: room.backgroundGradientKey ?? null,
+        })
       },
 
       resetToGlobal: () => {
-        set({ currentRoomId: null, currentRoomName: GLOBAL_ROOM_NAME })
+        set({ currentRoomId: null, currentRoomName: GLOBAL_ROOM_NAME, currentRoomBackgroundGradientKey: null })
       },
     }),
     {

@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { useThemeStore } from '@/store/useThemeStore'
 import { Room, RoomMember, RoomPrivacy, RoomStats } from '@/types'
+import { getRoomGradientClass, ROOM_GRADIENT_OPTIONS, RoomGradientKey } from '@/lib/roomGradient'
 
 interface UserSearchItem {
   id: string
@@ -172,9 +173,10 @@ export default function RoomPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [roomSettings, setRoomSettings] = useState<{ name: string; privacy: RoomPrivacy }>({
+  const [roomSettings, setRoomSettings] = useState<{ name: string; privacy: RoomPrivacy; backgroundGradientKey: RoomGradientKey | null }>({
     name: '',
     privacy: RoomPrivacy.PUBLIC,
+    backgroundGradientKey: null,
   })
   const [roomSaving, setRoomSaving] = useState(false)
   const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false)
@@ -248,8 +250,12 @@ export default function RoomPage() {
 
       const roomData = (await roomRes.json()) as Room
       setRoom(roomData)
-      setCurrentRoom({ id: roomData.id, name: roomData.name })
-      setRoomSettings({ name: roomData.name, privacy: roomData.privacy })
+      setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
+      setRoomSettings({
+        name: roomData.name,
+        privacy: roomData.privacy,
+        backgroundGradientKey: (roomData.backgroundGradientKey as RoomGradientKey | null | undefined) ?? null,
+      })
 
       if (membersRes.ok) {
         const membersData = (await membersRes.json()) as MembersResponse
@@ -475,6 +481,7 @@ export default function RoomPage() {
         body: JSON.stringify({
           name,
           privacy: roomSettings.privacy,
+          backgroundGradientKey: roomSettings.backgroundGradientKey,
         }),
       })
 
@@ -486,8 +493,12 @@ export default function RoomPage() {
 
       const updated = (await res.json()) as Room
       setRoom(updated)
-      setCurrentRoom({ id: updated.id, name: updated.name })
-      setRoomSettings({ name: updated.name, privacy: updated.privacy })
+      setCurrentRoom({ id: updated.id, name: updated.name, backgroundGradientKey: updated.backgroundGradientKey ?? null })
+      setRoomSettings({
+        name: updated.name,
+        privacy: updated.privacy,
+        backgroundGradientKey: (updated.backgroundGradientKey as RoomGradientKey | null | undefined) ?? null,
+      })
       setIsRoomSettingsOpen(false)
     } catch (e) {
       console.error('Failed to save room settings:', e)
@@ -495,7 +506,16 @@ export default function RoomPage() {
     } finally {
       setRoomSaving(false)
     }
-  }, [getToken, roomId, roomSettings.name, roomSettings.privacy, setCurrentRoom])
+  }, [getToken, roomId, roomSettings.backgroundGradientKey, roomSettings.name, roomSettings.privacy, setCurrentRoom])
+
+  const roomGradientKeyForPreview = isRoomSettingsOpen
+    ? roomSettings.backgroundGradientKey
+    : (room?.backgroundGradientKey ?? null)
+
+  const roomGradientClass = useMemo(
+    () => getRoomGradientClass(roomId, roomGradientKeyForPreview),
+    [roomGradientKeyForPreview, roomId]
+  )
 
   const weeklyChartOptions: Highcharts.Options = useMemo(
     () => ({
@@ -548,7 +568,13 @@ export default function RoomPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
+    <div
+      className={`min-h-screen ${
+        !loading && room
+          ? roomGradientClass ?? 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800'
+          : 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800'
+      }`}
+    >
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -889,6 +915,43 @@ export default function RoomPage() {
                   <option value={RoomPrivacy.PRIVATE}>Private</option>
                 </select>
               </label>
+            </div>
+
+            <div>
+              <div className="text-xs font-medium text-gray-600 dark:text-slate-300">Background</div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  title="Auto"
+                  aria-label="Auto"
+                  onClick={() => setRoomSettings((s) => ({ ...s, backgroundGradientKey: null }))}
+                  className={`h-10 w-10 rounded-lg border flex items-center justify-center text-xs font-semibold transition-colors ${
+                    roomSettings.backgroundGradientKey === null
+                      ? 'border-red-300 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-900/30'
+                      : 'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  A
+                </button>
+
+                {ROOM_GRADIENT_OPTIONS.map((option) => {
+                  const selected = roomSettings.backgroundGradientKey === option.key
+                  return (
+                    <button
+                      key={option.key}
+                      type="button"
+                      title={option.label}
+                      aria-label={option.label}
+                      onClick={() => setRoomSettings((s) => ({ ...s, backgroundGradientKey: option.key }))}
+                      className={`h-10 w-10 rounded-lg border transition-colors overflow-hidden ${
+                        selected
+                          ? 'border-red-300 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-900/30'
+                          : 'border-gray-200 dark:border-slate-700 hover:opacity-95'
+                      } ${option.className}`}
+                    />
+                  )
+                })}
+              </div>
             </div>
 
             <div className="flex items-center justify-end gap-2">

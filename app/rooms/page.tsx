@@ -91,7 +91,7 @@ export default function RoomsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const onOpenRoom = (room: { id: string; name: string }) => {
+  const onOpenRoom = (room: { id: string; name: string; backgroundGradientKey?: string | null }) => {
     setCurrentRoom(room)
     router.push(`/rooms/${room.id}`)
   }
@@ -142,7 +142,7 @@ export default function RoomsPage() {
 
       setIsCreateModalOpen(false)
 
-      setCurrentRoom({ id: created.id, name: created.name })
+      setCurrentRoom({ id: created.id, name: created.name, backgroundGradientKey: created.backgroundGradientKey ?? null })
       router.push(`/rooms/${created.id}`)
     } catch (e) {
       console.error('Failed to create room:', e)
@@ -242,9 +242,11 @@ export default function RoomsPage() {
                     key={room.id}
                     role="button"
                     tabIndex={0}
-                    onClick={() => onOpenRoom({ id: room.id, name: room.name })}
+                    onClick={() => onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') onOpenRoom({ id: room.id, name: room.name })
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })
+                      }
                     }}
                     className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors"
                   >
@@ -269,7 +271,7 @@ export default function RoomsPage() {
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
-                          onClick={() => onOpenRoom({ id: room.id, name: room.name })}
+                          onClick={() => onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })}
                           onClickCapture={(e) => e.stopPropagation()}
                           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                             isSelected
