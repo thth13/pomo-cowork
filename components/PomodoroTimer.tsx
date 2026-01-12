@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { Settings } from 'lucide-react'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useRoomStore } from '@/store/useRoomStore'
 import { useSocket } from '@/hooks/useSocket'
 import { useWakeLock } from '@/hooks/useWakeLock'
 import { useSessionRestore } from '@/hooks/useSessionRestore'
@@ -224,6 +225,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   } = useTimerStore()
 
   const { user, updateUserSettings } = useAuthStore()
+  const { currentRoomId, currentRoomName } = useRoomStore()
   const { emitSessionStart, emitSessionSync, emitSessionPause, emitSessionEnd, emitTimerTick } = useSocket()
 
   const [timerState, dispatchTimer] = useReducer(
@@ -487,7 +489,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
     try {
       // Optimistic local start (don't wait for network)
-      startSession(taskName, duration, type, tempId)
+      startSession(taskName, duration, type, tempId, currentRoomId)
 
       sendMessageToServiceWorker({
         type: 'START_TIMER',
@@ -503,6 +505,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         task: taskName,
         duration,
         type,
+        roomId: currentRoomId,
         anonymousId: user ? undefined : userId,
         startedAt: optimisticStartedAt,
       })
@@ -535,6 +538,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
       const sessionData = {
         id: dbSession.id,
+        roomId: currentRoomId,
         task: taskName,
         duration,
         type,
@@ -555,6 +559,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       // Already started optimistically; keep running.
     }
   }, [
+    currentRoomId,
     emitSessionStart,
     getSessionDuration,
     getSessionTypeLabel,
@@ -731,7 +736,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2)}`
 
       // Optimistic local start (don't wait for network)
-      startSession(taskName, duration, startType, tempId)
+      startSession(taskName, duration, startType, tempId, currentRoomId)
 
       sendMessageToServiceWorker({
         type: 'START_TIMER',
@@ -749,6 +754,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           task: taskName,
           duration,
           type: startType,
+          roomId: currentRoomId,
           anonymousId: user ? undefined : userId,
           startedAt: optimisticStartedAt,
         }
@@ -784,6 +790,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         // Emit to WebSocket with real session ID
         const sessionData = {
           id: dbSession.id,
+          roomId: currentRoomId,
           task: taskName,
           duration,
           type: startType,
@@ -838,6 +845,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
       emitSessionSync({
         id: sessionId,
+        roomId: currentRoomId,
         task: sessionSnapshot.task,
         duration: sessionSnapshot.duration,
         type: sessionSnapshot.type,
@@ -872,6 +880,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
       emitSessionSync({
         id: sessionId,
+        roomId: currentRoomId,
         task: sessionSnapshot.task,
         duration: sessionSnapshot.duration,
         type: sessionSnapshot.type,
@@ -921,6 +930,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
       emitSessionSync({
         id: sessionId,
+        roomId: currentRoomId,
         task: sessionSnapshot.task,
         duration: sessionSnapshot.duration,
         type: sessionSnapshot.type,
@@ -949,6 +959,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       emitSessionPause(sessionId)
       emitSessionSync({
         id: sessionId,
+        roomId: currentRoomId,
         task: sessionSnapshot.task,
         duration: sessionSnapshot.duration,
         type: sessionSnapshot.type,
@@ -1238,6 +1249,12 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         onTaskSearchChange={setTaskSearch}
         hasTaskOptions={taskOptions.length > 0}
       />
+
+      {currentRoomId && (
+        <div className="mb-3 text-xs sm:text-sm text-gray-600 dark:text-slate-300">
+          Room: <span className="font-semibold">{currentRoomName}</span>
+        </div>
+      )}
 
       {/* Timer Container */}
       <div className="relative mb-6 sm:mb-8">

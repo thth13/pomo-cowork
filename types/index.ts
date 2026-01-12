@@ -25,6 +25,7 @@ export interface PomodoroSession {
   id: string
   userId: string
   user?: User
+  roomId?: string | null
   task: string
   duration: number
   type: SessionType
@@ -35,6 +36,71 @@ export interface PomodoroSession {
   timeRemaining?: number
   pausedAt?: string
   remainingSeconds?: number
+}
+
+export enum RoomPrivacy {
+  PUBLIC = 'PUBLIC',
+  PRIVATE = 'PRIVATE',
+}
+
+export interface Room {
+  id: string
+  name: string
+  privacy: RoomPrivacy
+  ownerId: string
+  backgroundGradientKey?: string | null
+  createdAt: string
+  updatedAt: string
+  memberCount?: number
+}
+
+export interface RoomMemberUser {
+  id: string
+  username: string
+  avatarUrl?: string
+}
+
+export interface RoomMember {
+  id: string
+  roomId: string
+  userId: string
+  role: string
+  createdAt: string
+  user: RoomMemberUser
+}
+
+export interface RoomInvite {
+  id: string
+  status: 'PENDING' | 'ACCEPTED' | 'DECLINED'
+  roomId: string
+  room: { id: string; name: string }
+  inviter: { id: string; username: string; avatarUrl?: string }
+}
+
+export interface NotificationItem {
+  id: string
+  type: 'ROOM_INVITE'
+  title: string
+  message: string
+  readAt: string | null
+  createdAt: string
+  roomInviteId: string | null
+  roomInvite: RoomInvite | null
+}
+
+export interface RoomStats {
+  totalPomodoros: number
+  totalFocusMinutes: number
+  totalFocusHours?: number
+  avgDailyFocusMinutes?: number
+  weeklyActivity: Array<{ date: string; hours: number }>
+  topUsers?: Array<{
+    id: string
+    username: string
+    avatarUrl?: string
+    hours: number
+    contributionPercent: number
+  }>
 }
 
 export enum SessionType {
@@ -63,6 +129,7 @@ export interface ActiveSession {
   userId: string
   username: string
   avatarUrl?: string
+  roomId?: string | null
   task: string
   duration: number
   timeRemaining: number
@@ -93,6 +160,7 @@ export interface ChatMessage {
   userId: string | null
   username: string
   avatarUrl?: string
+  roomId?: string | null
   text: string
   timestamp: number
   type?: 'message' | 'system'

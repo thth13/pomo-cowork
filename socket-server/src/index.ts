@@ -13,6 +13,7 @@ interface PomodoroSession {
   userId: string
   username: string
   avatarUrl?: string
+  roomId?: string | null
   task: string
   type: string
   timeRemaining: number
@@ -30,6 +31,7 @@ interface ChatMessage {
   userId: string | null
   username: string
   avatarUrl?: string
+  roomId?: string | null
   text: string
   timestamp: number
   type?: 'message' | 'system'
@@ -63,9 +65,32 @@ const anonymousSockets = new Map<string, string>()
 const anonymousConnectionCounts = new Map<string, number>()
 const userNames = new Map<string, string>()
 const userAvatars = new Map<string, string>()
-const chatMessages: ChatMessage[] = []
+const chatMessagesByRoom = new Map<string, ChatMessage[]>()
 
 const MAX_CHAT_HISTORY = 100
+
+const normalizeRoomId = (roomId?: string | null) => {
+  if (typeof roomId !== 'string') return null
+  const trimmed = roomId.trim()
+  return trimmed ? trimmed : null
+}
+
+const getRoomKey = (roomId?: string | null) => normalizeRoomId(roomId) ?? 'global'
+
+const getChatHistoryForRoom = (roomId?: string | null) => {
+  const key = getRoomKey(roomId)
+  return chatMessagesByRoom.get(key) ?? []
+}
+
+const pushChatMessageForRoom = (message: ChatMessage) => {
+  const key = getRoomKey(message.roomId ?? null)
+  const arr = chatMessagesByRoom.get(key) ?? []
+  arr.push(message)
+  if (arr.length > MAX_CHAT_HISTORY) {
+    arr.splice(0, arr.length - MAX_CHAT_HISTORY)
+  }
+  chatMessagesByRoom.set(key, arr)
+}
 
 // URL to Next.js API
 const API_URL = process.env.API_URL || 'http://localhost:3000'
@@ -77,6 +102,7 @@ const saveSystemMessageToDB = async (message: ChatMessage) => {
     const response = await axios.post(`${apiUrl}/api/chat/messages`, {
       userId: message.userId,
       username: message.username,
+      roomId: message.roomId ?? null,
       type: 'system',
       action: message.action
     })
@@ -179,6 +205,7 @@ const loadActiveSessionsFromDB = async () => {
       userId: string
       username: string
       avatarUrl?: string
+      roomId?: string | null
       task: string
       type: string
       duration: number
@@ -203,6 +230,7 @@ const loadActiveSessionsFromDB = async () => {
           userId: dbSession.userId,
           username: dbSession.username,
           avatarUrl: dbSession.avatarUrl ?? userAvatars.get(dbSession.userId),
+          roomId: dbSession.roomId ?? null,
           task: dbSession.task,
           type: dbSession.type,
           duration: dbSession.duration,
@@ -215,6 +243,8 @@ const loadActiveSessionsFromDB = async () => {
         // Update existing session with data from DB
         existingSession.timeRemaining = dbSession.timeRemaining
         existingSession.lastUpdate = Date.now()
+
+        existingSession.roomId = dbSession.roomId ?? existingSession.roomId ?? null
 
         // Always update avatarUrl from DB if available
         if (dbSession.avatarUrl) {
@@ -252,6 +282,7 @@ const serializeSessions = () =>
     userId: session.userId,
     username: session.username,
     avatarUrl: session.avatarUrl,
+    roomId: session.roomId ?? null,
     task: session.task,
     type: session.type,
     duration: session.duration,
@@ -394,7 +425,8 @@ io.on('connection', async (socket) => {
     emitPresenceSnapshot()
   })
 
-  socket.on('chat-send', (payload: { text: string; userId?: string | null; username?: string; avatarUrl?: string | null }) => {
+  socket.on('chat-send', (payload: { text: string; userId?: string | null; username?: string; avatarUrl?: string | null; roomId?: string | null }) => {
+      const normalizedRoomId = normalizeRoomId(payload?.roomId ?? null)
     const rawText = (payload?.text ?? '').toString().slice(0, 1000)
     if (!rawText.trim()) return
 
@@ -430,21 +462,24 @@ io.on('connection', async (socket) => {
       userId,
       username,
       avatarUrl,
+      roomId: normalizedRoomId,
       text: rawText,
       timestamp: Date.now()
     }
 
     // Store locally and broadcast
-    chatMessages.push(localMessage)
-    if (chatMessages.length > MAX_CHAT_HISTORY) {
-      chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
-    }
+    pushChatMessageForRoom(localMessage)
     
     // Broadcast to all other clients (not sender)
     socket.broadcast.emit('chat-new', localMessage)
   })
 
-  socket.on('chat-typing', (payload: { isTyping: boolean; userId?: string | null; username?: string; avatarUrl?: string | null }) => {
+  socket.on('chat-history', (payload?: { roomId?: string | null }) => {
+    const roomId = normalizeRoomId(payload?.roomId ?? null)
+    socket.emit('chat-history', getChatHistoryForRoom(roomId))
+  })
+
+  socket.on('chat-typing', (payload: { isTyping: boolean; userId?: string | null; username?: string; avatarUrl?: string | null; roomId?: string | null }) => {
     const userId = socketUserMap.get(socket.id) ?? payload?.userId ?? null
     const anonymousId = anonymousSockets.get(socket.id)
     const payloadUsername = payload?.username?.toString().slice(0, 100) || undefined
@@ -466,9 +501,11 @@ io.on('connection', async (socket) => {
     } else if (anonymousId) {
       username = `Guest-${anonymousId.slice(-4)}`
     }
+    const roomId = normalizeRoomId(payload?.roomId ?? null)
     socket.broadcast.emit('chat-typing', {
       username,
-      isTyping: Boolean(payload?.isTyping)
+      isTyping: Boolean(payload?.isTyping),
+      roomId
     })
   })
 
@@ -539,6 +576,7 @@ io.on('connection', async (socket) => {
       userId,
       username,
       avatarUrl,
+      roomId: sessionRecord.roomId ?? null,
       text: '',
       timestamp: Date.now(),
       type: 'system',
@@ -555,11 +593,9 @@ io.on('connection', async (socket) => {
     }
 
     // Store locally and broadcast
-    chatMessages.push(systemMessage)
-    if (chatMessages.length > MAX_CHAT_HISTORY) {
-      chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
-    }
-    
+    const tempId = systemMessage.id
+    pushChatMessageForRoom(systemMessage)
+
     // Save to database
     const savedMessage = await saveSystemMessageToDB(systemMessage)
     if (savedMessage?.id) {
@@ -567,10 +603,17 @@ io.on('connection', async (socket) => {
     }
     sessionRecord.chatMessageId = systemMessage.id
 
-    // Replace message in history with persisted ID if needed
-    const lastIndex = chatMessages.length - 1
-    if (lastIndex >= 0) {
-      chatMessages[lastIndex] = systemMessage
+    // Replace message in per-room history with persisted ID if needed
+    if (systemMessage.id !== tempId) {
+      const key = getRoomKey(systemMessage.roomId ?? null)
+      const history = chatMessagesByRoom.get(key)
+      if (history) {
+        const idx = history.findIndex((m) => m.id === tempId)
+        if (idx !== -1) {
+          history[idx] = systemMessage
+          chatMessagesByRoom.set(key, history)
+        }
+      }
     }
 
     sessions.set(sessionData.id, sessionRecord)
@@ -667,6 +710,7 @@ io.on('connection', async (socket) => {
         userId,
         username,
         avatarUrl,
+        roomId: session.roomId ?? null,
         text: '',
         timestamp: Date.now(),
         type: 'system',
@@ -678,21 +722,38 @@ io.on('connection', async (socket) => {
       }
 
       // Store locally and broadcast
-      chatMessages.push(systemMessage)
-      if (chatMessages.length > MAX_CHAT_HISTORY) {
-        chatMessages.splice(0, chatMessages.length - MAX_CHAT_HISTORY)
-      }
+      pushChatMessageForRoom(systemMessage)
       
-      // Save to database
-      saveSystemMessageToDB(systemMessage)
+      // Save to database (best-effort)
+      const tempId = systemMessage.id
+      const saved = await saveSystemMessageToDB(systemMessage)
+      if (saved?.id) {
+        systemMessage.id = saved.id
+
+        // Replace message in per-room history with persisted ID if needed
+        const key = getRoomKey(systemMessage.roomId ?? null)
+        const history = chatMessagesByRoom.get(key)
+        if (history) {
+          const idx = history.findIndex((m) => m.id === tempId)
+          if (idx !== -1) {
+            history[idx] = systemMessage
+            chatMessagesByRoom.set(key, history)
+          }
+        }
+      }
       
       io.emit('chat-new', systemMessage)
     }
 
     if (shouldRemoveActivity && session.chatMessageId) {
-      const index = chatMessages.findIndex((message) => message.id === session.chatMessageId)
-      if (index !== -1) {
-        chatMessages.splice(index, 1)
+      const key = getRoomKey(session.roomId ?? null)
+      const history = chatMessagesByRoom.get(key)
+      if (history) {
+        const index = history.findIndex((message) => message.id === session.chatMessageId)
+        if (index !== -1) {
+          history.splice(index, 1)
+          chatMessagesByRoom.set(key, history)
+        }
       }
       io.emit('chat-remove', session.chatMessageId)
       await deleteSystemMessageFromDB(session.chatMessageId, session.id)
@@ -787,9 +848,14 @@ app.post('/chat/remove', (req, res) => {
   const removedIds: string[] = []
 
   uniqueIds.forEach((id) => {
-    const index = chatMessages.findIndex((message) => message.id === id)
-    if (index !== -1) {
-      chatMessages.splice(index, 1)
+    // Remove from any room history that contains the message
+    for (const [key, history] of chatMessagesByRoom.entries()) {
+      const index = history.findIndex((message) => message.id === id)
+      if (index !== -1) {
+        history.splice(index, 1)
+        chatMessagesByRoom.set(key, history)
+        break
+      }
     }
     removedIds.push(id)
     io.emit('chat-remove', id)

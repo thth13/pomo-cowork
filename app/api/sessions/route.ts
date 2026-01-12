@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const token = getTokenFromHeader(authHeader)
-    const { task, duration, type, anonymousId, startedAt } = await request.json()
+    const { task, duration, type, anonymousId, startedAt, roomId } = await request.json()
 
     if (!task || !duration || !type) {
       return NextResponse.json(
@@ -128,9 +128,34 @@ export async function POST(request: NextRequest) {
       return dt
     })()
 
+    const normalizedRoomId = (() => {
+      if (typeof roomId !== 'string') return null
+      const trimmed = roomId.trim()
+      return trimmed ? trimmed : null
+    })()
+
+    if (normalizedRoomId) {
+      const room = await prisma.room.findUnique({
+        where: { id: normalizedRoomId },
+        select: { id: true, privacy: true, ownerId: true },
+      })
+
+      if (!room) {
+        return NextResponse.json({ error: 'Invalid room' }, { status: 400 })
+      }
+
+      if (room.privacy === 'PRIVATE') {
+        const payload = token ? verifyToken(token) : null
+        if (!payload || payload.userId !== room.ownerId) {
+          return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        }
+      }
+    }
+
     const session = await prisma.pomodoroSession.create({
       data: {
         userId,
+        ...(normalizedRoomId ? { roomId: normalizedRoomId } : {}),
         task,
         duration,
         type: type as string,

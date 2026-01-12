@@ -6,6 +6,7 @@ import { Clock, User, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useRoomStore } from '@/store/useRoomStore'
 import { SessionType, SessionStatus, ActiveSession, TomatoThrow as TomatoThrowType } from '@/types'
 import Image from 'next/image'
 import TomatoThrow from './TomatoThrow'
@@ -295,6 +296,7 @@ function SessionCard({
 export default function ActiveSessions() {
   const { activeSessions } = useTimerStore()
   const { user } = useAuthStore()
+  const { currentRoomId } = useRoomStore()
   const { emitTomatoThrow, onTomatoReceive, offTomatoReceive } = useSocket()
   const [localSessions, setLocalSessions] = useState<ActiveSession[]>([])
   const [hasSocketActivity, setHasSocketActivity] = useState(false)
@@ -492,8 +494,10 @@ export default function ActiveSessions() {
   // Use sessions from WebSocket if available, otherwise from API
   const sessionsToShow = activeSessions.length > 0 ? activeSessions : localSessions
 
+  const sessionsInRoom = sessionsToShow.filter((session) => (session.roomId ?? null) === currentRoomId)
+
   // Filter out expired sessions
-  const allActiveSessions = sessionsToShow.filter(session => {
+  const allActiveSessions = sessionsInRoom.filter(session => {
     const status = session.status ?? SessionStatus.ACTIVE
 
     if (status === SessionStatus.PAUSED) {

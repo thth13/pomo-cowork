@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import type { ChatMessage as PublicChatMessage } from '@/types'
 
 export const dynamic = 'force-dynamic'
@@ -11,9 +12,40 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const cursor = searchParams.get('cursor')
   const take = Number(searchParams.get('take') || PAGE_SIZE)
+  const roomIdParam = searchParams.get('roomId')
+
+  const normalizedRoomId = (() => {
+    if (typeof roomIdParam !== 'string') return null
+    const trimmed = roomIdParam.trim()
+    return trimmed ? trimmed : null
+  })()
+
+  if (normalizedRoomId) {
+    const room = await prisma.room.findUnique({
+      where: { id: normalizedRoomId },
+      select: { id: true, privacy: true, ownerId: true },
+    })
+
+    if (!room) {
+      return NextResponse.json({ error: 'Invalid room' }, { status: 400 })
+    }
+
+    if (room.privacy === 'PRIVATE') {
+      const authHeader = request.headers.get('authorization')
+      const token = getTokenFromHeader(authHeader)
+      const payload = token ? verifyToken(token) : null
+
+      if (!payload || payload.userId !== room.ownerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+  }
 
   // Для загрузки старых сообщений (при прокрутке вверх)
   const messages = await prisma.chatMessage.findMany({
+    where: {
+      roomId: normalizedRoomId,
+    },
     take: take + 1, // Берем на 1 больше чтобы узнать есть ли еще сообщения
     ...(cursor ? { 
       skip: 1, 
@@ -24,6 +56,7 @@ export async function GET(request: Request) {
       id: true,
       userId: true,
       username: true,
+      roomId: true,
       text: true,
       type: true,
       actionType: true,
@@ -46,6 +79,7 @@ export async function GET(request: Request) {
     userId: m.userId,
     username: m.username,
     avatarUrl: m.user?.avatarUrl || undefined,
+    roomId: m.roomId ?? null,
     text: m.text,
     timestamp: new Date(m.createdAt).getTime(),
     type: m.type === 'system' ? 'system' : 'message',
@@ -71,6 +105,7 @@ export async function POST(request: Request) {
     userId?: string | null; 
     username?: string; 
     text?: string;
+    roomId?: string | null;
     type?: 'message' | 'system';
     action?: {
       type: 'work_start' | 'break_start' | 'long_break_start' | 'timer_stop' | 'session_complete' | 'time_tracking_start';
@@ -83,7 +118,36 @@ export async function POST(request: Request) {
   const isSystem = body.type === 'system'
   const username = (body.username ?? 'Guest').toString().slice(0, 100)
   const userId = body.userId ?? null
+  const normalizedRoomId = (() => {
+    if (typeof body.roomId !== 'string') return null
+    const trimmed = body.roomId.trim()
+    return trimmed ? trimmed : null
+  })()
   const actionTaskInput = body.action?.task ? body.action.task.toString().slice(0, 120) : null
+
+  if (normalizedRoomId) {
+    const room = await prisma.room.findUnique({
+      where: { id: normalizedRoomId },
+      select: { id: true, privacy: true, ownerId: true },
+    })
+
+    if (!room) {
+      return NextResponse.json({ error: 'Invalid room' }, { status: 400 })
+    }
+
+    if (room.privacy === 'PRIVATE') {
+      const authHeader = request.headers.get('authorization')
+      const token = getTokenFromHeader(authHeader)
+      const payload = token ? verifyToken(token) : null
+
+      const allowedByOwnerToken = Boolean(payload && payload.userId === room.ownerId)
+      const allowedSystemOwnerId = Boolean(isSystem && userId && userId === room.ownerId)
+
+      if (!allowedByOwnerToken && !allowedSystemOwnerId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+    }
+  }
 
   let text: string
   let actionType: string | null = null
@@ -138,6 +202,7 @@ export async function POST(request: Request) {
       text, 
       username, 
       userId,
+      ...(normalizedRoomId ? { roomId: normalizedRoomId } : {}),
       type: isSystem ? 'system' : 'message',
       actionType,
       actionDuration,
@@ -147,6 +212,7 @@ export async function POST(request: Request) {
       id: true,
       userId: true,
       username: true,
+      roomId: true,
       text: true,
       type: true,
       actionType: true,
@@ -166,6 +232,7 @@ export async function POST(request: Request) {
     userId: saved.userId,
     username: saved.username,
   avatarUrl: saved.user?.avatarUrl || undefined,
+    roomId: saved.roomId ?? null,
     text: saved.text,
     timestamp: new Date(saved.createdAt).getTime(),
     type: saved.type === 'system' ? 'system' : 'message',

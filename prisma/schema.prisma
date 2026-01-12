@@ -30,7 +30,105 @@ model User {
   tasks        Task[]
   chatMessages ChatMessage[]     @relation("ChatMessages")
 
+  ownedRooms      Room[]       @relation("RoomOwner")
+  roomMemberships RoomMember[]
+
+  invitesSent     RoomInvite[]   @relation("RoomInviteInviter")
+  invitesReceived RoomInvite[]   @relation("RoomInviteInvitee")
+  notifications   Notification[]
+
   @@map("users")
+}
+
+enum RoomPrivacy {
+  PUBLIC
+  PRIVATE
+}
+
+enum RoomInviteStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum NotificationType {
+  ROOM_INVITE
+}
+
+model Room {
+  id      String      @id @default(cuid())
+  name    String
+  privacy RoomPrivacy @default(PUBLIC)
+
+  backgroundGradientKey String? @db.VarChar(32)
+
+  ownerId String
+  owner   User   @relation("RoomOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  members      RoomMember[]
+  sessions     PomodoroSession[]
+  chatMessages ChatMessage[]
+  invites      RoomInvite[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@map("rooms")
+}
+
+model RoomMember {
+  id        String   @id @default(cuid())
+  roomId    String
+  userId    String
+  role      String   @default("MEMBER")
+  createdAt DateTime @default(now())
+
+  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@map("room_members")
+}
+
+model RoomInvite {
+  id        String           @id @default(cuid())
+  roomId    String
+  inviterId String
+  inviteeId String
+  status    RoomInviteStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  room    Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  inviter User @relation("RoomInviteInviter", fields: [inviterId], references: [id], onDelete: Cascade)
+  invitee User @relation("RoomInviteInvitee", fields: [inviteeId], references: [id], onDelete: Cascade)
+
+  notifications Notification[]
+
+  @@unique([roomId, inviteeId])
+  @@index([inviteeId])
+  @@index([roomId])
+  @@map("room_invites")
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  roomInviteId String?
+  roomInvite   RoomInvite? @relation(fields: [roomInviteId], references: [id], onDelete: SetNull)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@map("notifications")
 }
 
 model UserSettings {
@@ -80,20 +178,24 @@ model PomodoroSession {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  roomId String?
+  room   Room?   @relation(fields: [roomId], references: [id], onDelete: SetNull)
+
   task     String
   duration Int // in minutes
   type     String @default("WORK")
   status   String @default("ACTIVE")
 
-  startedAt   DateTime  @default(now())
-  endedAt     DateTime?
-  completedAt DateTime?
-  pausedAt    DateTime?
+  startedAt        DateTime  @default(now())
+  endedAt          DateTime?
+  completedAt      DateTime?
+  pausedAt         DateTime?
   remainingSeconds Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([roomId])
   @@map("pomodoro_sessions")
 }
 
@@ -101,6 +203,8 @@ model ChatMessage {
   id             String   @id @default(cuid())
   userId         String?
   user           User?    @relation("ChatMessages", fields: [userId], references: [id], onDelete: SetNull)
+  roomId         String?
+  room           Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
   username       String
   text           String
   type           String   @default("message") // "message" or "system"
@@ -110,5 +214,6 @@ model ChatMessage {
   createdAt      DateTime @default(now())
 
   @@index([createdAt])
+  @@index([roomId, createdAt])
   @@map("chat_messages")
 }

@@ -21,6 +21,7 @@ interface SessionWithTimeRemaining {
   id: ActiveSession['id']
   userId: ActiveSession['userId']
   username: ActiveSession['user']['username']
+  roomId: ActiveSession['roomId']
   task: ActiveSession['task']
   type: ActiveSession['type']
   duration: number
@@ -71,6 +72,7 @@ export async function GET(request: NextRequest) {
         userId: session.userId,
         username: session.user.username,
         avatarUrl: session.user.avatarUrl,
+        roomId: session.roomId,
         task: session.task,
         type: session.type,
         duration: session.duration,

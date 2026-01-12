@@ -8,6 +8,8 @@ import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
 import AuthModal from '@/components/AuthModal'
 import { registerServiceWorker } from '@/lib/serviceWorker'
+import { getRoomGradientClass } from '@/lib/roomGradient'
+import { useRoomStore } from '@/store/useRoomStore'
 import dynamic from 'next/dynamic'
 const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => null })
 import TaskList, { TaskListRef } from '@/components/TaskList'
@@ -15,9 +17,13 @@ import WorkHistory from '@/components/WorkHistory'
 
 export default function HomePage() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
+  const currentRoomId = useRoomStore((s) => s.currentRoomId)
+  const currentRoomBackgroundGradientKey = useRoomStore((s) => s.currentRoomBackgroundGradientKey)
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [mounted, setMounted] = useState(false)
   const taskListRef = useRef<TaskListRef>(null)
+
+  const roomGradientClass = getRoomGradientClass(currentRoomId, currentRoomBackgroundGradientKey)
 
   useEffect(() => {
     setMounted(true)
@@ -80,7 +86,11 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
+    <div
+      className={`min-h-screen ${
+        roomGradientClass ?? 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800'
+      }`}
+    >
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
