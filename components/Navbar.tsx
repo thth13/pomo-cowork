@@ -219,12 +219,18 @@ export default function Navbar() {
             <Link 
               href="/rooms" 
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                pathname === '/rooms' 
+                pathname.startsWith('/rooms') 
                   ? 'bg-red-500 text-white' 
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
-              <FontAwesomeIcon icon={faUsers} className="mr-2" />Rooms
+              <FontAwesomeIcon icon={faUsers} className="mr-2" />
+              <span className="relative inline-flex items-center">
+                <span>Rooms</span>
+                <span className="pointer-events-none absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 rounded-full border border-amber-200 bg-amber-50 px-1 py-[1px] text-[8px] font-semibold uppercase leading-none tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
+                  beta
+                </span>
+              </span>
             </Link>
             <Link 
               href="/users" 
@@ -481,13 +487,18 @@ export default function Navbar() {
                 href="/rooms" 
                 onClick={handleMobileLinkClick}
                 className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
-                  pathname === '/rooms' 
+                  pathname.startsWith('/rooms') 
                     ? 'bg-red-500 text-white' 
                     : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
                 }`}
               >
                 <FontAwesomeIcon icon={faUsers} className="mr-3 w-4" />
-                Rooms
+                <span className="relative inline-flex items-center">
+                  <span>Rooms</span>
+                  <span className="pointer-events-none absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 rounded-full border border-amber-200 bg-amber-50 px-1 py-[1px] text-[8px] font-semibold uppercase leading-none tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
+                    beta
+                  </span>
+                </span>
               </Link>
               <Link 
                 href="/users" 

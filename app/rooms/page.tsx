@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
@@ -41,13 +41,17 @@ const RoomsListSkeleton = () => (
 
 export default function RoomsPage() {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const searchParams = useSearchParams()
+  const { user, isLoading: authLoading } = useAuthStore()
   const { currentRoomId, currentRoomName, setCurrentRoom, resetToGlobal } = useRoomStore()
+
+  const shouldForceList = searchParams.get('list') === '1'
 
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isRedirecting, setIsRedirecting] = useState(false)
 
   const [createForm, setCreateForm] = useState<RoomFormState>({
     name: '',
@@ -87,9 +91,54 @@ export default function RoomsPage() {
   }
 
   useEffect(() => {
-    loadRooms()
+    if (authLoading) return
+
+    const token = getToken()
+
+    const run = async () => {
+      if (user && token && !shouldForceList) {
+        setIsRedirecting(true)
+        setLoading(true)
+        setError(null)
+
+        try {
+          const response = await fetch('/api/rooms/mine', {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+
+          if (response.ok) {
+            const data = (await response.json().catch(() => null)) as { rooms?: Room[] } | null
+            const myRooms = Array.isArray(data?.rooms) ? data.rooms : []
+
+            if (myRooms.length > 0) {
+              const preferred = currentRoomId ? myRooms.find((r) => r.id === currentRoomId) : null
+              const target = preferred ?? myRooms[0]
+
+              setCurrentRoom({
+                id: target.id,
+                name: target.name,
+                backgroundGradientKey: target.backgroundGradientKey ?? null,
+              })
+
+              router.replace(`/rooms/${target.id}`)
+              return
+            }
+          }
+        } catch (e) {
+          console.warn('Auto-redirect check failed:', e)
+        }
+        
+        setIsRedirecting(false)
+      }
+
+      await loadRooms()
+    }
+
+    void run()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [authLoading, user?.id, shouldForceList])
 
   const onOpenRoom = (room: { id: string; name: string; backgroundGradientKey?: string | null }) => {
     setCurrentRoom(room)
@@ -200,6 +249,9 @@ export default function RoomsPage() {
             </div>
           )}
 
+          {isRedirecting ? (
+            <RoomsListSkeleton />
+          ) : (
           <div className="space-y-3 mb-8">
             <div
               role="button"
@@ -288,6 +340,7 @@ export default function RoomsPage() {
               })
             )}
           </div>
+          )}
 
         </div>
       </main>
