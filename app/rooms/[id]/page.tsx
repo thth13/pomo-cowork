@@ -181,6 +181,8 @@ export default function RoomPage() {
   const [roomSaving, setRoomSaving] = useState(false)
   const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false)
   const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<string | null>(null)
+  const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const settingsModalShouldCloseRef = useRef(false)
 
   const [userQuery, setUserQuery] = useState('')
@@ -507,6 +509,37 @@ export default function RoomPage() {
       setRoomSaving(false)
     }
   }, [getToken, roomId, roomSettings.backgroundGradientKey, roomSettings.name, roomSettings.privacy, setCurrentRoom])
+
+  const onDeleteRoom = useCallback(async () => {
+    if (!roomId) return
+    const token = getToken()
+    if (!token) {
+      setError('Unauthorized')
+      return
+    }
+
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/rooms/${roomId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if (!res.ok) {
+        setError('Failed to delete room')
+        return
+      }
+
+      setCurrentRoom(null)
+      router.push('/rooms')
+    } catch {
+      setError('Failed to delete room')
+    } finally {
+      setDeleting(false)
+    }
+  }, [getToken, roomId, router, setCurrentRoom])
 
   const roomGradientKeyForPreview = isRoomSettingsOpen
     ? roomSettings.backgroundGradientKey
@@ -861,6 +894,41 @@ export default function RoomPage() {
         </div>
       )}
 
+      {isConfirmDeleteOpen && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-gray-200 dark:border-slate-700 p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Delete room?</h3>
+              <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
+                This action cannot be undone. All data will be lost.
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsConfirmDeleteOpen(false)}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={onDeleteRoom}
+                disabled={deleting}
+                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {isOwner && isRoomSettingsOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
@@ -954,22 +1022,41 @@ export default function RoomPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsRoomSettingsOpen(false)}
-                className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={onSaveRoomSettings}
-                disabled={roomSaving}
-                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
-              >
-                {roomSaving ? 'Saving...' : 'Save'}
-              </button>
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsConfirmDeleteOpen(true)}
+                  className="px-4 py-2 rounded-lg font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                >
+                  Delete room
+                </button>
+                <button
+                  type="button"
+                  onClick={onLeaveRoom}
+                  disabled={leaving}
+                  className="px-4 py-2 rounded-lg font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors disabled:opacity-50"
+                >
+                  {leaving ? 'Leaving...' : 'Leave room'}
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsRoomSettingsOpen(false)}
+                  className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={onSaveRoomSettings}
+                  disabled={roomSaving}
+                  className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
+                >
+                  {roomSaving ? 'Saving...' : 'Save'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
