@@ -16,9 +16,12 @@ import {
   faArrowUp, 
   faCalendar, 
   faBullseye, 
-  faTasks
+  faTasks,
+  faCheck,
+  faTimes
 } from '@fortawesome/free-solid-svg-icons'
 import LatestActivity from '@/components/LatestActivity'
+import { PaywallModal } from '@/components/PaywallModal'
 
 interface Stats {
   totalPomodoros: number
@@ -86,6 +89,7 @@ export default function StatsPage() {
   const [chartReady, setChartReady] = useState(false)
   const [activityPeriod, setActivityPeriod] = useState<'7' | '30' | '365'>('7')
   const [timelineOffset, setTimelineOffset] = useState(0)
+  const [showPaywall, setShowPaywall] = useState(false)
   const activityPeriodRef = useRef(activityPeriod)
   const timelineOffsetRef = useRef(timelineOffset)
   
@@ -461,12 +465,12 @@ export default function StatsPage() {
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">
-            <a
-              href="/settings"
+            <button
+              onClick={() => setShowPaywall(true)}
               className="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-semibold transition-colors"
             >
               Buy Pro
-            </a>
+            </button>
             <a
               href="/settings"
               className="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white px-4 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
@@ -484,6 +488,8 @@ export default function StatsPage() {
       </div>
     </div>
   )
+
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
@@ -1275,6 +1281,7 @@ export default function StatsPage() {
         </motion.div> */}
 
       </main>
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
     </div>
   )
 }
