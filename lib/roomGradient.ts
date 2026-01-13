@@ -5,6 +5,12 @@ export interface RoomGradientOption {
 }
 
 export const ROOM_GRADIENT_OPTIONS = [
+	// No background
+	{
+		key: 'none',
+		label: 'No background',
+		className: 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800',
+	},
 	// Soft multi-stop (existing style)
 	{
 		key: 'primary-to-secondary',

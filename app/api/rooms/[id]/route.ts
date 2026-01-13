@@ -150,3 +150,45 @@ export async function PATCH(
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
 }
+
+// DELETE /api/rooms/[id] - Delete room (owner only)
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    const token = getTokenFromHeader(authHeader)
+
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = verifyToken(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    const existing = await prisma.room.findUnique({
+      where: { id: params.id },
+      select: { id: true, ownerId: true },
+    })
+
+    if (!existing) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    if (existing.ownerId !== payload.userId) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    await prisma.room.delete({
+      where: { id: params.id },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Delete room error:', error)
+    return NextResponse.json({ error: 'Server error' }, { status: 500 })
+  }
+}
