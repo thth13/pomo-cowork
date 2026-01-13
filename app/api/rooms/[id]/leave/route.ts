@@ -4,7 +4,7 @@ import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
 
-// POST /api/rooms/[id]/leave - Leave room (member only, not owner)
+// POST /api/rooms/[id]/leave - Leave room (owner can leave too: ownership transfers; if alone, room is deleted)
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -29,7 +29,35 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     if (room.ownerId === payload.userId) {
-      return NextResponse.json({ error: 'Owner cannot leave room' }, { status: 403 })
+      const nextOwner = await prisma.roomMember.findFirst({
+        where: {
+          roomId: params.id,
+          userId: { not: payload.userId },
+        },
+        orderBy: { createdAt: 'asc' },
+        select: { userId: true },
+      })
+
+      if (!nextOwner) {
+        await prisma.room.delete({ where: { id: params.id } })
+        return NextResponse.json({ ok: true, deletedRoom: true })
+      }
+
+      await prisma.$transaction([
+        prisma.room.update({
+          where: { id: params.id },
+          data: { ownerId: nextOwner.userId },
+        }),
+        prisma.roomMember.update({
+          where: { roomId_userId: { roomId: params.id, userId: nextOwner.userId } },
+          data: { role: 'OWNER' },
+        }),
+        prisma.roomMember.deleteMany({
+          where: { roomId: params.id, userId: payload.userId },
+        }),
+      ])
+
+      return NextResponse.json({ ok: true, transferredTo: nextOwner.userId })
     }
 
     const member = await prisma.roomMember.findUnique({

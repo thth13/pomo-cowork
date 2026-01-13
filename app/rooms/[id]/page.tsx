@@ -6,7 +6,7 @@ import Image from 'next/image'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faClock, faFire, faChartColumn, faUserPlus, faXmark, faGear } from '@fortawesome/free-solid-svg-icons'
+import { faClock, faFire, faChartColumn, faUserPlus, faXmark, faGear, faRightFromBracket, faTrash, faBan } from '@fortawesome/free-solid-svg-icons'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
@@ -219,6 +219,7 @@ export default function RoomPage() {
   const isDark = theme === 'dark'
   const isOwner = Boolean(user?.id && room?.ownerId && room.ownerId === user.id)
   const isMember = Boolean(user?.id && members.some((m) => m.user.id === user.id))
+  const canLeaveRoom = Boolean(user?.id && room && (isOwner || isMember))
 
   const getToken = useCallback((): string | null => {
     if (storeToken) return storeToken
@@ -641,14 +642,21 @@ export default function RoomPage() {
                 Back
               </button>
 
-              {isMember && !isOwner && (
+              {canLeaveRoom && (
                 <button
                   type="button"
                   onClick={onLeaveRoom}
                   disabled={leaving}
-                  className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                  title="Leave room"
+                  aria-label="Leave room"
                 >
-                  Leave group
+                  {leaving ? (
+                    <div className="h-4 w-4 rounded-full border-2 border-red-200 border-t-white animate-spin" />
+                  ) : (
+                    <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
+                  )}
+                  <span className="hidden sm:inline">Leave</span>
                 </button>
               )}
             </div>
@@ -988,20 +996,6 @@ export default function RoomPage() {
             <div>
               <div className="text-xs font-medium text-gray-600 dark:text-slate-300">Background</div>
               <div className="mt-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  title="Auto"
-                  aria-label="Auto"
-                  onClick={() => setRoomSettings((s) => ({ ...s, backgroundGradientKey: null }))}
-                  className={`h-10 w-10 rounded-lg border flex items-center justify-center text-xs font-semibold transition-colors ${
-                    roomSettings.backgroundGradientKey === null
-                      ? 'border-red-300 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-900/30'
-                      : 'border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'
-                  }`}
-                >
-                  A
-                </button>
-
                 {ROOM_GRADIENT_OPTIONS.map((option) => {
                   const selected = roomSettings.backgroundGradientKey === option.key
                   return (
@@ -1011,35 +1005,33 @@ export default function RoomPage() {
                       title={option.label}
                       aria-label={option.label}
                       onClick={() => setRoomSettings((s) => ({ ...s, backgroundGradientKey: option.key }))}
-                      className={`h-10 w-10 rounded-lg border transition-colors overflow-hidden ${
+                      className={`relative h-10 w-10 rounded-lg border transition-colors overflow-hidden ${
                         selected
                           ? 'border-red-300 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-900/30'
                           : 'border-gray-200 dark:border-slate-700 hover:opacity-95'
                       } ${option.className}`}
-                    />
+                    >
+                      {option.key === 'none' && (
+                        <span className="absolute inset-0 flex items-center justify-center">
+                          <FontAwesomeIcon icon={faBan} className="h-4 w-4 text-gray-500/90 dark:text-slate-200/90" />
+                        </span>
+                      )}
+                    </button>
                   )
                 })}
               </div>
             </div>
 
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsConfirmDeleteOpen(true)}
-                  className="px-4 py-2 rounded-lg font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
-                >
-                  Delete room
-                </button>
-                <button
-                  type="button"
-                  onClick={onLeaveRoom}
-                  disabled={leaving}
-                  className="px-4 py-2 rounded-lg font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors disabled:opacity-50"
-                >
-                  {leaving ? 'Leaving...' : 'Leave room'}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setIsConfirmDeleteOpen(true)}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-900/20 transition-colors"
+                title="Delete room"
+              >
+                <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                <span className="text-sm font-semibold">Delete</span>
+              </button>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
