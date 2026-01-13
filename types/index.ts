@@ -6,6 +6,7 @@ export interface User {
   description?: string
   createdAt: string
   isAnonymous?: boolean
+  isPro?: boolean
   settings?: UserSettings
 }
 

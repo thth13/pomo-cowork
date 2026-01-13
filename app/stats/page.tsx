@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useThemeStore } from '@/store/useThemeStore'
@@ -76,7 +76,7 @@ interface Stats {
 }
 
 export default function StatsPage() {
-  const { isAuthenticated, token, isLoading: authLoading } = useAuthStore()
+  const { isAuthenticated, token, isLoading: authLoading, user } = useAuthStore()
   const { theme } = useThemeStore()
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -90,6 +90,7 @@ export default function StatsPage() {
   const timelineOffsetRef = useRef(timelineOffset)
   
   const isDark = theme === 'dark'
+  const isPro = Boolean(user?.isPro)
 
   useEffect(() => {
     activityPeriodRef.current = activityPeriod
@@ -427,6 +428,63 @@ export default function StatsPage() {
     </div>
   )
 
+  const ProPaywall = ({ children }: { children?: ReactNode }) => (
+    <div className="relative mb-8">
+      <div className="pointer-events-none select-none opacity-25 blur-[10px] saturate-50">
+        {children ?? (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <SkeletonChart />
+              <SkeletonChart />
+            </div>
+            <div className="mb-8">
+              <SkeletonChart />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
+              <SkeletonChart />
+              <SkeletonChart />
+            </div>
+          </>
+        )}
+      </div>
+
+      <div className="absolute inset-0 flex items-start justify-center px-4 pt-4 sm:pt-6">
+        <div className="w-full max-w-xl bg-white/90 dark:bg-slate-900/70 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl">
+          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 text-xs font-semibold mb-4">
+            PRO
+          </div>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            Upgrade to Pro to unlock extended statistics
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-slate-300 mb-6">
+            Heatmap, activity timelines, productivity trends, and task analytics are available in Pro.
+          </p>
+
+          <div className="flex flex-col sm:flex-row gap-3">
+            <a
+              href="/settings"
+              className="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-semibold transition-colors"
+            >
+              Buy Pro
+            </a>
+            <a
+              href="/settings"
+              className="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white px-4 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              Manage subscription
+            </a>
+          </div>
+
+          {!isAuthenticated && (
+            <div className="mt-4 text-xs text-gray-500 dark:text-slate-400">
+              Sign in to purchase and activate Pro on your account.
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
       <Navbar />
@@ -437,7 +495,7 @@ export default function StatsPage() {
           <p className="text-gray-600 dark:text-slate-300">Track your productivity and progress</p>
         </div>
 
-        {loading || !chartReady ? (
+        {loading ? (
           <>
             {/* Skeleton Overview Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
@@ -448,21 +506,8 @@ export default function StatsPage() {
               <SkeletonCard />
             </div>
 
-            {/* Skeleton Chart */}
-            <div className="mb-8">
-              <SkeletonChart />
-            </div>
-
-            {/* Skeleton Heatmap */}
-            <div className="mb-8">
-              <SkeletonChart />
-            </div>
-
-            {/* Skeleton Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-              <SkeletonChart />
-              <SkeletonChart />
-            </div>
+            {/* Skeleton Advanced */}
+            <ProPaywall />
           </>
         ) : (
           <>
@@ -522,313 +567,665 @@ export default function StatsPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <LatestActivity
-                token={token}
-                isAuthenticated={isAuthenticated}
-                onChange={() => fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })}
-              />
-
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 relative" aria-busy={timelineLoading}>
-                {timelineLoading && (
-                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                    <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                  </div>
-                )}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
-                  <div className="flex flex-col gap-1">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Last 7 Days</h3>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">Recent focus timelines</p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
-                      className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                      aria-label="Previous week"
-                    >
-                      &lt;
-                    </button>
-                    <div className="text-xs font-medium text-gray-700 dark:text-slate-200 min-w-[130px] text-center">
-                      {getTimelineRangeLabel() || '—'}
+            {!isPro ? (
+              <ProPaywall>
+                {!chartReady ? (
+                  <>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                      <SkeletonChart />
+                      <SkeletonChart />
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => handleTimelineOffsetChange(Math.max(0, timelineOffset - 7))}
-                      disabled={timelineOffset === 0}
-                      className={`text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
-                        timelineOffset === 0
-                          ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
-                          : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                      }`}
-                      aria-label="Next week"
-                    >
-                      &gt;
-                    </button>
-                  </div>
-                </div>
-
-                {lastSevenDays.length === 0 ? (
-                  <div className="text-sm text-gray-500 dark:text-slate-400 text-center py-10">
-                    No sessions for the last week yet.
-                  </div>
+                    <div className="mb-8">
+                      <SkeletonChart />
+                    </div>
+                    <div className="mb-8">
+                      <SkeletonChart />
+                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
+                      <SkeletonChart />
+                      <SkeletonChart />
+                    </div>
+                  </>
                 ) : (
-                  <div className="space-y-4">
-                    {lastSevenDays.map(day => {
-                      const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
-                      return (
-                        <div key={day.date} className="flex items-center">
-                          <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-[260px]">
-                            <div className="pointer-events-none absolute inset-0">
-                              {Array.from({ length: 25 }).map((_, idx) => {
-                                // Пропускаем первую (0) и последнюю (24) линии
-                                if (idx === 0 || idx === 24) return null
-                                
-                                const left = (idx / 24) * 100
-                                const isMajor = idx % 6 === 0
-                                return (
-                                  <div
-                                    key={idx}
-                                    className={`absolute ${isMajor ? 'h-full bg-gray-300 dark:bg-slate-600' : 'h-1/2 top-1/4 bg-gray-200 dark:bg-slate-700'}`}
-                                    style={{ width: '1px', left: `${left}%` }}
-                                  />
-                                )
-                              })}
-                            </div>
+                  <>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                      <LatestActivity
+                        token={token}
+                        isAuthenticated={isAuthenticated}
+                        onChange={() => fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })}
+                      />
 
-                            {focusSessions.length > 0 &&
-                              focusSessions.map(session => {
-                                const start = new Date(session.start)
-                                const end = new Date(session.end)
-                                const startMinutes = (start.getHours() * 60) + start.getMinutes()
-                                const endMinutes = Math.min(1440, (end.getHours() * 60) + end.getMinutes())
-                                const durationMinutes = Math.max(1, endMinutes - startMinutes || session.duration)
-                                const left = Math.max(0, (startMinutes / 1440) * 100)
-                                const width = Math.min(100 - left, (durationMinutes / 1440) * 100)
-                                return (
-                                  <div
-                                    key={session.id}
-                                    className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${getSessionColor(session.type)} shadow-sm`}
-                                    style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
-                                    title={`${formatTimeRange(session.start, session.end)} · ${session.task}`}
-                                  >
-                                    <span className="absolute inset-0 bg-white/10 dark:bg-slate-900/10 rounded-md" />
-                                  </div>
-                                )
-                              })}
+                      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 relative" aria-busy={timelineLoading}>
+                        {timelineLoading && (
+                          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+                            <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+                          <div className="flex flex-col gap-1">
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Last 7 Days</h3>
+                            <p className="text-xs text-gray-500 dark:text-slate-400">Recent focus timelines</p>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
+                              className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                              aria-label="Previous week"
+                            >
+                              &lt;
+                            </button>
+                            <div className="text-xs font-medium text-gray-700 dark:text-slate-200 min-w-[130px] text-center">
+                              {getTimelineRangeLabel() || '—'}
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => handleTimelineOffsetChange(Math.max(0, timelineOffset - 7))}
+                              disabled={timelineOffset === 0}
+                              className={`text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
+                                timelineOffset === 0
+                                  ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
+                                  : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                              }`}
+                              aria-label="Next week"
+                            >
+                              &gt;
+                            </button>
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
-                )}
 
-                <div className="relative mt-2 h-5 text-[11px] text-gray-500 dark:text-slate-400">
-                  {timeLabels.map((label, idx) => {
-                    const left = (label / 24) * 100
-                    const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
-                    return (
-                      <span
-                        key={label}
-                        className="absolute top-0"
-                        style={{ left: `${left}%`, transform: `translateX(${translateX})` }}
+                        {lastSevenDays.length === 0 ? (
+                          <div className="text-sm text-gray-500 dark:text-slate-400 text-center py-10">
+                            No sessions for the last week yet.
+                          </div>
+                        ) : (
+                          <div className="space-y-4">
+                            {lastSevenDays.map(day => {
+                              const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
+                              return (
+                                <div key={day.date} className="flex items-center">
+                                  <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-[260px]">
+                                    <div className="pointer-events-none absolute inset-0">
+                                      {Array.from({ length: 25 }).map((_, idx) => {
+                                        // Пропускаем первую (0) и последнюю (24) линии
+                                        if (idx === 0 || idx === 24) return null
+
+                                        const left = (idx / 24) * 100
+                                        const isMajor = idx % 6 === 0
+                                        return (
+                                          <div
+                                            key={idx}
+                                            className={`absolute ${isMajor ? 'h-full bg-gray-300 dark:bg-slate-600' : 'h-1/2 top-1/4 bg-gray-200 dark:bg-slate-700'}`}
+                                            style={{ width: '1px', left: `${left}%` }}
+                                          />
+                                        )
+                                      })}
+                                    </div>
+
+                                    {focusSessions.length > 0 &&
+                                      focusSessions.map(session => {
+                                        const start = new Date(session.start)
+                                        const end = new Date(session.end)
+                                        const startMinutes = (start.getHours() * 60) + start.getMinutes()
+                                        const endMinutes = Math.min(1440, (end.getHours() * 60) + end.getMinutes())
+                                        const durationMinutes = Math.max(1, endMinutes - startMinutes || session.duration)
+                                        const left = Math.max(0, (startMinutes / 1440) * 100)
+                                        const width = Math.min(100 - left, (durationMinutes / 1440) * 100)
+                                        return (
+                                          <div
+                                            key={session.id}
+                                            className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${getSessionColor(session.type)} shadow-sm`}
+                                            style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
+                                            title={`${formatTimeRange(session.start, session.end)} · ${session.task}`}
+                                          >
+                                            <span className="absolute inset-0 bg-white/10 dark:bg-slate-900/10 rounded-md" />
+                                          </div>
+                                        )
+                                      })}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
+
+                        <div className="relative mt-2 h-5 text-[11px] text-gray-500 dark:text-slate-400">
+                          {timeLabels.map((label, idx) => {
+                            const left = (label / 24) * 100
+                            const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
+                            return (
+                              <span
+                                key={label}
+                                className="absolute top-0"
+                                style={{ left: `${left}%`, transform: `translateX(${translateX})` }}
+                              >
+                                {String(label).padStart(2, '0')}:00
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Weekly Chart */}
+                    <div className="mb-8">
+                      <div
+                        className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6"
+                        aria-busy={activityLoading}
                       >
-                        {String(label).padStart(2, '0')}:00
-                      </span>
-                    )
-                  })}
+                        {activityLoading && (
+                          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+                            <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        )}
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                            {activityPeriod === '7' && 'Weekly Activity'}
+                            {activityPeriod === '30' && 'Monthly Activity'}
+                            {activityPeriod === '365' && 'Yearly Activity'}
+                          </h3>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                              onClick={() => handleActivityPeriodChange('7')}
+                              className={`text-xs px-3 py-1 rounded-lg transition-colors ${
+                                activityPeriod === '7'
+                                  ? 'text-white bg-blue-500'
+                                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              7d
+                            </button>
+                            <button
+                              onClick={() => handleActivityPeriodChange('30')}
+                              className={`text-xs px-3 py-1 rounded-lg transition-colors ${
+                                activityPeriod === '30'
+                                  ? 'text-white bg-blue-500'
+                                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              30d
+                            </button>
+                            <button
+                              onClick={() => handleActivityPeriodChange('365')}
+                              className={`text-xs px-3 py-1 rounded-lg transition-colors ${
+                                activityPeriod === '365'
+                                  ? 'text-white bg-blue-500'
+                                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                              }`}
+                            >
+                              Year
+                            </button>
+                          </div>
+                        </div>
+                        <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
+                      </div>
+                    </div>
+
+                    {/* Yearly Heatmap */}
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8">
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
+                        <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
+                          <div className="text-sm text-gray-600 dark:text-slate-300">
+                            <span className="font-medium">{totalPomodoros.toLocaleString()}</span> pomodoros in {new Date().getFullYear()}
+                          </div>
+                          <select className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
+                            <option>{new Date().getFullYear()}</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
+
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 dark:text-slate-400 mt-4 gap-3 sm:gap-0">
+                        <span>Less</span>
+                        <div className="flex items-center space-x-1">
+                          <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
+                          <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
+                          <div className="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm"></div>
+                          <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
+                          <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
+                        </div>
+                        <span>More</span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                            {stats?.weeklyActivity && stats.weeklyActivity.length > 0
+                              ? Math.max(...stats.weeklyActivity.map(w => w.pomodoros))
+                              : 0}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">Pomodoros</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                            {stats?.yearlyHeatmap ? stats.yearlyHeatmap.filter(d => d.pomodoros > 0).length : 0}
+                          </div>
+                          <div className="text-sm text-gray-600 dark:text-slate-300">Active Days</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">This year</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
+                          <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">days in a row</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Productivity Trends & Monthly Breakdown */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
+                      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Productivity Trends</h3>
+
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                                <FontAwesomeIcon icon={faArrowUp} className="text-green-600 dark:text-green-400 text-sm" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">Best Time</div>
+                                <div className="text-xs text-gray-500 dark:text-slate-400">
+                                  {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestTime?.efficiency || 0}%</div>
+                              <div className="text-xs text-gray-500 dark:text-slate-400">efficiency</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                                <FontAwesomeIcon icon={faCalendar} className="text-blue-600 dark:text-blue-400 text-sm" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">Best Day</div>
+                                <div className="text-xs text-gray-500 dark:text-slate-400">{bestDayName}</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestDay?.avgPomodoros || '0'}</div>
+                              <div className="text-xs text-gray-500 dark:text-slate-400">avg. pomodoros</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                                <FontAwesomeIcon icon={faBullseye} className="text-purple-600 dark:text-purple-400 text-sm" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">Focus Mode</div>
+                                <div className="text-xs text-gray-500 dark:text-slate-400">Average duration</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.avgSessionDuration || 0}m</div>
+                              <div className="text-xs text-gray-500 dark:text-slate-400">per session</div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+                            <div className="flex items-center space-x-3">
+                              <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                                <FontAwesomeIcon icon={faTasks} className="text-orange-600 dark:text-orange-400 text-sm" />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">Completed Tasks</div>
+                                <div className="text-xs text-gray-500 dark:text-slate-400">This week</div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
+                              <div className="text-xs text-gray-500 dark:text-slate-400">of {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Monthly Breakdown</h3>
+                        <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
+                      </div>
+                    </div>
+
+                    {/* Task Statistics */}
+                  </>
+                )}
+              </ProPaywall>
+            ) : !chartReady ? (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  <SkeletonChart />
+                  <SkeletonChart />
                 </div>
-              </div>
-            </div>
+                <div className="mb-8">
+                  <SkeletonChart />
+                </div>
+                <div className="mb-8">
+                  <SkeletonChart />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
+                  <SkeletonChart />
+                  <SkeletonChart />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  <LatestActivity
+                    token={token}
+                    isAuthenticated={isAuthenticated}
+                    onChange={() => fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })}
+                  />
 
-        {/* Weekly Chart */}
-        <div className="mb-8">
-          <div
-            className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6"
-            aria-busy={activityLoading}
-          >
-            {activityLoading && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-              </div>
-            )}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                {activityPeriod === '7' && 'Weekly Activity'}
-                {activityPeriod === '30' && 'Monthly Activity'}
-                {activityPeriod === '365' && 'Yearly Activity'}
-              </h3>
-              <div className="flex items-center gap-2 flex-wrap">
-                <button 
-                  onClick={() => handleActivityPeriodChange('7')}
-                  className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                    activityPeriod === '7' 
-                      ? 'text-white bg-blue-500' 
-                      : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  7d
-                </button>
-                <button 
-                  onClick={() => handleActivityPeriodChange('30')}
-                  className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                    activityPeriod === '30' 
-                      ? 'text-white bg-blue-500' 
-                      : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  30d
-                </button>
-                <button 
-                  onClick={() => handleActivityPeriodChange('365')}
-                  className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                    activityPeriod === '365' 
-                      ? 'text-white bg-blue-500' 
-                      : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  Year
-                </button>
-              </div>
-            </div>
-            <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
-          </div>
-        </div>
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 relative" aria-busy={timelineLoading}>
+                    {timelineLoading && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+                        <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+                      <div className="flex flex-col gap-1">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Last 7 Days</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">Recent focus timelines</p>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
+                          className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                          aria-label="Previous week"
+                        >
+                          &lt;
+                        </button>
+                        <div className="text-xs font-medium text-gray-700 dark:text-slate-200 min-w-[130px] text-center">
+                          {getTimelineRangeLabel() || '—'}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleTimelineOffsetChange(Math.max(0, timelineOffset - 7))}
+                          disabled={timelineOffset === 0}
+                          className={`text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
+                            timelineOffset === 0
+                              ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
+                              : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                          aria-label="Next week"
+                        >
+                          &gt;
+                        </button>
+                      </div>
+                    </div>
 
-        {/* Yearly Heatmap */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
-            <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
-              <div className="text-sm text-gray-600 dark:text-slate-300">
-                <span className="font-medium">{totalPomodoros.toLocaleString()}</span> pomodoros in {new Date().getFullYear()}
-              </div>
-              <select className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
-                <option>{new Date().getFullYear()}</option>
-              </select>
-            </div>
-          </div>
-          
-          <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
-          
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 dark:text-slate-400 mt-4 gap-3 sm:gap-0">
-            <span>Less</span>
-            <div className="flex items-center space-x-1">
-              <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
-              <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
-            </div>
-            <span>More</span>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                {stats?.weeklyActivity && stats.weeklyActivity.length > 0 
-                  ? Math.max(...stats.weeklyActivity.map(w => w.pomodoros))
-                  : 0}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">Pomodoros</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                {stats?.yearlyHeatmap ? stats.yearlyHeatmap.filter(d => d.pomodoros > 0).length : 0}
-              </div>
-              <div className="text-sm text-gray-600 dark:text-slate-300">Active Days</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">This year</div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
-              <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">days in a row</div>
-            </div>
-          </div>
-        </div>
+                    {lastSevenDays.length === 0 ? (
+                      <div className="text-sm text-gray-500 dark:text-slate-400 text-center py-10">
+                        No sessions for the last week yet.
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {lastSevenDays.map(day => {
+                          const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
+                          return (
+                            <div key={day.date} className="flex items-center">
+                              <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-[260px]">
+                                <div className="pointer-events-none absolute inset-0">
+                                  {Array.from({ length: 25 }).map((_, idx) => {
+                                    // Пропускаем первую (0) и последнюю (24) линии
+                                    if (idx === 0 || idx === 24) return null
 
-        {/* Productivity Trends & Monthly Breakdown */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Productivity Trends</h3>
-            
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faArrowUp} className="text-green-600 dark:text-green-400 text-sm" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Best Time</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400">
-                      {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
+                                    const left = (idx / 24) * 100
+                                    const isMajor = idx % 6 === 0
+                                    return (
+                                      <div
+                                        key={idx}
+                                        className={`absolute ${isMajor ? 'h-full bg-gray-300 dark:bg-slate-600' : 'h-1/2 top-1/4 bg-gray-200 dark:bg-slate-700'}`}
+                                        style={{ width: '1px', left: `${left}%` }}
+                                      />
+                                    )
+                                  })}
+                                </div>
+
+                                {focusSessions.length > 0 &&
+                                  focusSessions.map(session => {
+                                    const start = new Date(session.start)
+                                    const end = new Date(session.end)
+                                    const startMinutes = (start.getHours() * 60) + start.getMinutes()
+                                    const endMinutes = Math.min(1440, (end.getHours() * 60) + end.getMinutes())
+                                    const durationMinutes = Math.max(1, endMinutes - startMinutes || session.duration)
+                                    const left = Math.max(0, (startMinutes / 1440) * 100)
+                                    const width = Math.min(100 - left, (durationMinutes / 1440) * 100)
+                                    return (
+                                      <div
+                                        key={session.id}
+                                        className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${getSessionColor(session.type)} shadow-sm`}
+                                        style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
+                                        title={`${formatTimeRange(session.start, session.end)} · ${session.task}`}
+                                      >
+                                        <span className="absolute inset-0 bg-white/10 dark:bg-slate-900/10 rounded-md" />
+                                      </div>
+                                    )
+                                  })}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    <div className="relative mt-2 h-5 text-[11px] text-gray-500 dark:text-slate-400">
+                      {timeLabels.map((label, idx) => {
+                        const left = (label / 24) * 100
+                        const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
+                        return (
+                          <span
+                            key={label}
+                            className="absolute top-0"
+                            style={{ left: `${left}%`, transform: `translateX(${translateX})` }}
+                          >
+                            {String(label).padStart(2, '0')}:00
+                          </span>
+                        )
+                      })}
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestTime?.efficiency || 0}%</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400">efficiency</div>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faCalendar} className="text-blue-600 dark:text-blue-400 text-sm" />
-                  </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Best Day</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400">{bestDayName}</div>
+                {/* Weekly Chart */}
+                <div className="mb-8">
+                  <div
+                    className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6"
+                    aria-busy={activityLoading}
+                  >
+                    {activityLoading && (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+                        <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        {activityPeriod === '7' && 'Weekly Activity'}
+                        {activityPeriod === '30' && 'Monthly Activity'}
+                        {activityPeriod === '365' && 'Yearly Activity'}
+                      </h3>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          onClick={() => handleActivityPeriodChange('7')}
+                          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
+                            activityPeriod === '7'
+                              ? 'text-white bg-blue-500'
+                              : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          7d
+                        </button>
+                        <button
+                          onClick={() => handleActivityPeriodChange('30')}
+                          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
+                            activityPeriod === '30'
+                              ? 'text-white bg-blue-500'
+                              : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          30d
+                        </button>
+                        <button
+                          onClick={() => handleActivityPeriodChange('365')}
+                          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
+                            activityPeriod === '365'
+                              ? 'text-white bg-blue-500'
+                              : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          Year
+                        </button>
+                      </div>
+                    </div>
+                    <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestDay?.avgPomodoros || '0'}</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400">avg. pomodoros</div>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faBullseye} className="text-purple-600 dark:text-purple-400 text-sm" />
+                {/* Yearly Heatmap */}
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
+                    <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
+                      <div className="text-sm text-gray-600 dark:text-slate-300">
+                        <span className="font-medium">{totalPomodoros.toLocaleString()}</span> pomodoros in {new Date().getFullYear()}
+                      </div>
+                      <select className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
+                        <option>{new Date().getFullYear()}</option>
+                      </select>
+                    </div>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Focus Mode</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400">Average duration</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.avgSessionDuration || 0}m</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400">per session</div>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                    <FontAwesomeIcon icon={faTasks} className="text-orange-600 dark:text-orange-400 text-sm" />
+                  <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
+
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 dark:text-slate-400 mt-4 gap-3 sm:gap-0">
+                    <span>Less</span>
+                    <div className="flex items-center space-x-1">
+                      <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
+                      <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
+                      <div className="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm"></div>
+                      <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
+                      <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
+                    </div>
+                    <span>More</span>
                   </div>
-                  <div>
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">Completed Tasks</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400">This week</div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                        {stats?.weeklyActivity && stats.weeklyActivity.length > 0
+                          ? Math.max(...stats.weeklyActivity.map(w => w.pomodoros))
+                          : 0}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
+                      <div className="text-xs text-gray-500 dark:text-slate-400">Pomodoros</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                        {stats?.yearlyHeatmap ? stats.yearlyHeatmap.filter(d => d.pomodoros > 0).length : 0}
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-slate-300">Active Days</div>
+                      <div className="text-xs text-gray-500 dark:text-slate-400">This year</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
+                      <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
+                      <div className="text-xs text-gray-500 dark:text-slate-400">days in a row</div>
+                    </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
-                  <div className="text-xs text-gray-500 dark:text-slate-400">of {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
+
+                {/* Productivity Trends & Monthly Breakdown */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Productivity Trends</h3>
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                            <FontAwesomeIcon icon={faArrowUp} className="text-green-600 dark:text-green-400 text-sm" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">Best Time</div>
+                            <div className="text-xs text-gray-500 dark:text-slate-400">
+                              {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestTime?.efficiency || 0}%</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">efficiency</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                            <FontAwesomeIcon icon={faCalendar} className="text-blue-600 dark:text-blue-400 text-sm" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">Best Day</div>
+                            <div className="text-xs text-gray-500 dark:text-slate-400">{bestDayName}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestDay?.avgPomodoros || '0'}</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">avg. pomodoros</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
+                            <FontAwesomeIcon icon={faBullseye} className="text-purple-600 dark:text-purple-400 text-sm" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">Focus Mode</div>
+                            <div className="text-xs text-gray-500 dark:text-slate-400">Average duration</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.avgSessionDuration || 0}m</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">per session</div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
+                            <FontAwesomeIcon icon={faTasks} className="text-orange-600 dark:text-orange-400 text-sm" />
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">Completed Tasks</div>
+                            <div className="text-xs text-gray-500 dark:text-slate-400">This week</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">of {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Monthly Breakdown</h3>
+                    <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
+                  </div>
                 </div>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Monthly Breakdown</h3>
-            <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
-          </div>
-        </div>
-
-            {/* Task Statistics */}
+                {/* Task Statistics */}
+              </>
+            )}
 
           </>
         )}
