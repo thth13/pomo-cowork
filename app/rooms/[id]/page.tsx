@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
@@ -160,12 +160,14 @@ const UserAvatar = ({ avatarUrl, username, size }: UserAvatarProps) => {
 export default function RoomPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const { token: storeToken, user } = useAuthStore()
   const { setCurrentRoom } = useRoomStore()
   const { theme } = useThemeStore()
 
   const roomId = params?.id
+  const shouldJoinOnOpen = searchParams.get('join') === '1'
 
   const [room, setRoom] = useState<Room | null>(null)
   const [members, setMembers] = useState<RoomMember[]>([])
@@ -180,6 +182,7 @@ export default function RoomPage() {
   })
   const [roomSaving, setRoomSaving] = useState(false)
   const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false)
+  const [joining, setJoining] = useState(false)
   const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<string | null>(null)
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -220,6 +223,7 @@ export default function RoomPage() {
   const isOwner = Boolean(user?.id && room?.ownerId && room.ownerId === user.id)
   const isMember = Boolean(user?.id && members.some((m) => m.user.id === user.id))
   const canLeaveRoom = Boolean(user?.id && room && (isOwner || isMember))
+  const canJoinRoom = Boolean(user?.id && room?.privacy === RoomPrivacy.PUBLIC && !isOwner && !isMember)
 
   const getToken = useCallback((): string | null => {
     if (storeToken) return storeToken
@@ -239,10 +243,28 @@ export default function RoomPage() {
     setError(null)
 
     try {
+      if (shouldJoinOnOpen) {
+        const token = getToken()
+        if (token) {
+          const joinRes = await fetch(`/api/rooms/${roomId}/join`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            cache: 'no-store',
+          })
+
+          if (!joinRes.ok) {
+            const data = (await joinRes.json().catch(() => null)) as { error?: string } | null
+            setError(data?.error ?? 'Failed to join room')
+          }
+        }
+      }
+
       const [roomRes, membersRes, statsRes] = await Promise.all([
-        fetch(`/api/rooms/${roomId}`, { headers }),
-        fetch(`/api/rooms/${roomId}/members`, { headers }),
-        fetch(`/api/rooms/${roomId}/stats`, { headers }),
+        fetch(`/api/rooms/${roomId}`, { headers, cache: 'no-store' }),
+        fetch(`/api/rooms/${roomId}/members`, { headers, cache: 'no-store' }),
+        fetch(`/api/rooms/${roomId}/stats`, { headers, cache: 'no-store' }),
       ])
 
       if (!roomRes.ok) {
@@ -253,18 +275,29 @@ export default function RoomPage() {
 
       const roomData = (await roomRes.json()) as Room
       setRoom(roomData)
-      setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
       setRoomSettings({
         name: roomData.name,
         privacy: roomData.privacy,
         backgroundGradientKey: (roomData.backgroundGradientKey as RoomGradientKey | null | undefined) ?? null,
       })
 
+      let membersList: RoomMember[] = []
       if (membersRes.ok) {
         const membersData = (await membersRes.json()) as MembersResponse
-        setMembers(Array.isArray(membersData.members) ? membersData.members : [])
+        membersList = Array.isArray(membersData.members) ? membersData.members : []
+        setMembers(membersList)
       } else {
         setMembers([])
+      }
+
+      // Only set as current room if user joined or is already a member
+      const userIsMember = user?.id ? membersList.some((m) => m.user.id === user.id) : false
+      if (shouldJoinOnOpen || userIsMember) {
+        setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
+      }
+
+      if (shouldJoinOnOpen) {
+        router.replace(`/rooms/${roomId}`)
       }
 
       if (statsRes.ok) {
@@ -279,7 +312,7 @@ export default function RoomPage() {
     } finally {
       setLoading(false)
     }
-  }, [headers, roomId, setCurrentRoom])
+  }, [getToken, headers, roomId, router, setCurrentRoom, shouldJoinOnOpen, user?.id])
 
   useEffect(() => {
     loadAll()
@@ -288,7 +321,7 @@ export default function RoomPage() {
   const refreshMembers = useCallback(async () => {
     if (!roomId) return
     try {
-      const membersRes = await fetch(`/api/rooms/${roomId}/members`, { headers })
+      const membersRes = await fetch(`/api/rooms/${roomId}/members`, { headers, cache: 'no-store' })
       if (!membersRes.ok) return
       const membersData = (await membersRes.json()) as MembersResponse
       setMembers(Array.isArray(membersData.members) ? membersData.members : [])
@@ -296,6 +329,42 @@ export default function RoomPage() {
       // ignore
     }
   }, [headers, roomId])
+
+  const onJoinRoom = useCallback(async () => {
+    if (!roomId || !room) return
+
+    setError(null)
+    const token = getToken()
+    if (!token) {
+      setError('Login required to join a room')
+      return
+    }
+
+    setJoining(true)
+    try {
+      const res = await fetch(`/api/rooms/${roomId}/join`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        cache: 'no-store',
+      })
+
+      if (!res.ok) {
+        const data = (await res.json().catch(() => null)) as { error?: string } | null
+        setError(data?.error ?? 'Failed to join room')
+        return
+      }
+
+      setCurrentRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })
+      await refreshMembers()
+    } catch (e) {
+      console.error('Failed to join room:', e)
+      setError('Failed to join room')
+    } finally {
+      setJoining(false)
+    }
+  }, [getToken, refreshMembers, room, roomId, setCurrentRoom])
 
   useEffect(() => {
     let cancelled = false
@@ -616,12 +685,34 @@ export default function RoomPage() {
           <div className="flex items-start justify-between gap-4 mb-6">
             <div>
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                {room?.name ?? 'Room'}
+                {loading ? (
+                  <span className="inline-block align-middle h-7 w-40 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
+                ) : (
+                  room?.name ?? ''
+                )}
               </h2>
               <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Room page</p>
             </div>
 
             <div className="flex items-center gap-2">
+              {canJoinRoom && (
+                <button
+                  type="button"
+                  onClick={onJoinRoom}
+                  disabled={joining}
+                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
+                  title="Join room"
+                  aria-label="Join room"
+                >
+                  {joining ? (
+                    <div className="h-4 w-4 rounded-full border-2 border-gray-300 dark:border-slate-600 border-t-white dark:border-t-slate-900 animate-spin" />
+                  ) : (
+                    <FontAwesomeIcon icon={faUserPlus} className="h-4 w-4" />
+                  )}
+                  <span className="hidden sm:inline">Join</span>
+                </button>
+              )}
+
               {isOwner && (
                 <button
                   type="button"

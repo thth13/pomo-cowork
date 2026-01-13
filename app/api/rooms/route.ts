@@ -48,6 +48,13 @@ export async function GET(request: NextRequest) {
         backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
+        members: userId
+          ? {
+              where: { userId },
+              select: { userId: true },
+              take: 1,
+            }
+          : false,
         _count: {
           select: {
             members: true,
@@ -65,6 +72,7 @@ export async function GET(request: NextRequest) {
       createdAt: room.createdAt,
       updatedAt: room.updatedAt,
       memberCount: room._count.members,
+      isMember: userId ? room.members.length > 0 : undefined,
     }))
 
     return NextResponse.json(roomsWithCount)

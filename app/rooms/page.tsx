@@ -141,8 +141,26 @@ export default function RoomsPage() {
   }, [authLoading, user?.id, shouldForceList])
 
   const onOpenRoom = (room: { id: string; name: string; backgroundGradientKey?: string | null }) => {
-    setCurrentRoom(room)
+    // Just navigate, don't set as current room yet (let the room page decide based on membership)
     router.push(`/rooms/${room.id}`)
+  }
+
+  const onJoinRoom = (room: Room) => {
+    setError(null)
+
+    const token = getToken()
+    if (!token) {
+      setError('Login required to join a room')
+      return
+    }
+
+    setCurrentRoom({
+      id: room.id,
+      name: room.name,
+      backgroundGradientKey: room.backgroundGradientKey ?? null,
+    })
+
+    router.push(`/rooms/${room.id}?join=1`)
   }
 
   const onJoinGlobal = () => {
@@ -323,15 +341,26 @@ export default function RoomsPage() {
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
-                          onClick={() => onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })}
-                          onClickCapture={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (isSelected) {
+                              onOpenRoom({
+                                id: room.id,
+                                name: room.name,
+                                backgroundGradientKey: room.backgroundGradientKey ?? null,
+                              })
+                              return
+                            }
+
+                            void onJoinRoom(room)
+                          }}
                           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
                             isSelected
                               ? 'bg-red-500 text-white'
                               : 'bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200'
                           }`}
                         >
-                          {isSelected ? 'Selected' : 'Open'}
+                          {isSelected ? 'Selected' : 'Join'}
                         </button>
                       </div>
                     </div>

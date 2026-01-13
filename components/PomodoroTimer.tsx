@@ -225,7 +225,15 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   } = useTimerStore()
 
   const { user, updateUserSettings } = useAuthStore()
-  const { currentRoomId, currentRoomName } = useRoomStore()
+  const {
+    currentRoomId,
+    currentRoomName,
+    lastRoomId,
+    lastRoomName,
+    lastRoomBackgroundGradientKey,
+    setCurrentRoom,
+    resetToGlobal,
+  } = useRoomStore()
   const { emitSessionStart, emitSessionSync, emitSessionPause, emitSessionEnd, emitTimerTick } = useSocket()
 
   const [timerState, dispatchTimer] = useReducer(
@@ -302,6 +310,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   )
 
   const isTaskPickerDisabled = !!currentSession
+  const isRoomSwitchDisabled = Boolean(isRunning && currentSession)
 
   const {
     isTaskMenuOpen,
@@ -1250,10 +1259,32 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         hasTaskOptions={taskOptions.length > 0}
       />
 
-      {currentRoomId && (
-        <div className="mb-3 text-xs sm:text-sm text-gray-600 dark:text-slate-300">
-          Room: <span className="font-semibold">{currentRoomName}</span>
-        </div>
+      {(currentRoomId || lastRoomId) && (
+        <button
+          type="button"
+          onClick={() => {
+            if (isRoomSwitchDisabled) return
+            if (currentRoomId) {
+              resetToGlobal()
+              return
+            }
+
+            if (!lastRoomId) return
+            setCurrentRoom({ id: lastRoomId, name: lastRoomName, backgroundGradientKey: lastRoomBackgroundGradientKey })
+          }}
+          disabled={isRoomSwitchDisabled}
+          className="mb-3 text-xs sm:text-sm text-gray-600 dark:text-slate-300 disabled:opacity-60"
+          title={
+            isRoomSwitchDisabled
+              ? 'Stop/pause the timer to switch rooms'
+              : currentRoomId
+                ? 'Switch to Global'
+                : `Switch to ${lastRoomName}`
+          }
+        >
+          Room:{' '}
+          <span className="font-semibold underline underline-offset-2">{currentRoomId ? currentRoomName : 'Global'}</span>
+        </button>
       )}
 
       {/* Timer Container */}

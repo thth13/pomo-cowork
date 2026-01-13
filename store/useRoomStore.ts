@@ -16,6 +16,10 @@ interface RoomStore {
   currentRoomName: string
   currentRoomBackgroundGradientKey: string | null
 
+  lastRoomId: string | null
+  lastRoomName: string
+  lastRoomBackgroundGradientKey: string | null
+
   setCurrentRoom: (room: { id: string; name: string; backgroundGradientKey?: string | null } | null) => void
   resetToGlobal: () => void
 }
@@ -29,19 +33,35 @@ export const useRoomStore = create<RoomStore>()(
       currentRoomName: GLOBAL_ROOM_NAME,
       currentRoomBackgroundGradientKey: null,
 
+      lastRoomId: null,
+      lastRoomName: '',
+      lastRoomBackgroundGradientKey: null,
+
       setCurrentRoom: (room) => {
         if (!room) {
-          set({ currentRoomId: null, currentRoomName: GLOBAL_ROOM_NAME, currentRoomBackgroundGradientKey: null })
+          // Explicitly clearing the current room (e.g. leaving/deleting) also clears the last room.
+          set({
+            currentRoomId: null,
+            currentRoomName: GLOBAL_ROOM_NAME,
+            currentRoomBackgroundGradientKey: null,
+            lastRoomId: null,
+            lastRoomName: '',
+            lastRoomBackgroundGradientKey: null,
+          })
           return
         }
         set({
           currentRoomId: room.id,
           currentRoomName: room.name,
           currentRoomBackgroundGradientKey: room.backgroundGradientKey ?? null,
+          lastRoomId: room.id,
+          lastRoomName: room.name,
+          lastRoomBackgroundGradientKey: room.backgroundGradientKey ?? null,
         })
       },
 
       resetToGlobal: () => {
+        // Switch to Global but keep lastRoom* so UI can toggle back.
         set({ currentRoomId: null, currentRoomName: GLOBAL_ROOM_NAME, currentRoomBackgroundGradientKey: null })
       },
     }),

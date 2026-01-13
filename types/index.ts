@@ -52,6 +52,7 @@ export interface Room {
   createdAt: string
   updatedAt: string
   memberCount?: number
+  isMember?: boolean
 }
 
 export interface RoomMemberUser {
