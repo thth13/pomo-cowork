@@ -454,7 +454,7 @@ export default function StatsPage() {
 
       <div className="absolute inset-0 flex items-start justify-center px-4 pt-4 sm:pt-6">
         <div className="w-full max-w-xl bg-white/90 dark:bg-slate-900/70 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-3 py-1 text-xs font-semibold mb-4">
+          <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 px-3 py-1 text-xs font-semibold mb-4 shadow-lg">
             PRO
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -467,7 +467,7 @@ export default function StatsPage() {
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => setShowPaywall(true)}
-              className="inline-flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 text-sm font-semibold transition-colors"
+              className="inline-flex items-center justify-center rounded-xl bg-red-500 hover:bg-red-600 text-white px-4 py-2 text-sm font-semibold transition-colors"
             >
               Buy Pro
             </button>

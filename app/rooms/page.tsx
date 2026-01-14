@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Crown, Lock } from 'lucide-react'
 import Navbar from '@/components/Navbar'
+import { PaywallModal } from '@/components/PaywallModal'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { Room, RoomPrivacy } from '@/types'
@@ -52,6 +54,8 @@ export default function RoomsPage() {
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isRedirecting, setIsRedirecting] = useState(false)
+
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false)
 
   const [createForm, setCreateForm] = useState<RoomFormState>({
     name: '',
@@ -239,25 +243,25 @@ export default function RoomsPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={!user}
-                onClick={() => {
-                  setError(null)
-                  setIsCreateModalOpen(true)
-                }}
-                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
-              >
-                Create room
-              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsPaywallOpen(true)}
+                  aria-disabled="true"
+                  className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white opacity-60 cursor-pointer transition-colors"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Create room
+                  </span>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => router.push('/')}
-                className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-              >
-                Back
-              </button>
+                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                  <Crown className="w-3 h-3" />
+                  <span>PRO</span>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -447,6 +451,8 @@ export default function RoomsPage() {
           </div>
         </div>
       )}
+
+      {isPaywallOpen && <PaywallModal onClose={() => setIsPaywallOpen(false)} />}
     </div>
   )
 }

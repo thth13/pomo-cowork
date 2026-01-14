@@ -21,7 +21,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
 
         <div className="p-6 sm:p-8">
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 mb-6 ring-1 ring-blue-500/20">
+            <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 mb-6 shadow-lg">
               <span className="font-bold text-sm tracking-wide">PRO PLAN</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
@@ -62,11 +62,11 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                 onClick={() => setSelectedPlan('yearly')}
                 className={`p-4 rounded-xl border-2 transition-all cursor-pointer relative ${
                   selectedPlan === 'yearly' 
-                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/10 ring-4 ring-blue-500/10' 
-                    : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700'
+                    ? 'border-red-500 bg-red-50/60 dark:bg-red-900/10 ring-4 ring-red-500/10' 
+                    : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-300 dark:hover:border-amber-600'
                 }`}
               >
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-[10px] uppercase font-bold px-3 py-1 rounded-full shadow-md">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] uppercase font-bold px-3 py-1 rounded-full shadow-md">
                   Best Value
                 </div>
                 <div className="flex justify-between items-center mb-1 mt-1">
@@ -82,8 +82,8 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                 onClick={() => setSelectedPlan('monthly')}
                 className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
                   selectedPlan === 'monthly'
-                    ? 'border-blue-500 bg-blue-50/50 dark:bg-blue-900/10 ring-4 ring-blue-500/10'
-                    : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-blue-300 dark:hover:border-blue-700'
+                    ? 'border-red-500 bg-red-50/60 dark:bg-red-900/10 ring-4 ring-red-500/10'
+                    : 'border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:border-amber-300 dark:hover:border-amber-600'
                 }`}
               >
                 <div className="flex justify-between items-center mb-1">
@@ -95,7 +95,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                 </div>
               </div>
               
-              <button className="w-full mt-4 py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 active:scale-95">
+              <button className="w-full mt-4 py-3.5 px-4 bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/25 hover:shadow-amber-500/30 active:scale-95">
                 Continue to Checkout
               </button>
               
