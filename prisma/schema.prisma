@@ -204,7 +204,7 @@ model ChatMessage {
   userId         String?
   user           User?    @relation("ChatMessages", fields: [userId], references: [id], onDelete: SetNull)
   roomId         String?
-  room           Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
+  room           Room?    @relation(fields: [roomId], references: [id], onDelete: Cascade)
   username       String
   text           String
   type           String   @default("message") // "message" or "system"
