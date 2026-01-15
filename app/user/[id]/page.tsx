@@ -8,6 +8,7 @@ import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, 
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useThemeStore } from '@/store/useThemeStore'
+import { useConnectionStore } from '@/store/useConnectionStore'
 import Navbar from '@/components/Navbar'
 import dynamic from 'next/dynamic'
 
@@ -74,11 +75,13 @@ export default function UserProfilePage() {
   const { user: currentUser, logout } = useAuthStore()
   const { activeSessions } = useTimerStore()
   const { theme } = useThemeStore()
+  const { onlineUserIds } = useConnectionStore()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [chartReady, setChartReady] = useState(false)
+  const [timeRemaining, setTimeRemaining] = useState<string | null>(null)
 
   const userId = params?.id as string
   const isDark = theme === 'dark'
@@ -116,6 +119,34 @@ export default function UserProfilePage() {
 
     initHighcharts()
   }, [])
+
+  // Timer countdown effect
+  useEffect(() => {
+    if (!profile?.activeSession) {
+      setTimeRemaining(null)
+      return
+    }
+
+    const calculateTimeRemaining = () => {
+      const startTime = new Date(profile.activeSession!.startedAt).getTime()
+      const now = Date.now()
+      const elapsed = Math.floor((now - startTime) / 1000)
+      const totalDuration = profile.activeSession!.duration * 60
+      const remaining = Math.max(0, totalDuration - elapsed)
+      
+      const mins = Math.floor(remaining / 60)
+      const secs = remaining % 60
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+    }
+
+    setTimeRemaining(calculateTimeRemaining())
+    
+    const interval = setInterval(() => {
+      setTimeRemaining(calculateTimeRemaining())
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [profile?.activeSession])
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -319,24 +350,9 @@ export default function UserProfilePage() {
     }]
   }
 
-  // Check if user is online (has active session)
-  const isUserOnline = activeSessions.some(session => session.userId === userId) || (profile?.activeSession ? true : false)
+  // Check if user is online (connected to socket)
+  const isUserOnline = onlineUserIds[userId] === true
   const isUserWorking = profile?.activeSession ? true : false
-
-  // Calculate time remaining for active session
-  const getTimeRemaining = () => {
-    if (!profile?.activeSession) return null
-    
-    const startTime = new Date(profile.activeSession.startedAt).getTime()
-    const now = Date.now()
-    const elapsed = Math.floor((now - startTime) / 1000)
-    const totalDuration = profile.activeSession.duration * 60
-    const remaining = Math.max(0, totalDuration - elapsed)
-    
-    const mins = Math.floor(remaining / 60)
-    const secs = remaining % 60
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -577,7 +593,7 @@ export default function UserProfilePage() {
                   <div className="text-sm font-medium text-gray-900 dark:text-white">{profile.activeSession.task}</div>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500 dark:text-slate-400">{getSessionTypeLabel(profile.activeSession.type)}</span>
-                    <span className="font-bold text-red-600 dark:text-red-400 text-lg">{getTimeRemaining()}</span>
+                    <span className="font-bold text-red-600 dark:text-red-400 text-lg">{timeRemaining}</span>
                   </div>
                   <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-1.5">
                     <div 
