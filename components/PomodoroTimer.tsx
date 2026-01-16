@@ -32,6 +32,7 @@ interface TimerSettingsForm {
   workDuration: number
   shortBreak: number
   longBreak: number
+  longBreakAfter: number
 }
 
 interface TimerState {
@@ -238,7 +239,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
   const [timerState, dispatchTimer] = useReducer(
     timerReducer,
-    { workDuration, shortBreak, longBreak },
+    { workDuration, shortBreak, longBreak, longBreakAfter },
     createInitialTimerState
   )
   const {
@@ -590,6 +591,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       workDuration,
       shortBreak,
       longBreak,
+      longBreakAfter,
     })
     setIsSettingsOpen(true)
   }
@@ -603,6 +605,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       workDuration: Math.max(1, Math.round(settingsForm.workDuration)),
       shortBreak: Math.max(1, Math.round(settingsForm.shortBreak)),
       longBreak: Math.max(1, Math.round(settingsForm.longBreak)),
+      longBreakAfter: Math.max(1, Math.round(settingsForm.longBreakAfter)),
     }
 
     setSettingsForm(normalized)
@@ -610,7 +613,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       workDuration: normalized.workDuration,
       shortBreak: normalized.shortBreak,
       longBreak: normalized.longBreak,
-      longBreakAfter,
+      longBreakAfter: normalized.longBreakAfter,
     })
 
     if (user) {
@@ -618,7 +621,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         workDuration: normalized.workDuration,
         shortBreak: normalized.shortBreak,
         longBreak: normalized.longBreak,
-        longBreakAfter,
+        longBreakAfter: normalized.longBreakAfter,
       })
     }
 
@@ -637,7 +640,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
               workDuration: normalized.workDuration,
               shortBreak: normalized.shortBreak,
               longBreak: normalized.longBreak,
-              longBreakAfter,
+              longBreakAfter: normalized.longBreakAfter,
               soundEnabled,
               soundVolume,
               notificationsEnabled: notificationEnabled

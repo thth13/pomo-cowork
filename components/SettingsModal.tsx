@@ -6,6 +6,7 @@ interface TimerSettingsForm {
   workDuration: number
   shortBreak: number
   longBreak: number
+  longBreakAfter: number
 }
 
 interface SettingsModalProps {
@@ -120,53 +121,71 @@ export const SettingsModal = memo(function SettingsModal({
 
           {!isTimeTrackerMode && (
             <>
-              <label className="block">
-                <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                  Focus length
-                </span>
-                <input
-                  type="number"
-                  min={1}
-                  className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  value={settings.workDuration === 0 ? '' : settings.workDuration}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    onChange('workDuration', value === '' ? 0 : Number(value))
-                  }}
-                />
-              </label>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="block">
+                  <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
+                    Focus length
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    value={settings.workDuration === 0 ? '' : settings.workDuration}
+                    onChange={(event) => {
+                      const value = event.target.value
+                      onChange('workDuration', value === '' ? 0 : Number(value))
+                    }}
+                  />
+                </label>
 
-              <label className="block">
-                <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                  Short break
-                </span>
-                <input
-                  type="number"
-                  min={1}
-                  className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  value={settings.shortBreak === 0 ? '' : settings.shortBreak}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    onChange('shortBreak', value === '' ? 0 : Number(value))
-                  }}
-                />
-              </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
+                    Short break
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    value={settings.shortBreak === 0 ? '' : settings.shortBreak}
+                    onChange={(event) => {
+                      const value = event.target.value
+                      onChange('shortBreak', value === '' ? 0 : Number(value))
+                    }}
+                  />
+                </label>
 
-              <label className="block">
-                <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                  Long break
-                </span>
-                <input
-                  type="number"
-                  min={1}
-                  className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                  value={settings.longBreak === 0 ? '' : settings.longBreak}
-                  onChange={(event) => {
-                    const value = event.target.value
-                    onChange('longBreak', value === '' ? 0 : Number(value))
-                  }}
-                />
-              </label>
+                <label className="block">
+                  <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
+                    Long break
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    value={settings.longBreak === 0 ? '' : settings.longBreak}
+                    onChange={(event) => {
+                      const value = event.target.value
+                      onChange('longBreak', value === '' ? 0 : Number(value))
+                    }}
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
+                    Sessions before long break
+                  </span>
+                  <input
+                    type="number"
+                    min={1}
+                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                    value={settings.longBreakAfter === 0 ? '' : settings.longBreakAfter}
+                    onChange={(event) => {
+                      const value = event.target.value
+                      onChange('longBreakAfter', value === '' ? 0 : Number(value))
+                    }}
+                  />
+                </label>
+              </div>
 
               <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
                 <div>
