@@ -110,12 +110,6 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                   Privacy Policy
                 </Link>.
               </p>
-              <p className="text-[11px] text-center text-gray-500 dark:text-slate-400">
-                Refunds are governed by our{' '}
-                <Link href="/refund" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-slate-200">
-                  Refund Policy
-                </Link>.
-              </p>
               
               <div className="text-center mt-2">
                  <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
