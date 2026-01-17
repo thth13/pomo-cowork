@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
@@ -307,6 +308,19 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   isLogin ? 'Login' : 'Register'
                 )}
               </motion.button>
+
+              {!isLogin && (
+                <p className="text-[11px] text-center text-slate-500 dark:text-slate-400">
+                  By continuing, you agree to our{' '}
+                  <Link href="/terms" className="underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">
+                    Terms
+                  </Link>{' '}
+                  and{' '}
+                  <Link href="/privacy" className="underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">
+                    Privacy Policy
+                  </Link>.
+                </p>
+              )}
             </form>
           )}
 

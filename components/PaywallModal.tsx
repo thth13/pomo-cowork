@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTimes, faCheck } from '@fortawesome/free-solid-svg-icons'
+import Link from 'next/link'
 import { useState } from 'react'
 
 interface PaywallModalProps {
@@ -98,6 +99,23 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
               <button className="w-full mt-4 py-3.5 px-4 bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/25 hover:shadow-amber-500/30 active:scale-95">
                 Continue to Checkout
               </button>
+
+              <p className="text-[11px] text-center text-gray-500 dark:text-slate-400">
+                By continuing, you agree to our{' '}
+                <Link href="/terms" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-slate-200">
+                  Terms
+                </Link>{' '}
+                and{' '}
+                <Link href="/privacy" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-slate-200">
+                  Privacy Policy
+                </Link>.
+              </p>
+              <p className="text-[11px] text-center text-gray-500 dark:text-slate-400">
+                Refunds are governed by our{' '}
+                <Link href="/refund" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-slate-200">
+                  Refund Policy
+                </Link>.
+              </p>
               
               <div className="text-center mt-2">
                  <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">

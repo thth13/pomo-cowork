@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { memo, useRef, type MouseEvent } from 'react'
 
 interface TimerSettingsForm {
@@ -238,6 +239,20 @@ export const SettingsModal = memo(function SettingsModal({
           >
             Save changes
           </button>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-center gap-3 border-t border-gray-200 pt-4 text-xs text-gray-500 dark:border-slate-700 dark:text-slate-400">
+          <Link href="/terms" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
+            Terms of service
+          </Link>
+          <span className="text-gray-300 dark:text-slate-600">•</span>
+          <Link href="/privacy" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
+            Privacy policy
+          </Link>
+          <span className="text-gray-300 dark:text-slate-600">•</span>
+          <Link href="/refund" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
+            Refund policy
+          </Link>
         </div>
       </div>
     </div>
