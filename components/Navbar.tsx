@@ -53,6 +53,7 @@ export default function Navbar() {
   const { setCurrentRoom } = useRoomStore()
   const { totalOnlineCount, isConnected, isChecking } = useConnectionStore()
   const pathname = usePathname()
+  const showProBadge = Boolean(user)
   const connectionStatusClass = isChecking
     ? 'bg-yellow-400'
     : isConnected
@@ -352,7 +353,7 @@ export default function Navbar() {
                     )}
                   </div>
 
-                  <div className="relative" ref={menuRef}>
+                  <div className="relative flex items-center gap-2" ref={menuRef}>
                     <button
                       type="button"
                       onClick={() => setIsMenuOpen(prev => !prev)}
@@ -366,6 +367,12 @@ export default function Navbar() {
                         <User className="w-4 h-4" />
                       )}
                     </button>
+
+                    {showProBadge && (
+                      <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
+                        Pro
+                      </span>
+                    )}
 
                   {isMenuOpen && (
                     <div className="absolute right-0 mt-3 w-64 rounded-2xl border border-gray-200 bg-white/95 shadow-lg ring-1 ring-black/5 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 z-50">
@@ -428,13 +435,20 @@ export default function Navbar() {
             </div>
 
             {isAuthenticated && user ? (
-              <button
-                type="button"
-                onClick={() => setIsMobileMenuOpen(prev => !prev)}
-                className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all"
-              >
-                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
+              <div className="flex items-center gap-2">
+                {showProBadge && (
+                  <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
+                    Pro
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(prev => !prev)}
+                  className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all"
+                >
+                  {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
@@ -463,7 +477,14 @@ export default function Navbar() {
                   )}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user.username}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user.username}</p>
+                    {showProBadge && (
+                      <span className="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
+                        Pro
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{user.email}</p>
                 </div>
               </div>
