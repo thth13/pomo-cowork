@@ -49,12 +49,11 @@ const plans: PricingPlan[] = [
     features: [
       'Create private rooms',
       'Advanced statistics & heatmap',
-      'Time tracker mode',
       'Manual time entry & editing',
-      'No ads',
-      'Priority support & feature fast-track',
+      'Priority support',
       'Support the project ❤️',
       'Pro badge on profile',
+      'Time tracker mode'
     ],
   },
   {

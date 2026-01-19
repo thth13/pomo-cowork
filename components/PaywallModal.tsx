@@ -23,7 +23,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
         <div className="p-6 sm:p-8">
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 mb-6 shadow-lg">
-              <span className="font-bold text-sm tracking-wide">PRO PLAN</span>
+              <span className="font-bold text-sm tracking-wide">Pro Plan</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
               Upgrade to Pro
@@ -33,20 +33,20 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 mb-8">
+          <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
               <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                What you get:
+                What's included
               </h3>
               <ul className="space-y-4">
                 {[
                   "Create private rooms",
-                  "Advanced statistics & Heatmap",
+                  "Advanced statistics & heatmap",
                   "Manual time entry & editing",
-                  "No ads",
-                  "Priority support & feature request fast-track",
+                  "Priority support",
                   "Support the project ❤️",
-                  "Pro badge on profile"
+                  "Pro badge on profile",
+                  "Time tracker mode"
                 ].map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-3 text-sm text-gray-600 dark:text-slate-300">
                     <div className="mt-0.5 min-w-[18px] text-green-500">
@@ -71,7 +71,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                   Best Value
                 </div>
                 <div className="flex justify-between items-center mb-1 mt-1">
-                  <span className="font-semibold text-gray-900 dark:text-white">12 Months</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">12 months</span>
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">$60</span>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-slate-400 mb-3">
@@ -88,7 +88,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                 }`}
               >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="font-semibold text-gray-900 dark:text-white">1 Month</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">1 month</span>
                   <span className="text-xl font-bold text-gray-900 dark:text-white">$7</span>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-slate-400">
@@ -97,7 +97,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
               </div>
               
               <button className="w-full mt-4 py-3.5 px-4 bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/25 hover:shadow-amber-500/30 active:scale-95">
-                Continue to Checkout
+                Continue to checkout
               </button>
 
               <p className="text-[11px] text-center text-gray-500 dark:text-slate-400">
@@ -110,12 +110,6 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                   Privacy Policy
                 </Link>.
               </p>
-              
-              <div className="text-center mt-2">
-                 <button onClick={onClose} className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
-                    No thanks, maybe later
-                 </button>
-              </div>
             </div>
           </div>
         </div>

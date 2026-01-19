@@ -373,8 +373,9 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       workDuration,
       shortBreak,
       longBreak,
+      longBreakAfter,
     })
-  }, [workDuration, shortBreak, longBreak, setSettingsForm])
+  }, [workDuration, shortBreak, longBreak, longBreakAfter, setSettingsForm])
 
   useEffect(() => {
     completedSessionIdRef.current = null
