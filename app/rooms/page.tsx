@@ -47,6 +47,8 @@ export default function RoomsPage() {
   const { user, isLoading: authLoading } = useAuthStore()
   const { currentRoomId, currentRoomName, setCurrentRoom, resetToGlobal } = useRoomStore()
 
+  const isProMember = Boolean(user?.isPro)
+
   const shouldForceList = searchParams.get('list') === '1'
 
   const [rooms, setRooms] = useState<Room[]>([])
@@ -242,24 +244,34 @@ export default function RoomsPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="relative">
+            {isProMember ? (
               <button
                 type="button"
-                onClick={() => setIsPaywallOpen(true)}
-                aria-disabled="true"
-                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white opacity-60 cursor-pointer transition-colors"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
               >
-                <span className="inline-flex items-center gap-2">
-                  <Lock className="w-4 h-4" />
-                  Create room
-                </span>
+                Create room
               </button>
+            ) : (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsPaywallOpen(true)}
+                  aria-disabled="true"
+                  className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white opacity-60 cursor-pointer transition-colors"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Create room
+                  </span>
+                </button>
 
-              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
-                <Crown className="w-3 h-3" />
-                <span>PRO</span>
+                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                  <Crown className="w-3 h-3" />
+                  <span>PRO</span>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

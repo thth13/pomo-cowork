@@ -9,6 +9,9 @@ interface PaywallModalProps {
 
 export const PaywallModal = ({ onClose }: PaywallModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly')
+  const checkoutHref = selectedPlan === 'yearly'
+    ? '/purchase?plan=pro-yearly'
+    : '/purchase?plan=pro-monthly'
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -96,9 +99,12 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                 </div>
               </div>
               
-              <button className="w-full mt-4 py-3.5 px-4 bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/25 hover:shadow-amber-500/30 active:scale-95">
+              <Link
+                href={checkoutHref}
+                className="w-full mt-4 py-3.5 px-4 inline-flex items-center justify-center bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/25 hover:shadow-amber-500/30 active:scale-95"
+              >
                 Continue to checkout
-              </button>
+              </Link>
 
               <p className="text-[11px] text-center text-gray-500 dark:text-slate-400">
                 By continuing, you agree to our{' '}

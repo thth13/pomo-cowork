@@ -227,6 +227,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   } = useTimerStore()
 
   const { user, updateUserSettings } = useAuthStore()
+  const isProMember = Boolean(user?.isPro)
   const {
     currentRoomId,
     currentRoomName,
@@ -1380,6 +1381,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         isTimeTrackerMode={isTimeTrackerMode}
         onToggleTimeTrackerMode={() => setIsTimeTrackerMode(!isTimeTrackerMode)}
         onOpenPaywall={() => setIsPaywallOpen(true)}
+        isProMember={isProMember}
       />
 
       {isPaywallOpen && <PaywallModal onClose={() => setIsPaywallOpen(false)} />}

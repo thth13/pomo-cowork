@@ -1,6 +1,11 @@
+'use client'
+
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { useState } from 'react'
 import Navbar from '@/components/Navbar'
+import AuthModal from '@/components/AuthModal'
+import { useAuthStore } from '@/store/useAuthStore'
 
 interface PricingPlan {
   id: 'free' | 'pro-yearly' | 'pro-monthly'
@@ -44,7 +49,7 @@ const plans: PricingPlan[] = [
     highlighted: true,
     cta: {
       label: 'Continue to checkout',
-      href: '/settings',
+      href: '/purchase?plan=pro-yearly',
     },
     features: [
       'Create private rooms',
@@ -64,7 +69,7 @@ const plans: PricingPlan[] = [
     description: 'Full Pro features with flexible billing.',
     cta: {
       label: 'Continue to checkout',
-      href: '/settings',
+      href: '/purchase?plan=pro-monthly',
     },
     features: [
       'All Pro features included',
@@ -88,12 +93,15 @@ const faqs = [
   },
 ]
 
-export const metadata: Metadata = {
-  title: 'Pricing',
-  description: 'Choose the plan that fits your focus style.',
-}
-
 export default function PricingPage() {
+  const { isAuthenticated, isLoading, user } = useAuthStore()
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const isProMember = Boolean(user?.isPro)
+  const proExpiresAt = user?.proExpiresAt ? new Date(user.proExpiresAt) : null
+  const proExpiryLabel = proExpiresAt
+    ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(proExpiresAt)
+    : null
+
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Navbar />
@@ -133,16 +141,44 @@ export default function PricingPage() {
                 {plan.cadence}
               </span>
             </div>
-            <Link
-              href={plan.cta.href}
-              className={`mb-5 inline-flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
-                plan.highlighted
-                  ? 'bg-gradient-to-r from-red-500 to-amber-500 text-white shadow-lg shadow-red-500/20 hover:from-red-600 hover:to-amber-600'
-                  : 'border border-slate-200 text-slate-800 hover:border-amber-300 hover:text-slate-900 dark:border-slate-700 dark:text-slate-100 dark:hover:border-amber-600'
-              }`}
-            >
-              {plan.cta.label}
-            </Link>
+            {plan.id === 'free' ? (
+              <div
+                className="mb-5 inline-flex w-full items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-200"
+              >
+                {isProMember ? 'Included with Pro' : 'Your plan'}
+              </div>
+            ) : isProMember ? (
+              <div className="mb-5 flex w-full flex-col items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-center text-sm font-semibold text-emerald-700 dark:border-emerald-700/40 dark:bg-emerald-900/20 dark:text-emerald-200">
+                <span>Subscription active</span>
+                <span className="mt-1 text-xs font-medium text-emerald-700/80 dark:text-emerald-200/80">
+                  {proExpiryLabel ? `Active until ${proExpiryLabel}` : 'Active (no expiry date set)'}
+                </span>
+              </div>
+            ) : isAuthenticated ? (
+              <Link
+                href={plan.cta.href}
+                className={`mb-5 inline-flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                  plan.highlighted
+                    ? 'bg-gradient-to-r from-red-500 to-amber-500 text-white shadow-lg shadow-red-500/20 hover:from-red-600 hover:to-amber-600'
+                    : 'border border-slate-200 text-slate-800 hover:border-amber-300 hover:text-slate-900 dark:border-slate-700 dark:text-slate-100 dark:hover:border-amber-600'
+                }`}
+              >
+                {plan.cta.label}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => setIsAuthModalOpen(true)}
+                className={`mb-5 inline-flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${
+                  plan.highlighted
+                    ? 'bg-gradient-to-r from-red-500 to-amber-500 text-white shadow-lg shadow-red-500/20 hover:from-red-600 hover:to-amber-600'
+                    : 'border border-slate-200 text-slate-800 hover:border-amber-300 hover:text-slate-900 dark:border-slate-700 dark:text-slate-100 dark:hover:border-amber-600'
+                } ${isLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+              >
+                Sign in to purchase
+              </button>
+            )}
             <ul className="mt-2 space-y-3 text-sm text-slate-600 dark:text-slate-300">
               {plan.features.map((feature) => (
                 <li key={feature} className="flex items-start gap-2">
@@ -201,6 +237,11 @@ export default function PricingPage() {
         </Link>.
       </p>
       </main>
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
   )
 }

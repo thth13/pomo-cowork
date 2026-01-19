@@ -22,6 +22,7 @@ interface SettingsModalProps {
   isTimeTrackerMode: boolean
   onToggleTimeTrackerMode: () => void
   onOpenPaywall?: () => void
+  isProMember: boolean
 }
 
 export const SettingsModal = memo(function SettingsModal({
@@ -35,8 +36,10 @@ export const SettingsModal = memo(function SettingsModal({
   isTimeTrackerMode,
   onToggleTimeTrackerMode,
   onOpenPaywall,
+  isProMember,
 }: SettingsModalProps) {
   const shouldCloseRef = useRef(false)
+  const isTimeTrackerLocked = !isProMember
 
   if (!isOpen) {
     return null
@@ -100,29 +103,51 @@ export const SettingsModal = memo(function SettingsModal({
             <button
               type="button"
               onClick={() => {
-                if (onOpenPaywall) {
+                if (isTimeTrackerLocked && onOpenPaywall) {
                   onOpenPaywall()
                   return
                 }
                 onToggleTimeTrackerMode()
               }}
-              aria-disabled="true"
-              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-400 cursor-pointer focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500"
+              aria-disabled={isTimeTrackerLocked}
+              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
+                isTimeTrackerLocked
+                  ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-pointer dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500'
+                  : isTimeTrackerMode
+                    ? 'border-emerald-400 bg-emerald-600 text-white shadow-[0_8px_20px_-10px_rgba(16,185,129,0.7)] focus-visible:ring-emerald-500'
+                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700'
+              }`}
               aria-pressed={isTimeTrackerMode}
               title={isTimeTrackerMode ? 'Time tracker enabled' : 'Time tracker disabled'}
             >
-              <span className="relative flex items-center justify-center w-7 h-7 rounded-full border border-gray-200 bg-white text-gray-400 text-[10px] font-bold dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500">
+              <span
+                className={`relative flex items-center justify-center w-7 h-7 rounded-full border text-[10px] font-bold ${
+                  isTimeTrackerLocked
+                    ? 'border-gray-200 bg-white text-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500'
+                    : isTimeTrackerMode
+                      ? 'border-emerald-300 bg-white text-emerald-600'
+                      : 'border-gray-200 bg-white text-gray-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-400'
+                }`}
+              >
                 {isTimeTrackerMode ? 'ON' : 'OFF'}
               </span>
-              <span className="text-sm font-semibold text-gray-400 dark:text-slate-500">
+              <span
+                className={`text-sm font-semibold ${
+                  isTimeTrackerLocked
+                    ? 'text-gray-400 dark:text-slate-500'
+                    : 'text-gray-700 dark:text-slate-200'
+                }`}
+              >
                 {isTimeTrackerMode ? 'Enabled' : 'Disabled'}
               </span>
             </button>
 
-            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
-              <Crown className="w-3 h-3" />
-              <span>PRO</span>
-            </div>
+            {isTimeTrackerLocked && (
+              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                <Crown className="w-3 h-3" />
+                <span>PRO</span>
+              </div>
+            )}
           </div>
 
           {!isTimeTrackerMode && (

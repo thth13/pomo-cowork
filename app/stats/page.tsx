@@ -513,7 +513,26 @@ export default function StatsPage() {
             </div>
 
             {/* Skeleton Advanced */}
-            <ProPaywall />
+            {isPro ? (
+              <>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                  <SkeletonChart />
+                  <SkeletonChart />
+                </div>
+                <div className="mb-8">
+                  <SkeletonChart />
+                </div>
+                <div className="mb-8">
+                  <SkeletonChart />
+                </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
+                  <SkeletonChart />
+                  <SkeletonChart />
+                </div>
+              </>
+            ) : (
+              <ProPaywall />
+            )}
           </>
         ) : (
           <>
@@ -1281,7 +1300,7 @@ export default function StatsPage() {
         </motion.div> */}
 
       </main>
-      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      {!isPro && showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
     </div>
   )
 }
