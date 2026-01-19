@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { Crown } from 'lucide-react'
 import { memo, useRef, type MouseEvent } from 'react'
 
 interface TimerSettingsForm {
@@ -20,6 +21,7 @@ interface SettingsModalProps {
   onToggleAutoStart: () => void
   isTimeTrackerMode: boolean
   onToggleTimeTrackerMode: () => void
+  onOpenPaywall?: () => void
 }
 
 export const SettingsModal = memo(function SettingsModal({
@@ -32,6 +34,7 @@ export const SettingsModal = memo(function SettingsModal({
   onToggleAutoStart,
   isTimeTrackerMode,
   onToggleTimeTrackerMode,
+  onOpenPaywall,
 }: SettingsModalProps) {
   const shouldCloseRef = useRef(false)
 
@@ -82,7 +85,7 @@ export const SettingsModal = memo(function SettingsModal({
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
+          <div className="relative flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
             <div>
               <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 flex items-center gap-2">
                 Time tracker mode
@@ -96,28 +99,30 @@ export const SettingsModal = memo(function SettingsModal({
             </div>
             <button
               type="button"
-              onClick={onToggleTimeTrackerMode}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-                isTimeTrackerMode
-                  ? 'border-blue-400 bg-blue-600 text-white shadow-[0_8px_20px_-10px_rgba(59,130,246,0.7)] focus-visible:ring-blue-500'
-                  : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-100 focus-visible:ring-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-700'
-              }`}
+              onClick={() => {
+                if (onOpenPaywall) {
+                  onOpenPaywall()
+                  return
+                }
+                onToggleTimeTrackerMode()
+              }}
+              aria-disabled="true"
+              className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-400 cursor-pointer focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500"
               aria-pressed={isTimeTrackerMode}
               title={isTimeTrackerMode ? 'Time tracker enabled' : 'Time tracker disabled'}
             >
-              <span
-                className={`relative flex items-center justify-center w-7 h-7 rounded-full border text-[10px] font-bold ${
-                  isTimeTrackerMode
-                    ? 'border-blue-300 bg-white text-blue-600'
-                    : 'border-gray-200 bg-white text-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-400'
-                }`}
-              >
+              <span className="relative flex items-center justify-center w-7 h-7 rounded-full border border-gray-200 bg-white text-gray-400 text-[10px] font-bold dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500">
                 {isTimeTrackerMode ? 'ON' : 'OFF'}
               </span>
-              <span className="text-sm font-semibold text-gray-700 dark:text-slate-200">
+              <span className="text-sm font-semibold text-gray-400 dark:text-slate-500">
                 {isTimeTrackerMode ? 'Enabled' : 'Disabled'}
               </span>
             </button>
+
+            <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
+              <Crown className="w-3 h-3" />
+              <span>PRO</span>
+            </div>
           </div>
 
           {!isTimeTrackerMode && (
@@ -239,20 +244,6 @@ export const SettingsModal = memo(function SettingsModal({
           >
             Save changes
           </button>
-        </div>
-
-        <div className="flex flex-wrap items-center justify-center gap-3 border-t border-gray-200 pt-4 text-xs text-gray-500 dark:border-slate-700 dark:text-slate-400">
-          <Link href="/terms" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
-            Terms of service
-          </Link>
-          <span className="text-gray-300 dark:text-slate-600">•</span>
-          <Link href="/privacy" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
-            Privacy policy
-          </Link>
-          <span className="text-gray-300 dark:text-slate-600">•</span>
-          <Link href="/refund" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
-            Refund policy
-          </Link>
         </div>
       </div>
     </div>
