@@ -471,12 +471,12 @@ export default function StatsPage() {
             >
               Buy Pro
             </button>
-            <a
+            {/* <a
               href="/settings"
               className="inline-flex items-center justify-center rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-900 dark:text-white px-4 py-2 text-sm font-semibold hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
             >
               Manage subscription
-            </a>
+            </a> */}
           </div>
 
           {!isAuthenticated && (

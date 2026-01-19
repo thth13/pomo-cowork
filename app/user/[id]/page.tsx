@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut } from 'lucide-react'
+import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useThemeStore } from '@/store/useThemeStore'
@@ -25,6 +25,7 @@ interface UserProfile {
     description?: string
     createdAt: string
     totalSessions: number
+    isPro?: boolean
   }
   stats: {
     totalSessions: number
@@ -542,6 +543,12 @@ export default function UserProfilePage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white break-words">{profile.user.username}</h1>
+                  {profile.user.isPro && (
+                    <span className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
+                      <Crown className="w-3 h-3" />
+                      <span>PRO</span>
+                    </span>
+                  )}
                   {isOwnProfile && (
                     <>
                       <button

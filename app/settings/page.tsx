@@ -58,6 +58,13 @@ export default function SettingsPage() {
 
   const billingPortalUrl = process.env.NEXT_PUBLIC_BILLING_PORTAL_URL
   const isProMember = Boolean(user?.isPro)
+  
+  const formatProExpiryDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'N/A'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+
   const subscriptionDetails: SubscriptionDetail[] = [
     {
       label: 'Plan',
@@ -70,11 +77,11 @@ export default function SettingsPage() {
       helper: isProMember ? 'Your subscription is currently active.' : 'No active subscription found.',
     },
     {
-      label: 'Billing',
-      value: billingPortalUrl ? 'Managed in billing portal' : 'Portal not configured',
-      helper: billingPortalUrl
-        ? 'Use the portal to update payment methods or cancel.'
-        : 'Set NEXT_PUBLIC_BILLING_PORTAL_URL to enable self-serve billing.',
+      label: 'Expires',
+      value: isProMember && user?.proExpiresAt ? formatProExpiryDate(user.proExpiresAt) : 'N/A',
+      helper: isProMember && user?.proExpiresAt 
+        ? `Your Pro subscription is valid until this date.` 
+        : 'No expiration date available.',
     },
   ]
 
