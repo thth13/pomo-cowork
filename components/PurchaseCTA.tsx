@@ -53,9 +53,7 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
         body: JSON.stringify({ planId }),
       })
       await checkAuth()
-      router.push(
-        options?.redirectTo ?? `/purchase/success${planName ? `?plan=${encodeURIComponent(planName)}` : ''}`
-      )
+      router.push(options?.redirectTo ?? '/')
     } finally {
       setIsProcessing(false)
       setIsPurchaseModalOpen(false)

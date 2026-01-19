@@ -19,6 +19,7 @@ import { useTimerStore } from '@/store/useTimerStore'
 import { UserSettings } from '@/types'
 import Navbar from '@/components/Navbar'
 import AvatarUploader from '@/components/AvatarUploader'
+import { PaywallModal } from '@/components/PaywallModal'
 import { playEndSound, disposeNotificationSound } from '@/lib/notificationSound'
 
 export default function SettingsPage() {
@@ -53,6 +54,7 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [testMessage, setTestMessage] = useState('')
+  const [showPaywall, setShowPaywall] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
@@ -76,13 +78,17 @@ export default function SettingsPage() {
       value: isProMember ? 'Active' : 'Inactive',
       helper: isProMember ? 'Your subscription is currently active.' : 'No active subscription found.',
     },
-    {
-      label: 'Expires',
-      value: isProMember && user?.proExpiresAt ? formatProExpiryDate(user.proExpiresAt) : 'N/A',
-      helper: isProMember && user?.proExpiresAt 
-        ? `Your Pro subscription is valid until this date.` 
-        : 'No expiration date available.',
-    },
+    ...(isProMember
+      ? [
+          {
+            label: 'Expires',
+            value: user?.proExpiresAt ? formatProExpiryDate(user.proExpiresAt) : '—',
+            helper: user?.proExpiresAt
+              ? 'Your Pro subscription is valid until this date.'
+              : 'Expiration date not available.',
+          },
+        ]
+      : []),
   ]
 
   const handleTestNotification = async () => {
@@ -691,7 +697,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {billingPortalUrl ? (
+                {isProMember && billingPortalUrl ? (
                   <a
                     href={billingPortalUrl}
                     target="_blank"
@@ -700,6 +706,14 @@ export default function SettingsPage() {
                   >
                     Manage subscription
                   </a>
+                ) : !isProMember ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowPaywall(true)}
+                    className="inline-flex items-center justify-center rounded-full bg-primary-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
+                  >
+                    Get Pro
+                  </button>
                 ) : (
                   <button
                     type="button"
@@ -712,7 +726,7 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className={`grid gap-4 ${isProMember ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                 {subscriptionDetails.map(({ label, value, helper }) => (
                   <div
                     key={label}
@@ -787,6 +801,7 @@ export default function SettingsPage() {
           </motion.section>
         </div>
       </main>
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
     </div>
   )
 }
