@@ -16,8 +16,8 @@ export default function TermsOfServicePage() {
 
       <section className="mt-8 space-y-6 text-sm leading-6 text-gray-700 dark:text-slate-300">
         <p>
-          These Terms of Service ("Terms") govern your access to and use of the Pomo Cowork website, apps, and
-          related services ("Service"). By creating an account, purchasing a subscription, or using the
+          These Terms of Service (&quot;Terms&quot;) govern your access to and use of the Pomo Cowork website, apps, and
+          related services (&quot;Service&quot;). By creating an account, purchasing a subscription, or using the
           Service, you agree to these Terms.
         </p>
 
@@ -54,7 +54,7 @@ export default function TermsOfServicePage() {
         <div className="space-y-3">
           <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">4. Your content</h2>
           <p>
-            You retain ownership of the content you submit ("User Content"). You grant us a worldwide,
+            You retain ownership of the content you submit (&quot;User Content&quot;). You grant us a worldwide,
             non-exclusive, royalty-free license to host, process, transmit, and display User Content only
             as needed to operate, secure, and improve the Service. You represent that you have all rights
             necessary to grant this license.
@@ -158,7 +158,7 @@ export default function TermsOfServicePage() {
         <div className="space-y-3">
           <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">13. Disclaimers</h2>
           <p>
-            The Service is provided "as is" and "as available" without warranties of any kind, express
+            The Service is provided &quot;as is&quot; and &quot;as available&quot; without warranties of any kind, express
             or implied. We do not warrant that the Service will be uninterrupted, secure, or error-free.
           </p>
         </div>

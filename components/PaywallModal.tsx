@@ -39,7 +39,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
           <div className="grid md:grid-cols-2 gap-8 mb-6">
             <div className="space-y-6">
               <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                What's included
+                What&apos;s included
               </h3>
               <ul className="space-y-4">
                 {[
