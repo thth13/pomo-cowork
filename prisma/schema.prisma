@@ -33,9 +33,10 @@ model User {
   ownedRooms      Room[]       @relation("RoomOwner")
   roomMemberships RoomMember[]
 
-  invitesSent     RoomInvite[]   @relation("RoomInviteInviter")
-  invitesReceived RoomInvite[]   @relation("RoomInviteInvitee")
+  invitesSent     RoomInvite[]     @relation("RoomInviteInviter")
+  invitesReceived RoomInvite[]     @relation("RoomInviteInvitee")
   notifications   Notification[]
+  supportMessages SupportMessage[]
 
   @@map("users")
 }
@@ -216,4 +217,20 @@ model ChatMessage {
   @@index([createdAt])
   @@index([roomId, createdAt])
   @@map("chat_messages")
+}
+
+model SupportMessage {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String?
+  email     String
+  subject   String?
+  message   String
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("support_messages")
 }

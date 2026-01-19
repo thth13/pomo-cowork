@@ -86,10 +86,6 @@ export default function RootLayout({
                 <Link href="/privacy" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
                   Privacy policy
                 </Link>
-                <span className="text-gray-300 dark:text-slate-600">•</span>
-                <Link href="/refund" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
-                  Refund policy
-                </Link>
               </div>
             </footer>
             <ConnectionDebug />
