@@ -15,7 +15,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[85svh] sm:max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[96svh] sm:max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700">
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10"
@@ -37,8 +37,8 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-6">
-            <div className="space-y-6">
-              <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
+            <div className="space-y-3 sm:space-y-6">
+              <h3 className="hidden sm:flex font-bold text-gray-900 dark:text-white items-center gap-2">
                 What&apos;s included
               </h3>
               <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:gap-y-3">
