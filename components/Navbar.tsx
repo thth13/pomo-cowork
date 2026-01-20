@@ -50,7 +50,7 @@ export default function Navbar() {
   const notificationsRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
   const { user, isAuthenticated, logout, token } = useAuthStore()
-  const { setCurrentRoom } = useRoomStore()
+  const { setCurrentRoom, currentRoomId } = useRoomStore()
   const { totalOnlineCount, isConnected, isChecking } = useConnectionStore()
   const pathname = usePathname()
   const connectionStatusClass = isChecking
@@ -217,7 +217,7 @@ export default function Navbar() {
               <FontAwesomeIcon icon={faClock} className="mr-2" />Timer
             </Link>
             <Link 
-              href="/rooms" 
+              href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname.startsWith('/rooms') 
                   ? 'bg-red-500 text-white' 
@@ -494,7 +494,7 @@ export default function Navbar() {
                 Timer
               </Link>
               <Link 
-                href="/rooms" 
+                href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
                 onClick={handleMobileLinkClick}
                 className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
                   pathname.startsWith('/rooms') 

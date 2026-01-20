@@ -14,8 +14,8 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
     : '/purchase?plan=pro-monthly'
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[85svh] sm:max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700">
         <button 
           onClick={onClose}
           className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10"
@@ -23,8 +23,8 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
           <FontAwesomeIcon icon={faTimes} className="text-xl" />
         </button>
 
-        <div className="p-6 sm:p-8">
-          <div className="text-center mb-8">
+        <div className="p-4 sm:p-8">
+          <div className="text-center mb-6 sm:mb-8">
             <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 mb-6 shadow-lg">
               <span className="font-bold text-sm tracking-wide">Pro Plan</span>
             </div>
@@ -36,12 +36,12 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 mb-6">
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-6">
             <div className="space-y-6">
               <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 What&apos;s included
               </h3>
-              <ul className="space-y-4">
+              <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:gap-y-3">
                 {[
                   "Create private rooms",
                   "Advanced statistics & heatmap",
@@ -51,7 +51,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                   "Pro badge on profile",
                   "Time tracker mode"
                 ].map((feature, idx) => (
-                  <li key={idx} className="flex items-start gap-3 text-sm text-gray-600 dark:text-slate-300">
+                  <li key={idx} className="flex items-start gap-2 text-[14px] sm:text-sm text-gray-600 dark:text-slate-300">
                     <div className="mt-0.5 min-w-[18px] text-green-500">
                        <FontAwesomeIcon icon={faCheck} className="text-sm" />
                     </div>
