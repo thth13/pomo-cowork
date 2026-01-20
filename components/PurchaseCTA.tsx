@@ -120,10 +120,10 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
                   {vladikStep === 'question' ? (
                     <>
                       <h3 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
-                        Являетесь вы Владиком?
+                        Являетесь вы Влатиком?
                       </h3>
                       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                        Нужна минимальная проверка, чтобы выдать персональный бонус.
+                        Необходимо пройти проверку на Влатиковость.
                       </p>
 
                       <div className="mt-6 grid gap-3 sm:grid-cols-2">
@@ -163,7 +163,7 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
                         Поздравляем, Владик!
                       </h3>
                       <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                        Вы получили Pro аккаунт до 19 января 2526 года. Спасибо!
+                        Вы получили Pro аккаунт на пицот лет. Дата окончания 20.01.2526. Спасибо!
                       </p>
 
                       <div className="mt-6 flex gap-3">

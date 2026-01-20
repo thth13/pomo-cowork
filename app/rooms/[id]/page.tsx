@@ -292,9 +292,9 @@ export default function RoomPage() {
 
       // Only set as current room if user joined or is already a member
       const userIsMember = user?.id ? membersList.some((m) => m.user.id === user.id) : false
-      if (shouldJoinOnOpen || userIsMember) {
-        setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
-      }
+      // if (shouldJoinOnOpen || userIsMember) {
+      //   setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
+      // }
 
       if (shouldJoinOnOpen) {
         router.replace(`/rooms/${roomId}`)

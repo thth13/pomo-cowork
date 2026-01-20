@@ -122,11 +122,11 @@ export default function RoomsPage() {
               const preferred = currentRoomId ? myRooms.find((r) => r.id === currentRoomId) : null
               const target = preferred ?? myRooms[0]
 
-              setCurrentRoom({
-                id: target.id,
-                name: target.name,
-                backgroundGradientKey: target.backgroundGradientKey ?? null,
-              })
+              // setCurrentRoom({
+              //   id: target.id,
+              //   name: target.name,
+              //   backgroundGradientKey: target.backgroundGradientKey ?? null,
+              // })
 
               router.replace(`/rooms/${target.id}`)
               return
