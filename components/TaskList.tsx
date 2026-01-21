@@ -479,7 +479,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       </div>
 
       {/* Task List */}
-      <div className="p-4 space-y-3 max-h-[600px] overflow-y-auto">
+      <div className="p-4 space-y-3 max-h-[434px] overflow-y-auto">
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3, 4].map((i) => (
@@ -555,7 +555,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
 
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <div className={`text-sm font-medium ${
+                        <div className={`text-sm font-medium break-all ${
                           task.completed
                             ? 'text-gray-500 dark:text-slate-400 line-through'
                             : 'text-gray-900 dark:text-white'

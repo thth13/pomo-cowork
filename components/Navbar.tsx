@@ -264,7 +264,7 @@ export default function Navbar() {
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
-              <FontAwesomeIcon icon={faUsers} className="mr-2" />Search
+              <FontAwesomeIcon icon={faUsers} className="mr-2" />Coworkers
             </Link>
             <Link
               href="/stats"
