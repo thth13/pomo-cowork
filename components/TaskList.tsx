@@ -4,6 +4,7 @@ import { useState, useEffect, useImperativeHandle, forwardRef, useRef } from 're
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import NotificationToast from '@/components/NotificationToast'
 
 interface Task {
   id: string
@@ -37,9 +38,13 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskPriority, setNewTaskPriority] = useState<'Critical' | 'High' | 'Medium' | 'Low'>('Medium')
   const [isLoading, setIsLoading] = useState(true)
+  const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState('')
+  const [showToast, setShowToast] = useState(false)
   const { selectedTask, setSelectedTask, setTaskOptions, isRunning } = useTimerStore()
   const { user } = useAuthStore()
   const hasRestoredSelectedTask = useRef(false)
+  const deleteConfirmTimeoutRef = useRef<number | null>(null)
 
   useImperativeHandle(ref, () => ({
     refreshTasks: loadTasks
@@ -137,6 +142,13 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       setSelectedTask(null)
     }
   }, [tasks, selectedTask, setSelectedTask, isLoading])
+
+  useEffect(() => () => {
+    if (deleteConfirmTimeoutRef.current) {
+      window.clearTimeout(deleteConfirmTimeoutRef.current)
+      deleteConfirmTimeoutRef.current = null
+    }
+  }, [])
 
   const loadTasks = async () => {
     console.log('TaskList: Loading tasks...')
@@ -279,6 +291,42 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
         return restored
       })
     }
+  }
+
+  const requestDeleteTask = (id: string) => {
+    if (pendingDeleteTaskId === id) {
+      if (deleteConfirmTimeoutRef.current) {
+        window.clearTimeout(deleteConfirmTimeoutRef.current)
+        deleteConfirmTimeoutRef.current = null
+      }
+      setPendingDeleteTaskId(null)
+      setShowToast(false)
+      deleteTask(id)
+      return
+    }
+
+    setPendingDeleteTaskId(id)
+    setToastMessage('To delete, press again')
+    setShowToast(true)
+
+    if (deleteConfirmTimeoutRef.current) {
+      window.clearTimeout(deleteConfirmTimeoutRef.current)
+    }
+
+    deleteConfirmTimeoutRef.current = window.setTimeout(() => {
+      setPendingDeleteTaskId(null)
+      setShowToast(false)
+      deleteConfirmTimeoutRef.current = null
+    }, 2500)
+  }
+
+  const dismissDeleteToast = () => {
+    if (deleteConfirmTimeoutRef.current) {
+      window.clearTimeout(deleteConfirmTimeoutRef.current)
+      deleteConfirmTimeoutRef.current = null
+    }
+    setPendingDeleteTaskId(null)
+    setShowToast(false)
   }
 
   const addTask = async () => {
@@ -543,7 +591,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
                       disabled={task.isPending}
                       onClick={(e) => {
                         e.stopPropagation()
-                        deleteTask(task.id)
+                        requestDeleteTask(task.id)
                       }}
                       className={`text-gray-400 hover:text-red-500 transition-colors ${
                         task.isPending ? 'opacity-50 cursor-not-allowed hover:text-gray-400' : ''
@@ -567,6 +615,14 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
           </div>
         )}
       </div>
+
+      <NotificationToast
+        message={toastMessage}
+        isVisible={showToast}
+        onClose={dismissDeleteToast}
+        type="warning"
+        duration={2500}
+      />
     </motion.div>
   )
 })

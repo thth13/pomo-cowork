@@ -20,7 +20,7 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
   const [vladikStep, setVladikStep] = useState<'question' | 'checking' | 'congrats'>('question')
   const vladikTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isVladik = user?.id === 'cmklkzcqr0000snb3bo8hddjv'
+  const isVladik = user?.id === 'cmg93grnk00009cz1m82i3091'
 
   const clearVladikTimer = () => {
     if (vladikTimerRef.current) {
