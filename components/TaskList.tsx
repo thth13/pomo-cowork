@@ -29,6 +29,13 @@ const priorityColors = {
   'Low': 'text-blue-600',
 }
 
+const formatHoursFromMinutes = (minutes: number): string => {
+  const hours = minutes / 60
+  const rounded = Math.round(hours * 10) / 10
+  const display = Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1)
+  return `${display}h`
+}
+
 export interface TaskListRef {
   refreshTasks: () => Promise<void>
 }
@@ -41,7 +48,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState('')
   const [showToast, setShowToast] = useState(false)
-  const { selectedTask, setSelectedTask, setTaskOptions, isRunning } = useTimerStore()
+  const { selectedTask, setSelectedTask, setTaskOptions, isRunning, workDuration } = useTimerStore()
   const { user } = useAuthStore()
   const hasRestoredSelectedTask = useRef(false)
   const deleteConfirmTimeoutRef = useRef<number | null>(null)
@@ -507,6 +514,8 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
               const canonicalId = getTaskCanonicalId(task)
               const isActive = selectedTask?.id === canonicalId
               const isSelectionLocked = isRunning
+              const completedMinutes = task.completedPomodoros * workDuration
+              const completedHoursLabel = formatHoursFromMinutes(completedMinutes)
 
               const hoverState = isActive
                 ? 'ring-2 ring-blue-500 bg-blue-50 dark:bg-blue-900/20'
@@ -583,6 +592,8 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                           <span>{task.completedPomodoros} {task.completedPomodoros === 1 ? 'pomodoro' : 'pomodoros'}</span>
+                          <span className="text-gray-400 dark:text-slate-500">•</span>
+                          <span>{completedHoursLabel}</span>
                         </div>
                       </div>
                     </div>
