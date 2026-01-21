@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
@@ -307,17 +308,37 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
                   isLogin ? 'Login' : 'Register'
                 )}
               </motion.button>
+
             </form>
           )}
 
           {/* Toggle Mode */}
           {showEmailForm && (
-            <div className="mt-6 text-center space-y-2">
-              <p className="text-slate-600 dark:text-slate-300">
+            <div className="mt-6 text-center space-y-2 text-xs text-slate-500 dark:text-slate-400">
+              {!isLogin && (
+                <p className="leading-5">
+                  By continuing, you agree to our{' '}
+                  <Link
+                    href="/terms"
+                    className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white"
+                  >
+                    Terms
+                  </Link>{' '}
+                  and{' '}
+                  <Link
+                    href="/privacy"
+                    className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white"
+                  >
+                    Privacy Policy
+                  </Link>.
+                </p>
+              )}
+              <p>
                 {isLogin ? "Don't have an account?" : 'Already have an account?'}
+                {' '}
                 <button
                   onClick={toggleMode}
-                  className="ml-1 text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium"
+                  className="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                 >
                   {isLogin ? 'Register' : 'Login'}
                 </button>
@@ -325,7 +346,7 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
               <button
                 type="button"
                 onClick={() => setShowEmailForm(false)}
-                className="text-sm text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400"
+                className="text-xs text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400"
               >
                 Prefer Google? Continue with Google
               </button>

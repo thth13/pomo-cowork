@@ -1,0 +1,2 @@
+-- Empty migration placeholder restored to satisfy Prisma migrate history.
+-- Original migration file was missing in the repository.

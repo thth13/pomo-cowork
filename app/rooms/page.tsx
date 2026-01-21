@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { Crown, Lock } from 'lucide-react'
 import Navbar from '@/components/Navbar'
+import { PaywallModal } from '@/components/PaywallModal'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { Room, RoomPrivacy } from '@/types'
@@ -45,6 +47,8 @@ export default function RoomsPage() {
   const { user, isLoading: authLoading } = useAuthStore()
   const { currentRoomId, currentRoomName, setCurrentRoom, resetToGlobal } = useRoomStore()
 
+  const isProMember = Boolean(user?.isPro)
+
   const shouldForceList = searchParams.get('list') === '1'
 
   const [rooms, setRooms] = useState<Room[]>([])
@@ -52,6 +56,8 @@ export default function RoomsPage() {
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isRedirecting, setIsRedirecting] = useState(false)
+
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false)
 
   const [createForm, setCreateForm] = useState<RoomFormState>({
     name: '',
@@ -116,11 +122,11 @@ export default function RoomsPage() {
               const preferred = currentRoomId ? myRooms.find((r) => r.id === currentRoomId) : null
               const target = preferred ?? myRooms[0]
 
-              setCurrentRoom({
-                id: target.id,
-                name: target.name,
-                backgroundGradientKey: target.backgroundGradientKey ?? null,
-              })
+              // setCurrentRoom({
+              //   id: target.id,
+              //   name: target.name,
+              //   backgroundGradientKey: target.backgroundGradientKey ?? null,
+              // })
 
               router.replace(`/rooms/${target.id}`)
               return
@@ -229,149 +235,155 @@ export default function RoomsPage() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
-          <div className="flex items-start justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Rooms</h2>
-              <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">
-                Current: <span className="font-semibold">{currentRoomName}</span>
-              </p>
-            </div>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Rooms</h1>
+            <p className="text-gray-600 dark:text-slate-300">
+              Current: <span className="font-semibold">{currentRoomName}</span>
+            </p>
+          </div>
 
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            {isProMember ? (
               <button
                 type="button"
-                disabled={!user}
-                onClick={() => {
-                  setError(null)
-                  setIsCreateModalOpen(true)
-                }}
-                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
+                onClick={() => setIsCreateModalOpen(true)}
+                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
               >
                 Create room
               </button>
-
-              <button
-                type="button"
-                onClick={() => router.push('/')}
-                className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-              >
-                Back
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
-              {error}
-            </div>
-          )}
-
-          {isRedirecting ? (
-            <RoomsListSkeleton />
-          ) : (
-          <div className="space-y-3 mb-8">
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={onJoinGlobal}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' || e.key === ' ') onJoinGlobal()
-              }}
-              className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors"
-            >
-              <div>
-                <div className="font-semibold text-gray-900 dark:text-white">Global</div>
-                <div className="text-xs text-gray-500 dark:text-slate-400">Default room</div>
-              </div>
-              <button
-                type="button"
-                onClick={onJoinGlobal}
-                onClickCapture={(e) => e.stopPropagation()}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  currentRoomId === null
-                    ? 'bg-red-500 text-white'
-                    : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700'
-                }`}
-              >
-                {currentRoomId === null ? 'Selected' : 'Join'}
-              </button>
-            </div>
-
-            {loading ? (
-              <RoomsListSkeleton />
-            ) : rooms.length === 0 ? (
-              <div className="text-sm text-gray-500 dark:text-slate-400">No rooms yet</div>
             ) : (
-              rooms.map((room) => {
-                const isOwner = user?.id && room.ownerId === user.id
-                const isSelected = currentRoomId === room.id
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsPaywallOpen(true)}
+                  aria-disabled="true"
+                  className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white opacity-60 cursor-pointer transition-colors"
+                >
+                  <span className="inline-flex items-center gap-2">
+                    <Lock className="w-4 h-4" />
+                    Create room
+                  </span>
+                </button>
 
-                return (
-                  <div
-                    key={room.id}
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' || e.key === ' ') {
-                        onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })
-                      }
-                    }}
-                    className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors"
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="font-semibold text-gray-900 dark:text-white truncate">{room.name}</div>
-                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
-                            {privacyLabel(room.privacy)}
-                          </span>
-                          {isOwner && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
-                              Owner
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-slate-400">
-                          {room.memberCount ?? 0} {room.memberCount === 1 ? 'участник' : 'участников'}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (isSelected) {
-                              onOpenRoom({
-                                id: room.id,
-                                name: room.name,
-                                backgroundGradientKey: room.backgroundGradientKey ?? null,
-                              })
-                              return
-                            }
-
-                            void onJoinRoom(room)
-                          }}
-                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                            isSelected
-                              ? 'bg-red-500 text-white'
-                              : 'bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200'
-                          }`}
-                        >
-                          {isSelected ? 'Selected' : 'Join'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
+                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
+                  <Crown className="w-3 h-3" />
+                  <span>PRO</span>
+                </div>
+              </div>
             )}
           </div>
-          )}
-
         </div>
+
+        {error && (
+          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
+            {error}
+          </div>
+        )}
+
+        {isRedirecting ? (
+          <RoomsListSkeleton />
+        ) : (
+        <div className="space-y-3 mb-8">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={onJoinGlobal}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') onJoinGlobal()
+            }}
+            className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors"
+          >
+            <div>
+              <div className="font-semibold text-gray-900 dark:text-white">Global</div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">Default room</div>
+            </div>
+            <button
+              type="button"
+              onClick={onJoinGlobal}
+              onClickCapture={(e) => e.stopPropagation()}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                currentRoomId === null
+                  ? 'bg-red-500 text-white'
+                  : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              {currentRoomId === null ? 'Selected' : 'Join'}
+            </button>
+          </div>
+
+          {loading ? (
+            <RoomsListSkeleton />
+          ) : rooms.length === 0 ? (
+            <div className="text-sm text-gray-500 dark:text-slate-400">No rooms yet</div>
+          ) : (
+            rooms.map((room) => {
+              const isOwner = user?.id && room.ownerId === user.id
+              const isSelected = currentRoomId === room.id
+
+              return (
+                <div
+                  key={room.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })
+                    }
+                  }}
+                  className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="font-semibold text-gray-900 dark:text-white truncate">{room.name}</div>
+                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
+                          {privacyLabel(room.privacy)}
+                        </span>
+                        {isOwner && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+                            Owner
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500 dark:text-slate-400">
+                        {room.memberCount ?? 0} {room.memberCount === 1 ? 'участник' : 'участников'}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (isSelected) {
+                            onOpenRoom({
+                              id: room.id,
+                              name: room.name,
+                              backgroundGradientKey: room.backgroundGradientKey ?? null,
+                            })
+                            return
+                          }
+
+                          void onJoinRoom(room)
+                        }}
+                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          isSelected
+                            ? 'bg-red-500 text-white'
+                            : 'bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200'
+                        }`}
+                      >
+                        {isSelected ? 'Selected' : 'Join'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )
+            })
+          )}
+        </div>
+        )}
       </main>
 
       {isCreateModalOpen && (
@@ -447,6 +459,8 @@ export default function RoomsPage() {
           </div>
         </div>
       )}
+
+      {isPaywallOpen && <PaywallModal onClose={() => setIsPaywallOpen(false)} />}
     </div>
   )
 }

@@ -292,9 +292,9 @@ export default function RoomPage() {
 
       // Only set as current room if user joined or is already a member
       const userIsMember = user?.id ? membersList.some((m) => m.user.id === user.id) : false
-      if (shouldJoinOnOpen || userIsMember) {
-        setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
-      }
+      // if (shouldJoinOnOpen || userIsMember) {
+      //   setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
+      // }
 
       if (shouldJoinOnOpen) {
         router.replace(`/rooms/${roomId}`)
@@ -681,77 +681,76 @@ export default function RoomPage() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
-          <div className="flex items-start justify-between gap-4 mb-6">
-            <div>
-              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
-                {loading ? (
-                  <span className="inline-block align-middle h-7 w-40 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
-                ) : (
-                  room?.name ?? ''
-                )}
-              </h2>
-              <p className="text-sm text-gray-600 dark:text-slate-400 mt-1">Room page</p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {canJoinRoom && (
-                <button
-                  type="button"
-                  onClick={onJoinRoom}
-                  disabled={joining}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
-                  title="Join room"
-                  aria-label="Join room"
-                >
-                  {joining ? (
-                    <div className="h-4 w-4 rounded-full border-2 border-gray-300 dark:border-slate-600 border-t-white dark:border-t-slate-900 animate-spin" />
-                  ) : (
-                    <FontAwesomeIcon icon={faUserPlus} className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">Join</span>
-                </button>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+              {loading ? (
+                <span className="inline-block align-middle h-7 w-40 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
+              ) : (
+                room?.name ?? ''
               )}
+            </h1>
+            <p className="text-gray-600 dark:text-slate-300">Room page</p>
+          </div>
 
-              {isOwner && (
-                <button
-                  type="button"
-                  onClick={() => setIsRoomSettingsOpen(true)}
-                  className="p-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                  title="Settings"
-                  aria-label="Room settings"
-                >
-                  <FontAwesomeIcon icon={faGear} className="h-4 w-4" />
-                </button>
-              )}
-
+          <div className="flex items-center gap-2">
+            {canJoinRoom && (
               <button
                 type="button"
-                onClick={() => router.push('/rooms')}
-                className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                onClick={onJoinRoom}
+                disabled={joining}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
+                title="Join room"
+                aria-label="Join room"
               >
-                Back
+                {joining ? (
+                  <div className="h-4 w-4 rounded-full border-2 border-gray-300 dark:border-slate-600 border-t-white dark:border-t-slate-900 animate-spin" />
+                ) : (
+                  <FontAwesomeIcon icon={faUserPlus} className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">Join</span>
               </button>
+            )}
 
-              {canLeaveRoom && (
-                <button
-                  type="button"
-                  onClick={onLeaveRoom}
-                  disabled={leaving}
-                  className="inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
-                  title="Leave room"
-                  aria-label="Leave room"
-                >
-                  {leaving ? (
-                    <div className="h-4 w-4 rounded-full border-2 border-red-200 border-t-white animate-spin" />
-                  ) : (
-                    <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
-                  )}
-                  <span className="hidden sm:inline">Leave</span>
-                </button>
-              )}
-            </div>
+            {isOwner && (
+              <button
+                type="button"
+                onClick={() => setIsRoomSettingsOpen(true)}
+                className="p-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+                title="Settings"
+                aria-label="Room settings"
+              >
+                <FontAwesomeIcon icon={faGear} className="h-4 w-4" />
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => router.push('/rooms')}
+              className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
+            >
+              Back
+            </button>
+
+            {canLeaveRoom && (
+              <button
+                type="button"
+                onClick={onLeaveRoom}
+                disabled={leaving}
+                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+                title="Leave room"
+                aria-label="Leave room"
+              >
+                {leaving ? (
+                  <div className="h-4 w-4 rounded-full border-2 border-red-200 border-t-white animate-spin" />
+                ) : (
+                  <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
+                )}
+                <span className="hidden sm:inline">Leave</span>
+              </button>
+            )}
           </div>
+        </div>
 
           {error && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
@@ -982,7 +981,6 @@ export default function RoomPage() {
               </div>
             </div>
           )}
-        </div>
       </main>
 
       {inviteToast && (

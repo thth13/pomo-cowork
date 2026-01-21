@@ -11,19 +11,27 @@ import {
   Save,
   User,
   Mail,
-  Shield
+  Shield,
+  CreditCard
 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { UserSettings } from '@/types'
 import Navbar from '@/components/Navbar'
 import AvatarUploader from '@/components/AvatarUploader'
+import { PaywallModal } from '@/components/PaywallModal'
 import { playEndSound, disposeNotificationSound } from '@/lib/notificationSound'
 
 export default function SettingsPage() {
   const router = useRouter()
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const { setTimerSettings } = useTimerStore()
+
+  interface SubscriptionDetail {
+    label: string
+    value: string
+    helper?: string
+  }
   
   const [settings, setSettings] = useState<UserSettings>({
     id: '',
@@ -46,8 +54,42 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [testMessage, setTestMessage] = useState('')
+  const [showPaywall, setShowPaywall] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+
+  const billingPortalUrl = process.env.NEXT_PUBLIC_BILLING_PORTAL_URL
+  const isProMember = Boolean(user?.isPro)
+  
+  const formatProExpiryDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return 'N/A'
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+
+  const subscriptionDetails: SubscriptionDetail[] = [
+    {
+      label: 'Plan',
+      value: isProMember ? 'Pro' : 'Free',
+      helper: isProMember ? 'Unlimited focus rooms and analytics.' : 'Upgrade to unlock Pro perks.',
+    },
+    {
+      label: 'Status',
+      value: isProMember ? 'Active' : 'Inactive',
+      helper: isProMember ? 'Your subscription is currently active.' : 'No active subscription found.',
+    },
+    ...(isProMember
+      ? [
+          {
+            label: 'Expires',
+            value: user?.proExpiresAt ? formatProExpiryDate(user.proExpiresAt) : '—',
+            helper: user?.proExpiresAt
+              ? 'Your Pro subscription is valid until this date.'
+              : 'Expiration date not available.',
+          },
+        ]
+      : []),
+  ]
 
   const handleTestNotification = async () => {
     setTestMessage('')
@@ -634,7 +676,83 @@ export default function SettingsPage() {
           <motion.section
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, duration: 0.35 }}
+            transition={{ delay: 0.27, duration: 0.35 }}
+            className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 p-8 shadow-xl ring-1 ring-black/5 backdrop-blur dark:border-slate-700/70 dark:bg-slate-900/80"
+          >
+            <div className="absolute inset-x-10 -top-24 h-44 rounded-full bg-primary-500/10 blur-3xl dark:bg-primary-400/10" />
+
+            <div className="relative space-y-6">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-500/10 text-primary-600 dark:bg-primary-400/10 dark:text-primary-300">
+                    <CreditCard className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-white">
+                      Manage subscription
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      Review plan status and update billing details.
+                    </p>
+                  </div>
+                </div>
+
+                {isProMember && billingPortalUrl ? (
+                  <a
+                    href={billingPortalUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center justify-center rounded-full bg-primary-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
+                  >
+                    Manage subscription
+                  </a>
+                ) : !isProMember ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowPaywall(true)}
+                    className="inline-flex items-center justify-center rounded-full bg-primary-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
+                  >
+                    Get Pro
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex items-center justify-center rounded-full bg-slate-200 px-5 py-2 text-sm font-semibold text-slate-500 shadow-sm transition dark:bg-slate-800 dark:text-slate-400"
+                    aria-disabled="true"
+                  >
+                    Manage subscription
+                  </button>
+                )}
+              </div>
+
+              <div className={`grid gap-4 ${isProMember ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+                {subscriptionDetails.map(({ label, value, helper }) => (
+                  <div
+                    key={label}
+                    className="rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-sm dark:border-slate-700/60 dark:bg-slate-900/70"
+                  >
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      {label}
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-slate-900 dark:text-white">
+                      {value}
+                    </p>
+                    {helper && (
+                      <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        {helper}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </motion.section>
+
+          <motion.section
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.32, duration: 0.35 }}
             className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 p-8 shadow-xl ring-1 ring-black/5 backdrop-blur dark:border-slate-700/70 dark:bg-slate-900/80"
           >
             <div className="absolute inset-x-14 -top-24 h-44 rounded-full bg-secondary-500/10 blur-3xl dark:bg-secondary-400/10" />
@@ -683,6 +801,7 @@ export default function SettingsPage() {
           </motion.section>
         </div>
       </main>
+      {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
     </div>
   )
 }

@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import ThemeToggle from './ThemeToggle'
-import { User, Menu, X } from 'lucide-react'
+import { Crown, User, Menu, X } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
@@ -50,7 +50,7 @@ export default function Navbar() {
   const notificationsRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
   const { user, isAuthenticated, logout, token } = useAuthStore()
-  const { setCurrentRoom } = useRoomStore()
+  const { setCurrentRoom, currentRoomId } = useRoomStore()
   const { totalOnlineCount, isConnected, isChecking } = useConnectionStore()
   const pathname = usePathname()
   const connectionStatusClass = isChecking
@@ -217,7 +217,7 @@ export default function Navbar() {
               <FontAwesomeIcon icon={faClock} className="mr-2" />Timer
             </Link>
             <Link 
-              href="/rooms" 
+              href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname.startsWith('/rooms') 
                   ? 'bg-red-500 text-white' 
@@ -356,7 +356,7 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setIsMenuOpen(prev => !prev)}
-                      className="w-9 h-9 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold overflow-hidden hover:ring-2 hover:ring-primary-500 transition-all"
+                      className="relative w-9 h-9 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold hover:ring-2 hover:ring-primary-500 transition-all"
                       aria-haspopup="true"
                       aria-expanded={isMenuOpen}
                     >
@@ -364,6 +364,11 @@ export default function Navbar() {
                         <Image src={user.avatarUrl} alt={user.username} width={48} height={48} className="w-full h-full object-cover" />
                       ) : (
                         <User className="w-4 h-4" />
+                      )}
+                      {user.isPro && (
+                        <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
+                          <Crown className="w-3 h-3" />
+                        </span>
                       )}
                     </button>
 
@@ -455,11 +460,16 @@ export default function Navbar() {
             {/* User Info */}
             <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-slate-700 rounded-xl">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold overflow-hidden">
+                <div className="relative w-10 h-10 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold">
                   {user.avatarUrl ? (
                     <Image src={user.avatarUrl} alt={user.username} width={40} height={40} className="w-full h-full object-cover" />
                   ) : (
                     <User className="w-5 h-5" />
+                  )}
+                  {user.isPro && (
+                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
+                      <Crown className="w-3 h-3" />
+                    </span>
                   )}
                 </div>
                 <div>
@@ -484,7 +494,7 @@ export default function Navbar() {
                 Timer
               </Link>
               <Link 
-                href="/rooms" 
+                href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
                 onClick={handleMobileLinkClick}
                 className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
                   pathname.startsWith('/rooms') 

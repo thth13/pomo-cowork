@@ -8,15 +8,17 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  username    String   @unique
-  password    String
-  avatarUrl   String?
-  description String?
-  isAnonymous Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id           String    @id @default(cuid())
+  email        String    @unique
+  username     String    @unique
+  password     String
+  avatarUrl    String?
+  description  String?
+  isAnonymous  Boolean   @default(false)
+  isPro        Boolean   @default(false)
+  proExpiresAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   // Settings
   workDuration   Int @default(25) // minutes
@@ -25,17 +27,18 @@ model User {
   longBreakAfter Int @default(4) // sessions
 
   // Relations
-  sessions     PomodoroSession[]
-  settings     UserSettings?
-  tasks        Task[]
-  chatMessages ChatMessage[]     @relation("ChatMessages")
+  sessions PomodoroSession[]
+  settings UserSettings?
+  tasks    Task[]
 
   ownedRooms      Room[]       @relation("RoomOwner")
   roomMemberships RoomMember[]
 
-  invitesSent     RoomInvite[]   @relation("RoomInviteInviter")
-  invitesReceived RoomInvite[]   @relation("RoomInviteInvitee")
+  invitesSent     RoomInvite[]     @relation("RoomInviteInviter")
+  invitesReceived RoomInvite[]     @relation("RoomInviteInvitee")
   notifications   Notification[]
+  supportMessages SupportMessage[]
+  chatMessages    ChatMessage[]    @relation("ChatMessages")
 
   @@map("users")
 }
@@ -67,8 +70,8 @@ model Room {
 
   members      RoomMember[]
   sessions     PomodoroSession[]
-  chatMessages ChatMessage[]
   invites      RoomInvite[]
+  chatMessages ChatMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -207,13 +210,29 @@ model ChatMessage {
   room           Room?    @relation(fields: [roomId], references: [id], onDelete: SetNull)
   username       String
   text           String
-  type           String   @default("message") // "message" or "system"
-  actionType     String? // "work_start", "break_start", "long_break_start", "timer_stop"
-  actionDuration Int? // duration in minutes for work sessions
+  type           String   @default("message")
+  actionType     String?
+  actionDuration Int?
   actionTask     String?
   createdAt      DateTime @default(now())
 
   @@index([createdAt])
   @@index([roomId, createdAt])
   @@map("chat_messages")
+}
+
+model SupportMessage {
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name      String?
+  email     String
+  subject   String?
+  message   String
+  status    String   @default("NEW")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+  @@map("support_messages")
 }

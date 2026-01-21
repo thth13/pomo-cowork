@@ -21,6 +21,7 @@ import { TaskOption } from '@/types/task'
 import { TaskPicker } from '@/components/TaskPicker'
 import { TimerControls } from '@/components/TimerControls'
 import { SettingsModal } from '@/components/SettingsModal'
+import { PaywallModal } from '@/components/PaywallModal'
 import { TimerErrorBoundary } from '@/components/TimerErrorBoundary'
 import { useThrottle } from '@/hooks/useThrottle'
 
@@ -32,6 +33,7 @@ interface TimerSettingsForm {
   workDuration: number
   shortBreak: number
   longBreak: number
+  longBreakAfter: number
 }
 
 interface TimerState {
@@ -225,6 +227,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   } = useTimerStore()
 
   const { user, updateUserSettings } = useAuthStore()
+  const isProMember = Boolean(user?.isPro)
   const {
     currentRoomId,
     currentRoomName,
@@ -238,7 +241,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
   const [timerState, dispatchTimer] = useReducer(
     timerReducer,
-    { workDuration, shortBreak, longBreak },
+    { workDuration, shortBreak, longBreak, longBreakAfter },
     createInitialTimerState
   )
   const {
@@ -259,6 +262,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   const canTriggerAction = useThrottle(1000)
   const [isPausing, setIsPausing] = useState(false)
   const [isResuming, setIsResuming] = useState(false)
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false)
 
   const setSessionType = useCallback(
     (type: SessionType) => dispatchTimer({ type: 'SET_SESSION_TYPE', payload: type }),
@@ -370,8 +374,9 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       workDuration,
       shortBreak,
       longBreak,
+      longBreakAfter,
     })
-  }, [workDuration, shortBreak, longBreak, setSettingsForm])
+  }, [workDuration, shortBreak, longBreak, longBreakAfter, setSettingsForm])
 
   useEffect(() => {
     completedSessionIdRef.current = null
@@ -590,6 +595,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       workDuration,
       shortBreak,
       longBreak,
+      longBreakAfter,
     })
     setIsSettingsOpen(true)
   }
@@ -603,6 +609,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       workDuration: Math.max(1, Math.round(settingsForm.workDuration)),
       shortBreak: Math.max(1, Math.round(settingsForm.shortBreak)),
       longBreak: Math.max(1, Math.round(settingsForm.longBreak)),
+      longBreakAfter: Math.max(1, Math.round(settingsForm.longBreakAfter)),
     }
 
     setSettingsForm(normalized)
@@ -610,7 +617,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       workDuration: normalized.workDuration,
       shortBreak: normalized.shortBreak,
       longBreak: normalized.longBreak,
-      longBreakAfter,
+      longBreakAfter: normalized.longBreakAfter,
     })
 
     if (user) {
@@ -618,7 +625,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         workDuration: normalized.workDuration,
         shortBreak: normalized.shortBreak,
         longBreak: normalized.longBreak,
-        longBreakAfter,
+        longBreakAfter: normalized.longBreakAfter,
       })
     }
 
@@ -637,7 +644,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
               workDuration: normalized.workDuration,
               shortBreak: normalized.shortBreak,
               longBreak: normalized.longBreak,
-              longBreakAfter,
+              longBreakAfter: normalized.longBreakAfter,
               soundEnabled,
               soundVolume,
               notificationsEnabled: notificationEnabled
@@ -1373,7 +1380,11 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         onToggleAutoStart={() => setIsAutoStartEnabled((prev) => !prev)}
         isTimeTrackerMode={isTimeTrackerMode}
         onToggleTimeTrackerMode={() => setIsTimeTrackerMode(!isTimeTrackerMode)}
+        onOpenPaywall={() => setIsPaywallOpen(true)}
+        isProMember={isProMember}
       />
+
+      {isPaywallOpen && <PaywallModal onClose={() => setIsPaywallOpen(false)} />}
 
     </div>
   )

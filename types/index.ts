@@ -6,6 +6,8 @@ export interface User {
   description?: string
   createdAt: string
   isAnonymous?: boolean
+  isPro?: boolean
+  proExpiresAt?: string | null
   settings?: UserSettings
 }
 
