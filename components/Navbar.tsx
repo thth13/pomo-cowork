@@ -45,6 +45,7 @@ export default function Navbar() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [inviteAction, setInviteAction] = useState<{ id: string; kind: 'accept' | 'decline' } | null>(null)
+  const autoReadRef = useRef<Set<string>>(new Set())
   const menuRef = useRef<HTMLDivElement | null>(null)
   const mobileMenuRef = useRef<HTMLDivElement | null>(null)
   const notificationsRef = useRef<HTMLDivElement | null>(null)
@@ -122,6 +123,29 @@ export default function Navbar() {
     return () => window.clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authHeaders])
+
+  // todo: remove
+  useEffect(() => {
+    if (!authHeaders || notifications.length === 0) return
+    const resolvedInvites = notifications.filter(
+      (n) =>
+        n.readAt === null &&
+        n.type === 'ROOM_INVITE' &&
+        n.roomInvite &&
+        n.roomInvite.status !== 'PENDING'
+    )
+    const toMark = resolvedInvites.filter((n) => !autoReadRef.current.has(n.id))
+    if (toMark.length === 0) return
+    toMark.forEach((n) => autoReadRef.current.add(n.id))
+
+    const idsToRemove = new Set(toMark.map((n) => n.id))
+    void (async () => {
+      await Promise.all(toMark.map((n) => markRead(n.id)))
+      setNotifications((prev) => prev.filter((n) => !idsToRemove.has(n.id)))
+      setUnreadCount((prev) => Math.max(0, prev - toMark.length))
+    })()
+  }, [notifications, authHeaders])
+  // todo
 
   const markRead = async (id: string) => {
     if (!authHeaders) return
@@ -356,12 +380,12 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setIsMenuOpen(prev => !prev)}
-                      className="relative w-9 h-9 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold hover:ring-2 hover:ring-primary-500 transition-all"
+                      className="relative w-9 h-9 rounded-full overflow-visible bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold hover:ring-2 hover:ring-primary-500 transition-all"
                       aria-haspopup="true"
                       aria-expanded={isMenuOpen}
                     >
                       {user.avatarUrl ? (
-                        <Image src={user.avatarUrl} alt={user.username} width={48} height={48} className="w-full h-full object-cover" />
+                        <Image src={user.avatarUrl} alt={user.username} width={48} height={48} className="w-full h-full object-cover rounded-full" />
                       ) : (
                         <User className="w-4 h-4" />
                       )}

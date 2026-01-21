@@ -32,10 +32,20 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Invite already resolved' }, { status: 409 })
     }
 
-    await prisma.roomInvite.update({
-      where: { id: invite.id },
-      data: { status: 'DECLINED' },
-    })
+    await prisma.$transaction([
+      prisma.roomInvite.update({
+        where: { id: invite.id },
+        data: { status: 'DECLINED' },
+      }),
+      prisma.notification.updateMany({
+        where: {
+          userId: payload.userId,
+          roomInviteId: invite.id,
+          readAt: null,
+        },
+        data: { readAt: new Date() },
+      }),
+    ])
 
     return NextResponse.json({ ok: true })
   } catch (error) {

@@ -52,6 +52,14 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
           role: 'MEMBER',
         },
       }),
+      prisma.notification.updateMany({
+        where: {
+          userId: payload.userId,
+          roomInviteId: invite.id,
+          readAt: null,
+        },
+        data: { readAt: new Date() },
+      }),
     ])
 
     return NextResponse.json({ roomId: invite.roomId, roomName: invite.room.name })
