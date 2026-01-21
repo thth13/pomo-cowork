@@ -21,6 +21,7 @@ import {
   faTimes
 } from '@fortawesome/free-solid-svg-icons'
 import LatestActivity from '@/components/LatestActivity'
+import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
 
 interface Stats {
@@ -90,11 +91,22 @@ export default function StatsPage() {
   const [activityPeriod, setActivityPeriod] = useState<'7' | '30' | '365'>('7')
   const [timelineOffset, setTimelineOffset] = useState(0)
   const [showPaywall, setShowPaywall] = useState(false)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const activityPeriodRef = useRef(activityPeriod)
   const timelineOffsetRef = useRef(timelineOffset)
   
   const isDark = theme === 'dark'
   const isPro = Boolean(user?.isPro)
+  const shouldPromptRegister = !isAuthenticated || user?.isAnonymous
+
+  const openPaywallOrRegister = () => {
+    if (shouldPromptRegister) {
+      setIsAuthModalOpen(true)
+      return
+    }
+
+    setShowPaywall(true)
+  }
 
   useEffect(() => {
     activityPeriodRef.current = activityPeriod
@@ -466,7 +478,7 @@ export default function StatsPage() {
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button
-              onClick={() => setShowPaywall(true)}
+              onClick={openPaywallOrRegister}
               className="inline-flex items-center justify-center rounded-xl bg-red-500 hover:bg-red-600 text-white px-4 py-2 text-sm font-semibold transition-colors"
             >
               Buy Pro
@@ -1301,6 +1313,7 @@ export default function StatsPage() {
 
       </main>
       {!isPro && showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
     </div>
   )
 }

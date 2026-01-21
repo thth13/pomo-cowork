@@ -21,6 +21,7 @@ import { TaskOption } from '@/types/task'
 import { TaskPicker } from '@/components/TaskPicker'
 import { TimerControls } from '@/components/TimerControls'
 import { SettingsModal } from '@/components/SettingsModal'
+import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
 import { TimerErrorBoundary } from '@/components/TimerErrorBoundary'
 import { useThrottle } from '@/hooks/useThrottle'
@@ -226,7 +227,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     taskOptions,
   } = useTimerStore()
 
-  const { user, updateUserSettings } = useAuthStore()
+  const { user, isAuthenticated, updateUserSettings } = useAuthStore()
   const isProMember = Boolean(user?.isPro)
   const {
     currentRoomId,
@@ -263,6 +264,16 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   const [isPausing, setIsPausing] = useState(false)
   const [isResuming, setIsResuming] = useState(false)
   const [isPaywallOpen, setIsPaywallOpen] = useState(false)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+
+  const openPaywallOrRegister = () => {
+    if (!isAuthenticated || user?.isAnonymous) {
+      setIsAuthModalOpen(true)
+      return
+    }
+
+    setIsPaywallOpen(true)
+  }
 
   const setSessionType = useCallback(
     (type: SessionType) => dispatchTimer({ type: 'SET_SESSION_TYPE', payload: type }),
@@ -1380,11 +1391,12 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         onToggleAutoStart={() => setIsAutoStartEnabled((prev) => !prev)}
         isTimeTrackerMode={isTimeTrackerMode}
         onToggleTimeTrackerMode={() => setIsTimeTrackerMode(!isTimeTrackerMode)}
-        onOpenPaywall={() => setIsPaywallOpen(true)}
+        onOpenPaywall={openPaywallOrRegister}
         isProMember={isProMember}
       />
 
       {isPaywallOpen && <PaywallModal onClose={() => setIsPaywallOpen(false)} />}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
 
     </div>
   )

@@ -19,6 +19,7 @@ import { useTimerStore } from '@/store/useTimerStore'
 import { UserSettings } from '@/types'
 import Navbar from '@/components/Navbar'
 import AvatarUploader from '@/components/AvatarUploader'
+import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
 import { playEndSound, disposeNotificationSound } from '@/lib/notificationSound'
 
@@ -55,11 +56,22 @@ export default function SettingsPage() {
   const [saveMessage, setSaveMessage] = useState('')
   const [testMessage, setTestMessage] = useState('')
   const [showPaywall, setShowPaywall] = useState(false)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
   const billingPortalUrl = process.env.NEXT_PUBLIC_BILLING_PORTAL_URL
   const isProMember = Boolean(user?.isPro)
+  const shouldPromptRegister = !isAuthenticated || user?.isAnonymous
+
+  const openPaywallOrRegister = () => {
+    if (shouldPromptRegister) {
+      setIsAuthModalOpen(true)
+      return
+    }
+
+    setShowPaywall(true)
+  }
   
   const formatProExpiryDate = (dateString: string | null | undefined): string => {
     if (!dateString) return 'N/A'
@@ -709,7 +721,7 @@ export default function SettingsPage() {
                 ) : !isProMember ? (
                   <button
                     type="button"
-                    onClick={() => setShowPaywall(true)}
+                    onClick={openPaywallOrRegister}
                     className="inline-flex items-center justify-center rounded-full bg-primary-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
                   >
                     Get Pro
@@ -802,6 +814,7 @@ export default function SettingsPage() {
         </div>
       </main>
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
     </div>
   )
 }

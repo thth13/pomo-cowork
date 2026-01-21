@@ -41,7 +41,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
               <h3 className="hidden sm:flex font-bold text-gray-900 dark:text-white items-center gap-2">
                 What&apos;s included
               </h3>
-              <ul className="grid grid-cols-2 gap-x-4 gap-y-2 sm:gap-y-3">
+              <ul className="grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-2 sm:gap-y-3">
                 {[
                   "Create private rooms",
                   "Advanced statistics & heatmap",

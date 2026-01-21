@@ -9,10 +9,11 @@ import { useAuthStore } from '@/store/useAuthStore'
 interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
+  initialMode?: 'login' | 'register'
 }
 
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
-  const [isLogin, setIsLogin] = useState(true)
+export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalProps) {
+  const [isLogin, setIsLogin] = useState(initialMode === 'login')
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -34,8 +35,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
       setIsLoading(false)
       setIsGoogleProcessing(false)
       setFormData({ email: '', username: '', password: '' })
+      return
     }
-  }, [isOpen])
+
+    setIsLogin(initialMode === 'login')
+  }, [initialMode, isOpen])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

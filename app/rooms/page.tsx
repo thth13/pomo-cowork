@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { Crown, Lock } from 'lucide-react'
 import Navbar from '@/components/Navbar'
+import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
@@ -44,7 +45,7 @@ const RoomsListSkeleton = () => (
 export default function RoomsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, isLoading: authLoading } = useAuthStore()
+  const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const { currentRoomId, currentRoomName, setCurrentRoom, resetToGlobal } = useRoomStore()
 
   const isProMember = Boolean(user?.isPro)
@@ -58,6 +59,7 @@ export default function RoomsPage() {
   const [isRedirecting, setIsRedirecting] = useState(false)
 
   const [isPaywallOpen, setIsPaywallOpen] = useState(false)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
 
   const [createForm, setCreateForm] = useState<RoomFormState>({
     name: '',
@@ -65,6 +67,15 @@ export default function RoomsPage() {
   })
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
+  const openPaywallOrRegister = () => {
+    if (!isAuthenticated || user?.isAnonymous) {
+      setIsAuthModalOpen(true)
+      return
+    }
+
+    setIsPaywallOpen(true)
+  }
 
   const getToken = (): string | null => {
     if (typeof window === 'undefined') return null
@@ -256,7 +267,7 @@ export default function RoomsPage() {
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setIsPaywallOpen(true)}
+                  onClick={openPaywallOrRegister}
                   aria-disabled="true"
                   className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white opacity-60 cursor-pointer transition-colors"
                 >
@@ -461,6 +472,7 @@ export default function RoomsPage() {
       )}
 
       {isPaywallOpen && <PaywallModal onClose={() => setIsPaywallOpen(false)} />}
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
     </div>
   )
 }
