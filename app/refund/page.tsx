@@ -1,23 +1,15 @@
-import dynamic from 'next/dynamic'
-
-const SupportContact = dynamic(() => import('@/components/SupportContact'), {
-  ssr: false,
-  loading: () => null,
-})
-
 export default function RefundPolicyPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-6 py-12 text-gray-900 dark:text-slate-100">
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold">Refund Policy</h1>
-        <p className="text-sm text-gray-500 dark:text-slate-400">Effective date: 17 January 2026</p>
+        <p className="text-sm text-gray-500 dark:text-slate-400">Effective date: 22 January 2026</p>
       </header>
 
       <section className="mt-8 space-y-6 text-sm leading-6 text-gray-700 dark:text-slate-300">
         <p>
           This Refund Policy explains how refunds work for Pomo Cowork paid subscriptions and one-time purchases
-          (if offered). This Policy applies to purchases made directly through Pomo Cowork unless a different
-          store policy applies.
+          (if offered). This Policy applies to purchases processed by Paddle.
         </p>
 
         <div className="space-y-3">
@@ -36,81 +28,31 @@ export default function RefundPolicyPage() {
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">2. Cancellations</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">2. Refund window</h2>
           <p>
-            You can cancel your subscription at any time. After cancellation, you will retain access to
-            paid features until the end of your current billing period. Cancellation prevents the next
-            renewal charge; it does not automatically refund the current billing period.
+            You can request a refund within 14 days of the date of purchase or renewal. Requests made after
+            14 days are not eligible for a refund.
           </p>
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">3. General refund rule</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">3. Cancellations</h2>
           <p>
-            Subscription fees are billed in advance. We do not provide prorated refunds or credits for
-            unused time in a billing period, except where required by applicable law or expressly stated
-            in this Policy.
+            You can cancel your subscription at any time. Cancellation prevents the next renewal charge.
           </p>
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">4. Free trials and discounts</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">4. How to request a refund</h2>
           <p>
-            If a free trial is offered, you can cancel before the trial ends to avoid being charged. If a
-            discounted first period is offered, refunds (if any) are assessed based on the amount paid.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">5. When we may refund</h2>
-          <p>We may issue a full or partial refund in our reasonable discretion, for example if:</p>
-          <ul className="list-disc space-y-2 pl-5">
-            <li>You were charged multiple times for the same billing period.</li>
-            <li>A renewal charge was made in error (e.g., after a confirmed cancellation due to a technical issue).</li>
-            <li>The Service was materially unavailable for an extended period and you could not reasonably use it.</li>
-            <li>A purchase was unauthorized, and we can verify it (we may request supporting information).</li>
-          </ul>
-          <p>
-            Approved refunds are issued to the original payment method where possible. If that is not
-            possible, we may use an alternative method.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">6. Non-refundable cases</h2>
-          <p>Except where required by law, we generally do not refund:</p>
-          <ul className="list-disc space-y-2 pl-5">
-            <li>Unused time after you cancel a subscription.</li>
-            <li>Failure to use the Service or forgetting to cancel before renewal.</li>
-            <li>Issues caused by your device, network, browser extensions, or third-party services outside our control.</li>
-            <li>One-time purchases after delivery or activation (if applicable).</li>
-          </ul>
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">7. Statutory consumer rights (EEA/UK)</h2>
-          <p>
-            If you are a consumer in the EEA/UK, you may have a legal right to withdraw from certain
-            purchases within 14 days. Where applicable to digital services/content, you may be asked to
-            explicitly consent to immediate performance and acknowledge that you lose your withdrawal
-            right once the service is fully performed or digital content is delivered. Nothing in this
-            Policy affects your statutory rights.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">8. Chargebacks</h2>
-          <p>
-            If you initiate a chargeback without first contacting support, we may suspend your account
-            while we investigate. We encourage you to <SupportContact inline triggerLabel="contact support" /> first so we
-            can resolve billing issues quickly.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">9. How to request a refund</h2>
-          <p>
-            To request a refund, <SupportContact inline triggerLabel="contact support" /> and include:
+            To request a refund, email{' '}
+            <a
+              href="mailto:support@pomo-co.work"
+              className="underline underline-offset-2 hover:text-gray-900 dark:hover:text-white"
+            >
+              support@pomo-co.work
+            </a>
+            {' '}and include:
           </p>
           <ul className="list-disc space-y-2 pl-5">
             <li>Account email</li>
@@ -118,24 +60,15 @@ export default function RefundPolicyPage() {
             <li>Reason for the request</li>
           </ul>
           <p>
-            We typically respond within 5 business days. If approved, processing time depends on your
-            bank/payment provider (often 5–10 business days).
+            If approved, refunds are returned to the original payment method. Processing time depends on
+            your bank or payment provider.
           </p>
         </div>
 
         <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">10. Taxes and fees</h2>
+          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">5. Changes to this Policy</h2>
           <p>
-            Refunds may exclude taxes or fees where they are non-refundable or where required by law.
-            Currency conversion differences and bank fees are not refundable.
-          </p>
-        </div>
-
-        <div className="space-y-3">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-slate-100">11. Changes to this Policy</h2>
-          <p>
-            We may update this Policy from time to time. If changes are material, we will provide notice
-            in the Service or by email. The effective date above indicates the latest version.
+            We may update this Policy from time to time. The effective date above indicates the latest version.
           </p>
         </div>
       </section>

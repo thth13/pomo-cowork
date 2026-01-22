@@ -1,10 +1,17 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 
 export default function InitialLoader() {
   const { isLoading } = useAuthStore()
-  if (!isLoading) {
+  const [isHydrated, setIsHydrated] = useState(false)
+
+  useEffect(() => {
+    setIsHydrated(true)
+  }, [])
+
+  if (!isHydrated || !isLoading) {
     return null
   }
 
