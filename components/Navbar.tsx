@@ -49,6 +49,7 @@ export default function Navbar() {
   const menuRef = useRef<HTMLDivElement | null>(null)
   const mobileMenuRef = useRef<HTMLDivElement | null>(null)
   const notificationsRef = useRef<HTMLDivElement | null>(null)
+  const mobileNotificationsRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
   const { user, isAuthenticated, logout, token } = useAuthStore()
   const { setCurrentRoom, currentRoomId } = useRoomStore()
@@ -68,7 +69,10 @@ export default function Navbar() {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsMenuOpen(false)
       }
-      if (notificationsRef.current && !notificationsRef.current.contains(event.target as Node)) {
+      const isInsideNotifications =
+        notificationsRef.current?.contains(event.target as Node) ||
+        mobileNotificationsRef.current?.contains(event.target as Node)
+      if (!isInsideNotifications) {
         setIsNotificationsOpen(false)
       }
       if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
@@ -457,13 +461,103 @@ export default function Navbar() {
             </div>
 
             {isAuthenticated && user ? (
-              <button
-                type="button"
-                onClick={() => setIsMobileMenuOpen(prev => !prev)}
-                className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all"
-              >
-                {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-              </button>
+              <>
+                <div className="relative" ref={mobileNotificationsRef}>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const next = !isNotificationsOpen
+                      setIsNotificationsOpen(next)
+                      if (next) await fetchNotifications()
+                    }}
+                    className="relative w-9 h-9 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all"
+                    aria-label="Notifications"
+                    aria-haspopup="true"
+                    aria-expanded={isNotificationsOpen}
+                  >
+                    <FontAwesomeIcon icon={faEnvelope} className="text-base" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-0 right-0 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] leading-[16px] text-center">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </button>
+
+                  {isNotificationsOpen && (
+                    <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-gray-200 bg-white/95 shadow-lg ring-1 ring-black/5 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 z-50 overflow-hidden">
+                      <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</p>
+                      </div>
+
+                      {notificationsLoading && notifications.length === 0 ? (
+                        <NotificationsSkeleton />
+                      ) : notifications.length === 0 ? (
+                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">No notifications</div>
+                      ) : (
+                        <div className="max-h-96 overflow-auto">
+                          {notifications.map((n) => {
+                            const isInvite =
+                              n.readAt === null &&
+                              n.type === 'ROOM_INVITE' &&
+                              n.roomInvite &&
+                              n.roomInvite.status === 'PENDING'
+                            const isUnread = n.readAt === null
+                            const isAccepting = inviteAction?.id === n.id && inviteAction.kind === 'accept'
+                            const isDeclining = inviteAction?.id === n.id && inviteAction.kind === 'decline'
+                            const isInviteBusy = isAccepting || isDeclining
+                            return (
+                              <div
+                                key={n.id}
+                                className={`px-4 py-3 border-b border-gray-100 dark:border-slate-700 last:border-b-0 ${
+                                  isUnread ? 'bg-gray-50 dark:bg-slate-800/60' : 'bg-transparent'
+                                }`}
+                              >
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">{n.title}</div>
+                                <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{n.message}</div>
+
+                                {isInvite && (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => acceptInvite(n)}
+                                      disabled={isInviteBusy}
+                                      className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center gap-2"
+                                    >
+                                      {isAccepting && (
+                                        <span className="h-3.5 w-3.5 rounded-full border-2 border-white/50 border-t-white animate-spin" />
+                                      )}
+                                      Accept
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => declineInvite(n)}
+                                      disabled={isInviteBusy}
+                                      className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-60 flex items-center gap-2"
+                                    >
+                                      {isDeclining && (
+                                        <span className="h-3.5 w-3.5 rounded-full border-2 border-gray-400/50 dark:border-slate-400/50 border-t-gray-600 dark:border-t-slate-200 animate-spin" />
+                                      )}
+                                      Decline
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsMobileMenuOpen(prev => !prev)}
+                  className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all"
+                >
+                  {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                </button>
+              </>
             ) : (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
@@ -484,9 +578,11 @@ export default function Navbar() {
             {/* User Info */}
             <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-slate-700 rounded-xl">
               <div className="flex items-center space-x-3">
-                <div className="relative w-10 h-10 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold">
+                <div className="relative w-10 h-10 rounded-full overflow-visible bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold">
                   {user.avatarUrl ? (
-                    <Image src={user.avatarUrl} alt={user.username} width={40} height={40} className="w-full h-full object-cover" />
+                    <span className="block w-full h-full rounded-full overflow-hidden">
+                      <Image src={user.avatarUrl} alt={user.username} width={40} height={40} className="w-full h-full object-cover" />
+                    </span>
                   ) : (
                     <User className="w-5 h-5" />
                   )}
