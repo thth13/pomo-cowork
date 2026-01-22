@@ -101,12 +101,22 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   restoreSession: (session: PomodoroSession) => {
+    const isPaused = session.status === SessionStatus.PAUSED
+    const storedRemaining =
+      typeof session.remainingSeconds === 'number'
+        ? session.remainingSeconds
+        : typeof session.timeRemaining === 'number'
+          ? session.timeRemaining
+          : null
+
     const startTime = new Date(session.startedAt).getTime()
     const now = Date.now()
     const elapsed = Math.floor((now - startTime) / 1000)
     const totalDuration = session.duration * 60
-    const remaining = Math.max(0, totalDuration - elapsed)
-    
+    const remaining = isPaused && storedRemaining !== null
+      ? Math.max(0, storedRemaining)
+      : Math.max(0, totalDuration - elapsed)
+
     if (remaining > 0) {
       set({
         currentSession: {
@@ -115,7 +125,11 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         },
         timeRemaining: remaining,
         isRunning: session.status === SessionStatus.ACTIVE,
-        pausedAt: session.status === SessionStatus.PAUSED ? Date.now() : null,
+        pausedAt: isPaused
+          ? session.pausedAt
+            ? new Date(session.pausedAt).getTime()
+            : Date.now()
+          : null,
       })
     }
   },
