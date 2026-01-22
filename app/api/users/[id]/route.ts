@@ -23,6 +23,7 @@ export async function GET(
         description: true,
         createdAt: true,
         isPro: true,
+        lastKek: true,
         _count: {
           select: {
             sessions: true
