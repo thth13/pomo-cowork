@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
@@ -11,9 +11,9 @@ import { useTimerStore } from '@/store/useTimerStore'
 import { useThemeStore } from '@/store/useThemeStore'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import Navbar from '@/components/Navbar'
-import dynamic from 'next/dynamic'
-
-const HighchartsReact = dynamic(() => import('highcharts-react-official'), { ssr: false })
+import ActiveSessionTimer from '@/components/ActiveSessionTimer'
+import WeeklyActivityChart from '@/components/WeeklyActivityChart'
+import YearlyHeatmapChart from '@/components/YearlyHeatmapChart'
 
 let Highcharts: any = null
 let isHeatmapInitialized = false
@@ -84,7 +84,6 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [chartReady, setChartReady] = useState(false)
-  const [timeRemaining, setTimeRemaining] = useState<string | null>(null)
 
   const userId = params?.id as string
   const isDark = theme === 'dark'
@@ -123,34 +122,6 @@ export default function UserProfilePage() {
     initHighcharts()
   }, [])
 
-  // Timer countdown effect
-  useEffect(() => {
-    if (!profile?.activeSession) {
-      setTimeRemaining(null)
-      return
-    }
-
-    const calculateTimeRemaining = () => {
-      const startTime = new Date(profile.activeSession!.startedAt).getTime()
-      const now = Date.now()
-      const elapsed = Math.floor((now - startTime) / 1000)
-      const totalDuration = profile.activeSession!.duration * 60
-      const remaining = Math.max(0, totalDuration - elapsed)
-      
-      const mins = Math.floor(remaining / 60)
-      const secs = remaining % 60
-      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-    }
-
-    setTimeRemaining(calculateTimeRemaining())
-    
-    const interval = setInterval(() => {
-      setTimeRemaining(calculateTimeRemaining())
-    }, 1000)
-
-    return () => clearInterval(interval)
-  }, [profile?.activeSession])
-
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -184,23 +155,23 @@ export default function UserProfilePage() {
     }
   }, [userId])
 
-  // Generate heatmap data for the year
-  const generateHeatmapData = () => {
+  // Generate heatmap data for the year - memoized to prevent recalculation
+  const heatmapData = useMemo((): Array<[number, number, number]> => {
     if (!userStats?.yearlyHeatmap) return []
     
     return userStats.yearlyHeatmap.map(item => [
       item.week,
       item.dayOfWeek,
       item.pomodoros
-    ])
-  }
+    ] as [number, number, number])
+  }, [userStats?.yearlyHeatmap])
 
-  // Generate weekly activity data
-  const generateWeeklyData = () => {
+  // Generate weekly activity data - memoized to prevent recalculation
+  const weeklyData = useMemo(() => {
     if (!userStats) return []
     
     return userStats.weeklyActivity.map(item => item.pomodoros)
-  }
+  }, [userStats?.weeklyActivity])
 
   const totalPomodoros = userStats?.totalPomodoros || 0
   const totalFocusMinutes = userStats?.totalFocusMinutes || 0
@@ -212,146 +183,13 @@ export default function UserProfilePage() {
     ? (Number.isInteger(avgPomodorosPerDay) ? avgPomodorosPerDay.toString() : avgPomodorosPerDay.toFixed(1))
     : '0'
   const weekDayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const weeklyCategories = userStats?.weeklyActivity?.map(item => {
-    const [year, month, day] = item.date.split('-').map(Number)
-    const date = new Date(year, month - 1, day)
-    return weekDayLabels[date.getDay()]
-  }) || []
-
-  const heatmapOptions: Highcharts.Options = {
-    chart: { 
-      type: 'heatmap', 
-      backgroundColor: 'transparent',
-      height: 140,
-      spacing: [0, 0, 0, 0]
-    },
-    title: { text: '' },
-    credits: { enabled: false },
-    xAxis: {
-      visible: false,
-      min: 0,
-      gridLineWidth: 0,
-      lineWidth: 0
-    },
-    yAxis: {
-      categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      title: { text: '' },
-      reversed: true,
-      labels: {
-        style: { 
-          fontSize: '10px',
-          color: isDark ? '#cbd5e1' : '#6b7280'
-        }
-      },
-      gridLineWidth: 0,
-      lineWidth: 0
-    },
-    colorAxis: {
-      min: 0,
-      max: 10,
-      stops: isDark ? [
-        [0, '#334155'],
-        [0.25, '#14532d'],
-        [0.5, '#166534'],
-        [0.75, '#15803d'],
-        [1, '#22c55e']
-      ] : [
-        [0, '#ebedf0'],
-        [0.25, '#c6e48b'],
-        [0.5, '#7bc96f'],
-        [0.75, '#239a3b'],
-        [1, '#196127']
-      ]
-    },
-    legend: { enabled: false },
-    tooltip: {
-      formatter: function() {
-        const point = this as any
-        const dataPoint = userStats?.yearlyHeatmap?.find(
-          item => item.week === point.x && item.dayOfWeek === point.y
-        )
-        const dateStr = dataPoint?.date || ''
-        return '<b>' + point.value + '</b> pomodoros<br>' + 
-               (dateStr ? new Date(dateStr).toLocaleDateString('en-US') : '')
-      }
-    },
-    plotOptions: {
-      heatmap: {
-        borderWidth: 2,
-        borderColor: isDark ? '#1e293b' : '#ffffff',
-        dataLabels: { enabled: false }
-      }
-    },
-    series: [{
-      type: 'heatmap',
-      name: 'Pomodoros',
-      data: generateHeatmapData(),
-      colsize: 1,
-      rowsize: 1
-    }]
-  }
-
-  const weeklyOptions: Highcharts.Options = {
-    chart: {
-      type: 'column',
-      backgroundColor: 'transparent',
-      height: 320,
-    },
-    title: {
-      text: undefined,
-    },
-    credits: {
-      enabled: false,
-    },
-    xAxis: {
-      categories: weeklyCategories.length > 0 ? weeklyCategories : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      lineColor: isDark ? '#475569' : '#e5e7eb',
-      tickColor: isDark ? '#475569' : '#e5e7eb',
-      lineWidth: 0,
-      tickWidth: 0,
-      labels: {
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
-      }
-    },
-    yAxis: {
-      title: {
-        text: undefined,
-      },
-      gridLineWidth: 1,
-      gridLineColor: isDark ? '#334155' : '#f3f4f6',
-      labels: {
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
-      }
-    },
-    legend: {
-      enabled: false,
-    },
-    plotOptions: {
-      column: {
-        borderRadius: 4,
-        pointPadding: 0.2,
-        groupPadding: 0.1,
-        color: '#3b82f6',
-      }
-    },
-    tooltip: {
-      formatter: function(this: any) {
-        const index = this.point?.index ?? 0
-        const entry = userStats?.weeklyActivity?.[index]
-        if (!entry) {
-          return `<b>${this.x}</b><br/>Pomodoros: ${this.y || 0}`
-        }
-        const [year, month, day] = entry.date.split('-').map(Number)
-        const date = new Date(year, month - 1, day)
-        const label = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-        return `<b>${label}</b><br/>Pomodoros: ${this.y || 0}`
-      }
-    },
-    series: [{
-      type: 'column',
-      data: generateWeeklyData(),
-    }]
-  }
+  const weeklyCategories = useMemo(() => {
+    return userStats?.weeklyActivity?.map(item => {
+      const [year, month, day] = item.date.split('-').map(Number)
+      const date = new Date(year, month - 1, day)
+      return weekDayLabels[date.getDay()]
+    }) || []
+  }, [userStats?.weeklyActivity])
 
   // Check if user is online (connected to socket)
   const isUserOnline = onlineUserIds[userId] === true
@@ -602,40 +440,11 @@ export default function UserProfilePage() {
               </div>
             </div>
             {/* Current Status */}
-            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 w-full lg:w-auto lg:min-w-[280px] lg:max-w-[280px]">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 ${isUserOnline ? 'bg-green-400' : 'bg-gray-400'} rounded-full ${isUserOnline ? 'pulse-dot' : ''}`}></div>
-                  <span className={`text-sm font-medium ${isUserOnline ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-slate-400'}`}>
-                    {isUserOnline ? 'Online' : 'Offline'}
-                  </span>
-                </div>
-                <span className="text-xs text-gray-500 dark:text-slate-400">
-                  {isUserWorking ? 'Currently Working' : 'Not Working'}
-                </span>
-              </div>
-              {isUserWorking && profile.activeSession ? (
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">{profile.activeSession.task}</div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-gray-500 dark:text-slate-400">{getSessionTypeLabel(profile.activeSession.type)}</span>
-                    <span className="font-bold text-red-600 dark:text-red-400 text-lg">{timeRemaining}</span>
-                  </div>
-                  <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-1.5">
-                    <div 
-                      className="bg-red-500 h-1.5 rounded-full transition-all" 
-                      style={{ 
-                        width: `${Math.max(0, Math.min(100, ((Date.now() - new Date(profile.activeSession.startedAt).getTime()) / (profile.activeSession.duration * 60 * 1000)) * 100))}%` 
-                      }}
-                    ></div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-2 text-gray-500 dark:text-slate-400 text-sm">
-                  Not currently working
-                </div>
-              )}
-            </div>
+            <ActiveSessionTimer 
+              activeSession={profile.activeSession}
+              isUserOnline={isUserOnline}
+              isUserWorking={isUserWorking}
+            />
           </div>
         </motion.div>
 
@@ -706,7 +515,12 @@ export default function UserProfilePage() {
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Yearly Activity</h3>
               </div>
-              <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
+              <YearlyHeatmapChart 
+                Highcharts={Highcharts} 
+                heatmapData={heatmapData} 
+                isDark={isDark}
+                yearlyHeatmap={userStats?.yearlyHeatmap}
+              />
               <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 mt-4">
                 <span>Less</span>
                 <div className="flex items-center space-x-1">
@@ -730,7 +544,13 @@ export default function UserProfilePage() {
               <div className="flex items-center justify-between mb-8">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Weekly Activity</h3>
               </div>
-              <HighchartsReact highcharts={Highcharts} options={weeklyOptions} />
+              <WeeklyActivityChart 
+                Highcharts={Highcharts}
+                weeklyData={weeklyData}
+                weeklyCategories={weeklyCategories}
+                isDark={isDark}
+                weeklyActivity={userStats?.weeklyActivity}
+              />
             </motion.div>
           </div>
 

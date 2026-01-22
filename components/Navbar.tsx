@@ -163,6 +163,16 @@ export default function Navbar() {
     }).catch(() => null)
   }
 
+  const markAllAsRead = async () => {
+    if (!authHeaders || notifications.length === 0) return
+    const unreadIds = notifications.filter(n => n.readAt === null).map(n => n.id)
+    if (unreadIds.length === 0) return
+
+    await Promise.all(unreadIds.map(id => markRead(id)))
+    setNotifications([])
+    setUnreadCount(0)
+  }
+
   const acceptInvite = async (notification: NotificationItem) => {
     if (!authHeaders) return
     const inviteId = notification.roomInviteId
@@ -298,7 +308,10 @@ export default function Navbar() {
                       onClick={async () => {
                         const next = !isNotificationsOpen
                         setIsNotificationsOpen(next)
-                        if (next) await fetchNotifications()
+                        if (next) {
+                          await fetchNotifications()
+                          await markAllAsRead()
+                        }
                       }}
                       className="relative p-2 text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                       aria-label="Notifications"
@@ -466,6 +479,9 @@ export default function Navbar() {
                   <button
                     type="button"
                     onClick={async () => {
+                      await fetchNotifications()
+                      await markAllAsRead()
+                      
                       const next = !isNotificationsOpen
                       setIsNotificationsOpen(next)
                       if (next) await fetchNotifications()

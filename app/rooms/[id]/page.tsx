@@ -724,14 +724,6 @@ export default function RoomPage() {
               </button>
             )}
 
-            <button
-              type="button"
-              onClick={() => router.push('/rooms')}
-              className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-            >
-              Back
-            </button>
-
             {canLeaveRoom && (
               <button
                 type="button"

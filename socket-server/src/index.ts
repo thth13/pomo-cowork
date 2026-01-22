@@ -135,15 +135,9 @@ const deleteSystemMessageFromDB = async (messageId: string, sessionId?: string) 
 const updateLastSeenAt = async (userId: string) => {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3000'
-    const headers: Record<string, string> = {}
-    const secret = process.env.PRESENCE_SECRET
-    if (secret) {
-      headers['x-presence-secret'] = secret
-    }
-
     await axios.post<LastSeenResponse>(`${apiUrl}/api/users/${userId}/last-seen`, {
       lastSeenAt: new Date().toISOString()
-    }, { headers })
+    })
   } catch (error) {
     console.error('Failed to update lastSeenAt:', error)
   }
