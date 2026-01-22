@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
+import { getEffectiveMinutes } from '@/lib/sessionStats'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
@@ -36,7 +37,37 @@ export async function GET(request: NextRequest) {
       ]
     })
 
-    return NextResponse.json(tasks)
+    const sessions = await prisma.pomodoroSession.findMany({
+      where: {
+        userId: decoded.userId,
+        type: 'WORK',
+        status: { in: ['COMPLETED', 'CANCELLED'] }
+      },
+      select: {
+        task: true,
+        duration: true,
+        startedAt: true,
+        endedAt: true,
+        completedAt: true,
+        pausedAt: true,
+        remainingSeconds: true,
+        createdAt: true,
+      }
+    })
+
+    const focusMinutesByTask = new Map<string, number>()
+    sessions.forEach((session) => {
+      const key = session.task
+      const minutes = getEffectiveMinutes(session)
+      focusMinutesByTask.set(key, (focusMinutesByTask.get(key) ?? 0) + minutes)
+    })
+
+    const tasksWithStats = tasks.map(task => ({
+      ...task,
+      focusMinutes: focusMinutesByTask.get(task.title) ?? 0,
+    }))
+
+    return NextResponse.json(tasksWithStats)
   } catch (error) {
     console.error('Get tasks error:', error)
     return NextResponse.json(

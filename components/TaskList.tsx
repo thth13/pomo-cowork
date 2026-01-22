@@ -13,6 +13,7 @@ interface Task {
   description: string
   pomodoros: number
   completedPomodoros: number
+  focusMinutes?: number
   priority: 'Critical' | 'High' | 'Medium' | 'Low'
   completed: boolean
   isPending?: boolean
@@ -48,7 +49,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const [pendingDeleteTaskId, setPendingDeleteTaskId] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState('')
   const [showToast, setShowToast] = useState(false)
-  const { selectedTask, setSelectedTask, setTaskOptions, isRunning, workDuration } = useTimerStore()
+  const { selectedTask, setSelectedTask, setTaskOptions, isRunning } = useTimerStore()
   const { user } = useAuthStore()
   const hasRestoredSelectedTask = useRef(false)
   const deleteConfirmTimeoutRef = useRef<number | null>(null)
@@ -182,6 +183,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
           description: task.description ?? '',
           pomodoros: task.pomodoros ?? 1,
           completedPomodoros: task.completedPomodoros ?? 0,
+          focusMinutes: task.focusMinutes ?? 0,
           priority: task.priority ?? 'Medium',
           completed: task.completed ?? false,
           isPending: false,
@@ -346,6 +348,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       description: '',
       pomodoros: 1,
       completedPomodoros: 0,
+      focusMinutes: 0,
       priority: newTaskPriority,
       completed: false,
       isPending: true,
@@ -391,6 +394,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
               description: createdTask.description ?? '',
               pomodoros: createdTask.pomodoros ?? 1,
               completedPomodoros: createdTask.completedPomodoros ?? 0,
+              focusMinutes: createdTask.focusMinutes ?? 0,
               priority: createdTask.priority ?? optimisticTask.priority,
               completed: createdTask.completed ?? false,
               isPending: false,
@@ -514,7 +518,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
               const canonicalId = getTaskCanonicalId(task)
               const isActive = selectedTask?.id === canonicalId
               const isSelectionLocked = isRunning
-              const completedMinutes = task.completedPomodoros * workDuration
+              const completedMinutes = task.focusMinutes ?? 0
               const completedHoursLabel = formatHoursFromMinutes(completedMinutes)
 
               const hoverState = isActive
