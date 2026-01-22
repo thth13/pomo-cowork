@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown } from 'lucide-react'
+import { formatDistanceToNowStrict } from 'date-fns'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useThemeStore } from '@/store/useThemeStore'
@@ -26,6 +27,7 @@ interface UserProfile {
     createdAt: string
     totalSessions: number
     isPro?: boolean
+    lastSeenAt?: string | null
   }
   stats: {
     totalSessions: number
@@ -409,6 +411,19 @@ export default function UserProfilePage() {
     }
   }
 
+  const getLastSeenLabel = (lastSeenAt?: string | null) => {
+    if (!lastSeenAt) {
+      return 'Last seen a long time ago'
+    }
+
+    const lastSeenDate = new Date(lastSeenAt)
+    if (Number.isNaN(lastSeenDate.getTime())) {
+      return 'Last seen a long time ago'
+    }
+
+    return `Last seen ${formatDistanceToNowStrict(lastSeenDate, { addSuffix: true })}`
+  }
+
   if (loading || !chartReady) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
@@ -579,6 +594,11 @@ export default function UserProfilePage() {
                     <span>Joined {formatDate(profile.user.createdAt)}</span>
                   </div>
                 </div>
+                {!isUserOnline && (
+                  <div className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-slate-400">
+                    {getLastSeenLabel(profile.user.lastSeenAt)}
+                  </div>
+                )}
               </div>
             </div>
             {/* Current Status */}
@@ -594,7 +614,6 @@ export default function UserProfilePage() {
                   {isUserWorking ? 'Currently Working' : 'Not Working'}
                 </span>
               </div>
-
               {isUserWorking && profile.activeSession ? (
                 <div className="space-y-2">
                   <div className="text-sm font-medium text-gray-900 dark:text-white">{profile.activeSession.task}</div>

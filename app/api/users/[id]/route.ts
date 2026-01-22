@@ -23,7 +23,7 @@ export async function GET(
         description: true,
         createdAt: true,
         isPro: true,
-        lastKek: true,
+        lastSeenAt: true,
         _count: {
           select: {
             sessions: true
@@ -119,6 +119,7 @@ export async function GET(
         description: user.description,
         createdAt: user.createdAt,
         isPro: user.isPro,
+        lastSeenAt: user.lastSeenAt,
         totalSessions: user._count.sessions
       },
       stats: {

@@ -42,6 +42,11 @@ interface ChatMessage {
   }
 }
 
+interface LastSeenResponse {
+  success: boolean
+  lastSeenAt?: string | null
+}
+
 const app = express()
 const server: Server = http.createServer(app)
 
@@ -127,6 +132,23 @@ const deleteSystemMessageFromDB = async (messageId: string, sessionId?: string) 
   }
 }
 
+const updateLastSeenAt = async (userId: string) => {
+  try {
+    const apiUrl = process.env.API_URL || 'http://localhost:3000'
+    const headers: Record<string, string> = {}
+    const secret = process.env.PRESENCE_SECRET
+    if (secret) {
+      headers['x-presence-secret'] = secret
+    }
+
+    await axios.post<LastSeenResponse>(`${apiUrl}/api/users/${userId}/last-seen`, {
+      lastSeenAt: new Date().toISOString()
+    }, { headers })
+  } catch (error) {
+    console.error('Failed to update lastSeenAt:', error)
+  }
+}
+
 const incrementUserConnection = (userId: string) => {
   const next = (userConnectionCounts.get(userId) ?? 0) + 1
   userConnectionCounts.set(userId, next)
@@ -148,6 +170,7 @@ const decrementUserConnection = (userId: string) => {
     userConnectionCounts.delete(userId)
     onlineUsers.delete(userId)
     io.emit('user-online', { userId, online: false })
+    void updateLastSeenAt(userId)
   } else {
     userConnectionCounts.set(userId, next)
   }
@@ -353,6 +376,7 @@ setInterval(() => {
     if (!activeSockets.has(userId)) {
       onlineUsers.delete(userId)
       userConnectionCounts.delete(userId)
+      void updateLastSeenAt(userId)
       cleaned = true
     }
   })
