@@ -10,6 +10,7 @@ import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
 import InitialLoader from '@/components/InitialLoader'
+import SiteFooter from '@/components/SiteFooter'
 
 config.autoAddCss = false
 
@@ -94,19 +95,7 @@ export default function RootLayout({
           <AuthProvider>
             <InitialLoader />
             {children}
-            <footer className="border-t border-gray-200 bg-white/80 px-4 py-6 text-xs text-gray-500 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
-              <div className="mx-auto flex w-full max-w-7xl flex-wrap items-center justify-center gap-3">
-                <span>© 2026 Pomo Cowork</span>
-                <span className="text-gray-300 dark:text-slate-600">•</span>
-                <Link href="/terms" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
-                  Terms of service
-                </Link>
-                <span className="text-gray-300 dark:text-slate-600">•</span>
-                <Link href="/privacy" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
-                  Privacy policy
-                </Link>
-              </div>
-            </footer>
+            <SiteFooter />
             <ConnectionDebug />
             <OfflineToast />
           </AuthProvider>

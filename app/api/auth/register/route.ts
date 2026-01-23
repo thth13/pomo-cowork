@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { hashPassword, generateToken } from '@/lib/auth'
+import { recordReferralSignup } from '@/lib/referrals'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, username, password, anonymousId } = await request.json()
+    const { email, username, password, anonymousId, referralCode } = await request.json()
 
     if (!email || !username || !password) {
       return NextResponse.json(
@@ -155,6 +156,8 @@ export async function POST(request: NextRequest) {
         include: { settings: true }
       })
     }
+
+    await recordReferralSignup(referralCode, user.id)
 
     // Generate JWT token
     const token = generateToken({

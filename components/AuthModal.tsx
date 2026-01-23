@@ -110,7 +110,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
     // OAuth 2.0 redirect flow
     const redirectUri = `${window.location.origin}/api/auth/google/callback`
     const scope = 'openid email profile'
-    const state = crypto.randomUUID()
+    const baseState = crypto.randomUUID()
+    const referralCode = localStorage.getItem('referral_code')
+    const state = referralCode ? `${baseState}|ref:${referralCode}` : baseState
     sessionStorage.setItem('google_oauth_state', state)
 
     console.log('Google OAuth redirect URI:', redirectUri)

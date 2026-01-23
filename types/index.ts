@@ -197,6 +197,33 @@ export interface LeaderboardUser {
   rank: number
 }
 
+export interface ReferralLink {
+  id: string
+  code: string
+  label?: string | null
+  isArchived?: boolean
+  createdAt: string
+  createdBy: {
+    id: string
+    email: string
+  }
+  clicksCount: number
+  signupsCount: number
+}
+
+export interface ReferralSignupUser {
+  id: string
+  email: string
+  username: string
+  avatarUrl?: string | null
+  createdAt: string
+}
+
+export interface ReferralSignupEntry {
+  signupCreatedAt: string
+  user: ReferralSignupUser
+}
+
 export interface TomatoThrow {
   id: string
   fromUserId: string

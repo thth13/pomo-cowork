@@ -40,8 +40,55 @@ model User {
   notifications   Notification[]
   supportMessages SupportMessage[]
   chatMessages    ChatMessage[]    @relation("ChatMessages")
+  referralLinks   ReferralLink[]
+  referralSignups ReferralSignup[]
 
   @@map("users")
+}
+
+model ReferralLink {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  label       String?
+  isArchived  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  createdById String
+
+  createdBy User             @relation(fields: [createdById], references: [id], onDelete: Cascade)
+  clicks    ReferralClick[]
+  signups   ReferralSignup[]
+
+  @@index([createdById])
+  @@map("referral_links")
+}
+
+model ReferralClick {
+  id          String   @id @default(cuid())
+  referralId  String
+  fingerprint String
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  referral ReferralLink @relation(fields: [referralId], references: [id], onDelete: Cascade)
+
+  @@unique([referralId, fingerprint])
+  @@index([referralId, createdAt])
+  @@map("referral_clicks")
+}
+
+model ReferralSignup {
+  id         String   @id @default(cuid())
+  referralId String
+  userId     String
+  createdAt  DateTime @default(now())
+
+  referral ReferralLink @relation(fields: [referralId], references: [id], onDelete: Cascade)
+  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([referralId, userId])
+  @@index([referralId, createdAt])
+  @@map("referral_signups")
 }
 
 enum RoomPrivacy {

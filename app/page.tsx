@@ -53,6 +53,23 @@ export default function HomePage() {
   }, [checkAuth])
 
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    const ref = url.searchParams.get('ref')
+
+    if (ref) {
+      localStorage.setItem('referral_code', ref)
+      void fetch('/api/referrals/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: ref }),
+      })
+      url.searchParams.delete('ref')
+      window.history.replaceState({}, '', url.pathname + url.search)
+    }
+  }, [])
+
+  useEffect(() => {
     // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission()

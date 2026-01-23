@@ -53,13 +53,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       // Get anonymous ID if it exists
       const anonymousId = localStorage.getItem('anonymous_user_id')
+      const referralCode = localStorage.getItem('referral_code')
       
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, username, password, anonymousId }),
+        body: JSON.stringify({ email, username, password, anonymousId, referralCode }),
       })
 
       if (response.ok) {
@@ -69,6 +70,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         // Clear anonymous ID after successful registration
         if (anonymousId) {
           localStorage.removeItem('anonymous_user_id')
+        }
+        if (referralCode) {
+          localStorage.removeItem('referral_code')
         }
         
         set({ user, token, isAuthenticated: true })

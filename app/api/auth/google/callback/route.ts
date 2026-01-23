@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { generateToken, hashPassword } from '@/lib/auth'
+import { normalizeReferralCode, recordReferralSignup } from '@/lib/referrals'
 import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
@@ -53,12 +54,22 @@ const generateUniqueUsername = async (base: string): Promise<string> => {
   return `${sanitizedBase}${crypto.randomBytes(2).toString('hex')}`
 }
 
+const getReferralFromState = (state: string | null): string | null => {
+  if (!state) return null
+  const marker = '|ref:'
+  const index = state.indexOf(marker)
+  if (index === -1) return null
+  const raw = state.slice(index + marker.length)
+  return normalizeReferralCode(raw)
+}
+
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const code = searchParams.get('code')
     const state = searchParams.get('state')
     const error = searchParams.get('error')
+    const referralCode = getReferralFromState(state)
 
     // Проверка на ошибки от Google
     if (error) {
@@ -180,6 +191,8 @@ export async function GET(request: NextRequest) {
     }
 
     // Генерируем JWT токен
+    await recordReferralSignup(referralCode, user.id)
+
     const jwtToken = generateToken({
       userId: user.id,
       email: user.email,

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { generateToken, hashPassword } from '@/lib/auth'
+import { recordReferralSignup } from '@/lib/referrals'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
@@ -99,7 +100,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Google OAuth is not configured' }, { status: 500 })
     }
 
-    const { token, anonymousId } = await request.json()
+    const { token, anonymousId, referralCode } = await request.json()
 
     if (!token) {
       return NextResponse.json({ error: 'Google token is required' }, { status: 400 })
@@ -184,6 +185,8 @@ export async function POST(request: NextRequest) {
         include: { settings: true },
       })
     }
+
+    await recordReferralSignup(referralCode, user.id)
 
     const jwtToken = generateToken({
       userId: user.id,
