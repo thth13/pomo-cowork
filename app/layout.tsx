@@ -1,4 +1,6 @@
 import './globals.css'
+import '@fortawesome/fontawesome-svg-core/styles.css'
+import { config } from '@fortawesome/fontawesome-svg-core'
 import Link from 'next/link'
 import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
@@ -8,6 +10,8 @@ import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
 import InitialLoader from '@/components/InitialLoader'
+
+config.autoAddCss = false
 
 const inter = Inter({ subsets: ['latin'] })
 const GA_MEASUREMENT_ID = 'G-TEKE22N2N5'
