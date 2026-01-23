@@ -347,13 +347,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                   {isLogin ? 'Register' : 'Login'}
                 </button>
               </p>
-              <button
-                type="button"
-                onClick={() => setShowEmailForm(false)}
-                className="text-xs text-slate-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400"
-              >
-                Prefer Google? Continue with Google
-              </button>
             </div>
           )}
         </motion.div>
