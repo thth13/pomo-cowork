@@ -2,6 +2,7 @@ import './globals.css'
 import Link from 'next/link'
 import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
+import Script from 'next/script'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
@@ -9,6 +10,7 @@ import OfflineToast from '@/components/OfflineToast'
 import InitialLoader from '@/components/InitialLoader'
 
 const inter = Inter({ subsets: ['latin'] })
+const GA_MEASUREMENT_ID = 'G-TEKE22N2N5'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pomo-co.work'),
@@ -66,6 +68,19 @@ export default function RootLayout({
               } catch (e) {
                 document.documentElement.classList.add('light');
               }
+            `,
+          }}
+        />
+        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
+        <Script
+          id="google-analytics"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${GA_MEASUREMENT_ID}');
             `,
           }}
         />
