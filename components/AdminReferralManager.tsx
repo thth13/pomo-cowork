@@ -73,6 +73,10 @@ export default function AdminReferralManager() {
         },
       })
 
+      if (response.status === 403) {
+        notFound()
+      }
+
       if (!response.ok) {
         const body = await response.json().catch(() => null)
         throw new Error(body?.error ?? 'Failed to load referrals')
@@ -110,6 +114,10 @@ export default function AdminReferralManager() {
         },
         body: JSON.stringify(payload),
       })
+
+      if (response.status === 403) {
+        notFound()
+      }
 
       if (!response.ok) {
         const body = await response.json().catch(() => null)
@@ -155,6 +163,10 @@ export default function AdminReferralManager() {
           Authorization: token ? `Bearer ${token}` : '',
         },
       })
+
+      if (response.status === 403) {
+        notFound()
+      }
 
       if (!response.ok) {
         const body = await response.json().catch(() => null)
@@ -214,6 +226,10 @@ export default function AdminReferralManager() {
         },
       })
 
+      if (response.status === 403) {
+        notFound()
+      }
+
       if (!response.ok) {
         const body = await response.json().catch(() => null)
         throw new Error(body?.error ?? 'Failed to load signups')
@@ -254,6 +270,10 @@ export default function AdminReferralManager() {
           Authorization: token ? `Bearer ${token}` : '',
         },
       })
+
+      if (response.status === 403) {
+        notFound()
+      }
 
       if (!response.ok) {
         const body = await response.json().catch(() => null)
