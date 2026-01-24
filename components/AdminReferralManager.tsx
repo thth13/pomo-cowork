@@ -3,7 +3,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import NotificationToast from '@/components/NotificationToast'
-import type { ReferralLink, ReferralPurchaseEntry, ReferralSignupEntry, SubscriptionPlan } from '@/types'
+import type {
+  ReferralLink,
+  ReferralPurchaseEntry,
+  ReferralSignupEntry,
+  SubscriptionPlan,
+  SupportMessageEntry,
+} from '@/types'
 import { X } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -27,12 +33,15 @@ export default function AdminReferralManager() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [archivingId, setArchivingId] = useState<string | null>(null)
   const [confirmArchiveId, setConfirmArchiveId] = useState<string | null>(null)
+  const [isCreateOpen, setIsCreateOpen] = useState(false)
   const [openSignupsId, setOpenSignupsId] = useState<string | null>(null)
   const [signupsByReferral, setSignupsByReferral] = useState<Record<string, ReferralSignupEntry[]>>({})
   const [signupsLoadingId, setSignupsLoadingId] = useState<string | null>(null)
   const [openPurchasesId, setOpenPurchasesId] = useState<string | null>(null)
   const [purchasesByReferral, setPurchasesByReferral] = useState<Record<string, ReferralPurchaseEntry[]>>({})
   const [purchasesLoadingId, setPurchasesLoadingId] = useState<string | null>(null)
+  const [supportMessages, setSupportMessages] = useState<SupportMessageEntry[]>([])
+  const [supportLoading, setSupportLoading] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'warning'>('info')
   const [showToast, setShowToast] = useState(false)
@@ -73,10 +82,6 @@ export default function AdminReferralManager() {
         },
       })
 
-      if (response.status === 403) {
-        notFound()
-      }
-
       if (!response.ok) {
         const body = await response.json().catch(() => null)
         throw new Error(body?.error ?? 'Failed to load referrals')
@@ -97,6 +102,38 @@ export default function AdminReferralManager() {
     }
   }, [isAuthenticated])
 
+  const fetchSupportMessages = async () => {
+    setSupportLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/admin/support', {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        throw new Error(body?.error ?? 'Failed to load support messages')
+      }
+
+      const data = (await response.json()) as SupportMessageEntry[]
+      setSupportMessages(data)
+    } catch (err) {
+      setToastType('error')
+      setToastMessage(err instanceof Error ? err.message : 'Failed to load support messages')
+      setShowToast(true)
+    } finally {
+      setSupportLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      void fetchSupportMessages()
+    }
+  }, [isAuthenticated])
+
   const handleCreate = async () => {
     setIsSubmitting(true)
 
@@ -114,10 +151,6 @@ export default function AdminReferralManager() {
         },
         body: JSON.stringify(payload),
       })
-
-      if (response.status === 403) {
-        notFound()
-      }
 
       if (!response.ok) {
         const body = await response.json().catch(() => null)
@@ -163,10 +196,6 @@ export default function AdminReferralManager() {
           Authorization: token ? `Bearer ${token}` : '',
         },
       })
-
-      if (response.status === 403) {
-        notFound()
-      }
 
       if (!response.ok) {
         const body = await response.json().catch(() => null)
@@ -226,10 +255,6 @@ export default function AdminReferralManager() {
         },
       })
 
-      if (response.status === 403) {
-        notFound()
-      }
-
       if (!response.ok) {
         const body = await response.json().catch(() => null)
         throw new Error(body?.error ?? 'Failed to load signups')
@@ -271,10 +296,6 @@ export default function AdminReferralManager() {
         },
       })
 
-      if (response.status === 403) {
-        notFound()
-      }
-
       if (!response.ok) {
         const body = await response.json().catch(() => null)
         throw new Error(body?.error ?? 'Failed to load purchases')
@@ -311,54 +332,82 @@ export default function AdminReferralManager() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Create referral link</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Optional: set a label or custom code (4-32 chars, letters, numbers, _ or -).
-            </p>
-          </div>
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Referral links</h2>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Create, track, and manage referral codes for campaigns and partners.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
           {user ? (
             <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">
               {user.email}
             </span>
           ) : null}
-        </div>
-
-        <div className="mt-5 grid gap-4 md:grid-cols-2">
-          <label className="space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
-            Label
-            <input
-              value={label}
-              onChange={(event) => setLabel(event.target.value)}
-              placeholder="Partner or campaign"
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-rose-500 dark:focus:ring-rose-500/40"
-            />
-          </label>
-          <label className="space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
-            Custom code
-            <input
-              value={code}
-              onChange={(event) => setCode(event.target.value)}
-              placeholder="Optional"
-              className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-rose-500 dark:focus:ring-rose-500/40"
-            />
-          </label>
-        </div>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            onClick={handleCreate}
-            disabled={isSubmitting}
-            className="inline-flex items-center justify-center rounded-xl bg-rose-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:bg-rose-300"
+            onClick={() => setIsCreateOpen((prev) => !prev)}
+            className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-200"
           >
-            {isSubmitting ? 'Creating...' : 'Create link'}
+            {isCreateOpen ? 'Hide create' : 'Create link'}
           </button>
         </div>
       </div>
+
+      <AnimatePresence initial={false}>
+        {isCreateOpen ? (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2 }}
+            className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Create referral link</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Optional: set a label or custom code (4-32 chars, letters, numbers, _ or -).
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-5 grid gap-4 md:grid-cols-2">
+              <label className="space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                Label
+                <input
+                  value={label}
+                  onChange={(event) => setLabel(event.target.value)}
+                  placeholder="Partner or campaign"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-rose-500 dark:focus:ring-rose-500/40"
+                />
+              </label>
+              <label className="space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+                Custom code
+                <input
+                  value={code}
+                  onChange={(event) => setCode(event.target.value)}
+                  placeholder="Optional"
+                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-rose-500 dark:focus:ring-rose-500/40"
+                />
+              </label>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={handleCreate}
+                disabled={isSubmitting}
+                className="inline-flex items-center justify-center rounded-xl bg-rose-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:bg-rose-300"
+              >
+                {isSubmitting ? 'Creating...' : 'Create link'}
+              </button>
+            </div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
       <div className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
         <div className="flex items-center justify-between">
@@ -590,6 +639,64 @@ export default function AdminReferralManager() {
                 </div>
               )
             })
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Support messages</h2>
+          <span className="text-xs text-slate-400">{supportMessages.length} total</span>
+        </div>
+
+        <div className="mt-4 space-y-4">
+          {supportLoading ? (
+            <div className="text-sm text-slate-500 dark:text-slate-400">Loading support messages...</div>
+          ) : supportMessages.length === 0 ? (
+            <div className="text-sm text-slate-500 dark:text-slate-400">No support messages yet.</div>
+          ) : (
+            supportMessages.map((entry) => (
+              <div
+                key={entry.id}
+                className="rounded-xl border border-slate-200 bg-white/70 p-4 text-sm text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-base font-semibold text-slate-900 dark:text-white">
+                      {entry.subject?.trim() || 'No subject'}
+                    </p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {entry.name?.trim() || 'Anonymous'} · {entry.email}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                      {entry.status}
+                    </span>
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      {new Date(entry.createdAt).toLocaleDateString('en-GB', {
+                        day: '2-digit',
+                        month: 'short',
+                        year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <p className="mt-3 whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">
+                  {entry.message}
+                </p>
+                {entry.user ? (
+                  <div className="mt-3">
+                    <Link
+                      href={`/user/${entry.user.id}`}
+                      className="inline-flex items-center gap-2 text-xs font-semibold text-rose-600 transition hover:text-rose-700 dark:text-rose-300 dark:hover:text-rose-200"
+                    >
+                      View user profile
+                    </Link>
+                  </div>
+                ) : null}
+              </div>
+            ))
           )}
         </div>
       </div>

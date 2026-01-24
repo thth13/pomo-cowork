@@ -238,6 +238,22 @@ export interface ReferralPurchaseEntry {
   user: ReferralSignupUser
 }
 
+export interface SupportMessageEntry {
+  id: string
+  name?: string | null
+  email: string
+  subject?: string | null
+  message: string
+  status: string
+  createdAt: string
+  user?: {
+    id: string
+    username: string
+    email: string
+    avatarUrl?: string | null
+  } | null
+}
+
 export interface TomatoThrow {
   id: string
   fromUserId: string
