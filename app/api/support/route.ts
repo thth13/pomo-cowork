@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic'
 
 interface SupportPayload {
   name?: string
-  email: string
+  email?: string
   subject?: string
   message: string
 }
@@ -24,12 +24,12 @@ export async function POST(request: NextRequest) {
     const subject = body.subject?.trim() || undefined
     const message = body.message?.trim()
 
-    if (!email || !isValidEmail(email)) {
+    if (email && !isValidEmail(email)) {
       return NextResponse.json({ error: 'Valid email is required' }, { status: 400 })
     }
 
-    if (!message || message.length < 10) {
-      return NextResponse.json({ error: 'Message must be at least 10 characters' }, { status: 400 })
+    if (!message || message.length === 0) {
+      return NextResponse.json({ error: 'Message is required' }, { status: 400 })
     }
 
     if (name && name.length > 120) {
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       data: {
         userId: decoded?.userId,
         name,
-        email,
+        email: email ?? '',
         subject,
         message,
       },

@@ -241,7 +241,7 @@ export interface ReferralPurchaseEntry {
 export interface SupportMessageEntry {
   id: string
   name?: string | null
-  email: string
+  email?: string | null
   subject?: string | null
   message: string
   status: string

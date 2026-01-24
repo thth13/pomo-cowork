@@ -37,8 +37,8 @@ export default function SupportContact({
   const [error, setError] = useState<string | null>(null)
 
   const canSubmit = useMemo(() => {
-    return form.email.trim().length > 0 && form.message.trim().length >= 10
-  }, [form.email, form.message])
+    return form.message.trim().length > 0
+  }, [form.message])
 
   const updateField = (field: keyof SupportFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }))
@@ -71,7 +71,7 @@ export default function SupportContact({
         },
         body: JSON.stringify({
           name: form.name.trim() || undefined,
-          email: form.email.trim(),
+          email: form.email.trim() || undefined,
           subject: form.subject.trim() || undefined,
           message: form.message.trim(),
         }),
@@ -116,7 +116,7 @@ export default function SupportContact({
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Support request</h3>
                 <p className="text-sm text-gray-600 dark:text-slate-300">
-                  Tell us what went wrong and we will get back to you by email.
+                  Tell us what went wrong. Leave an email if you want a reply.
                 </p>
               </div>
               <button
@@ -141,10 +141,9 @@ export default function SupportContact({
                   />
                 </label>
                 <label className="flex flex-col gap-2 text-sm font-medium text-gray-700 dark:text-slate-200">
-                  Email
+                  Email (optional)
                   <input
                     type="email"
-                    required
                     value={form.email}
                     onChange={(event) => updateField('email', event.target.value)}
                     className="h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-900 shadow-sm focus:border-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-white"

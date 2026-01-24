@@ -666,7 +666,7 @@ export default function AdminReferralManager() {
                       {entry.subject?.trim() || 'No subject'}
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      {entry.name?.trim() || 'Anonymous'} · {entry.email}
+                      {entry.name?.trim() || 'Anonymous'} · {entry.email?.trim() || 'No email'}
                     </p>
                   </div>
                   <div className="text-right">
