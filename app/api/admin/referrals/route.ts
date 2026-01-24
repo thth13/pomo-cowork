@@ -7,6 +7,12 @@ import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
+const MONTHLY_PRICE_USD = 7
+const YEARLY_PRICE_USD = 60
+const REFERRAL_SHARE = 0.5
+const YEARLY_THRESHOLD_DAYS = 200
+const MS_PER_DAY = 1000 * 60 * 60 * 24
+
 interface CreateReferralBody {
   label?: string
   code?: string
@@ -73,18 +79,44 @@ export async function GET(request: NextRequest) {
         createdAt: true,
         createdBy: { select: { id: true, email: true } },
         _count: { select: { clicks: true, signups: true } },
+        signups: {
+          select: {
+            createdAt: true,
+            user: { select: { isPro: true, proExpiresAt: true } },
+          },
+        },
       },
     })
 
-    const payload = referrals.map((item) => ({
-      id: item.id,
-      code: item.code,
-      label: item.label,
-      createdAt: item.createdAt,
-      createdBy: item.createdBy,
-      clicksCount: item._count.clicks,
-      signupsCount: item._count.signups,
-    }))
+    const payload = referrals.map((item) => {
+      const purchaseStats = item.signups.reduce(
+        (acc, signup) => {
+          if (!signup.user.isPro || !signup.user.proExpiresAt) return acc
+
+          const durationDays =
+            (signup.user.proExpiresAt.getTime() - signup.createdAt.getTime()) / MS_PER_DAY
+          const price = durationDays >= YEARLY_THRESHOLD_DAYS ? YEARLY_PRICE_USD : MONTHLY_PRICE_USD
+
+          return {
+            purchasesCount: acc.purchasesCount + 1,
+            earnedAmount: acc.earnedAmount + price * REFERRAL_SHARE,
+          }
+        },
+        { purchasesCount: 0, earnedAmount: 0 }
+      )
+
+      return {
+        id: item.id,
+        code: item.code,
+        label: item.label,
+        createdAt: item.createdAt,
+        createdBy: item.createdBy,
+        clicksCount: item._count.clicks,
+        signupsCount: item._count.signups,
+        purchasesCount: purchaseStats.purchasesCount,
+        earnedAmount: purchaseStats.earnedAmount,
+      }
+    })
 
     return NextResponse.json(payload)
   } catch (error) {

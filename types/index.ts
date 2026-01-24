@@ -209,6 +209,8 @@ export interface ReferralLink {
   }
   clicksCount: number
   signupsCount: number
+  purchasesCount: number
+  earnedAmount: number
 }
 
 export interface ReferralSignupUser {
@@ -221,6 +223,18 @@ export interface ReferralSignupUser {
 
 export interface ReferralSignupEntry {
   signupCreatedAt: string
+  user: ReferralSignupUser
+}
+
+export enum SubscriptionPlan {
+  MONTHLY = 'MONTHLY',
+  YEARLY = 'YEARLY',
+}
+
+export interface ReferralPurchaseEntry {
+  purchaseCreatedAt: string
+  subscriptionPlan: SubscriptionPlan
+  amount: number
   user: ReferralSignupUser
 }
 

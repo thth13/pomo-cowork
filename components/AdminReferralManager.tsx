@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import NotificationToast from '@/components/NotificationToast'
-import type { ReferralLink, ReferralSignupEntry } from '@/types'
+import type { ReferralLink, ReferralPurchaseEntry, ReferralSignupEntry, SubscriptionPlan } from '@/types'
 import { X } from 'lucide-react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
@@ -30,11 +30,33 @@ export default function AdminReferralManager() {
   const [openSignupsId, setOpenSignupsId] = useState<string | null>(null)
   const [signupsByReferral, setSignupsByReferral] = useState<Record<string, ReferralSignupEntry[]>>({})
   const [signupsLoadingId, setSignupsLoadingId] = useState<string | null>(null)
+  const [openPurchasesId, setOpenPurchasesId] = useState<string | null>(null)
+  const [purchasesByReferral, setPurchasesByReferral] = useState<Record<string, ReferralPurchaseEntry[]>>({})
+  const [purchasesLoadingId, setPurchasesLoadingId] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'warning'>('info')
   const [showToast, setShowToast] = useState(false)
 
   const baseUrl = useMemo(() => getBaseUrl(), [])
+  const monthlyAmount = 7 * 0.5
+  const yearlyAmount = 60 * 0.5
+  const moneyFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        maximumFractionDigits: 0,
+      }),
+    []
+  )
+
+  const formatMoney = (value?: number | null) =>
+    Number.isFinite(value) ? moneyFormatter.format(value ?? 0) : '—'
+
+  const getPurchaseAmount = (entry: ReferralPurchaseEntry) => {
+    if (Number.isFinite(entry.amount)) return entry.amount
+    return entry.subscriptionPlan === 'YEARLY' ? yearlyAmount : monthlyAmount
+  }
 
   useEffect(() => {
     if (!isAuthenticated && !isLoading) {
@@ -209,6 +231,57 @@ export default function AdminReferralManager() {
     }
   }
 
+  const handlePurchasesToggle = async (id: string) => {
+    if (openPurchasesId === id) {
+      setOpenPurchasesId(null)
+      return
+    }
+
+    if (purchasesLoadingId === id) {
+      return
+    }
+
+    if (purchasesByReferral[id]) {
+      setOpenPurchasesId(id)
+      return
+    }
+
+    setPurchasesLoadingId(id)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/admin/referrals/${id}/purchases`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        throw new Error(body?.error ?? 'Failed to load purchases')
+      }
+
+      const data = (await response.json()) as ReferralPurchaseEntry[]
+      const normalized = data.map((entry) => ({
+        ...entry,
+        amount: Number.isFinite(entry.amount)
+          ? entry.amount
+          : entry.subscriptionPlan === 'YEARLY'
+            ? yearlyAmount
+            : monthlyAmount,
+      }))
+      setPurchasesByReferral((prev) => ({ ...prev, [id]: normalized }))
+      setOpenPurchasesId(id)
+    } catch (err) {
+      setToastType('error')
+      setToastMessage(err instanceof Error ? err.message : 'Failed to load purchases')
+      setShowToast(true)
+    } finally {
+      setPurchasesLoadingId(null)
+    }
+  }
+
+  const getPlanLabel = (plan: SubscriptionPlan) => (plan === 'YEARLY' ? 'Yearly' : 'Monthly')
+
   if (isLoading) {
     return null
   }
@@ -289,6 +362,9 @@ export default function AdminReferralManager() {
                       <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                         {item.code}
                       </span>
+                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        Earned: {moneyFormatter.format(item.earnedAmount)}
+                      </span>
                     </div>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
                       Created by {item.createdBy.email}
@@ -307,6 +383,17 @@ export default function AdminReferralManager() {
                         Signups: {item.signupsCount}
                         {signupsLoadingId === item.id ? (
                           <span className="ml-1 h-3 w-3 animate-spin rounded-full border-2 border-emerald-300 border-t-transparent" />
+                        ) : null}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void handlePurchasesToggle(item.id)}
+                        className="flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm transition hover:border-violet-300 hover:text-violet-800 dark:border-violet-900/40 dark:bg-violet-950/40 dark:text-violet-200 dark:hover:border-violet-800"
+                      >
+                        <span className="h-2 w-2 rounded-full bg-violet-500" />
+                        Purchases: {item.purchasesCount}
+                        {purchasesLoadingId === item.id ? (
+                          <span className="ml-1 h-3 w-3 animate-spin rounded-full border-2 border-violet-300 border-t-transparent" />
                         ) : null}
                       </button>
                     </div>
@@ -381,6 +468,77 @@ export default function AdminReferralManager() {
                             </motion.ul>
                           ) : (
                             <div>No signups yet.</div>
+                          )}
+                        </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                    <AnimatePresence initial={false}>
+                      {openPurchasesId === item.id ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: -6 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -6 }}
+                          transition={{ duration: 0.2 }}
+                          className="rounded-xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300"
+                        >
+                          {purchasesByReferral[item.id]?.length ? (
+                            <motion.ul
+                              className="space-y-2"
+                              initial="hidden"
+                              animate="show"
+                              variants={{
+                                hidden: { opacity: 1 },
+                                show: {
+                                  opacity: 1,
+                                  transition: { staggerChildren: 0.06 },
+                                },
+                              }}
+                            >
+                              {purchasesByReferral[item.id].map((entry) => (
+                                <motion.li
+                                  key={`${entry.user.id}-${entry.purchaseCreatedAt}`}
+                                  variants={{
+                                    hidden: { opacity: 0, y: -6 },
+                                    show: { opacity: 1, y: 0 },
+                                  }}
+                                >
+                                  <Link
+                                    href={`/user/${entry.user.id}`}
+                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-slate-100 bg-white/70 px-3 py-2 text-left transition hover:border-violet-200 hover:bg-violet-50/40 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-violet-900/50"
+                                  >
+                                    <div className="flex min-w-0 items-center gap-3">
+                                      {entry.user.avatarUrl ? (
+                                        <img
+                                          src={entry.user.avatarUrl}
+                                          alt={entry.user.username}
+                                          className="h-8 w-8 rounded-full object-cover"
+                                          loading="lazy"
+                                          width={32}
+                                          height={32}
+                                        />
+                                      ) : (
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                                          {entry.user.username.slice(0, 2).toUpperCase()}
+                                        </div>
+                                      )}
+                                      <div className="min-w-0">
+                                        <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                                          {entry.user.username}
+                                        </p>
+                                        <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                          {entry.user.email}
+                                        </p>
+                                      </div>
+                                    </div>
+                                    <span className="text-[11px] font-semibold text-violet-600 dark:text-violet-300">
+                                      {getPlanLabel(entry.subscriptionPlan)} · {formatMoney(getPurchaseAmount(entry))}
+                                    </span>
+                                  </Link>
+                                </motion.li>
+                              ))}
+                            </motion.ul>
+                          ) : (
+                            <div>No purchases yet.</div>
                           )}
                         </motion.div>
                       ) : null}
