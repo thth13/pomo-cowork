@@ -16,6 +16,7 @@ config.autoAddCss = false
 
 const inter = Inter({ subsets: ['latin'] })
 const GA_MEASUREMENT_ID = 'G-TEKE22N2N5'
+const isProduction = process.env.NODE_ENV === 'production'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pomo-co.work'),
@@ -76,19 +77,26 @@ export default function RootLayout({
             `,
           }}
         />
-        <Script src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`} strategy="afterInteractive" />
-        <Script
-          id="google-analytics"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', '${GA_MEASUREMENT_ID}');
-            `,
-          }}
-        />
+        {isProduction ? (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script
+              id="google-analytics"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){dataLayer.push(arguments);}
+                  gtag('js', new Date());
+                  gtag('config', '${GA_MEASUREMENT_ID}');
+                `,
+              }}
+            />
+          </>
+        ) : null}
       </head>
       <body className={inter.className}>
         <ThemeProvider>
