@@ -14,6 +14,7 @@ import dynamic from 'next/dynamic'
 const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => null })
 import TaskList, { TaskListRef } from '@/components/TaskList'
 import WorkHistory from '@/components/WorkHistory'
+import TodayContribution from '@/components/TodayContribution'
 
 export default function HomePage() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
@@ -134,8 +135,15 @@ export default function HomePage() {
             </motion.section>
           </div>
 
-          {/* Правая колонка - Список задач, Чат и История */}
+          {/* Правая колонка - Вклад, Список задач, Чат и История */}
           <div className="col-span-12 lg:col-span-4 space-y-4 sm:space-y-6 lg:space-y-8">
+            <motion.section
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+            >
+              <TodayContribution />
+            </motion.section>
             <TaskList ref={taskListRef} />
             <Chat />
             <WorkHistory />
