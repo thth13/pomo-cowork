@@ -14,11 +14,18 @@ interface Session {
   pausedAt?: string | null
   remainingSeconds?: number | null
   createdAt?: string
+  user?: {
+    id: string
+  } | null
 }
 
 interface ContributionTotals {
   pomodoros: number
   focusMinutes: number
+}
+
+interface ContributionMeta {
+  activeUsers: number
 }
 
 const emptyTotals: ContributionTotals = {
@@ -28,6 +35,7 @@ const emptyTotals: ContributionTotals = {
 
 export default function TodayContribution() {
   const [totals, setTotals] = useState<ContributionTotals>(emptyTotals)
+  const [meta, setMeta] = useState<ContributionMeta>({ activeUsers: 0 })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
 
@@ -62,10 +70,17 @@ export default function TodayContribution() {
           return sum + getEffectiveMinutes(session)
         }, 0)
 
+        const uniqueUsers = new Set(
+          completedSessions
+            .map((session) => session.user?.id)
+            .filter((id): id is string => Boolean(id))
+        )
+
         setTotals({
           pomodoros: completedPomodoros.length,
           focusMinutes,
         })
+        setMeta({ activeUsers: uniqueUsers.size })
       } catch (fetchError) {
         if (active) {
           setError(true)
@@ -101,6 +116,7 @@ export default function TodayContribution() {
 
   const pomodorosLabel = totals.pomodoros === 1 ? 'pomodoro completed' : 'pomodoros completed'
   const hoursLabel = totals.focusMinutes === 60 ? 'hour focused' : 'hours focused'
+  const usersLabel = meta.activeUsers === 1 ? 'person contributed today' : 'people contributed today'
 
   const tomatoIcons = useMemo(() => {
     const cap = 12
@@ -188,6 +204,10 @@ export default function TodayContribution() {
         {totals.pomodoros === 0 && (
           <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">No pomodoros yet.</p>
         )}
+      </div>
+
+      <div className="mt-4 rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-sm text-gray-600 shadow-sm backdrop-blur dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
+        <span className="font-semibold text-gray-900 dark:text-white">{meta.activeUsers}</span> {usersLabel}
       </div>
 
       {error && (
