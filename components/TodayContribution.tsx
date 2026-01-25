@@ -60,7 +60,21 @@ export default function TodayContribution() {
 
         if (!active) return
 
-        const completedSessions = data.filter((session) => session.status === 'COMPLETED')
+        const now = new Date()
+        const startOfDay = new Date(now)
+        startOfDay.setHours(0, 0, 0, 0)
+        const endOfDay = new Date(now)
+        endOfDay.setHours(23, 59, 59, 999)
+        const isWithinToday = (session: Session) => {
+          const timestamp = session.completedAt ?? session.endedAt ?? session.startedAt
+          const date = timestamp ? new Date(timestamp) : null
+          if (!date || Number.isNaN(date.getTime())) return false
+          return date >= startOfDay && date <= endOfDay
+        }
+
+        const completedSessions = data.filter(
+          (session) => session.status === 'COMPLETED' && isWithinToday(session)
+        )
         const completedPomodoros = completedSessions.filter((session) => session.type === 'WORK')
         const focusSessions = completedSessions.filter(
           (session) => session.type === 'WORK' || session.type === 'TIME_TRACKING'
