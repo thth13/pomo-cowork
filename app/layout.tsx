@@ -93,6 +93,9 @@ export default function RootLayout({
                   function gtag(){dataLayer.push(arguments);}
                   gtag('js', new Date());
                   gtag('config', '${GA_MEASUREMENT_ID}');
+                  if (window.location && window.location.pathname === '/') {
+                    gtag('event', 'conversion', { send_to: 'AW-11075064387/OpNVCNuN-IgYEMOkgKEp' });
+                  }
                 `,
               }}
             />
