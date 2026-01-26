@@ -11,6 +11,7 @@ import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
 import InitialLoader from '@/components/InitialLoader'
 import SiteFooter from '@/components/SiteFooter'
+import FeedbackWidget from '@/components/FeedbackWidget'
 
 config.autoAddCss = false
 
@@ -104,6 +105,7 @@ export default function RootLayout({
             <InitialLoader />
             {children}
             <SiteFooter />
+            <FeedbackWidget />
             <ConnectionDebug />
             <OfflineToast />
           </AuthProvider>
