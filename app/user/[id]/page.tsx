@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown } from 'lucide-react'
+import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown, Eye } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -28,6 +28,7 @@ interface UserProfile {
     totalSessions: number
     isPro?: boolean
     lastSeenAt?: string | null
+    profileViews?: number
   }
   stats: {
     totalSessions: number
@@ -154,6 +155,27 @@ export default function UserProfilePage() {
       fetchUserProfile()
     }
   }, [userId])
+
+  useEffect(() => {
+    if (!userId || isOwnProfile || typeof window === 'undefined') {
+      return
+    }
+
+    const viewKey = `profile_viewed:${userId}`
+    const lastViewedRaw = localStorage.getItem(viewKey)
+    const lastViewed = lastViewedRaw ? Number(lastViewedRaw) : 0
+    const now = Date.now()
+    const tenMinutes = 10 * 60 * 1000
+
+    if (!Number.isFinite(lastViewed) || now - lastViewed >= tenMinutes) {
+      localStorage.setItem(viewKey, now.toString())
+      const token = localStorage.getItem('token')
+      const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
+      fetch(`/api/users/${userId}/view`, { method: 'POST', headers }).catch((error) => {
+        console.error('Error incrementing profile views:', error)
+      })
+    }
+  }, [userId, isOwnProfile])
 
   // Generate heatmap data for the year - memoized to prevent recalculation
   const heatmapData = useMemo((): Array<[number, number, number]> => {
@@ -430,6 +452,10 @@ export default function UserProfilePage() {
                   <div className="flex items-center space-x-2">
                     <Calendar className="w-4 h-4" />
                     <span>Joined {formatDate(profile.user.createdAt)}</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Eye className="w-4 h-4" />
+                    <span>{(profile.user.profileViews ?? 0).toLocaleString()} views</span>
                   </div>
                 </div>
                 {!isUserOnline && (
