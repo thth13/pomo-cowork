@@ -1,6 +1,6 @@
 'use client'
 
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 
 const DEFAULT_MESSAGE = 'Help us get better'
@@ -16,6 +16,7 @@ export default function FeedbackWidget() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const widgetRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -92,14 +93,31 @@ export default function FeedbackWidget() {
     setShowPrompt(false)
   }
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setOpen(false)
     setError(null)
     setSuccess(false)
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
+      const target = event.target as Node | null
+      if (!target || !widgetRef.current) return
+      if (!widgetRef.current.contains(target)) {
+        handleClose()
+      }
+    }
+    document.addEventListener('mousedown', handlePointerDown)
+    document.addEventListener('touchstart', handlePointerDown)
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown)
+      document.removeEventListener('touchstart', handlePointerDown)
+    }
+  }, [open, handleClose])
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex items-end justify-end">
+    <div ref={widgetRef} className="fixed bottom-6 right-6 z-50 flex items-end justify-end">
       <div className="relative">
         {promptMounted && !open && (
           <div
