@@ -185,7 +185,7 @@ export default function TodayContribution() {
       <div className="mt-4">
         <p className="text-xs font-medium text-gray-500 dark:text-slate-400">Pomodoro count</p>
         <div className="mt-2 flex flex-wrap items-center gap-2">
-          {Array.from({ length: tomatoIcons.visible || 1 }).map((_, index) => (
+          {Array.from({ length: tomatoIcons.visible }).map((_, index) => (
             <span
               key={`tomato-${index}`}
               className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/80 shadow-sm ring-1 ring-rose-200/60 dark:bg-slate-900/70 dark:ring-rose-500/30 ${
