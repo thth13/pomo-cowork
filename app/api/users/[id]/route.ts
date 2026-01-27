@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { verifyToken } from '@/lib/auth'
 import { getEffectiveMinutes } from '@/lib/sessionStats'
 
 export const dynamic = 'force-dynamic'
@@ -24,6 +23,7 @@ export async function GET(
         createdAt: true,
         isPro: true,
         lastSeenAt: true,
+        profileViews: true,
         _count: {
           select: {
             sessions: true
@@ -120,6 +120,7 @@ export async function GET(
         createdAt: user.createdAt,
         isPro: user.isPro,
         lastSeenAt: user.lastSeenAt,
+        profileViews: user.profileViews,
         totalSessions: user._count.sessions
       },
       stats: {

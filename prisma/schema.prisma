@@ -17,6 +17,7 @@ model User {
   isAnonymous  Boolean   @default(false)
   isPro        Boolean   @default(false)
   proExpiresAt DateTime?
+  profileViews Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   lastSeenAt   DateTime?
@@ -42,6 +43,8 @@ model User {
   chatMessages    ChatMessage[]    @relation("ChatMessages")
   referralLinks   ReferralLink[]
   referralSignups ReferralSignup[]
+  wallMessagesReceived UserWallMessage[] @relation("WallProfileUser")
+  wallMessagesSent     UserWallMessage[] @relation("WallAuthorUser")
 
   @@map("users")
 }
@@ -283,4 +286,19 @@ model SupportMessage {
   @@index([createdAt])
   @@index([userId])
   @@map("support_messages")
+}
+
+model UserWallMessage {
+  id            String   @id @default(cuid())
+  profileUserId String
+  authorId      String
+  message       String
+  createdAt     DateTime @default(now())
+
+  profileUser User @relation("WallProfileUser", fields: [profileUserId], references: [id], onDelete: Cascade)
+  author      User @relation("WallAuthorUser", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([profileUserId, createdAt])
+  @@index([authorId, createdAt])
+  @@map("user_wall_messages")
 }
