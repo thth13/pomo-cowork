@@ -108,7 +108,9 @@ export default function RootLayout({
             <InitialLoader />
             {children}
             <SiteFooter />
-            <FeedbackWidget />
+            <div className="hidden sm:block">
+              <FeedbackWidget />
+            </div>
             <ConnectionDebug />
             <OfflineToast />
           </AuthProvider>
