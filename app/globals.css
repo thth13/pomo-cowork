@@ -94,5 +94,34 @@
   .timer-ring {
     transform: rotate(-90deg);
   }
-}
 
+  .feedback-pop {
+    animation: feedback-pop 180ms ease-out;
+  }
+
+  .feedback-pop-out {
+    animation: feedback-pop-out 180ms ease-in forwards;
+  }
+
+  @keyframes feedback-pop {
+    from {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @keyframes feedback-pop-out {
+    from {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(8px) scale(0.98);
+    }
+  }
+}

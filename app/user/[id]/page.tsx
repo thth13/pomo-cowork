@@ -568,7 +568,7 @@ export default function UserProfilePage() {
                   <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-slate-300 mb-3 break-words">{profile.user.description}</p>
                 )}
                 <div className="flex items-center flex-wrap gap-4 text-xs sm:text-sm text-gray-500 dark:text-slate-400">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-1">
                     <Calendar className="w-4 h-4" />
                     <span>Joined {formatDate(profile.user.createdAt)}</span>
                   </div>

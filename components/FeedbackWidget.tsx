@@ -1,6 +1,7 @@
 'use client'
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ChevronDown, MessageCircle } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 
 const DEFAULT_MESSAGE = 'Help us get better'
@@ -16,6 +17,7 @@ export default function FeedbackWidget() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [closing, setClosing] = useState(false)
   const widgetRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
@@ -94,9 +96,13 @@ export default function FeedbackWidget() {
   }
 
   const handleClose = useCallback(() => {
-    setOpen(false)
+    setClosing(true)
     setError(null)
     setSuccess(false)
+    window.setTimeout(() => {
+      setOpen(false)
+      setClosing(false)
+    }, 180)
   }, [])
 
   useEffect(() => {
@@ -129,7 +135,7 @@ export default function FeedbackWidget() {
           </div>
         )}
         {open && (
-          <div className="absolute bottom-16 right-0 w-[320px] rounded-2xl border border-rose-100 bg-white shadow-2xl dark:border-rose-900/40 dark:bg-slate-900">
+          <div className={`absolute bottom-16 right-0 w-[320px] rounded-2xl border border-rose-100 bg-white shadow-2xl dark:border-rose-900/40 dark:bg-slate-900 ${closing ? 'feedback-pop-out' : 'feedback-pop'}`}>
             <div className="flex items-start justify-between gap-3 border-b border-rose-100/70 px-4 pb-3 pt-4 dark:border-rose-900/40">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.25em] text-rose-500 dark:text-rose-300">
@@ -142,10 +148,10 @@ export default function FeedbackWidget() {
               <button
                 type="button"
                 onClick={handleClose}
-                className="rounded-full px-2 py-1 text-sm text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-white"
-                aria-label="Close"
+                className="rounded-full p-1 text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-white"
+                aria-label="Collapse"
               >
-                ✕
+                <ChevronDown className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
 
@@ -196,15 +202,10 @@ export default function FeedbackWidget() {
         <button
           type="button"
           onClick={open ? handleClose : handleOpen}
-          className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-rose-500 via-rose-400 to-amber-400 text-white shadow-lg shadow-rose-500/30 transition hover:scale-[1.02] focus:outline-none sm:h-14 sm:w-14"
+          className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-900/25 transition hover:scale-[1.02] focus:outline-none sm:h-14 sm:w-14"
           aria-label="Open feedback"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M7 18l-2 3 3-2h8a4 4 0 0 0 4-4V8a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v7a3 3 0 0 0 3 3h2Z"
-              fill="currentColor"
-            />
-          </svg>
+          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" stroke="none" aria-hidden="true" />
         </button>
       </div>
     </div>
