@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown, Eye } from 'lucide-react'
+import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown, Eye, MessageSquare, Send } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -73,6 +73,17 @@ interface UserStats {
   }>
 }
 
+interface WallMessage {
+  id: string
+  message: string
+  createdAt: string
+  author: {
+    id: string
+    username: string
+    avatarUrl?: string | null
+  }
+}
+
 export default function UserProfilePage() {
   const params = useParams()
   const router = useRouter()
@@ -85,10 +96,19 @@ export default function UserProfilePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [chartReady, setChartReady] = useState(false)
+  const [wallMessages, setWallMessages] = useState<WallMessage[]>([])
+  const [wallLoading, setWallLoading] = useState(true)
+  const [wallLoadingMore, setWallLoadingMore] = useState(false)
+  const [wallError, setWallError] = useState<string | null>(null)
+  const [wallMessageText, setWallMessageText] = useState('')
+  const [wallSubmitting, setWallSubmitting] = useState(false)
+  const [wallHasMore, setWallHasMore] = useState(false)
+  const [wallCursor, setWallCursor] = useState<string | null>(null)
 
   const userId = params?.id as string
   const isDark = theme === 'dark'
   const isOwnProfile = currentUser?.id === userId
+  const canPostWallMessage = Boolean(currentUser && !isOwnProfile)
 
   const handleLogout = () => {
     logout()
@@ -155,6 +175,96 @@ export default function UserProfilePage() {
       fetchUserProfile()
     }
   }, [userId])
+
+  useEffect(() => {
+    const fetchWallMessages = async () => {
+      if (!userId) return
+      try {
+        setWallLoading(true)
+        setWallError(null)
+        setWallCursor(null)
+        const response = await fetch(`/api/users/${userId}/wall?take=5`)
+        if (!response.ok) {
+          throw new Error('Failed to load wall messages')
+        }
+        const data = await response.json()
+        setWallMessages(data.messages || [])
+        setWallHasMore(Boolean(data.hasMore))
+        setWallCursor(data.nextCursor || null)
+      } catch (error) {
+        console.error('Error loading wall messages:', error)
+        setWallError('Failed to load wall messages')
+      } finally {
+        setWallLoading(false)
+      }
+    }
+
+    fetchWallMessages()
+  }, [userId])
+
+  const loadMoreWallMessages = async () => {
+    if (!userId || !wallHasMore || wallLoadingMore || !wallCursor) return
+    try {
+      setWallLoadingMore(true)
+      const response = await fetch(`/api/users/${userId}/wall?take=5&cursor=${wallCursor}`)
+      if (!response.ok) {
+        throw new Error('Failed to load more messages')
+      }
+      const data = await response.json()
+      setWallMessages((prev) => [...prev, ...(data.messages || [])])
+      setWallHasMore(Boolean(data.hasMore))
+      setWallCursor(data.nextCursor || null)
+    } catch (error) {
+      console.error('Error loading more wall messages:', error)
+      setWallError('Failed to load more wall messages')
+    } finally {
+      setWallLoadingMore(false)
+    }
+  }
+
+  const handleWallSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!canPostWallMessage || wallSubmitting) return
+
+    const message = wallMessageText.trim()
+    if (!message) {
+      setWallError('Message cannot be empty')
+      return
+    }
+
+    try {
+      setWallSubmitting(true)
+      setWallError(null)
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setWallError('Login required to post on the wall')
+        return
+      }
+
+      const response = await fetch(`/api/users/${userId}/wall`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ message }),
+      })
+
+      const payload = await response.json()
+      if (!response.ok) {
+        setWallError(payload?.error || 'Failed to send message')
+        return
+      }
+
+      setWallMessages((prev) => [payload, ...prev])
+      setWallMessageText('')
+    } catch (error) {
+      console.error('Error sending wall message:', error)
+      setWallError('Failed to send message')
+    } finally {
+      setWallSubmitting(false)
+    }
+  }
 
   useEffect(() => {
     if (!userId || isOwnProfile || typeof window === 'undefined') {
@@ -282,6 +392,14 @@ export default function UserProfilePage() {
     }
 
     return `Last seen ${formatDistanceToNowStrict(lastSeenDate, { addSuffix: true })}`
+  }
+
+  const formatRelativeDate = (dateString: string) => {
+    const parsed = new Date(dateString)
+    if (Number.isNaN(parsed.getTime())) {
+      return 'Just now'
+    }
+    return formatDistanceToNowStrict(parsed, { addSuffix: true })
   }
 
   if (loading || !chartReady) {
@@ -529,6 +647,112 @@ export default function UserProfilePage() {
                 <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{totalFocusDisplay}</div>
                 <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Work Time</div>
               </div>
+            </motion.div>
+
+            {/* Wall */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.15 }}
+              className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5 sm:p-6 lg:p-8"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+                    <MessageSquare className="w-4 h-4 text-indigo-500 dark:text-indigo-300" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Wall</h3>
+                </div>
+                <span className="text-xs text-gray-500 dark:text-slate-400">Public messages</span>
+              </div>
+
+              {canPostWallMessage ? (
+                <form onSubmit={handleWallSubmit} className="space-y-3">
+                  <div className="relative">
+                    <textarea
+                      value={wallMessageText}
+                      onChange={(event) => setWallMessageText(event.target.value)}
+                      rows={3}
+                      maxLength={500}
+                      placeholder={`Leave ${profile.user.username} a message...`}
+                      className="w-full resize-none rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <div className="absolute bottom-2 right-3 text-[10px] text-gray-400 dark:text-slate-500">
+                      {wallMessageText.trim().length}/500
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="submit"
+                      disabled={wallSubmitting || wallMessageText.trim().length === 0}
+                      className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-400"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      {wallSubmitting ? 'Sending...' : 'Post'}
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
+                  {isOwnProfile ? 'This is your wall. Other users can leave messages here.' : 'Log in to leave a message on this wall.'}
+                </div>
+              )}
+
+              {wallError && (
+                <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-900/30 dark:text-red-300">
+                  {wallError}
+                </div>
+              )}
+
+              <div className="mt-5 space-y-3">
+                {wallLoading ? (
+                  <div className="text-sm text-gray-500 dark:text-slate-400">Loading messages...</div>
+                ) : wallMessages.length === 0 ? (
+                  <div className="text-sm text-gray-500 dark:text-slate-400">No messages yet. Be the first!</div>
+                ) : (
+                  wallMessages.map((message) => (
+                    <div key={message.id} className="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/40 px-4 py-3">
+                      {message.author.avatarUrl ? (
+                        <Image
+                          src={message.author.avatarUrl}
+                          alt={message.author.username}
+                          width={36}
+                          height={36}
+                          className="h-9 w-9 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
+                          {message.author.username.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {message.author.username}
+                          </div>
+                          <div className="text-[11px] text-gray-400 dark:text-slate-500 whitespace-nowrap">
+                            {formatRelativeDate(message.createdAt)}
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-700 dark:text-slate-300 break-words">{message.message}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {wallHasMore && !wallLoading && (
+                <div className="mt-4">
+                  <button
+                    type="button"
+                    onClick={loadMoreWallMessages}
+                    disabled={wallLoadingMore}
+                    className="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-gray-600 dark:text-slate-300 transition-colors hover:bg-gray-50 dark:hover:bg-slate-700 disabled:cursor-not-allowed"
+                  >
+                    {wallLoadingMore ? 'Loading...' : 'Load more'}
+                  </button>
+                </div>
+              )}
             </motion.div>
 
             {/* Activity Heatmap */}
