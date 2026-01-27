@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown, Eye, MessageSquare, Send } from 'lucide-react'
@@ -681,7 +682,7 @@ export default function UserProfilePage() {
                       {wallMessageText.trim().length}/500
                     </div>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-end">
                     <button
                       type="submit"
                       disabled={wallSubmitting || wallMessageText.trim().length === 0}
@@ -712,24 +713,32 @@ export default function UserProfilePage() {
                 ) : (
                   wallMessages.map((message) => (
                     <div key={message.id} className="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/40 px-4 py-3">
-                      {message.author.avatarUrl ? (
-                        <Image
-                          src={message.author.avatarUrl}
-                          alt={message.author.username}
-                          width={36}
-                          height={36}
-                          className="h-9 w-9 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
-                          {message.author.username.charAt(0).toUpperCase()}
-                        </div>
-                      )}
+                      <Link
+                        href={`/user/${message.author.id}`}
+                        className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      >
+                        {message.author.avatarUrl ? (
+                          <Image
+                            src={message.author.avatarUrl}
+                            alt={message.author.username}
+                            width={36}
+                            height={36}
+                            className="h-9 w-9 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
+                            {message.author.username.charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                      </Link>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-2">
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <Link
+                            href={`/user/${message.author.id}`}
+                            className="text-sm font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
+                          >
                             {message.author.username}
-                          </div>
+                          </Link>
                           <div className="text-[11px] text-gray-400 dark:text-slate-500 whitespace-nowrap">
                             {formatRelativeDate(message.createdAt)}
                           </div>
