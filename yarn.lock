@@ -1701,6 +1701,11 @@
   resolved "https://registry.npmjs.org/@types/react-dom/-/react-dom-18.3.7.tgz"
   integrity sha512-MEe3UeoENYVFXzoXEWsvcpg6ZvlrFNlOQ7EOsvhI3CfAXwzPfO8Qwuxd40nepsYKqyyVQnTdEfv68q91yLcKrQ==
 
+"@types/react-gtm-module@^2.0.4":
+  version "2.0.4"
+  resolved "https://registry.yarnpkg.com/@types/react-gtm-module/-/react-gtm-module-2.0.4.tgz#27457712f7a17f44e752d2b7bd93e794a5fc6ff3"
+  integrity sha512-5wPMWsUE5AI6O0B0K1/zbs0rFHBKu+7NWXQwDXhqvA12ooLD6W1AYiWZqR4UiOd7ixZDV1H5Ys301zEsqyIfNg==
+
 "@types/react@^18":
   version "18.3.25"
   resolved "https://registry.npmjs.org/@types/react/-/react-18.3.25.tgz"
