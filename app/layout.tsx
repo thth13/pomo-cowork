@@ -93,6 +93,20 @@ export default function RootLayout({
                   function gtag(){dataLayer.push(arguments);}
                   gtag('js', new Date());
                   gtag('config', '${GA_MEASUREMENT_ID}');
+                  function gtag_report_conversion(url) {
+                    var callback = function () {
+                      if (typeof(url) != 'undefined') {
+                        window.location = url;
+                      }
+                    };
+                    gtag('event', 'conversion', {
+                        'send_to': 'AW-11075064387/-cWiCIOI_O0bEMOkgKEp',
+                        'value': 15.0,
+                        'currency': 'UAH',
+                        'event_callback': callback
+                    });
+                    return false;
+                  }
                   if (window.location && window.location.pathname === '/') {
                     gtag('event', 'conversion', { send_to: 'AW-11075064387/OpNVCNuN-IgYEMOkgKEp' });
                   }

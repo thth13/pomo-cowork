@@ -55,6 +55,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
           setError('Invalid email or password')
         }
       } else {
+        if (typeof window !== 'undefined') {
+          const reportConversion = (window as Window & { gtag_report_conversion?: () => void }).gtag_report_conversion
+          if (typeof reportConversion === 'function') {
+            reportConversion()
+          }
+        }
         if (!formData.username.trim()) {
           setError('Username is required')
           setIsLoading(false)
@@ -97,6 +103,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
     if (!googleClientId) {
       setError('Google login is not configured.')
       return
+    }
+
+    if (typeof window !== 'undefined') {
+      const reportConversion = (window as Window & { gtag_report_conversion?: () => void }).gtag_report_conversion
+      if (typeof reportConversion === 'function') {
+        reportConversion()
+      }
     }
 
     setIsGoogleProcessing(true)
