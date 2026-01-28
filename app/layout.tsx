@@ -2,6 +2,7 @@ import './globals.css'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import Link from 'next/link'
+import Script from 'next/script'
 import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -63,6 +64,18 @@ export default function RootLayout({
     <html lang="ru">
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-TEKE22N2N5" />
+        <Script
+          id="gtag-init"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-TEKE22N2N5');
+            `,
+          }}
+        />
         <script
           dangerouslySetInnerHTML={{
             __html: `
