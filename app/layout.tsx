@@ -4,7 +4,6 @@ import { config } from '@fortawesome/fontawesome-svg-core'
 import Link from 'next/link'
 import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
-import Script from 'next/script'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
@@ -12,12 +11,11 @@ import OfflineToast from '@/components/OfflineToast'
 import InitialLoader from '@/components/InitialLoader'
 import SiteFooter from '@/components/SiteFooter'
 import FeedbackWidget from '@/components/FeedbackWidget'
+import GtmClient from '@/components/GtmClient'
 
 config.autoAddCss = false
 
 const inter = Inter({ subsets: ['latin'] })
-const GA_MEASUREMENT_ID = 'G-TEKE22N2N5'
-const isProduction = process.env.NODE_ENV === 'production'
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pomo-co.work'),
@@ -78,47 +76,11 @@ export default function RootLayout({
             `,
           }}
         />
-        {isProduction ? (
-          <>
-            <Script
-              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-              strategy="afterInteractive"
-            />
-            <Script
-              id="google-analytics"
-              strategy="afterInteractive"
-              dangerouslySetInnerHTML={{
-                __html: `
-                  window.dataLayer = window.dataLayer || [];
-                  function gtag(){dataLayer.push(arguments);}
-                  gtag('js', new Date());
-                  gtag('config', '${GA_MEASUREMENT_ID}');
-                  function gtag_report_conversion(url) {
-                    var callback = function () {
-                      if (typeof(url) != 'undefined') {
-                        window.location = url;
-                      }
-                    };
-                    gtag('event', 'conversion', {
-                        'send_to': 'AW-11075064387/-cWiCIOI_O0bEMOkgKEp',
-                        'value': 15.0,
-                        'currency': 'UAH',
-                        'event_callback': callback
-                    });
-                    return false;
-                  }
-                  if (window.location && window.location.pathname === '/') {
-                    gtag('event', 'conversion', { send_to: 'AW-11075064387/OpNVCNuN-IgYEMOkgKEp' });
-                  }
-                `,
-              }}
-            />
-          </>
-        ) : null}
       </head>
       <body className={inter.className}>
         <ThemeProvider>
           <AuthProvider>
+            <GtmClient />
             <InitialLoader />
             {children}
             <SiteFooter />

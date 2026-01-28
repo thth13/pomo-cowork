@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
+import { reportConversion } from '@/lib/gtm'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -55,12 +56,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
           setError('Invalid email or password')
         }
       } else {
-        if (typeof window !== 'undefined') {
-          const reportConversion = (window as Window & { gtag_report_conversion?: () => void }).gtag_report_conversion
-          if (typeof reportConversion === 'function') {
-            reportConversion()
-          }
-        }
+        reportConversion()
         if (!formData.username.trim()) {
           setError('Username is required')
           setIsLoading(false)
@@ -105,12 +101,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       return
     }
 
-    if (typeof window !== 'undefined') {
-      const reportConversion = (window as Window & { gtag_report_conversion?: () => void }).gtag_report_conversion
-      if (typeof reportConversion === 'function') {
-        reportConversion()
-      }
-    }
+    reportConversion()
 
     setIsGoogleProcessing(true)
 
