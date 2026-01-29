@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import PricingPlanCta from '../../components/PricingPlanCta'
@@ -82,7 +83,7 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <Navbar />
-      <main className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
+      <main className="mx-auto w-full max-w-6xl px-4 pb-10 pt-10 sm:px-6 lg:px-8">
         <section className="mb-12 text-center">
         <h1 className="mt-4 text-3xl font-bold text-slate-900 dark:text-white sm:text-4xl">
           Choose a plan that keeps you focused
@@ -135,6 +136,24 @@ export default function PricingPage() {
           </div>
         ))}
       </section>
+
+      <p className="mt-6 text-center text-xs text-slate-500 dark:text-slate-400">
+        By continuing, you agree to our{' '}
+        <Link href="/terms" className="underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">
+          Terms
+        </Link>{' '}
+        and{' '}
+        <Link href="/privacy" className="underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">
+          Privacy Policy
+        </Link>.
+      </p>
+
+      <p className="mt-2 text-center text-xs text-slate-500 dark:text-slate-400">
+        See our{' '}
+        <Link href="/refund" className="underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">
+          Refund Policy
+        </Link>.
+      </p>
 
       {/**
       <section className="mt-12 rounded-2xl border border-slate-200 bg-white px-6 py-8 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
