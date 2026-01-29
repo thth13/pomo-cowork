@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import PricingPlanCta from '../../components/PricingPlanCta'
@@ -52,7 +51,6 @@ const plans: PricingPlan[] = [
       'Advanced statistics & heatmap',
       'Manual time entry & editing',
       'Priority support',
-      'Support the project ❤️',
       'Pro badge on profile',
       'Time tracker mode'
     ],
@@ -71,21 +69,6 @@ const plans: PricingPlan[] = [
       'All Pro features included',
       'Cancel anytime',
     ],
-  },
-]
-
-const faqs = [
-  {
-    question: 'Can I switch between monthly and yearly?',
-    answer: 'Yes. You can upgrade or downgrade anytime in Settings.',
-  },
-  {
-    question: 'Do you offer refunds?',
-    answer: 'Refunds are handled on a case-by-case basis. See Refund Policy.',
-  },
-  {
-    question: 'Is the Free plan limited?',
-    answer: 'Free is generous for solo use. Pro unlocks private rooms and advanced analytics.',
   },
 ]
 
@@ -172,32 +155,6 @@ export default function PricingPage() {
       </section>
       */}
 
-      <section className="mt-12 grid gap-6 md:grid-cols-3">
-        {faqs.map((item) => (
-          <div key={item.question} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <h4 className="text-sm font-semibold text-slate-900 dark:text-white">{item.question}</h4>
-            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{item.answer}</p>
-          </div>
-        ))}
-      </section>
-
-      <p className="mt-10 text-center text-xs text-slate-500 dark:text-slate-400">
-        By continuing, you agree to our{' '}
-        <Link href="/terms" className="underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">
-          Terms
-        </Link>{' '}
-        and{' '}
-        <Link href="/privacy" className="underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">
-          Privacy Policy
-        </Link>.
-      </p>
-
-      <p className="mt-2 text-center text-xs text-slate-500 dark:text-slate-400">
-        See our{' '}
-        <Link href="/refund" className="underline underline-offset-2 hover:text-slate-700 dark:hover:text-slate-200">
-          Refund Policy
-        </Link>.
-      </p>
       </main>
 
     </div>

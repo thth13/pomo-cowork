@@ -26,12 +26,10 @@ export const reportConversion = () => {
 }
 
 export const reportHomeConversion = () => {
-  if (typeof window === 'undefined') return
-  const script = document.createElement('script')
-  script.type = 'text/javascript'
-  script.text = `if (typeof window.gtag === 'function') { window.gtag('event', 'conversion', {'send_to': 'AW-11075064387/OpNVCNuN-IgYEMOkgKEp'}); }`
-  document.head.appendChild(script)
-  script.remove()
+  pushGtmEvent({
+    event: 'conversion',
+    send_to: 'AW-11075064387/OpNVCNuN-IgYEMOkgKEp',
+  })
 }
 
 export const reportPageLoadConversion = (path: string) => {
