@@ -32,9 +32,9 @@ export const reportHomeConversion = () => {
   })
 }
 
-export const reportPageLoadConversion = () => {
+export const reportPageLoadConversion = (path: string) => {
   pushGtmEvent({
-    event: 'conversion',
-    send_to: 'AW-11075064387/tmsoCMXQxe4bEMOkgKEp',
+    event: 'page_view',
+    page_path: path,
   })
 }

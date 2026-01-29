@@ -12,7 +12,7 @@ export default function GtmClient() {
   }, [])
 
   useEffect(() => {
-    reportPageLoadConversion()
+    reportPageLoadConversion(pathname)
     if (pathname === '/') {
       reportHomeConversion()
     }
