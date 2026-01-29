@@ -9,19 +9,54 @@ export default function OfflineToast() {
   const { isConnected } = useConnectionStore()
   const [visible, setVisible] = useState(false)
   const hasEverConnectedRef = useRef(false)
+  const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [isPageVisible, setIsPageVisible] = useState(true)
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      const nextVisible = document.visibilityState === 'visible'
+      setIsPageVisible(nextVisible)
+      if (!nextVisible) {
+        setVisible(false)
+        if (showTimerRef.current) {
+          clearTimeout(showTimerRef.current)
+          showTimerRef.current = null
+        }
+      }
+    }
+
+    onVisibilityChange()
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+      if (showTimerRef.current) {
+        clearTimeout(showTimerRef.current)
+        showTimerRef.current = null
+      }
+    }
+  }, [])
 
   useEffect(() => {
     if (isConnected) {
       hasEverConnectedRef.current = true
       setVisible(false)
+      if (showTimerRef.current) {
+        clearTimeout(showTimerRef.current)
+        showTimerRef.current = null
+      }
       return
     }
 
-    // Show toast only after we were online at least once
-    if (hasEverConnectedRef.current) {
-      setVisible(true)
+    if (!hasEverConnectedRef.current || !isPageVisible) return
+
+    if (!showTimerRef.current) {
+      showTimerRef.current = setTimeout(() => {
+        setVisible(true)
+        showTimerRef.current = null
+      }, 1500)
     }
-  }, [isConnected])
+  }, [isConnected, isPageVisible])
 
   return (
     <AnimatePresence>
