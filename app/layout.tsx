@@ -73,6 +73,7 @@ export default function RootLayout({
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
               gtag('config', 'G-TEKE22N2N5');
+              gtag('config', 'AW-11075064387');
             `,
           }}
         />
