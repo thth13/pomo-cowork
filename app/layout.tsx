@@ -73,17 +73,6 @@ export default function RootLayout({
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
               gtag('config', 'G-TEKE22N2N5');
-            `,
-          }}
-        />
-        <Script async src="https://www.googletagmanager.com/gtag/js?id=AW-11075064387" />
-        <Script
-          id="gtag-ads-init"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
               gtag('config', 'AW-11075064387');
             `,
           }}
