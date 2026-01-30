@@ -322,7 +322,18 @@ export default function ActiveSessions() {
   const { activeSessions } = useTimerStore()
   const { user } = useAuthStore()
   const { currentRoomId } = useRoomStore()
-  const { emitTomatoThrow, onTomatoReceive, offTomatoReceive } = useSocket()
+  const {
+    emitTomatoThrow,
+    onTomatoReceive,
+    offTomatoReceive,
+    emitReactionSet,
+    emitReactionRemove,
+    requestReactions,
+    onReactionUpdate,
+    offReactionUpdate,
+    onReactionSnapshot,
+    offReactionSnapshot
+  } = useSocket()
   const [localSessions, setLocalSessions] = useState<ActiveSession[]>([])
   const [hasSocketActivity, setHasSocketActivity] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -430,6 +441,51 @@ export default function ActiveSessions() {
       offTomatoReceive(handleTomatoReceive)
     }
   }, [onTomatoReceive, offTomatoReceive])
+
+  useEffect(() => {
+    const handleReactionSnapshot = (payload: { countsByTarget: Record<string, Record<string, number>>; myReactionsByTarget?: Record<string, string> }) => {
+      setReactionsByUser(payload.countsByTarget ?? {})
+      setMyReactionsByTarget(payload.myReactionsByTarget ?? {})
+    }
+
+    const handleReactionUpdate = (payload: { action: 'set' | 'remove'; toUserId: string; fromUserId: string; emoji: string | null; previousEmoji?: string | null; counts: Record<string, number> }) => {
+      setReactionsByUser(prev => {
+        const next = { ...prev }
+        if (Object.keys(payload.counts).length === 0) {
+          delete next[payload.toUserId]
+        } else {
+          next[payload.toUserId] = payload.counts
+        }
+        return next
+      })
+
+      if (payload.fromUserId === user?.id) {
+        if (payload.action === 'remove') {
+          setMyReactionsByTarget(prev => {
+            const next = { ...prev }
+            delete next[payload.toUserId]
+            return next
+          })
+        } else if (payload.emoji) {
+          setMyReactionsByTarget(prev => ({
+            ...prev,
+            [payload.toUserId]: payload.emoji as string
+          }))
+        }
+      }
+    }
+
+    onReactionSnapshot(handleReactionSnapshot)
+    onReactionUpdate(handleReactionUpdate)
+    return () => {
+      offReactionSnapshot(handleReactionSnapshot)
+      offReactionUpdate(handleReactionUpdate)
+    }
+  }, [onReactionSnapshot, offReactionSnapshot, onReactionUpdate, offReactionUpdate, user?.id])
+
+  useEffect(() => {
+    requestReactions({ userId: user?.id ?? null })
+  }, [requestReactions, user?.id])
 
   // Load active sessions on mount for guests
   useEffect(() => {
@@ -548,31 +604,11 @@ export default function ActiveSessions() {
       return
     }
 
-    setReactionsByUser(prev => {
-      const current = prev[targetUserId] ?? {}
-      const next = { ...current }
-
-      if (previousEmoji) {
-        const previousCount = (next[previousEmoji] ?? 0) - 1
-        if (previousCount <= 0) {
-          delete next[previousEmoji]
-        } else {
-          next[previousEmoji] = previousCount
-        }
-      }
-
-      next[emoji] = (next[emoji] ?? 0) + 1
-
-      return {
-        ...prev,
-        [targetUserId]: next
-      }
+    emitReactionSet({
+      fromUserId: user.id,
+      toUserId: targetUserId,
+      emoji
     })
-
-    setMyReactionsByTarget(prev => ({
-      ...prev,
-      [targetUserId]: emoji
-    }))
 
     setContextMenu(prev => ({ ...prev, show: false }))
   }
@@ -586,54 +622,18 @@ export default function ActiveSessions() {
     const previousEmoji = myReactionsByTarget[targetUserId]
 
     if (previousEmoji === emoji) {
-      setReactionsByUser(prev => {
-        const current = prev[targetUserId] ?? {}
-        const next = { ...current }
-        const previousCount = (next[emoji] ?? 0) - 1
-        if (previousCount <= 0) {
-          delete next[emoji]
-        } else {
-          next[emoji] = previousCount
-        }
-        return {
-          ...prev,
-          [targetUserId]: next
-        }
-      })
-
-      setMyReactionsByTarget(prev => {
-        const next = { ...prev }
-        delete next[targetUserId]
-        return next
+      emitReactionRemove({
+        fromUserId: user.id,
+        toUserId: targetUserId
       })
       return
     }
 
-    setReactionsByUser(prev => {
-      const current = prev[targetUserId] ?? {}
-      const next = { ...current }
-
-      if (previousEmoji) {
-        const previousCount = (next[previousEmoji] ?? 0) - 1
-        if (previousCount <= 0) {
-          delete next[previousEmoji]
-        } else {
-          next[previousEmoji] = previousCount
-        }
-      }
-
-      next[emoji] = (next[emoji] ?? 0) + 1
-
-      return {
-        ...prev,
-        [targetUserId]: next
-      }
+    emitReactionSet({
+      fromUserId: user.id,
+      toUserId: targetUserId,
+      emoji
     })
-
-    setMyReactionsByTarget(prev => ({
-      ...prev,
-      [targetUserId]: emoji
-    }))
   }
 
   const handleTomatoAnimationComplete = (id: string) => {

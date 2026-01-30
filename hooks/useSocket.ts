@@ -199,6 +199,35 @@ export function useSocket() {
     sharedSocket?.off('tomato-receive', handler)
   }
 
+  // Reactions
+  const emitReactionSet = (payload: { fromUserId: string; toUserId: string; emoji: string }) => {
+    sharedSocket?.emit('reaction-set', payload)
+  }
+
+  const emitReactionRemove = (payload: { fromUserId: string; toUserId: string }) => {
+    sharedSocket?.emit('reaction-remove', payload)
+  }
+
+  const requestReactions = (payload?: { userId?: string | null }) => {
+    sharedSocket?.emit('get-reactions', payload)
+  }
+
+  const onReactionUpdate = (handler: (payload: { action: 'set' | 'remove'; toUserId: string; fromUserId: string; emoji: string | null; previousEmoji?: string | null; counts: Record<string, number> }) => void) => {
+    sharedSocket?.on('reaction-update', handler)
+  }
+
+  const offReactionUpdate = (handler: (payload: { action: 'set' | 'remove'; toUserId: string; fromUserId: string; emoji: string | null; previousEmoji?: string | null; counts: Record<string, number> }) => void) => {
+    sharedSocket?.off('reaction-update', handler)
+  }
+
+  const onReactionSnapshot = (handler: (payload: { countsByTarget: Record<string, Record<string, number>>; myReactionsByTarget?: Record<string, string> }) => void) => {
+    sharedSocket?.on('reaction-snapshot', handler)
+  }
+
+  const offReactionSnapshot = (handler: (payload: { countsByTarget: Record<string, Record<string, number>>; myReactionsByTarget?: Record<string, string> }) => void) => {
+    sharedSocket?.off('reaction-snapshot', handler)
+  }
+
   return {
     emitSessionStart,
     emitSessionSync,
@@ -220,6 +249,14 @@ export function useSocket() {
     // tomato
     emitTomatoThrow,
     onTomatoReceive,
-    offTomatoReceive
+    offTomatoReceive,
+    // reactions
+    emitReactionSet,
+    emitReactionRemove,
+    requestReactions,
+    onReactionUpdate,
+    offReactionUpdate,
+    onReactionSnapshot,
+    offReactionSnapshot
   }
 }

@@ -71,6 +71,7 @@ const anonymousConnectionCounts = new Map<string, number>()
 const userNames = new Map<string, string>()
 const userAvatars = new Map<string, string>()
 const chatMessagesByRoom = new Map<string, ChatMessage[]>()
+const reactionsByTarget = new Map<string, Map<string, string>>()
 
 const MAX_CHAT_HISTORY = 100
 
@@ -95,6 +96,37 @@ const pushChatMessageForRoom = (message: ChatMessage) => {
     arr.splice(0, arr.length - MAX_CHAT_HISTORY)
   }
   chatMessagesByRoom.set(key, arr)
+}
+
+const buildReactionCounts = (targetMap?: Map<string, string>) => {
+  const counts: Record<string, number> = {}
+  if (!targetMap) return counts
+  targetMap.forEach((emoji) => {
+    counts[emoji] = (counts[emoji] ?? 0) + 1
+  })
+  return counts
+}
+
+const serializeReactionCounts = () => {
+  const result: Record<string, Record<string, number>> = {}
+  reactionsByTarget.forEach((targetMap, targetUserId) => {
+    const counts = buildReactionCounts(targetMap)
+    if (Object.keys(counts).length > 0) {
+      result[targetUserId] = counts
+    }
+  })
+  return result
+}
+
+const getMyReactionsForUser = (userId: string) => {
+  const result: Record<string, string> = {}
+  reactionsByTarget.forEach((targetMap, targetUserId) => {
+    const emoji = targetMap.get(userId)
+    if (emoji) {
+      result[targetUserId] = emoji
+    }
+  })
+  return result
 }
 
 // URL to Next.js API
@@ -814,6 +846,54 @@ io.on('connection', async (socket) => {
       userCount: onlineUsers.size,
       anonymousCount,
       total: onlineUsers.size + anonymousCount
+    })
+  })
+
+  socket.on('get-reactions', (payload?: { userId?: string | null }) => {
+    const userId = typeof payload?.userId === 'string' ? payload.userId : null
+    socket.emit('reaction-snapshot', {
+      countsByTarget: serializeReactionCounts(),
+      myReactionsByTarget: userId ? getMyReactionsForUser(userId) : {}
+    })
+  })
+
+  socket.on('reaction-set', (payload: { fromUserId: string; toUserId: string; emoji: string }) => {
+    if (!payload?.fromUserId || !payload?.toUserId || !payload?.emoji) return
+    const targetMap = reactionsByTarget.get(payload.toUserId) ?? new Map<string, string>()
+    const previousEmoji = targetMap.get(payload.fromUserId) ?? null
+    targetMap.set(payload.fromUserId, payload.emoji)
+    reactionsByTarget.set(payload.toUserId, targetMap)
+
+    io.emit('reaction-update', {
+      action: 'set',
+      toUserId: payload.toUserId,
+      fromUserId: payload.fromUserId,
+      emoji: payload.emoji,
+      previousEmoji,
+      counts: buildReactionCounts(targetMap)
+    })
+  })
+
+  socket.on('reaction-remove', (payload: { fromUserId: string; toUserId: string }) => {
+    if (!payload?.fromUserId || !payload?.toUserId) return
+    const targetMap = reactionsByTarget.get(payload.toUserId)
+    if (!targetMap) return
+    const previousEmoji = targetMap.get(payload.fromUserId) ?? null
+    if (!previousEmoji) return
+    targetMap.delete(payload.fromUserId)
+    if (targetMap.size === 0) {
+      reactionsByTarget.delete(payload.toUserId)
+    } else {
+      reactionsByTarget.set(payload.toUserId, targetMap)
+    }
+
+    io.emit('reaction-update', {
+      action: 'remove',
+      toUserId: payload.toUserId,
+      fromUserId: payload.fromUserId,
+      emoji: previousEmoji,
+      previousEmoji,
+      counts: buildReactionCounts(targetMap)
     })
   })
 
