@@ -39,7 +39,9 @@ function SessionCard({
   isCurrentUser = false,
   onContextMenu,
   onElementMount,
-  reactions
+  reactions,
+  myReaction,
+  onReactionClick
 }: { 
   session: ActiveSession; 
   index: number; 
@@ -47,6 +49,8 @@ function SessionCard({
   onContextMenu: (e: React.MouseEvent, userId: string, element: HTMLElement) => void;
   onElementMount: (userId: string, element: HTMLElement | null) => void;
   reactions?: Record<string, number>;
+  myReaction?: string;
+  onReactionClick: (emoji: string, e: React.MouseEvent) => void;
 }) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
@@ -237,10 +241,18 @@ function SessionCard({
       {reactions && Object.keys(reactions).length > 0 && (
         <div className="absolute -top-2 -right-2 flex flex-wrap gap-1 bg-white/90 dark:bg-slate-800/90 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-sm max-w-[180px]">
           {Object.entries(reactions).map(([emoji, count]) => (
-            <div key={emoji} className="flex items-center gap-1 text-xs text-gray-700 dark:text-slate-200">
+            <button
+              key={emoji}
+              type="button"
+              onClick={(e) => onReactionClick(emoji, e)}
+              className={`flex items-center gap-1 text-xs ${
+                myReaction === emoji ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-slate-200'
+              }`}
+              aria-pressed={myReaction === emoji}
+            >
               <span className="text-sm">{emoji}</span>
               <span className="font-semibold">{count}</span>
-            </div>
+            </button>
           ))}
         </div>
       )}
@@ -322,6 +334,7 @@ export default function ActiveSessions() {
   })
   const [menuPosition, setMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
   const [reactionsByUser, setReactionsByUser] = useState<Record<string, Record<string, number>>>({})
+  const [myReactionsByTarget, setMyReactionsByTarget] = useState<Record<string, string>>({})
   const [tomatoThrows, setTomatoThrows] = useState<TomatoAnimation[]>([])
   const [toastMessage, setToastMessage] = useState('')
   const [showToast, setShowToast] = useState(false)
@@ -522,24 +535,105 @@ export default function ActiveSessions() {
   }
 
   const handleAddReaction = (emoji: string) => {
-    if (!contextMenu.targetUserId) {
+    if (!contextMenu.targetUserId || !user) {
+      setContextMenu(prev => ({ ...prev, show: false }))
+      return
+    }
+
+    const targetUserId = contextMenu.targetUserId
+    const previousEmoji = myReactionsByTarget[targetUserId]
+
+    if (previousEmoji === emoji) {
       setContextMenu(prev => ({ ...prev, show: false }))
       return
     }
 
     setReactionsByUser(prev => {
-      const current = prev[contextMenu.targetUserId] ?? {}
-      const nextCount = (current[emoji] ?? 0) + 1
+      const current = prev[targetUserId] ?? {}
+      const next = { ...current }
+
+      if (previousEmoji) {
+        const previousCount = (next[previousEmoji] ?? 0) - 1
+        if (previousCount <= 0) {
+          delete next[previousEmoji]
+        } else {
+          next[previousEmoji] = previousCount
+        }
+      }
+
+      next[emoji] = (next[emoji] ?? 0) + 1
+
       return {
         ...prev,
-        [contextMenu.targetUserId]: {
-          ...current,
-          [emoji]: nextCount
-        }
+        [targetUserId]: next
       }
     })
 
+    setMyReactionsByTarget(prev => ({
+      ...prev,
+      [targetUserId]: emoji
+    }))
+
     setContextMenu(prev => ({ ...prev, show: false }))
+  }
+
+  const handleReactionClick = (targetUserId: string, emoji: string, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+
+    if (!user) return
+
+    const previousEmoji = myReactionsByTarget[targetUserId]
+
+    if (previousEmoji === emoji) {
+      setReactionsByUser(prev => {
+        const current = prev[targetUserId] ?? {}
+        const next = { ...current }
+        const previousCount = (next[emoji] ?? 0) - 1
+        if (previousCount <= 0) {
+          delete next[emoji]
+        } else {
+          next[emoji] = previousCount
+        }
+        return {
+          ...prev,
+          [targetUserId]: next
+        }
+      })
+
+      setMyReactionsByTarget(prev => {
+        const next = { ...prev }
+        delete next[targetUserId]
+        return next
+      })
+      return
+    }
+
+    setReactionsByUser(prev => {
+      const current = prev[targetUserId] ?? {}
+      const next = { ...current }
+
+      if (previousEmoji) {
+        const previousCount = (next[previousEmoji] ?? 0) - 1
+        if (previousCount <= 0) {
+          delete next[previousEmoji]
+        } else {
+          next[previousEmoji] = previousCount
+        }
+      }
+
+      next[emoji] = (next[emoji] ?? 0) + 1
+
+      return {
+        ...prev,
+        [targetUserId]: next
+      }
+    })
+
+    setMyReactionsByTarget(prev => ({
+      ...prev,
+      [targetUserId]: emoji
+    }))
   }
 
   const handleTomatoAnimationComplete = (id: string) => {
@@ -672,6 +766,8 @@ export default function ActiveSessions() {
               onContextMenu={handleContextMenu}
               onElementMount={handleElementMount}
               reactions={reactionsByUser[session.userId]}
+              myReaction={myReactionsByTarget[session.userId]}
+              onReactionClick={(emoji, e) => handleReactionClick(session.userId, emoji, e)}
             />
           ))}
         </AnimatePresence>
