@@ -129,6 +129,46 @@ const getMyReactionsForUser = (userId: string) => {
   return result
 }
 
+const clearReactionsForUser = (userId: string, ioServer: IOServer) => {
+  // Remove reactions targeting this user.
+  const targetMap = reactionsByTarget.get(userId)
+  if (targetMap) {
+    targetMap.forEach((emoji, fromUserId) => {
+      targetMap.delete(fromUserId)
+      ioServer.emit('reaction-update', {
+        action: 'remove',
+        toUserId: userId,
+        fromUserId,
+        emoji,
+        previousEmoji: emoji,
+        counts: buildReactionCounts(targetMap)
+      })
+    })
+    reactionsByTarget.delete(userId)
+  }
+
+  // Remove reactions authored by this user on others.
+  reactionsByTarget.forEach((map, targetUserId) => {
+    if (!map.has(userId)) return
+    const emoji = map.get(userId) ?? null
+    if (!emoji) return
+    map.delete(userId)
+    if (map.size === 0) {
+      reactionsByTarget.delete(targetUserId)
+    } else {
+      reactionsByTarget.set(targetUserId, map)
+    }
+    ioServer.emit('reaction-update', {
+      action: 'remove',
+      toUserId: targetUserId,
+      fromUserId: userId,
+      emoji,
+      previousEmoji: emoji,
+      counts: buildReactionCounts(map)
+    })
+  })
+}
+
 // URL to Next.js API
 const API_URL = process.env.API_URL || 'http://localhost:3000'
 
@@ -564,6 +604,10 @@ io.on('connection', async (socket) => {
     const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
     const anonymousId = anonymousSockets.get(socket.id)
 
+    if (userId) {
+      clearReactionsForUser(userId, io)
+    }
+
     // Clean up any existing sessions for this user
     sessions.forEach((existingSession, existingSessionId) => {
       const isSameUser = (
@@ -731,6 +775,10 @@ io.on('connection', async (socket) => {
     
     if (!session) {
       return // Session doesn't exist, nothing to do
+    }
+
+    if (session.userId) {
+      clearReactionsForUser(session.userId, io)
     }
 
     const shouldRemoveActivity = reason === 'manual' && (
