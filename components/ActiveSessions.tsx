@@ -11,7 +11,7 @@ import { SessionType, SessionStatus, ActiveSession, TomatoThrow as TomatoThrowTy
 import Image from 'next/image'
 import TomatoThrow from './TomatoThrow'
 import { useSocket } from '@/hooks/useSocket'
-import NotificationToast from './NotificationToast'
+import EmojiPicker from 'emoji-picker-react'
 
 interface TomatoAnimation {
   id: string
@@ -37,13 +37,15 @@ function SessionCard({
   index, 
   isCurrentUser = false,
   onContextMenu,
-  onElementMount
+  onElementMount,
+  reactions
 }: { 
   session: ActiveSession; 
   index: number; 
   isCurrentUser?: boolean;
   onContextMenu: (e: React.MouseEvent, userId: string, element: HTMLElement) => void;
   onElementMount: (userId: string, element: HTMLElement | null) => void;
+  reactions?: Record<string, number>;
 }) {
   const router = useRouter()
   const cardRef = useRef<HTMLDivElement>(null)
@@ -223,7 +225,7 @@ function SessionCard({
   return (
     <motion.div 
       ref={cardRef}
-      className="bg-gray-50 dark:bg-slate-700 rounded-xl p-4 sm:p-6 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors cursor-pointer"
+      className="relative bg-gray-50 dark:bg-slate-700 rounded-xl p-4 sm:p-6 hover:bg-gray-100 dark:hover:bg-slate-600 transition-colors cursor-pointer"
       onClick={handleClick}
       onContextMenu={handleContextMenu}
       initial={{ opacity: 0, y: -20 }}
@@ -231,6 +233,16 @@ function SessionCard({
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.3 }}
     >
+      {reactions && Object.keys(reactions).length > 0 && (
+        <div className="absolute -top-2 -right-2 flex flex-wrap gap-1 bg-white/90 dark:bg-slate-800/90 border border-gray-200 dark:border-slate-600 rounded-full px-2 py-1 shadow-sm max-w-[180px]">
+          {Object.entries(reactions).map(([emoji, count]) => (
+            <div key={emoji} className="flex items-center gap-1 text-xs text-gray-700 dark:text-slate-200">
+              <span className="text-sm">{emoji}</span>
+              <span className="font-semibold">{count}</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
           <div className="relative flex-shrink-0">
@@ -297,7 +309,7 @@ export default function ActiveSessions() {
   const { activeSessions } = useTimerStore()
   const { user } = useAuthStore()
   const { currentRoomId } = useRoomStore()
-  const { emitTomatoThrow, onTomatoReceive, offTomatoReceive } = useSocket()
+  const { onTomatoReceive, offTomatoReceive } = useSocket()
   const [localSessions, setLocalSessions] = useState<ActiveSession[]>([])
   const [hasSocketActivity, setHasSocketActivity] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -307,9 +319,8 @@ export default function ActiveSessions() {
     targetUserId: '',
     targetElement: null
   })
+  const [reactionsByUser, setReactionsByUser] = useState<Record<string, Record<string, number>>>({})
   const [tomatoThrows, setTomatoThrows] = useState<TomatoAnimation[]>([])
-  const [toastMessage, setToastMessage] = useState('')
-  const [showToast, setShowToast] = useState(false)
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const sessionCardsRef = useRef<Map<string, HTMLElement>>(new Map())
 
@@ -425,58 +436,25 @@ export default function ActiveSessions() {
     })
   }
 
-  const handleThrowTomato = async () => {
-    if (!user || !contextMenu.targetElement) {
+  const handleAddReaction = (emoji: string) => {
+    if (!contextMenu.targetUserId) {
       setContextMenu(prev => ({ ...prev, show: false }))
       return
     }
 
-    // Проверка: пользователь должен быть в активной сессии работы
-    const userSession = sessionsToShow.find(s => s.userId === user.id)
-    const isInWorkSession = userSession && userSession.type === SessionType.WORK && userSession.status !== SessionStatus.PAUSED
-    
-    if (!isInWorkSession) {
-      setToastMessage('You can only throw tomatoes during an active work session!')
-      setShowToast(true)
-      setContextMenu(prev => ({ ...prev, show: false }))
-      return
-    }
-
-    try {
-      // Get element position for animation
-      const rect = contextMenu.targetElement.getBoundingClientRect()
-      const targetX = rect.left + rect.width / 2
-      const targetY = rect.top + rect.height / 2
-
-      // Emit via WebSocket
-      emitTomatoThrow({
-        fromUserId: user.id,
-        toUserId: contextMenu.targetUserId,
-        fromUsername: user.username,
-        x: targetX,
-        y: targetY
-      })
-
-      // Call API for persistence (optional)
-      const token = localStorage.getItem('token')
-      if (token) {
-        fetch('/api/tomato/throw', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            targetUserId: contextMenu.targetUserId
-          })
-        }).catch(error => console.error('Failed to save tomato throw:', error))
+    setReactionsByUser(prev => {
+      const current = prev[contextMenu.targetUserId] ?? {}
+      const nextCount = (current[emoji] ?? 0) + 1
+      return {
+        ...prev,
+        [contextMenu.targetUserId]: {
+          ...current,
+          [emoji]: nextCount
+        }
       }
+    })
 
-      setContextMenu(prev => ({ ...prev, show: false }))
-    } catch (error) {
-      console.error('Failed to throw tomato:', error)
-      setContextMenu(prev => ({ ...prev, show: false }))
-    }
+    setContextMenu(prev => ({ ...prev, show: false }))
   }
 
   const handleTomatoAnimationComplete = (id: string) => {
@@ -544,14 +522,6 @@ export default function ActiveSessions() {
   
   return (
     <>
-      <NotificationToast
-        message={toastMessage}
-        isVisible={showToast}
-        onClose={() => setShowToast(false)}
-        type="warning"
-        duration={3000}
-      />
-      
       <TomatoThrow 
         tomatoThrows={tomatoThrows}
         onAnimationComplete={handleTomatoAnimationComplete}
@@ -561,19 +531,21 @@ export default function ActiveSessions() {
       {contextMenu.show && (
         <div
           ref={contextMenuRef}
-          className="fixed z-50 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-1 min-w-[160px]"
+          className="fixed z-50 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-2 min-w-[200px]"
           style={{
             left: `${contextMenu.x}px`,
             top: `${contextMenu.y}px`
           }}
         >
-          <button
-            onClick={handleThrowTomato}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 text-gray-700 dark:text-slate-200"
-          >
-            <span className="text-lg">🍅</span>
-            Throw a tomato
-          </button>
+          <EmojiPicker
+            onEmojiClick={(emojiData) => handleAddReaction(emojiData.emoji)}
+            width={260}
+            height={320}
+            lazyLoadEmojis
+            searchDisabled
+            skinTonesDisabled
+            previewConfig={{ showPreview: false }}
+          />
         </div>
       )}
       
@@ -596,6 +568,7 @@ export default function ActiveSessions() {
               isCurrentUser={session.userId === user?.id}
               onContextMenu={handleContextMenu}
               onElementMount={handleElementMount}
+              reactions={reactionsByUser[session.userId]}
             />
           ))}
         </AnimatePresence>

@@ -65,6 +65,7 @@ export default function RootLayout({
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <Script async src="https://www.googletagmanager.com/gtag/js?id=G-TEKE22N2N5" />
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=AW-11075064387" />
         <Script
           id="gtag-init"
           dangerouslySetInnerHTML={{
@@ -73,6 +74,7 @@ export default function RootLayout({
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
               gtag('config', 'G-TEKE22N2N5');
+              gtag('config', 'AW-11075064387');
             `,
           }}
         />
