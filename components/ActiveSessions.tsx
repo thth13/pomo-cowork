@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, User, ExternalLink } from 'lucide-react'
 import { useRouter } from 'next/navigation'
@@ -13,6 +13,7 @@ import TomatoThrow from './TomatoThrow'
 import { useSocket } from '@/hooks/useSocket'
 import NotificationToast from './NotificationToast'
 import EmojiPicker from 'emoji-picker-react'
+import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 
 interface TomatoAnimation {
   id: string
@@ -321,6 +322,13 @@ function SessionCard({
 export default function ActiveSessions() {
   const { activeSessions } = useTimerStore()
   const { user } = useAuthStore()
+  const anonymousId = useMemo(() => {
+    if (user || typeof window === 'undefined') {
+      return null
+    }
+    return getOrCreateAnonymousId()
+  }, [user])
+  const currentUserId = user?.id ?? anonymousId
   const { currentRoomId } = useRoomStore()
   const {
     emitTomatoThrow,
@@ -459,7 +467,7 @@ export default function ActiveSessions() {
         return next
       })
 
-      if (payload.fromUserId === user?.id) {
+      if (payload.fromUserId === currentUserId) {
         if (payload.action === 'remove') {
           setMyReactionsByTarget(prev => {
             const next = { ...prev }
@@ -481,11 +489,11 @@ export default function ActiveSessions() {
       offReactionSnapshot(handleReactionSnapshot)
       offReactionUpdate(handleReactionUpdate)
     }
-  }, [onReactionSnapshot, offReactionSnapshot, onReactionUpdate, offReactionUpdate, user?.id])
+  }, [onReactionSnapshot, offReactionSnapshot, onReactionUpdate, offReactionUpdate, currentUserId])
 
   useEffect(() => {
-    requestReactions({ userId: user?.id ?? null })
-  }, [requestReactions, user?.id])
+    requestReactions({ userId: currentUserId ?? null })
+  }, [requestReactions, currentUserId])
 
   // Load active sessions on mount for guests
   useEffect(() => {
@@ -591,7 +599,7 @@ export default function ActiveSessions() {
   }
 
   const handleAddReaction = (emoji: string) => {
-    if (!contextMenu.targetUserId || !user) {
+    if (!contextMenu.targetUserId || !currentUserId) {
       setContextMenu(prev => ({ ...prev, show: false }))
       return
     }
@@ -605,7 +613,7 @@ export default function ActiveSessions() {
     }
 
     emitReactionSet({
-      fromUserId: user.id,
+      fromUserId: currentUserId,
       toUserId: targetUserId,
       emoji
     })
@@ -617,20 +625,20 @@ export default function ActiveSessions() {
     e.preventDefault()
     e.stopPropagation()
 
-    if (!user) return
+    if (!currentUserId) return
 
     const previousEmoji = myReactionsByTarget[targetUserId]
 
     if (previousEmoji === emoji) {
       emitReactionRemove({
-        fromUserId: user.id,
+        fromUserId: currentUserId,
         toUserId: targetUserId
       })
       return
     }
 
     emitReactionSet({
-      fromUserId: user.id,
+      fromUserId: currentUserId,
       toUserId: targetUserId,
       emoji
     })
@@ -712,7 +720,7 @@ export default function ActiveSessions() {
       <TomatoThrow 
         tomatoThrows={tomatoThrows}
         onAnimationComplete={handleTomatoAnimationComplete}
-        currentUserId={user?.id}
+        currentUserId={currentUserId ?? undefined}
       />
       
       {contextMenu.show && (
@@ -762,7 +770,7 @@ export default function ActiveSessions() {
               key={session.id} 
               session={session} 
               index={index} 
-              isCurrentUser={session.userId === user?.id}
+              isCurrentUser={session.userId === currentUserId}
               onContextMenu={handleContextMenu}
               onElementMount={handleElementMount}
               reactions={reactionsByUser[session.userId]}
