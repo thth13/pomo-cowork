@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
 import { ClipLoader } from 'react-spinners'
+import Image from 'next/image'
 import type { NotificationItem } from '@/types'
 import type { RefObject } from 'react'
 
@@ -14,6 +15,7 @@ interface NotificationsMenuProps {
   onToggle: () => void | Promise<void>
   onAcceptInvite: (notification: NotificationItem) => void
   onDeclineInvite: (notification: NotificationItem) => void
+  onNotificationClick?: (notification: NotificationItem) => void
   containerRef?: RefObject<HTMLDivElement>
 }
 
@@ -27,6 +29,7 @@ export default function NotificationsMenu({
   onToggle,
   onAcceptInvite,
   onDeclineInvite,
+  onNotificationClick,
   containerRef,
 }: NotificationsMenuProps) {
   const buttonClassName =
@@ -79,6 +82,9 @@ export default function NotificationsMenu({
                 const isAccepting = inviteAction?.id === n.id && inviteAction.kind === 'accept'
                 const isDeclining = inviteAction?.id === n.id && inviteAction.kind === 'decline'
                 const isInviteBusy = isAccepting || isDeclining
+                const isWallMessage = n.type === 'WALL_MESSAGE' && n.wallMessage
+                const avatarUrl = n.wallMessage?.author?.avatarUrl
+                const avatarFallback = n.wallMessage?.author?.username?.[0]?.toUpperCase() ?? '?'
                 return (
                   <div
                     key={n.id}
@@ -86,8 +92,30 @@ export default function NotificationsMenu({
                       isUnread ? 'bg-gray-50 dark:bg-slate-800/60' : 'bg-transparent'
                     }`}
                   >
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{n.title}</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{n.message}</div>
+                    {isWallMessage ? (
+                      <button
+                        type="button"
+                        onClick={() => onNotificationClick?.(n)}
+                        className="flex w-full items-start gap-3 text-left"
+                      >
+                        <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-slate-200">
+                          {avatarUrl ? (
+                            <Image src={avatarUrl} alt={n.wallMessage?.author?.username ?? 'User'} width={40} height={40} className="h-full w-full object-cover" />
+                          ) : (
+                            <span>{avatarFallback}</span>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{n.title}</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 line-clamp-2">{n.message}</div>
+                        </div>
+                      </button>
+                    ) : (
+                      <>
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{n.title}</div>
+                        <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{n.message}</div>
+                      </>
+                    )}
 
                     {isInvite && (
                       <div className="mt-2 flex items-center gap-2">

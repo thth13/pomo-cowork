@@ -83,13 +83,20 @@ export interface RoomInvite {
 
 export interface NotificationItem {
   id: string
-  type: 'ROOM_INVITE'
+  type: 'ROOM_INVITE' | 'WALL_MESSAGE'
   title: string
   message: string
   readAt: string | null
   createdAt: string
   roomInviteId: string | null
   roomInvite: RoomInvite | null
+  wallMessageId?: string | null
+  wallMessage?: {
+    id: string
+    message: string
+    profileUserId: string
+    author: { id: string; username: string; avatarUrl?: string }
+  } | null
 }
 
 export interface RoomStats {

@@ -107,6 +107,7 @@ enum RoomInviteStatus {
 
 enum NotificationType {
   ROOM_INVITE
+  WALL_MESSAGE
 }
 
 model Room {
@@ -178,6 +179,8 @@ model Notification {
 
   roomInviteId String?
   roomInvite   RoomInvite? @relation(fields: [roomInviteId], references: [id], onDelete: SetNull)
+  wallMessageId String?
+  wallMessage   UserWallMessage? @relation("WallMessageNotifications", fields: [wallMessageId], references: [id], onDelete: SetNull)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -297,6 +300,7 @@ model UserWallMessage {
 
   profileUser User @relation("WallProfileUser", fields: [profileUserId], references: [id], onDelete: Cascade)
   author      User @relation("WallAuthorUser", fields: [authorId], references: [id], onDelete: Cascade)
+  notifications Notification[] @relation("WallMessageNotifications")
 
   @@index([profileUserId, createdAt])
   @@index([authorId, createdAt])

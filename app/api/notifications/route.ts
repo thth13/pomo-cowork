@@ -40,6 +40,21 @@ export async function GET(request: NextRequest) {
             inviter: { select: { id: true, username: true, avatarUrl: true } },
           },
         },
+        wallMessageId: true,
+        wallMessage: {
+          select: {
+            id: true,
+            message: true,
+            profileUserId: true,
+            author: {
+              select: {
+                id: true,
+                username: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
       },
     })
 

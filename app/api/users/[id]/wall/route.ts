@@ -126,6 +126,16 @@ export async function POST(
       },
     })
 
+    await prisma.notification.create({
+      data: {
+        userId,
+        type: 'WALL_MESSAGE',
+        title: `${created.author.username} left a message on your wall`,
+        message: created.message,
+        wallMessageId: created.id,
+      },
+    })
+
     return NextResponse.json(created, { status: 201 })
   } catch (error) {
     console.error('Wall message create error:', error)

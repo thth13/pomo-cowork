@@ -202,6 +202,21 @@ export default function Navbar() {
     router.push('/')
   }
 
+  const handleNotificationClick = async (notification: NotificationItem) => {
+    if (!authHeaders) return
+    if (notification.type !== 'WALL_MESSAGE') return
+
+    await markRead(notification.id)
+    setNotifications((prev) => prev.filter((n) => n.id !== notification.id))
+    setUnreadCount((prev) => Math.max(0, prev - 1))
+    setIsNotificationsOpen(false)
+
+    const targetProfileId = notification.wallMessage?.profileUserId
+    if (targetProfileId) {
+      router.push(`/user/${targetProfileId}`)
+    }
+  }
+
   const handleMobileLinkClick = () => {
     setIsMobileMenuOpen(false)
   }
@@ -293,6 +308,7 @@ export default function Navbar() {
                     }}
                     onAcceptInvite={acceptInvite}
                     onDeclineInvite={declineInvite}
+                    onNotificationClick={handleNotificationClick}
                     containerRef={notificationsRef}
                   />
 
@@ -392,6 +408,7 @@ export default function Navbar() {
                   }}
                   onAcceptInvite={acceptInvite}
                   onDeclineInvite={declineInvite}
+                  onNotificationClick={handleNotificationClick}
                   containerRef={mobileNotificationsRef}
                 />
 
