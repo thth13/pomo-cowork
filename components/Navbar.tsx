@@ -33,6 +33,7 @@ export default function Navbar() {
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [inviteAction, setInviteAction] = useState<{ id: string; kind: 'accept' | 'decline' } | null>(null)
   const autoReadRef = useRef<Set<string>>(new Set())
+  const openedReadRef = useRef<Set<string>>(new Set())
   const menuRef = useRef<HTMLDivElement | null>(null)
   const mobileMenuRef = useRef<HTMLDivElement | null>(null)
   const notificationsRef = useRef<HTMLDivElement | null>(null)
@@ -138,6 +139,13 @@ export default function Navbar() {
   }, [notifications, authHeaders])
   // todo
 
+  useEffect(() => {
+    if (!isNotificationsOpen) return
+    if (!authHeaders || notifications.length === 0) return
+    markVisibleAsRead(notifications)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isNotificationsOpen, notifications, authHeaders])
+
   const markRead = async (id: string) => {
     if (!authHeaders) return
     await fetch(`/api/notifications/${id}`, {
@@ -148,6 +156,26 @@ export default function Navbar() {
       },
       body: JSON.stringify({ read: true }),
     }).catch(() => null)
+  }
+
+  const markVisibleAsRead = (items: NotificationItem[]) => {
+    if (!authHeaders) return
+    const toMark = items.filter(
+      (n) =>
+        n.readAt === null &&
+        !openedReadRef.current.has(n.id) &&
+        !(n.type === 'ROOM_INVITE' && n.roomInvite?.status === 'PENDING')
+    )
+    if (toMark.length === 0) return
+
+    toMark.forEach((n) => openedReadRef.current.add(n.id))
+    const readAt = new Date().toISOString()
+    const idsToMark = new Set(toMark.map((n) => n.id))
+    setNotifications((prev) =>
+      prev.map((n) => (idsToMark.has(n.id) ? { ...n, readAt } : n))
+    )
+    setUnreadCount((prev) => Math.max(0, prev - toMark.length))
+    void Promise.all(toMark.map((n) => markRead(n.id)))
   }
 
   const acceptInvite = async (notification: NotificationItem) => {
