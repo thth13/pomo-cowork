@@ -142,3 +142,54 @@ export async function POST(
     return NextResponse.json({ error: 'Failed to send wall message' }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const authHeader = request.headers.get('authorization')
+    const token = getTokenFromHeader(authHeader)
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const payload = verifyToken(token)
+    if (!payload) {
+      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    const messageId = request.nextUrl.searchParams.get('messageId')
+    if (!messageId) {
+      return NextResponse.json({ error: 'Message id is required' }, { status: 400 })
+    }
+
+    const message = await prisma.userWallMessage.findFirst({
+      where:
+        payload.userId === params.id
+          ? {
+              id: messageId,
+              profileUserId: params.id,
+            }
+          : {
+              id: messageId,
+              profileUserId: params.id,
+              authorId: payload.userId,
+            },
+      select: { id: true },
+    })
+
+    if (!message) {
+      return NextResponse.json({ error: 'Message not found' }, { status: 404 })
+    }
+
+    await prisma.userWallMessage.delete({
+      where: { id: messageId },
+    })
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Wall message delete error:', error)
+    return NextResponse.json({ error: 'Failed to delete wall message' }, { status: 500 })
+  }
+}

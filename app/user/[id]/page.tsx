@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown, Eye, MessageSquare, Send } from 'lucide-react'
+import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown, Eye, MessageSquare, Send, X } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -103,6 +103,7 @@ export default function UserProfilePage() {
   const [wallError, setWallError] = useState<string | null>(null)
   const [wallMessageText, setWallMessageText] = useState('')
   const [wallSubmitting, setWallSubmitting] = useState(false)
+  const [wallDeletingId, setWallDeletingId] = useState<string | null>(null)
   const [wallHasMore, setWallHasMore] = useState(false)
   const [wallCursor, setWallCursor] = useState<string | null>(null)
 
@@ -264,6 +265,40 @@ export default function UserProfilePage() {
       setWallError('Failed to send message')
     } finally {
       setWallSubmitting(false)
+    }
+  }
+
+  const handleWallDelete = async (messageId: string) => {
+    if (wallDeletingId) return
+
+    try {
+      setWallDeletingId(messageId)
+      setWallError(null)
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setWallError('Login required to delete messages')
+        return
+      }
+
+      const response = await fetch(`/api/users/${userId}/wall?messageId=${messageId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const payload = await response.json()
+      if (!response.ok) {
+        setWallError(payload?.error || 'Failed to delete message')
+        return
+      }
+
+      setWallMessages((prev) => prev.filter((message) => message.id !== messageId))
+    } catch (error) {
+      console.error('Error deleting wall message:', error)
+      setWallError('Failed to delete message')
+    } finally {
+      setWallDeletingId(null)
     }
   }
 
@@ -712,7 +747,7 @@ export default function UserProfilePage() {
                   <div className="text-sm text-gray-500 dark:text-slate-400">No messages yet. Be the first!</div>
                 ) : (
                   wallMessages.map((message) => (
-                    <div key={message.id} className="flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/40 px-4 py-3">
+                    <div key={message.id} className="group flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/40 px-4 py-3 relative">
                       <Link
                         href={`/user/${message.author.id}`}
                         className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -745,6 +780,17 @@ export default function UserProfilePage() {
                         </div>
                         <p className="text-sm text-gray-700 dark:text-slate-300 break-words">{message.message}</p>
                       </div>
+                      {(isOwnProfile || currentUser?.id === message.author.id) && (
+                        <button
+                          type="button"
+                          onClick={() => handleWallDelete(message.id)}
+                          disabled={wallDeletingId === message.id}
+                          aria-label="Delete wall message"
+                          className="absolute -right-2 -top-2 inline-flex h-5 w-5 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-600 opacity-0 transition-all hover:bg-red-100 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60 group-hover:opacity-100 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
                     </div>
                   ))
                 )}
