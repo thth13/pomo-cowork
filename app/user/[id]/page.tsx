@@ -728,9 +728,15 @@ export default function UserProfilePage() {
                     </button>
                   </div>
                 </form>
+              ) : isOwnProfile ? (
+                wallMessages.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
+                    This is your wall. Other users can leave messages here.
+                  </div>
+                ) : null
               ) : (
                 <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
-                  {isOwnProfile ? 'This is your wall. Other users can leave messages here.' : 'Log in to leave a message on this wall.'}
+                  Log in to leave a message on this wall.
                 </div>
               )}
 
@@ -744,7 +750,9 @@ export default function UserProfilePage() {
                 {wallLoading ? (
                   <div className="text-sm text-gray-500 dark:text-slate-400">Loading messages...</div>
                 ) : wallMessages.length === 0 ? (
-                  <div className="text-sm text-gray-500 dark:text-slate-400">No messages yet. Be the first!</div>
+                  isOwnProfile ? null : (
+                    <div className="text-sm text-gray-500 dark:text-slate-400">No messages yet. Be the first!</div>
+                  )
                 ) : (
                   wallMessages.map((message) => (
                     <div key={message.id} className="group flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/40 px-4 py-3 relative">
