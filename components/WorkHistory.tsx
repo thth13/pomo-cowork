@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useRoomStore } from '@/store/useRoomStore'
 import { Calendar, Trash2 } from 'lucide-react'
 import ConfirmModal from './ConfirmModal'
 import Image from 'next/image'
@@ -25,6 +26,7 @@ interface Session {
 
 export default function WorkHistory() {
   const { user } = useAuthStore()
+  const { currentRoomId } = useRoomStore()
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -39,7 +41,12 @@ export default function WorkHistory() {
           headers.Authorization = `Bearer ${token}`
         }
 
-        const response = await fetch('/api/sessions/today', {
+        const url = new URL('/api/sessions/today', window.location.origin)
+        if (currentRoomId) {
+          url.searchParams.set('roomId', currentRoomId)
+        }
+
+        const response = await fetch(url.toString(), {
           headers
         })
 
@@ -59,7 +66,7 @@ export default function WorkHistory() {
     // Update every 30 seconds
     const interval = setInterval(fetchTodaySessions, 30000)
     return () => clearInterval(interval)
-  }, [user])
+  }, [user, currentRoomId])
 
   const handleDeleteConfirmed = async () => {
     if (!confirmingId) return

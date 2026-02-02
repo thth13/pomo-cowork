@@ -5,8 +5,12 @@ const prisma = new PrismaClient()
 
 export const dynamic = 'force-dynamic'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Получаем параметры запроса
+    const { searchParams } = new URL(request.url)
+    const roomId = searchParams.get('roomId')
+
     // Получаем начало и конец сегодняшнего дня
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -23,7 +27,9 @@ export async function GET() {
         startedAt: {
           gte: today,
           lt: tomorrow
-        }
+        },
+        // Фильтр по комнате: если roomId передан, фильтруем по нему, иначе только null (глобальные сессии)
+        roomId: roomId || null
       },
       include: {
         user: {
