@@ -133,11 +133,9 @@ export default function TodayContribution() {
   const usersLabel = meta.activeUsers === 1 ? 'person contributed today' : 'people contributed today'
 
   const tomatoIcons = useMemo(() => {
-    const cap = 12
-    const visible = Math.min(totals.pomodoros, cap)
     return {
-      visible,
-      overflow: totals.pomodoros - visible
+      visible: totals.pomodoros,
+      overflow: 0
     }
   }, [totals.pomodoros])
 
@@ -184,7 +182,7 @@ export default function TodayContribution() {
 
       <div className="mt-4">
         <p className="text-xs font-medium text-gray-500 dark:text-slate-400">Pomodoro count</p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
+        <div className="mt-2 flex max-h-32 flex-wrap items-center gap-2 overflow-y-auto">
           {Array.from({ length: tomatoIcons.visible }).map((_, index) => (
             <span
               key={`tomato-${index}`}
@@ -209,11 +207,6 @@ export default function TodayContribution() {
               </svg>
             </span>
           ))}
-          {tomatoIcons.overflow > 0 && (
-            <span className="text-xs font-semibold text-rose-600 dark:text-rose-200">
-              +{tomatoIcons.overflow} more
-            </span>
-          )}
         </div>
         {totals.pomodoros === 0 && (
           <p className="mt-2 text-xs text-gray-500 dark:text-slate-400">No pomodoros yet.</p>
