@@ -34,6 +34,19 @@ interface SessionWithTimeRemaining {
 // GET /api/sessions/active - Get all active sessions
 export async function GET(request: NextRequest) {
   try {
+    // Clean up old paused sessions (older than 30 minutes)
+    const PAUSED_TIMEOUT = 30 * 60 * 1000 // 30 minutes in milliseconds
+    const cutoffTime = new Date(Date.now() - PAUSED_TIMEOUT)
+    
+    await prisma.pomodoroSession.deleteMany({
+      where: {
+        status: 'PAUSED',
+        pausedAt: {
+          lt: cutoffTime
+        }
+      }
+    })
+
     const activeSessions = await prisma.pomodoroSession.findMany({
       where: {
         status: {

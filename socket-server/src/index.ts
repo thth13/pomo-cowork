@@ -24,6 +24,7 @@ interface PomodoroSession {
   lastUpdate?: number
   startTime: number
   chatMessageId?: string
+  disconnectedAt?: number // timestamp when user disconnected while paused
 }
 
 interface ChatMessage {
@@ -425,6 +426,30 @@ setInterval(() => {
   }
 }, 60000)
 
+// Periodic cleanup of paused sessions without active socket (every 2 minutes)
+setInterval(() => {
+  let cleaned = 0
+  const PAUSED_TIMEOUT = 30 * 60 * 1000 // 30 minutes in milliseconds
+  
+  sessions.forEach((session, sessionId) => {
+    // Only clean paused sessions without active socket connection
+    if (session.status === 'PAUSED' && !session.socketId && session.disconnectedAt) {
+      const timeSinceDisconnect = Date.now() - session.disconnectedAt
+      
+      if (timeSinceDisconnect > PAUSED_TIMEOUT) {
+        console.log(`Cleaning paused session ${sessionId} - disconnected ${Math.floor(timeSinceDisconnect / 60000)} minutes ago`)
+        sessions.delete(sessionId)
+        cleaned += 1
+      }
+    }
+  })
+
+  if (cleaned > 0) {
+    console.log(`Cleaned ${cleaned} paused sessions that timed out`)
+    io.emit('session-update', serializeSessions())
+  }
+}, 120000) // Check every 2 minutes
+
 // Periodic cleanup of "ghost" connections
 setInterval(() => {
   // Check if there are active sockets for each user
@@ -753,6 +778,7 @@ io.on('connection', async (socket) => {
       chatMessageId: existingSession?.chatMessageId,
       username: existingSession?.username || sessionData.username,
       avatarUrl: existingSession?.avatarUrl || sessionData.avatarUrl,
+      disconnectedAt: undefined, // Clear disconnectedAt when user reconnects
     })
 
     io.emit('session-update', serializeSessions())
@@ -973,6 +999,12 @@ io.on('connection', async (socket) => {
         session.lastUpdate = Date.now()
         // Убираем привязку к сокету
         delete session.socketId
+        
+        // Для паузнутых сессий отмечаем время отключения
+        if (session.status === 'PAUSED') {
+          session.disconnectedAt = Date.now()
+          console.log(`Paused session ${sessionId} disconnected at ${new Date().toISOString()}, will be cleaned in 30 minutes`)
+        }
       }
     })
 
