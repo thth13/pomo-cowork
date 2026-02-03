@@ -17,6 +17,7 @@ interface SettingsModalProps {
   onChange: (field: keyof TimerSettingsForm, value: number) => void
   onSave: () => void | Promise<void>
   onClose: () => void
+  isTimerRunning: boolean
   isAutoStartEnabled: boolean
   onToggleAutoStart: () => void
   isTimeTrackerMode: boolean
@@ -31,6 +32,7 @@ export const SettingsModal = memo(function SettingsModal({
   onChange,
   onSave,
   onClose,
+  isTimerRunning,
   isAutoStartEnabled,
   onToggleAutoStart,
   isTimeTrackerMode,
@@ -40,6 +42,7 @@ export const SettingsModal = memo(function SettingsModal({
 }: SettingsModalProps) {
   const shouldCloseRef = useRef(false)
   const isTimeTrackerLocked = !isProMember
+  const isTimeTrackerToggleDisabled = isTimerRunning
 
   if (!isOpen) {
     return null
@@ -103,26 +106,40 @@ export const SettingsModal = memo(function SettingsModal({
             <button
               type="button"
               onClick={() => {
+                if (isTimeTrackerToggleDisabled) {
+                  return
+                }
                 if (isTimeTrackerLocked && onOpenPaywall) {
                   onOpenPaywall()
                   return
                 }
                 onToggleTimeTrackerMode()
               }}
-              aria-disabled={isTimeTrackerLocked}
+              disabled={isTimeTrackerToggleDisabled}
+              aria-disabled={isTimeTrackerLocked || isTimeTrackerToggleDisabled}
               className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-                isTimeTrackerLocked
+                isTimeTrackerToggleDisabled
+                  ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500'
+                  : isTimeTrackerLocked
                   ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-pointer dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500'
                   : isTimeTrackerMode
                     ? 'border-emerald-400 bg-emerald-600 text-white shadow-[0_8px_20px_-10px_rgba(16,185,129,0.7)] focus-visible:ring-emerald-500'
                     : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700'
               }`}
               aria-pressed={isTimeTrackerMode}
-              title={isTimeTrackerMode ? 'Time tracker enabled' : 'Time tracker disabled'}
+              title={
+                isTimeTrackerToggleDisabled
+                  ? 'Stop the timer to switch modes'
+                  : isTimeTrackerMode
+                    ? 'Time tracker enabled'
+                    : 'Time tracker disabled'
+              }
             >
               <span
                 className={`relative flex items-center justify-center w-7 h-7 rounded-full border text-[10px] font-bold ${
-                  isTimeTrackerLocked
+                  isTimeTrackerToggleDisabled
+                    ? 'border-gray-200 bg-white text-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500'
+                    : isTimeTrackerLocked
                     ? 'border-gray-200 bg-white text-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500'
                     : isTimeTrackerMode
                       ? 'border-emerald-300 bg-white text-emerald-600'
@@ -133,7 +150,7 @@ export const SettingsModal = memo(function SettingsModal({
               </span>
               <span
                 className={`text-sm font-semibold ${
-                  isTimeTrackerLocked
+                  isTimeTrackerToggleDisabled || isTimeTrackerLocked
                     ? 'text-gray-400 dark:text-slate-500'
                     : 'text-gray-700 dark:text-slate-200'
                 }`}

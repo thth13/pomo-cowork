@@ -326,6 +326,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
   const isTaskPickerDisabled = !!currentSession
   const isRoomSwitchDisabled = Boolean(isRunning && currentSession)
+  const isTimerRunning = Boolean(currentSession && isRunning)
 
   const {
     isTaskMenuOpen,
@@ -1387,10 +1388,23 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         onChange={handleSettingsChange}
         onSave={handleSettingsSave}
         onClose={() => setIsSettingsOpen(false)}
+        isTimerRunning={isTimerRunning}
         isAutoStartEnabled={isAutoStartEnabled}
         onToggleAutoStart={() => setIsAutoStartEnabled((prev) => !prev)}
         isTimeTrackerMode={isTimeTrackerMode}
-        onToggleTimeTrackerMode={() => setIsTimeTrackerMode(!isTimeTrackerMode)}
+        onToggleTimeTrackerMode={async () => {
+          if (isTimerRunning) {
+            return
+          }
+
+          const nextValue = !isTimeTrackerMode
+
+          if (nextValue && currentSession) {
+            await handleStop()
+          }
+
+          setIsTimeTrackerMode(nextValue)
+        }}
         onOpenPaywall={openPaywallOrRegister}
         isProMember={isProMember}
       />
