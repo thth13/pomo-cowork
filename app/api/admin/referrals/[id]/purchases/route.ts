@@ -66,7 +66,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       const durationDays =
         (signup.user.proExpiresAt.getTime() - signup.createdAt.getTime()) / MS_PER_DAY
       const subscriptionPlan = durationDays >= YEARLY_THRESHOLD_DAYS ? 'YEARLY' : 'MONTHLY'
-      const basePrice = subscriptionPlan === 'YEARLY' ? 60 : 7
+      const basePrice = subscriptionPlan === 'YEARLY' ? 49.99 : 4.99
       const amount = basePrice * REFERRAL_SHARE
 
       return [

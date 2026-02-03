@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 }
 
 const planDetails: Record<string, { name: string; originalPrice: string; cadence: string }> = {
-  'pro-yearly': { name: 'Pro (Yearly)', originalPrice: '$60', cadence: 'per year' },
-  'pro-monthly': { name: 'Pro (Monthly)', originalPrice: '$7', cadence: 'per month' },
+  'pro-yearly': { name: 'Pro (Yearly)', originalPrice: '$49.99', cadence: 'per year' },
+  'pro-monthly': { name: 'Pro (Monthly)', originalPrice: '$4.99', cadence: 'per month' },
 }
 
 export default function PurchasePage({

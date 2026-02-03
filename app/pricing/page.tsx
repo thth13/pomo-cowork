@@ -38,7 +38,7 @@ const plans: PricingPlan[] = [
   {
     id: 'pro-yearly',
     name: 'Pro',
-    price: '$60',
+    price: '$49.99',
     cadence: 'per year',
     description: 'Best value for individuals who want full power.',
     badge: 'Best value',
@@ -59,7 +59,7 @@ const plans: PricingPlan[] = [
   {
     id: 'pro-monthly',
     name: 'Pro Monthly',
-    price: '$7',
+    price: '$4.99',
     cadence: 'per month',
     description: 'Full Pro features with flexible billing.',
     cta: {

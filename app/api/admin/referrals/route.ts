@@ -7,8 +7,8 @@ import { Prisma } from '@prisma/client'
 
 export const dynamic = 'force-dynamic'
 
-const MONTHLY_PRICE_USD = 7
-const YEARLY_PRICE_USD = 60
+const MONTHLY_PRICE_USD = 4.99
+const YEARLY_PRICE_USD = 49.99
 const REFERRAL_SHARE = 0.5
 const YEARLY_THRESHOLD_DAYS = 200
 const MS_PER_DAY = 1000 * 60 * 60 * 24
