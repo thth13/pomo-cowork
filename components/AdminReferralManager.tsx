@@ -20,6 +20,16 @@ interface CreateReferralPayload {
   code?: string
 }
 
+interface ProUserEntry {
+  id: string
+  username: string
+  email: string
+  avatarUrl?: string | null
+  proExpiresAt?: string | null
+  createdAt: string
+  lastSeenAt?: string | null
+}
+
 const getBaseUrl = () => {
   if (typeof window === 'undefined') return ''
   return window.location.origin
@@ -42,6 +52,8 @@ export default function AdminReferralManager() {
   const [purchasesLoadingId, setPurchasesLoadingId] = useState<string | null>(null)
   const [supportMessages, setSupportMessages] = useState<SupportMessageEntry[]>([])
   const [supportLoading, setSupportLoading] = useState(false)
+  const [proUsers, setProUsers] = useState<ProUserEntry[]>([])
+  const [proUsersLoading, setProUsersLoading] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'warning'>('info')
   const [showToast, setShowToast] = useState(false)
@@ -131,6 +143,38 @@ export default function AdminReferralManager() {
   useEffect(() => {
     if (isAuthenticated) {
       void fetchSupportMessages()
+    }
+  }, [isAuthenticated])
+
+  const fetchProUsers = async () => {
+    setProUsersLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/admin/pro-users', {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      })
+
+      if (!response.ok) {
+        const body = await response.json().catch(() => null)
+        throw new Error(body?.error ?? 'Failed to load pro users')
+      }
+
+      const data = (await response.json()) as ProUserEntry[]
+      setProUsers(data)
+    } catch (err) {
+      setToastType('error')
+      setToastMessage(err instanceof Error ? err.message : 'Failed to load pro users')
+      setShowToast(true)
+    } finally {
+      setProUsersLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      void fetchProUsers()
     }
   }, [isAuthenticated])
 
@@ -322,6 +366,14 @@ export default function AdminReferralManager() {
   }
 
   const getPlanLabel = (plan: SubscriptionPlan) => (plan === 'YEARLY' ? 'Yearly' : 'Monthly')
+  const formatShortDate = (value?: string | null) =>
+    value
+      ? new Date(value).toLocaleDateString('en-GB', {
+          day: '2-digit',
+          month: 'short',
+          year: 'numeric',
+        })
+      : 'No expiry'
 
   if (isLoading) {
     return null
@@ -639,6 +691,65 @@ export default function AdminReferralManager() {
                 </div>
               )
             })
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Pro users</h2>
+          <span className="text-xs text-slate-400">{proUsers.length} total</span>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {proUsersLoading ? (
+            <div className="text-sm text-slate-500 dark:text-slate-400">Loading pro users...</div>
+          ) : proUsers.length === 0 ? (
+            <div className="text-sm text-slate-500 dark:text-slate-400">No active pro users yet.</div>
+          ) : (
+            proUsers.map((entry) => (
+              <Link
+                key={entry.id}
+                href={`/user/${entry.id}`}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm transition hover:border-amber-200 hover:bg-amber-50/50 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:border-amber-900/50"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  {entry.avatarUrl ? (
+                    <img
+                      src={entry.avatarUrl}
+                      alt={entry.username}
+                      className="h-10 w-10 rounded-full object-cover"
+                      loading="lazy"
+                      width={40}
+                      height={40}
+                    />
+                  ) : (
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                      {entry.username.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                      {entry.username}
+                    </p>
+                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{entry.email}</p>
+                    {entry.lastSeenAt ? (
+                      <p className="text-[11px] text-slate-400">
+                        Last seen {formatShortDate(entry.lastSeenAt)}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-right">
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-200">
+                    Pro
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    {entry.proExpiresAt ? `Active until ${formatShortDate(entry.proExpiresAt)}` : 'No expiry'}
+                  </span>
+                </div>
+              </Link>
+            ))
           )}
         </div>
       </div>
