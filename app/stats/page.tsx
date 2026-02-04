@@ -77,6 +77,10 @@ interface Stats {
     totalPlannedPomodoros: number
     totalCompletedPomodoros: number
   }
+  taskTimeDistribution: Array<{
+    task: string
+    minutes: number
+  }>
 }
 
 export default function StatsPage() {
@@ -367,6 +371,39 @@ export default function StatsPage() {
       name: 'Pomodoros per Month',
       data: stats?.monthlyBreakdown?.map(m => m.pomodoros) || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       color: '#3b82f6'
+    }]
+  }
+
+  const taskTimePalette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
+  const taskTimeDistribution = (stats?.taskTimeDistribution || []).filter(item => item.minutes > 0)
+  const totalTaskTimeMinutes = taskTimeDistribution.reduce((sum, item) => sum + item.minutes, 0)
+  const taskTimeData = taskTimeDistribution.map((item, index) => ({
+    name: item.task,
+    y: item.minutes,
+    minutes: item.minutes,
+    percentage: totalTaskTimeMinutes > 0 ? (item.minutes / totalTaskTimeMinutes) * 100 : 0,
+    color: taskTimePalette[index % taskTimePalette.length]
+  }))
+
+  const taskTimeChartOptions: Highcharts.Options = {
+    chart: { type: 'pie', backgroundColor: 'transparent' },
+    title: { text: '' },
+    credits: { enabled: false },
+    tooltip: {
+      pointFormat: '<b>{point.percentage:.1f}%</b> ({point.y:.0f} min)'
+    },
+    legend: { enabled: false },
+    plotOptions: {
+      pie: {
+        innerSize: '55%',
+        borderWidth: 0,
+        dataLabels: { enabled: false }
+      }
+    },
+    series: [{
+      type: 'pie',
+      name: 'Focus time',
+      data: taskTimeData as any
     }]
   }
 
@@ -932,6 +969,40 @@ export default function StatsPage() {
                     </div>
 
                     {/* Task Statistics */}
+                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Task Time Distribution</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">By total focus minutes</p>
+                      </div>
+
+                      {taskTimeData.length === 0 ? (
+                        <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
+                          No tracked focus time by task yet.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 sm:gap-6 items-center">
+                          <div>
+                            <HighchartsReact highcharts={Highcharts} options={taskTimeChartOptions} />
+                          </div>
+                          <div className="space-y-3">
+                            {taskTimeData.map(item => (
+                              <div key={item.name} className="flex items-center justify-between gap-4">
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span
+                                    className="w-3 h-3 rounded-full shrink-0"
+                                    style={{ backgroundColor: item.color }}
+                                  />
+                                  <span className="text-sm text-gray-800 dark:text-slate-100 truncate">{item.name}</span>
+                                </div>
+                                <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  {item.percentage.toFixed(1)}%
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </>
                 )}
               </ProPaywall>
@@ -1261,6 +1332,40 @@ export default function StatsPage() {
                 </div>
 
                 {/* Task Statistics */}
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Task Time Distribution</h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">By total focus minutes</p>
+                  </div>
+
+                  {taskTimeData.length === 0 ? (
+                    <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
+                      No tracked focus time by task yet.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 sm:gap-6 items-center">
+                      <div>
+                        <HighchartsReact highcharts={Highcharts} options={taskTimeChartOptions} />
+                      </div>
+                      <div className="space-y-3">
+                        {taskTimeData.map(item => (
+                          <div key={item.name} className="flex items-center justify-between gap-4">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="w-3 h-3 rounded-full shrink-0"
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="text-sm text-gray-800 dark:text-slate-100 truncate">{item.name}</span>
+                            </div>
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {item.percentage.toFixed(1)}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </>
             )}
 

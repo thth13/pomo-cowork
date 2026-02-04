@@ -435,6 +435,16 @@ export async function GET(request: NextRequest) {
       totalCompletedPomodoros: allUserTasks.reduce((sum, t) => sum + t.completedPomodoros, 0)
     }
 
+    const taskTimeMap = new Map<string, number>()
+    allFocusSessions.forEach((session) => {
+      const taskName = session.task?.trim() || 'Без названия'
+      taskTimeMap.set(taskName, (taskTimeMap.get(taskName) || 0) + getEffectiveMinutes(session))
+    })
+    const taskTimeDistribution = Array.from(taskTimeMap.entries())
+      .map(([task, minutes]) => ({ task, minutes }))
+      .filter((item) => item.minutes > 0)
+      .sort((a, b) => b.minutes - a.minutes)
+
     const stats = {
       // Верхний блок
       totalPomodoros,
@@ -459,7 +469,10 @@ export async function GET(request: NextRequest) {
       productivityTrends,
       
       // Статистика по задачам
-      taskStats
+      taskStats,
+
+      // Распределение времени по задачам
+      taskTimeDistribution
     }
 
     return NextResponse.json(stats)
