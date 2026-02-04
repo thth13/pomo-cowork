@@ -7,28 +7,38 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: Request) {
   try {
-    // Получаем параметры запроса
     const { searchParams } = new URL(request.url)
     const roomId = searchParams.get('roomId')
+    const dayStartParam = searchParams.get('dayStart')
+    const dayEndParam = searchParams.get('dayEnd')
 
-    // Получаем начало и конец сегодняшнего дня
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
+    const now = new Date()
+    const dayStart = dayStartParam ? new Date(dayStartParam) : new Date(now)
+    if (!dayStartParam) {
+      dayStart.setHours(0, 0, 0, 0)
+    }
 
-    // Получаем все завершенные сессии за сегодня
+    const dayEnd = dayEndParam ? new Date(dayEndParam) : new Date(dayStart)
+    if (!dayEndParam) {
+      dayEnd.setDate(dayEnd.getDate() + 1)
+    }
+
+    if (Number.isNaN(dayStart.getTime()) || Number.isNaN(dayEnd.getTime()) || dayStart >= dayEnd) {
+      return NextResponse.json(
+        { error: 'Invalid day range' },
+        { status: 400 }
+      )
+    }
+
     const sessions = await prisma.pomodoroSession.findMany({
       where: {
         status: {
           in: ['COMPLETED', 'CANCELLED']
         },
         startedAt: {
-          gte: today,
-          lt: tomorrow
+          gte: dayStart,
+          lt: dayEnd
         },
-        // Фильтр по комнате: если roomId передан, фильтруем по нему, иначе только null (глобальные сессии)
         roomId: roomId || null
       },
       include: {

@@ -42,6 +42,12 @@ export default function WorkHistory() {
         }
 
         const url = new URL('/api/sessions/today', window.location.origin)
+        const dayStart = new Date()
+        dayStart.setHours(0, 0, 0, 0)
+        const dayEnd = new Date(dayStart)
+        dayEnd.setDate(dayEnd.getDate() + 1)
+        url.searchParams.set('dayStart', dayStart.toISOString())
+        url.searchParams.set('dayEnd', dayEnd.toISOString())
         if (currentRoomId) {
           url.searchParams.set('roomId', currentRoomId)
         }

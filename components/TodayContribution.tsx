@@ -51,7 +51,16 @@ export default function TodayContribution() {
           headers.Authorization = `Bearer ${token}`
         }
 
-        const response = await fetch('/api/sessions/today', { headers })
+        const dayStart = new Date()
+        dayStart.setHours(0, 0, 0, 0)
+        const dayEnd = new Date(dayStart)
+        dayEnd.setDate(dayEnd.getDate() + 1)
+
+        const url = new URL('/api/sessions/today', window.location.origin)
+        url.searchParams.set('dayStart', dayStart.toISOString())
+        url.searchParams.set('dayEnd', dayEnd.toISOString())
+
+        const response = await fetch(url.toString(), { headers })
         if (!response.ok) {
           throw new Error('Failed to load sessions')
         }
@@ -60,16 +69,11 @@ export default function TodayContribution() {
 
         if (!active) return
 
-        const now = new Date()
-        const startOfDay = new Date(now)
-        startOfDay.setHours(0, 0, 0, 0)
-        const endOfDay = new Date(now)
-        endOfDay.setHours(23, 59, 59, 999)
         const isWithinToday = (session: Session) => {
           const timestamp = session.completedAt ?? session.endedAt ?? session.startedAt
           const date = timestamp ? new Date(timestamp) : null
           if (!date || Number.isNaN(date.getTime())) return false
-          return date >= startOfDay && date <= endOfDay
+          return date >= dayStart && date < dayEnd
         }
 
         const completedSessions = data.filter(
