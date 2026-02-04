@@ -75,10 +75,10 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                 </div>
                 <div className="flex justify-between items-center mb-1 mt-1">
                   <span className="font-semibold text-gray-900 dark:text-white">12 months</span>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">$60</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white">$49.99</span>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-slate-400 mb-3">
-                  $5.00/month · Save ~29%
+                  $4.17/month · Save ~17%
                 </div>
               </div>
 
@@ -92,7 +92,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
               >
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-semibold text-gray-900 dark:text-white">1 month</span>
-                  <span className="text-xl font-bold text-gray-900 dark:text-white">$7</span>
+                  <span className="text-xl font-bold text-gray-900 dark:text-white">$4.99</span>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-slate-400">
                   Billed monthly
