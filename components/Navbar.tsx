@@ -530,7 +530,7 @@ export default function Navbar() {
                 }`}
               >
                 <FontAwesomeIcon icon={faUsers} className="mr-3 w-4" />
-                Search
+                Coworkers
               </Link>
               <Link
                 href="/stats"
