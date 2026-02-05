@@ -377,13 +377,33 @@ export default function StatsPage() {
   const taskTimePalette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
   const taskTimeDistribution = (stats?.taskTimeDistribution || []).filter(item => item.minutes > 0)
   const totalTaskTimeMinutes = taskTimeDistribution.reduce((sum, item) => sum + item.minutes, 0)
-  const taskTimeData = taskTimeDistribution.map((item, index) => ({
+  const sortedTaskTimeDistribution = [...taskTimeDistribution].sort((a, b) => b.minutes - a.minutes)
+  const taskTimeData = sortedTaskTimeDistribution.map((item, index) => ({
     name: item.task,
     y: item.minutes,
     minutes: item.minutes,
     percentage: totalTaskTimeMinutes > 0 ? (item.minutes / totalTaskTimeMinutes) * 100 : 0,
     color: taskTimePalette[index % taskTimePalette.length]
   }))
+  const taskTimeDisplayData = (() => {
+    const topItems = taskTimeData.slice(0, 10)
+    const otherMinutes = taskTimeData.slice(10).reduce((sum, item) => sum + item.minutes, 0)
+
+    if (otherMinutes <= 0) {
+      return topItems
+    }
+
+    return [
+      ...topItems,
+      {
+        name: 'Other',
+        y: otherMinutes,
+        minutes: otherMinutes,
+        percentage: totalTaskTimeMinutes > 0 ? (otherMinutes / totalTaskTimeMinutes) * 100 : 0,
+        color: '#94a3b8'
+      }
+    ]
+  })()
 
   const taskTimeChartOptions: Highcharts.Options = {
     chart: { type: 'pie', backgroundColor: 'transparent' },
@@ -403,7 +423,7 @@ export default function StatsPage() {
     series: [{
       type: 'pie',
       name: 'Focus time',
-      data: taskTimeData as any
+      data: taskTimeDisplayData as any
     }]
   }
 
@@ -975,7 +995,7 @@ export default function StatsPage() {
                         <p className="text-xs text-gray-500 dark:text-slate-400">By total focus minutes</p>
                       </div>
 
-                      {taskTimeData.length === 0 ? (
+                      {taskTimeDisplayData.length === 0 ? (
                         <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
                           No tracked focus time by task yet.
                         </div>
@@ -985,7 +1005,7 @@ export default function StatsPage() {
                             <HighchartsReact highcharts={Highcharts} options={taskTimeChartOptions} />
                           </div>
                           <div className="space-y-3">
-                            {taskTimeData.map(item => (
+                            {taskTimeDisplayData.map(item => (
                               <div key={item.name} className="flex items-center justify-between gap-4">
                                 <div className="flex items-center gap-2 min-w-0">
                                   <span
@@ -1338,7 +1358,7 @@ export default function StatsPage() {
                     <p className="text-xs text-gray-500 dark:text-slate-400">By total focus minutes</p>
                   </div>
 
-                  {taskTimeData.length === 0 ? (
+                  {taskTimeDisplayData.length === 0 ? (
                     <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
                       No tracked focus time by task yet.
                     </div>
@@ -1348,7 +1368,7 @@ export default function StatsPage() {
                         <HighchartsReact highcharts={Highcharts} options={taskTimeChartOptions} />
                       </div>
                       <div className="space-y-3">
-                        {taskTimeData.map(item => (
+                        {taskTimeDisplayData.map(item => (
                           <div key={item.name} className="flex items-center justify-between gap-4">
                             <div className="flex items-center gap-2 min-w-0">
                               <span
