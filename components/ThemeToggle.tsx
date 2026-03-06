@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Sun, Moon } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Sun, Moon, Cloud, Star } from 'lucide-react'
 import { useThemeStore } from '@/store/useThemeStore'
 
 export default function ThemeToggle() {
@@ -13,76 +13,93 @@ export default function ThemeToggle() {
     setMounted(true)
   }, [])
 
-  const isDark = theme === 'dark'
-
-  const buttonClasses = [
-    'relative w-10 h-10 rounded-xl border overflow-hidden transition-all duration-300 flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
-    isDark
-      ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 shadow-[0_0_12px_rgba(56,189,248,0.35)] focus-visible:ring-slate-500 focus-visible:ring-offset-slate-900'
-      : 'bg-gradient-to-br from-amber-100 via-orange-100 to-amber-200 border-amber-200 shadow-[0_0_12px_rgba(251,191,36,0.35)] focus-visible:ring-amber-400 focus-visible:ring-offset-amber-50'
-  ].join(' ')
-
   if (!mounted) {
     return (
-      <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-700 animate-pulse" />
+      <div className="w-16 h-8 rounded-full bg-slate-200 dark:bg-slate-700 animate-pulse" />
     )
   }
 
-  return (
-    <motion.button
-      onClick={toggleTheme}
-      className={buttonClasses}
-      whileHover={{ scale: 1.07 }}
-      whileTap={{ scale: 0.94 }}
-      title={theme === 'light' ? 'Переключить на тёмную тему' : 'Переключить на светлую тему'}
-    >
-      <motion.span
-        layout
-        className="absolute inset-0 rounded-full"
-        animate={{
-          background: isDark
-            ? 'radial-gradient(circle at 30% 30%, rgba(56,189,248,0.35), transparent 60%)'
-            : 'radial-gradient(circle at 70% 30%, rgba(251,191,36,0.45), transparent 65%)',
-          opacity: 1
-        }}
-        transition={{ duration: 0.35, ease: 'easeInOut' }}
-      />
+  const isDark = theme === 'dark'
 
-      <AnimatePresence mode="wait" initial={false}>
-        {isDark ? (
-          <motion.div
-            key="moon-icon"
-            initial={{ scale: 0.6, opacity: 0, rotate: -10 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            exit={{ scale: 0.6, opacity: 0, rotate: 10 }}
-            transition={{ duration: 0.2 }}
-            className="relative flex items-center justify-center"
-          >
-            <motion.span
-              className="absolute inset-0 rounded-full bg-cyan-400/25 blur-md"
-              animate={{ opacity: [0.3, 0.55, 0.3], scale: [0.9, 1.05, 0.9] }}
-              transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <Moon className="relative w-5 h-5 text-cyan-100" strokeWidth={1.5} />
-          </motion.div>
-        ) : (
-          <motion.div
-            key="sun-icon"
-            initial={{ scale: 0.6, opacity: 0, rotate: 10 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            exit={{ scale: 0.6, opacity: 0, rotate: -10 }}
-            transition={{ duration: 0.2 }}
-            className="relative flex items-center justify-center"
-          >
-            <motion.span
-              className="absolute inset-0 rounded-full bg-amber-300/40 blur-md"
-              animate={{ opacity: [0.4, 0.7, 0.4], scale: [0.95, 1.08, 0.95] }}
-              transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-            />
-            <Sun className="relative w-5 h-5 text-amber-500" strokeWidth={1.8} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </motion.button>
+  return (
+    <button
+      onClick={toggleTheme}
+      className={`relative flex w-16 h-8 rounded-full p-1 transition-colors duration-500 outline-none ${
+        isDark ? 'bg-slate-800' : 'bg-sky-300'
+      }`}
+      aria-label="Toggle Theme"
+      title={isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
+    >
+      {/* Background Elements */}
+      <div className="absolute inset-0 overflow-hidden rounded-full pointer-events-none">
+        {/* Stars */}
+        <motion.div
+          initial={false}
+          animate={{
+            y: isDark ? 0 : 20,
+            opacity: isDark ? 1 : 0,
+          }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0"
+        >
+          {/* Several little realistic stars */}
+          <div className="absolute top-[14px] left-[8px] w-[2px] h-[2px] rounded-full bg-white opacity-90 animate-pulse shadow-[0_0_3px_1px_rgba(255,255,255,0.8)]" />
+          <div className="absolute top-[8px] left-[16px] w-[1px] h-[1px] rounded-full bg-white opacity-60 shadow-[0_0_2px_rgba(255,255,255,0.6)]" />
+          <div className="absolute top-[20px] left-[14px] w-[2px] h-[2px] rounded-full bg-blue-100 opacity-80 animate-pulse shadow-[0_0_4px_rgba(219,234,254,0.8)]" style={{ animationDelay: '0.5s' }} />
+          <div className="absolute top-[12px] left-[24px] w-[1.5px] h-[1.5px] rounded-full bg-white opacity-100 shadow-[0_0_2px_1px_rgba(255,255,255,0.9)]" />
+          <div className="absolute top-[22px] left-[26px] w-[1px] h-[1px] rounded-full bg-white opacity-50 shadow-[0_0_2px_rgba(255,255,255,0.4)]" />
+          <div className="absolute top-[16px] left-[32px] w-[2px] h-[2px] rounded-full bg-blue-50 opacity-90 animate-pulse shadow-[0_0_3px_rgba(239,246,255,0.8)]" style={{ animationDelay: '1s' }} />
+        </motion.div>
+
+        {/* Clouds */}
+        <motion.div
+          initial={false}
+          animate={{
+            y: isDark ? 20 : 0,
+            opacity: isDark ? 0 : 1,
+          }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0"
+        >
+          <Cloud className="absolute top-[10px] right-[6px] w-4 h-4 text-white fill-white opacity-80 drop-shadow-sm" />
+          <Cloud className="absolute top-[5px] right-[18px] w-3 h-3 text-white fill-white opacity-60" />
+          <Cloud className="absolute top-[16px] right-[22px] w-[10px] h-[10px] text-white/90 fill-white opacity-50" />
+        </motion.div>
+      </div>
+
+      {/* Toggle Handle */}
+      <motion.div
+        className="relative z-10 flex h-6 w-6 items-center justify-center rounded-full bg-white shadow-sm"
+        initial={false}
+        animate={{
+          x: isDark ? 32 : 0,
+        }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+      >
+        <motion.div
+          initial={false}
+          animate={{
+            rotate: isDark ? -180 : 0,
+            opacity: isDark ? 0 : 1,
+          }}
+          transition={{ duration: 0.3 }}
+          className="absolute"
+        >
+          <Sun className="h-4 w-4 text-amber-500" />
+        </motion.div>
+        
+        <motion.div
+          initial={false}
+          animate={{
+            rotate: isDark ? 0 : 180,
+            opacity: isDark ? 1 : 0,
+          }}
+          transition={{ duration: 0.3 }}
+          className="absolute"
+        >
+          <Moon className="h-4 w-4 text-slate-700" />
+        </motion.div>
+      </motion.div>
+    </button>
   )
 }
