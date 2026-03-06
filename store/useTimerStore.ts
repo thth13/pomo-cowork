@@ -137,12 +137,14 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   pauseSession: () => {
     const { currentSession, timeRemaining } = get()
     if (currentSession) {
+      const pausedAt = Date.now()
       set({
         isRunning: false,
-        pausedAt: Date.now(),
+        pausedAt,
         currentSession: {
           ...currentSession,
           status: SessionStatus.PAUSED,
+          pausedAt: new Date(pausedAt).toISOString(),
           timeRemaining,
         },
       })
@@ -150,19 +152,20 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   resumeSession: () => {
-    const { currentSession, pausedAt, timeRemaining } = get()
-    if (currentSession && pausedAt) {
-      // Adjust startedAt to account for pause time
-      const pauseDuration = Date.now() - pausedAt
-      const newStartedAt = new Date(new Date(currentSession.startedAt).getTime() + pauseDuration).toISOString()
-      
+    const { currentSession, timeRemaining } = get()
+    if (currentSession) {
+      const totalDurationSeconds = currentSession.duration * 60
+      const elapsedSeconds = Math.max(0, totalDurationSeconds - timeRemaining)
+      const newStartedAt = new Date(Date.now() - elapsedSeconds * 1000).toISOString()
+
       set({
         isRunning: true,
         pausedAt: null,
         currentSession: {
           ...currentSession,
           status: SessionStatus.ACTIVE,
-          startedAt: newStartedAt, // Update startedAt to compensate for pause
+          pausedAt: undefined,
+          startedAt: newStartedAt,
           timeRemaining,
         },
       })
