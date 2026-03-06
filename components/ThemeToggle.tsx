@@ -24,8 +24,10 @@ export default function ThemeToggle() {
   return (
     <button
       onClick={toggleTheme}
-      className={`relative flex w-16 h-8 rounded-full p-1 transition-colors duration-500 outline-none ${
-        isDark ? 'bg-slate-800' : 'bg-sky-300'
+      className={`relative flex w-16 h-8 rounded-full p-1 transition-all duration-500 outline-none ${
+        isDark 
+          ? 'bg-slate-800 ring-1 ring-inset ring-white/10 md:ring-0 shadow-[0_0_10px_rgba(0,0,0,0.4)] md:shadow-none' 
+          : 'bg-sky-300'
       }`}
       aria-label="Toggle Theme"
       title={isDark ? 'Переключить на светлую тему' : 'Переключить на тёмную тему'}
