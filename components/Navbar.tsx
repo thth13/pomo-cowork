@@ -14,6 +14,7 @@ import Image from 'next/image'
 import { useRoomStore } from '@/store/useRoomStore'
 import { NotificationItem } from '@/types'
 import NotificationsMenu from './NotificationsMenu'
+import { TomatoMascot } from '@/components/TomatoMascot'
 import {
   faArrowRightFromBracket,
   faArrowUpRightFromSquare,
@@ -254,8 +255,8 @@ export default function Navbar() {
       <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 md:px-8 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link href="/" className="flex items-center space-x-2 md:space-x-3">
-            <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
-              <FontAwesomeIcon icon={faClock} className="text-white text-lg" />
+            <div className="w-10 h-10 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center">
+              <TomatoMascot className="w-7 h-7" />
             </div>
             <div>
               <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Pomo Cowork</h1>
