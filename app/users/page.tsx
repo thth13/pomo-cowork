@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
+  faChevronLeft,
+  faChevronRight,
   faClock,
-  faCrown,
   faFire,
   faMagnifyingGlass,
   faRotateRight,
@@ -41,6 +42,10 @@ interface PeriodTotals {
 interface LeaderboardResponse {
   period: LeaderboardPeriod
   periodLabel: string
+  periodStart: string
+  periodEnd: string
+  offset: number
+  isCurrentPeriod: boolean
   leaderboard: LeaderboardUser[]
   currentUser: LeaderboardUser | null
   periodTotals: PeriodTotals
@@ -80,10 +85,11 @@ const RANK_META = {
   },
 } as const
 
-const fmt = (hours: number) => {
-  if (!Number.isFinite(hours)) return '0'
-  if (Number.isInteger(hours)) return String(hours)
-  return hours.toFixed(1)
+const formatTime = (totalMinutes: number) => {
+  if (!Number.isFinite(totalMinutes)) return '0:00'
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = Math.floor(totalMinutes % 60)
+  return `${hours}:${minutes.toString().padStart(2, '0')}`
 }
 
 function Avatar({
@@ -136,10 +142,11 @@ export default function UsersPage() {
   const { user: currentUser, token } = useAuthStore()
 
   const [period, setPeriod] = useState<LeaderboardPeriod>('month')
+  const [periodOffset, setPeriodOffset] = useState(0)
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
   const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null)
   const [periodTotals, setPeriodTotals] = useState<PeriodTotals | null>(null)
-  const [periodLabel, setPeriodLabel] = useState('This month')
+  const [periodLabel, setPeriodLabel] = useState('Mar 1-31, 2026')
   const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -151,7 +158,7 @@ export default function UsersPage() {
 
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
 
-    fetch(`/api/stats/leaderboard?period=${period}`, { headers, signal: ctrl.signal })
+    fetch(`/api/stats/leaderboard?period=${period}&offset=${periodOffset}`, { headers, signal: ctrl.signal })
       .then((res) => {
         if (!res.ok) throw new Error('Failed')
         return res.json() as Promise<LeaderboardResponse>
@@ -175,12 +182,13 @@ export default function UsersPage() {
       })
 
     return () => ctrl.abort()
-  }, [period, token])
+  }, [period, periodOffset, token])
 
   const maxMinutes = leaderboard[0]?.totalMinutes || 1
   const filtered = leaderboard.filter((u) =>
     u.username.toLowerCase().includes(search.toLowerCase()),
   )
+  const currentUserProgress = currentUserRank ? Math.round((currentUserRank.totalMinutes / maxMinutes) * 100) : 0
 
   return (
     <>
@@ -203,7 +211,10 @@ export default function UsersPage() {
                 <button
                   key={p.value}
                   type="button"
-                  onClick={() => setPeriod(p.value)}
+                  onClick={() => {
+                    setPeriod(p.value)
+                    setPeriodOffset(0)
+                  }}
                   className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 ${
                     p.value === period
                       ? 'bg-slate-900 text-white shadow-md dark:bg-white dark:text-slate-900'
@@ -214,6 +225,30 @@ export default function UsersPage() {
                   {p.label}
                 </button>
               ))}
+            </div>
+
+            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setPeriodOffset((value) => value + 1)}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-900/5 transition hover:-translate-y-0.5 hover:text-slate-900 dark:bg-slate-900/80 dark:text-slate-300 dark:ring-white/10 dark:hover:text-white"
+                aria-label={`Previous ${period}`}
+              >
+                <FontAwesomeIcon icon={faChevronLeft} />
+              </button>
+              <div className="min-w-[220px] rounded-2xl bg-white/80 px-5 py-3 text-center shadow-sm ring-1 ring-slate-900/5 backdrop-blur-xl dark:bg-slate-900/70 dark:ring-white/10">
+                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Selected Range</p>
+                <p className="mt-1 text-sm font-black text-slate-900 dark:text-white sm:text-base">{periodLabel}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPeriodOffset((value) => Math.max(0, value - 1))}
+                disabled={periodOffset === 0}
+                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-900/5 transition hover:-translate-y-0.5 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 dark:bg-slate-900/80 dark:text-slate-300 dark:ring-white/10 dark:hover:text-white"
+                aria-label={`Next ${period}`}
+              >
+                <FontAwesomeIcon icon={faChevronRight} />
+              </button>
             </div>
           </div>
 
@@ -229,15 +264,17 @@ export default function UsersPage() {
                   accent: 'text-sky-500',
                   bg: 'bg-sky-50 dark:bg-sky-500/10',
                   border: 'ring-sky-100 dark:ring-sky-500/20',
+                  valueClass: 'text-3xl',
                 },
                 {
                   label: 'Focus Time',
-                  value: loading ? '—' : `${fmt((periodTotals?.totalMinutes ?? 0) / 60)}h`,
+                  value: loading ? '—' : `${formatTime(periodTotals?.totalMinutes ?? 0)}`,
                   sub: 'across all users',
                   icon: faClock,
                   accent: 'text-violet-500',
                   bg: 'bg-violet-50 dark:bg-violet-500/10',
                   border: 'ring-violet-100 dark:ring-violet-500/20',
+                  valueClass: 'text-3xl',
                 },
                 {
                   label: 'Pomodoros',
@@ -247,6 +284,7 @@ export default function UsersPage() {
                   accent: 'text-rose-500',
                   bg: 'bg-rose-50 dark:bg-rose-500/10',
                   border: 'ring-rose-100 dark:ring-rose-500/20',
+                  valueClass: 'text-3xl',
                 },
               ] as const
             ).map((stat) => (
@@ -261,7 +299,7 @@ export default function UsersPage() {
                 </div>
                 <div>
                   <p className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">{stat.label}</p>
-                  <p className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+                  <p className={`${stat.valueClass} font-black text-slate-900 dark:text-white`}>
                     {stat.value}
                   </p>
                   <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{stat.sub}</p>
@@ -308,7 +346,7 @@ export default function UsersPage() {
               <div>
                 <h3 className="text-3xl font-black text-slate-900 dark:text-white">Nobody here yet!</h3>
                 <p className="mt-3 max-w-md mx-auto text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
-                  Be the very first to complete a focus session and claim the highest rank for {periodLabel.toLowerCase()}.
+                  Be the very first to log focus time and claim the highest rank for {periodLabel}.
                 </p>
               </div>
             </div>
@@ -403,7 +441,7 @@ export default function UsersPage() {
                                   )}
                                 </div>
                                 <span className="shrink-0 text-sm font-black text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                  {fmt(user.totalHours)}<span className="text-xs text-slate-400 font-bold ml-0.5 mr-1.5">h</span>
+                                  {formatTime(user.totalMinutes)}<span className="text-xs text-slate-400 font-bold ml-0.5 mr-1.5">h</span>
                                   <span className="text-slate-200 dark:text-slate-700 font-normal mr-1.5">|</span>
                                   {user.totalPomodoros} <span className="text-xs">🍅</span>
                                 </span>
@@ -460,7 +498,7 @@ export default function UsersPage() {
                           <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700/50">
                             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Focus</p>
                             <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
-                              {fmt(currentUserRank.totalHours)}<span className="text-sm text-slate-400 ml-0.5 font-bold">h</span>
+                              {formatTime(currentUserRank.totalMinutes)}<span className="text-sm text-slate-400 ml-0.5 font-bold">h</span>
                             </p>
                           </div>
                           <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700/50">
@@ -475,14 +513,14 @@ export default function UsersPage() {
                           <div className="mb-2 flex items-center justify-between text-xs font-bold">
                             <span className="text-slate-500">Progress to #1</span>
                             <span className="text-slate-900 dark:text-white">
-                              {Math.round((currentUserRank.totalMinutes / maxMinutes) * 100)}%
+                              {currentUserProgress}%
                             </span>
                           </div>
                           <div className="h-2.5 overflow-hidden rounded-full bg-slate-200/60 dark:bg-slate-700">
                             <div
                               className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-500 shadow-[inset_0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-1000"
                               style={{
-                                width: `${Math.round((currentUserRank.totalMinutes / maxMinutes) * 100)}%`,
+                                width: `${currentUserProgress}%`,
                               }}
                             />
                           </div>
@@ -495,44 +533,12 @@ export default function UsersPage() {
                         </div>
                         <p className="text-sm font-bold leading-relaxed text-slate-600 dark:text-slate-300">
                           {currentUser
-                            ? `Log a session to appear on the ${periodLabel.toLowerCase()} board.`
+                            ? `Log focus time to appear on the ${periodLabel} board.`
                             : 'Log in and focus to see your position.'}
                         </p>
                       </div>
                     )}
                   </div>
-
-                  {/* Rules Card */}
-                  <div className="overflow-hidden rounded-[32px] bg-white border border-slate-200/60 shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
-                    <div className="bg-slate-50/50 border-b border-slate-100 px-7 py-5 dark:bg-slate-800/20 dark:border-slate-800/80">
-                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                        How It Works
-                      </h3>
-                    </div>
-                    <div className="p-7">
-                      <ul className="space-y-5 text-sm">
-                        <li className="flex gap-4">
-                          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-500/10">
-                            <FontAwesomeIcon icon={faCrown} className="text-[10px]" />
-                          </div>
-                          <div>
-                            <strong className="block text-slate-900 dark:text-white mb-1 font-bold">Primary Metric</strong>
-                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Ranked strictly by effective tracked minutes.</p>
-                          </div>
-                        </li>
-                        <li className="flex gap-4">
-                          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-500 dark:bg-sky-500/10">
-                            <FontAwesomeIcon icon={faClock} className="text-xs" />
-                          </div>
-                          <div>
-                            <strong className="block text-slate-900 dark:text-white mb-1 font-bold">Tracking Periods</strong>
-                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Day, Week (Mon-Sun), Month, and Year.</p>
-                          </div>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                  
                 </aside>
               </div>
             </div>
