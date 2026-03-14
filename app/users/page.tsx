@@ -20,8 +20,10 @@ import {
 } from '@fortawesome/free-solid-svg-icons'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
+import { DayPicker, DateRange } from 'react-day-picker'
+import 'react-day-picker/dist/style.css'
 
-type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year'
+type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year' | 'custom'
 
 interface LeaderboardUser {
   id: string
@@ -143,6 +145,8 @@ export default function UsersPage() {
 
   const [period, setPeriod] = useState<LeaderboardPeriod>('month')
   const [periodOffset, setPeriodOffset] = useState(0)
+  const [dateRange, setDateRange] = useState<DateRange | undefined>()
+  const [showCustomRange, setShowCustomRange] = useState(false)
   const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
   const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null)
   const [periodTotals, setPeriodTotals] = useState<PeriodTotals | null>(null)
@@ -158,7 +162,12 @@ export default function UsersPage() {
 
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
 
-    fetch(`/api/stats/leaderboard?period=${period}&offset=${periodOffset}`, { headers, signal: ctrl.signal })
+    let url = `/api/stats/leaderboard?period=${period}&offset=${periodOffset}`
+    if (period === 'custom' && dateRange?.from && dateRange?.to) {
+      url += `&startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`
+    }
+
+    fetch(url, { headers, signal: ctrl.signal })
       .then((res) => {
         if (!res.ok) throw new Error('Failed')
         return res.json() as Promise<LeaderboardResponse>
@@ -182,7 +191,7 @@ export default function UsersPage() {
       })
 
     return () => ctrl.abort()
-  }, [period, periodOffset, token])
+  }, [period, periodOffset, dateRange?.from, dateRange?.to, token])
 
   const maxMinutes = leaderboard[0]?.totalMinutes || 1
   const filtered = leaderboard.filter((u) =>
@@ -200,55 +209,115 @@ export default function UsersPage() {
         <main className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 
           {/* ─── HEADER ─────────────────────────────────────────── */}
-          <div className="mb-12 flex flex-col items-center text-center">
-            <h1 className="mb-8 text-4xl font-black text-slate-900 dark:text-white sm:text-5xl lg:text-6xl">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <h1 className="mb-6 text-4xl font-black text-slate-900 dark:text-white sm:text-5xl">
               Leaderboard
             </h1>
 
-            {/* Period segmented control */}
-            <div className="inline-flex items-center rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-900/80 dark:ring-white/10 backdrop-blur-xl transition-all">
-              {PERIODS.map((p) => (
-                <button
-                  key={p.value}
-                  type="button"
-                  onClick={() => {
-                    setPeriod(p.value)
-                    setPeriodOffset(0)
-                  }}
-                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 ${
-                    p.value === period
-                      ? 'bg-slate-900 text-white shadow-md dark:bg-white dark:text-slate-900'
-                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
-                  }`}
-                >
-                  <FontAwesomeIcon icon={p.icon} className={p.value === period ? 'opacity-100' : 'opacity-60'} />
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={() => setPeriodOffset((value) => value + 1)}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-900/5 transition hover:-translate-y-0.5 hover:text-slate-900 dark:bg-slate-900/80 dark:text-slate-300 dark:ring-white/10 dark:hover:text-white"
-                aria-label={`Previous ${period}`}
-              >
-                <FontAwesomeIcon icon={faChevronLeft} />
-              </button>
-              <div className="min-w-[220px] rounded-2xl bg-white/80 px-5 py-3 text-center shadow-sm ring-1 ring-slate-900/5 backdrop-blur-xl dark:bg-slate-900/70 dark:ring-white/10">
-                <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Selected Range</p>
-                <p className="mt-1 text-sm font-black text-slate-900 dark:text-white sm:text-base">{periodLabel}</p>
+            {/* Combined Controls */}
+            <div className="relative z-50 flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-900/80 dark:ring-white/10 backdrop-blur-xl transition-all">
+              {/* Period selection */}
+              <div className="flex items-center">
+                {PERIODS.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => {
+                      setPeriod(p.value)
+                      setPeriodOffset(0)
+                    }}
+                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${
+                      p.value === period
+                        ? 'bg-slate-900 text-white shadow-md dark:bg-white dark:text-slate-900'
+                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
+                    }`}
+                  >
+                    <FontAwesomeIcon icon={p.icon} className={p.value === period ? 'opacity-100' : 'opacity-60'} />
+                    <span className="hidden sm:inline">{p.label}</span>
+                  </button>
+                ))}
               </div>
-              <button
-                type="button"
-                onClick={() => setPeriodOffset((value) => Math.max(0, value - 1))}
-                disabled={periodOffset === 0}
-                className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-slate-700 shadow-sm ring-1 ring-slate-900/5 transition hover:-translate-y-0.5 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:translate-y-0 dark:bg-slate-900/80 dark:text-slate-300 dark:ring-white/10 dark:hover:text-white"
-                aria-label={`Next ${period}`}
-              >
-                <FontAwesomeIcon icon={faChevronRight} />
-              </button>
+
+              <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-700 sm:block mx-1"></div>
+
+              {/* Range selection */}
+              <div className="relative flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setPeriodOffset((value) => value + 1)}
+                  disabled={period === 'custom'}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-transparent text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-20 disabled:hover:bg-transparent dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                  aria-label={`Previous ${period}`}
+                >
+                  <FontAwesomeIcon icon={faChevronLeft} />
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setShowCustomRange(!showCustomRange)}
+                  className="min-w-[130px] px-2 text-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition py-1"
+                >
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">{periodLabel}</p>
+                </button>
+
+                {showCustomRange && (
+                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-[99] w-max rounded-3xl bg-white p-4 shadow-2xl ring-1 ring-slate-900/10 dark:bg-slate-900 dark:ring-white/10 flex flex-col gap-3">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Custom Range</h3>
+                    <div className="flex flex-col gap-2">
+                      <style>{`
+                        .rdp-root { 
+                          --rdp-accent-color: #0f172a;
+                          --rdp-accent-background-color: #f1f5f9;
+                          --rdp-day-height: 38px;
+                          --rdp-day-width: 38px;
+                          margin: 0;
+                        }
+                        .dark .rdp-root {
+                          --rdp-accent-color: #ffffff;
+                          --rdp-accent-background-color: #1e293b;
+                        }
+                      `}</style>
+                      <DayPicker
+                        mode="range"
+                        selected={dateRange}
+                        onSelect={setDateRange}
+                        className="text-slate-900 dark:text-white"
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (dateRange?.from && dateRange?.to) {
+                              setPeriod('custom')
+                              setShowCustomRange(false)
+                            }
+                          }}
+                          className="flex-1 rounded-xl bg-slate-900 py-2.5 text-sm font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 transition"
+                        >
+                          Apply
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomRange(false)}
+                          className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-bold text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-white transition"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <button
+                  type="button"
+                  onClick={() => setPeriodOffset((value) => Math.max(0, value - 1))}
+                  disabled={periodOffset === 0 || period === 'custom'}
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-transparent text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-20 disabled:hover:bg-transparent dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white dark:disabled:hover:bg-transparent"
+                  aria-label={`Next ${period}`}
+                >
+                  <FontAwesomeIcon icon={faChevronRight} />
+                </button>
+              </div>
             </div>
           </div>
 

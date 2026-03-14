@@ -5,7 +5,7 @@ import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionSta
 
 export const dynamic = 'force-dynamic'
 
-type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year'
+type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year' | 'custom'
 
 interface PeriodWindow {
   start: Date
@@ -14,7 +14,7 @@ interface PeriodWindow {
 }
 
 const isLeaderboardPeriod = (value: string | null): value is LeaderboardPeriod => {
-  return value === 'day' || value === 'week' || value === 'month' || value === 'year'
+  return value === 'day' || value === 'week' || value === 'month' || value === 'year' || value === 'custom'
 }
 
 const startOfLocalDay = (date: Date) => {
@@ -65,9 +65,19 @@ const formatDateRange = (start: Date, endExclusive: Date) => {
   return `${formatFullDate(start)} - ${formatFullDate(end)}`
 }
 
-const getPeriodWindow = (period: LeaderboardPeriod, offset: number): PeriodWindow => {
+const getPeriodWindow = (period: LeaderboardPeriod, offset: number, customStart?: string, customEnd?: string): PeriodWindow => {
   const now = new Date()
   const safeOffset = Math.max(0, offset)
+
+  if (period === 'custom') {
+    const start = customStart ? startOfLocalDay(new Date(customStart)) : startOfLocalDay(now)
+    const end = customEnd ? addDays(startOfLocalDay(new Date(customEnd)), 1) : addDays(startOfLocalDay(now), 1)
+    return {
+      start,
+      end,
+      label: formatDateRange(start, end),
+    }
+  }
 
   if (period === 'day') {
     const start = startOfLocalDay(addDays(now, -safeOffset))
@@ -117,7 +127,9 @@ export async function GET(request: NextRequest) {
     const requestedPeriod = searchParams.get('period')
     const period: LeaderboardPeriod = isLeaderboardPeriod(requestedPeriod) ? requestedPeriod : 'month'
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10) || 0)
-    const periodWindow = getPeriodWindow(period, offset)
+    const customStart = searchParams.get('startDate') || undefined
+    const customEnd = searchParams.get('endDate') || undefined
+    const periodWindow = getPeriodWindow(period, offset, customStart, customEnd)
     const { start: periodStart, end: periodEnd, label: periodLabel } = periodWindow
 
     // Получаем текущего пользователя если авторизован
