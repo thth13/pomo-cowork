@@ -1,33 +1,26 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/store/useAuthStore'
-import Navbar from '@/components/Navbar'
 import Image from 'next/image'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faClock,
   faCrown,
   faFire,
-  faMedal,
-  faSearch,
+  faMagnifyingGlass,
+  faRotateRight,
   faTrophy,
-  faUsers
+  faUsers,
+  faCalendarDay,
+  faCalendarWeek,
+  faCalendarDays,
+  faCalendar
 } from '@fortawesome/free-solid-svg-icons'
+import Navbar from '@/components/Navbar'
+import { useAuthStore } from '@/store/useAuthStore'
 
-interface UserSearchResult {
-  id: string
-  username: string
-  avatarUrl?: string
-  createdAt: string
-  isOnline: boolean
-  rank: number
-  stats: {
-    totalHours: number
-    totalPomodoros: number
-  }
-}
+type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year'
 
 interface LeaderboardUser {
   id: string
@@ -35,376 +28,517 @@ interface LeaderboardUser {
   avatarUrl?: string
   totalHours: number
   totalPomodoros: number
-  totalMinutes?: number
+  totalMinutes: number
   rank: number
 }
 
-interface WeekTotals {
+interface PeriodTotals {
   totalMinutes: number
   totalHours: number
   totalPomodoros: number
 }
 
-export default function UsersPage() {
-  const router = useRouter()
-  const { user: currentUser } = useAuthStore()
-  const [users, setUsers] = useState<UserSearchResult[]>([])
-  const [allUsers, setAllUsers] = useState<UserSearchResult[]>([])
-  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
-  const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null)
-  const [weekTotals, setWeekTotals] = useState<WeekTotals | null>(null)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [loading, setLoading] = useState(true)
-  const [leaderboardLoading, setLeaderboardLoading] = useState(true)
-  const [page, setPage] = useState(1)
+interface LeaderboardResponse {
+  period: LeaderboardPeriod
+  periodLabel: string
+  leaderboard: LeaderboardUser[]
+  currentUser: LeaderboardUser | null
+  periodTotals: PeriodTotals
+}
 
-  const formatHours = (hours: number) => {
-    if (!Number.isFinite(hours)) return '0'
-    if (Number.isInteger(hours)) return String(hours)
-    return hours.toFixed(1)
-  }
+const PERIODS: { value: LeaderboardPeriod; label: string; icon: any }[] = [
+  { value: 'day', label: 'Today', icon: faCalendarDay },
+  { value: 'week', label: 'Week', icon: faCalendarWeek },
+  { value: 'month', label: 'Month', icon: faCalendarDays },
+  { value: 'year', label: 'Year', icon: faCalendar },
+]
 
-  const searchUsers = useCallback(async (query: string) => {
-    if (!query) {
-      setUsers(allUsers)
-      return
-    }
-    
-    // Фильтруем локально для мгновенного отклика
-    const filtered = allUsers.filter(user => 
-      user.username.toLowerCase().includes(query.toLowerCase())
+const RANK_META = {
+  1: {
+    platform: 'bg-amber-400',
+    platformText: 'text-amber-950',
+    glow: '[box-shadow:0_0_0_4px_rgba(251,191,36,0.25)]',
+    badge: 'bg-amber-400 text-amber-950',
+    bar: 'bg-amber-400',
+    ringColor: 'ring-amber-300',
+  },
+  2: {
+    platform: 'bg-slate-300 dark:bg-slate-500',
+    platformText: 'text-slate-800 dark:text-slate-100',
+    glow: '[box-shadow:0_0_0_4px_rgba(148,163,184,0.25)]',
+    badge: 'bg-slate-300 text-slate-800 dark:bg-slate-500 dark:text-slate-100',
+    bar: 'bg-slate-400',
+    ringColor: 'ring-slate-300',
+  },
+  3: {
+    platform: 'bg-orange-400',
+    platformText: 'text-orange-950',
+    glow: '[box-shadow:0_0_0_4px_rgba(249,115,22,0.22)]',
+    badge: 'bg-orange-400 text-orange-950',
+    bar: 'bg-orange-400',
+    ringColor: 'ring-orange-300',
+  },
+} as const
+
+const fmt = (hours: number) => {
+  if (!Number.isFinite(hours)) return '0'
+  if (Number.isInteger(hours)) return String(hours)
+  return hours.toFixed(1)
+}
+
+function Avatar({
+  user,
+  size,
+  textSize,
+}: {
+  user: Pick<LeaderboardUser, 'username' | 'avatarUrl'>
+  size: string
+  textSize: string
+}) {
+  if (user.avatarUrl) {
+    return (
+      <Image
+        src={user.avatarUrl}
+        alt={user.username}
+        width={96}
+        height={96}
+        className={`${size} rounded-full object-cover`}
+      />
     )
-    setUsers(filtered)
-  }, [allUsers])
-
-  // Загрузка всех пользователей и топа при монтировании
-  useEffect(() => {
-    loadLeaderboard()
-    loadAllUsers()
-  }, [])
-
-  const loadLeaderboard = async () => {
-    setLeaderboardLoading(true)
-    try {
-      const response = await fetch('/api/stats/leaderboard')
-      if (response.ok) {
-        const data = await response.json()
-        setWeekTotals(data.weekTotals ?? null)
-        const eligibleTopUsers = (data.topUsers || []).filter((user: LeaderboardUser) =>
-          user.totalPomodoros > 0 || user.totalHours > 0
-        )
-        const eligibleCurrentUser = data.currentUser && (data.currentUser.totalPomodoros > 0 || data.currentUser.totalHours > 0)
-          ? data.currentUser
-          : null
-        setLeaderboard(eligibleTopUsers)
-        setCurrentUserRank(eligibleCurrentUser)
-      }
-    } catch (error) {
-      console.error('Error loading leaderboard:', error)
-    } finally {
-      setLeaderboardLoading(false)
-    }
   }
 
-  const loadAllUsers = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/users/search?q=')
-      if (response.ok) {
-        const data = await response.json()
-        const eligibleUsers = (data.users || []).filter((user: UserSearchResult) =>
-          user.stats.totalPomodoros > 0 || user.stats.totalHours > 0
-        )
-        setAllUsers(eligibleUsers)
-        setUsers(eligibleUsers)
-      }
-    } catch (error) {
-      console.error('Error loading users:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  return (
+    <div
+      className={`${size} flex items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-emerald-400 font-black text-white ${textSize}`}
+    >
+      {user.username.charAt(0).toUpperCase()}
+    </div>
+  )
+}
 
-  // Поиск с дебаунсом
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchQuery.length >= 1) {
-        searchUsers(searchQuery)
-      } else {
-        setUsers(allUsers)
-      }
-    }, 300)
-
-    return () => clearTimeout(timeoutId)
-  }, [searchQuery, allUsers, searchUsers])
-
-  const getRankBadgeColor = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-r from-yellow-400 to-yellow-500'
-    if (rank === 2) return 'bg-gradient-to-r from-red-500 to-red-600'
-    if (rank === 3) return 'bg-gradient-to-r from-yellow-400 to-yellow-500'
-    if (rank <= 5) return 'bg-gradient-to-r from-orange-400 to-orange-500'
-    if (rank <= 10) return 'bg-gradient-to-r from-blue-500 to-blue-600'
-    return 'bg-gradient-to-r from-purple-500 to-purple-600'
-  }
-
-  const getLeaderboardItemStyle = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900/20 dark:to-yellow-800/20 border-yellow-200 dark:border-yellow-800/50'
-    if (rank === 2) return 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/30 dark:to-gray-700/30 border-gray-200 dark:border-gray-700/50'
-    if (rank === 3) return 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 border-orange-200 dark:border-orange-800/50'
-    return ''
-  }
-
-  const getLeaderboardBadgeColor = (rank: number) => {
-    if (rank === 1) return 'bg-gradient-to-r from-yellow-400 to-yellow-500'
-    if (rank === 2) return 'bg-gradient-to-r from-gray-400 to-gray-500'
-    if (rank === 3) return 'bg-gradient-to-r from-orange-400 to-orange-500'
-    return 'text-gray-600'
-  }
-
-  const getLeaderboardIcon = (rank: number) => {
-    if (rank === 1) return <FontAwesomeIcon icon={faCrown} className="text-yellow-500" />
-    if (rank === 2) return <FontAwesomeIcon icon={faMedal} className="text-gray-500" />
-    if (rank === 3) return <FontAwesomeIcon icon={faMedal} className="text-orange-500" />
-    return null
-  }
-
-  const SkeletonUserCard = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-5 min-w-[0] animate-pulse">
-      <div className="flex flex-col items-center text-center">
-        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gray-200 dark:bg-slate-700 mb-3 sm:mb-4"></div>
-        <div className="h-5 w-24 sm:w-28 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
-        <div className="flex items-center justify-center gap-2.5 mb-3 sm:mb-4">
-          <div className="h-4 w-12 sm:w-14 bg-gray-200 dark:bg-slate-700 rounded"></div>
-          <div className="h-4 w-12 sm:w-14 bg-gray-200 dark:bg-slate-700 rounded"></div>
+function RowSkeleton() {
+  return (
+    <div className="animate-pulse px-6 py-4">
+      <div className="flex items-center gap-4">
+        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800" />
+        <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3.5 w-32 rounded bg-slate-100 dark:bg-slate-800" />
+          <div className="h-2.5 w-full max-w-xs rounded bg-slate-100 dark:bg-slate-800" />
         </div>
-        <div className="h-10 w-full bg-gray-200 dark:bg-slate-700 rounded-lg"></div>
       </div>
     </div>
   )
+}
 
-  const SkeletonLeaderboardItem = () => (
-    <div className="flex items-center space-x-3 p-3 rounded-lg border dark:border-slate-700 animate-pulse">
-      <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700"></div>
-      <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-slate-700"></div>
-      <div className="flex-1">
-        <div className="h-4 w-24 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
-        <div className="h-3 w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
-      </div>
-    </div>
+export default function UsersPage() {
+  const router = useRouter()
+  const { user: currentUser, token } = useAuthStore()
+
+  const [period, setPeriod] = useState<LeaderboardPeriod>('month')
+  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
+  const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null)
+  const [periodTotals, setPeriodTotals] = useState<PeriodTotals | null>(null)
+  const [periodLabel, setPeriodLabel] = useState('This month')
+  const [search, setSearch] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const ctrl = new AbortController()
+    setLoading(true)
+    setError(null)
+
+    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
+
+    fetch(`/api/stats/leaderboard?period=${period}`, { headers, signal: ctrl.signal })
+      .then((res) => {
+        if (!res.ok) throw new Error('Failed')
+        return res.json() as Promise<LeaderboardResponse>
+      })
+      .then((data) => {
+        const active = (data.leaderboard ?? []).filter((u) => u.totalMinutes > 0)
+        setLeaderboard(active)
+        setCurrentUserRank(data.currentUser?.totalMinutes ? data.currentUser : null)
+        setPeriodTotals(data.periodTotals)
+        setPeriodLabel(data.periodLabel)
+      })
+      .catch((err: unknown) => {
+        if (ctrl.signal.aborted) return
+        console.error(err)
+        setError('Failed to load leaderboard')
+        setLeaderboard([])
+        setCurrentUserRank(null)
+      })
+      .finally(() => {
+        if (!ctrl.signal.aborted) setLoading(false)
+      })
+
+    return () => ctrl.abort()
+  }, [period, token])
+
+  const maxMinutes = leaderboard[0]?.totalMinutes || 1
+  const filtered = leaderboard.filter((u) =>
+    u.username.toLowerCase().includes(search.toLowerCase()),
   )
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Основная область поиска */}
-          <div className="flex-1 order-2 lg:order-1">
-            {/* Поиск */}
-            <div className="mb-8">
-              <div className="relative max-w-2xl mx-auto">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <FontAwesomeIcon icon={faSearch} className="text-gray-400 dark:text-slate-500" />
-                </div>
-                <input 
-                  type="text" 
-                  placeholder="Search users..." 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500"
-                />
-              </div>
-            </div>
+      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617] pb-24 font-sans tracking-tight">
+        {/* Subtle decorative background gradient */}
+        <div className="absolute inset-x-0 top-0 h-[600px] bg-gradient-to-b from-sky-500/5 via-violet-500/5 to-transparent pointer-events-none dark:from-sky-500/10 dark:via-violet-500/10" />
 
-            {/* Search Results */}
-            <div className="search-results md:max-h-[calc(100vh-200px)] md:overflow-y-auto">
-              {loading ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4">
-                  <SkeletonUserCard />
-                  <SkeletonUserCard />
-                  <SkeletonUserCard />
-                  <SkeletonUserCard />
-                  <SkeletonUserCard />
-                  <SkeletonUserCard />
-                </div>
-              ) : users.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-3 gap-3 sm:gap-4">
-                  {users.map((user) => (
-                    <div 
-                      key={user.id}
-                      className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-2.5 sm:p-4 lg:p-5 hover:shadow-lg transition-all cursor-pointer min-w-[0]"
-                      onClick={() => router.push(`/user/${user.id}`)}
-                    >
-                      <div className="flex flex-col items-center text-center">
-                        <div className="relative mb-2.5 sm:mb-4">
-                          {user.avatarUrl ? (
-                            <Image 
-                              src={user.avatarUrl} 
-                              alt={user.username}
-                              width={64}
-                              height={64}
-                              className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white text-lg sm:text-xl lg:text-2xl font-bold">
-                              {user.username.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <div className={`absolute -top-1 -right-1 w-4.5 h-4.5 sm:w-5 sm:h-5 lg:w-6 lg:h-6 ${user.isOnline ? 'bg-green-400' : 'bg-gray-400 dark:bg-slate-600'} rounded-full border-2 border-white dark:border-slate-800`}></div>
-                          <div className={`absolute -top-2 -right-2 min-w-[20px] sm:min-w-[22px] lg:min-w-[24px] h-5 sm:h-5 lg:h-6 rounded-xl flex items-center justify-center text-[10px] sm:text-[11px] lg:text-xs font-semibold border-2 border-white dark:border-slate-800 text-white ${getRankBadgeColor(user.rank)}`}>
-                            #{user.rank}
-                          </div>
-                        </div>
-                        <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 dark:text-white mb-1.5">{user.username}</h3>
-                        <div className="flex items-center justify-center gap-2.5 text-[11px] sm:text-xs lg:text-sm text-gray-500 dark:text-slate-400 mb-3 sm:mb-4">
-                          <div className="flex items-center space-x-1 whitespace-nowrap">
-                            <FontAwesomeIcon icon={faClock} />
-                            <span>{user.stats.totalHours}h</span>
-                          </div>
-                          <div className="flex items-center space-x-1 whitespace-nowrap">
-                            <FontAwesomeIcon icon={faFire} className="text-red-500" />
-                            <span>{user.stats.totalPomodoros}p</span>
-                          </div>
-                        </div>
-                        <button 
-                          className="bg-gray-100 dark:bg-slate-700 hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-700 dark:text-slate-200 px-3 py-2 sm:px-5 rounded-lg font-medium transition-colors w-full text-xs sm:text-sm lg:text-base"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            router.push(`/user/${user.id}`)
-                          }}
-                        >
-                          Profile
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <FontAwesomeIcon icon={faUsers} className="text-gray-300 dark:text-slate-600 text-6xl mb-4" />
-                  <p className="text-gray-500 dark:text-slate-400">No users found</p>
-                </div>
-              )}
-            </div>
-          </div>
+        <main className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
 
-          {/* Leaderboard Sidebar */}
-          <div className="w-full lg:w-80 bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 h-fit lg:sticky top-8 order-1 lg:order-2">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white">Top by Hours</h3>
-              <div className="flex items-center space-x-1 text-sm text-gray-500 dark:text-slate-400">
-                <FontAwesomeIcon icon={faTrophy} className="text-yellow-500" />
-                <span className="text-gray-500 dark:text-slate-400">Week</span>
-              </div>
-            </div>
+          {/* ─── HEADER ─────────────────────────────────────────── */}
+          <div className="mb-12 flex flex-col items-center text-center">
+            <h1 className="mb-8 text-4xl font-black text-slate-900 dark:text-white sm:text-5xl lg:text-6xl">
+              Leaderboard
+            </h1>
 
-            <div className="mb-4 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/30 px-3 py-2">
-              <div className="flex items-center justify-between text-xs text-gray-600 dark:text-slate-400">
-                <div className="flex items-center space-x-2">
-                  <FontAwesomeIcon icon={faUsers} className="text-gray-400 dark:text-slate-500" />
-                  <span>Total</span>
-                </div>
-                {leaderboardLoading ? (
-                  <div className="h-4 w-28 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
-                ) : (
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center space-x-1 whitespace-nowrap">
-                      <FontAwesomeIcon icon={faClock} />
-                      <span>{formatHours((weekTotals?.totalMinutes ?? 0) / 60)}h</span>
-                    </span>
-                    <span className="flex items-center space-x-1 whitespace-nowrap">
-                      <FontAwesomeIcon icon={faFire} className="text-red-500" />
-                      <span>{weekTotals?.totalPomodoros ?? 0}p</span>
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              {leaderboardLoading ? (
-                <>
-                  <SkeletonLeaderboardItem />
-                  <SkeletonLeaderboardItem />
-                  <SkeletonLeaderboardItem />
-                  <SkeletonLeaderboardItem />
-                  <SkeletonLeaderboardItem />
-                  <SkeletonLeaderboardItem />
-                  <SkeletonLeaderboardItem />
-                </>
-              ) : leaderboard.slice(0, 7).map((user) => (
-                <div 
-                  key={user.id}
-                  className={`flex items-center space-x-3 p-3 rounded-lg border dark:border-slate-700 cursor-pointer transition-all hover:shadow-md ${getLeaderboardItemStyle(user.rank)}`}
-                  onClick={() => router.push(`/user/${user.id}`)}
+            {/* Period segmented control */}
+            <div className="inline-flex items-center rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-900/80 dark:ring-white/10 backdrop-blur-xl transition-all">
+              {PERIODS.map((p) => (
+                <button
+                  key={p.value}
+                  type="button"
+                  onClick={() => setPeriod(p.value)}
+                  className={`inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold transition-all duration-200 ${
+                    p.value === period
+                      ? 'bg-slate-900 text-white shadow-md dark:bg-white dark:text-slate-900'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
+                  }`}
                 >
-                  <div className={`flex items-center justify-center w-8 h-8 text-white rounded-full text-sm font-bold ${user.rank <= 3 ? getLeaderboardBadgeColor(user.rank) : 'bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300'}`}>
-                    {user.rank}
-                  </div>
-                  {user.avatarUrl ? (
-                    <Image 
-                      src={user.avatarUrl} 
-                      alt={user.username}
-                      width={40}
-                      height={40}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
-                      {user.username.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 dark:text-white">{user.username}</p>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">{user.totalHours}h / {user.totalPomodoros} pomodoros</p>
-                  </div>
-                  {getLeaderboardIcon(user.rank)}
-                </div>
+                  <FontAwesomeIcon icon={p.icon} className={p.value === period ? 'opacity-100' : 'opacity-60'} />
+                  {p.label}
+                </button>
               ))}
             </div>
+          </div>
 
-            {currentUserRank && !leaderboardLoading && (
-              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
-                <div 
-                  className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800 cursor-pointer"
-                  onClick={() => router.push(`/profile`)}
+          {/* ─── STATS STRIP ────────────────────────────────────── */}
+          <div className="mb-10 grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
+            {(
+              [
+                {
+                  label: 'Active Users',
+                  value: loading ? '—' : String(leaderboard.length),
+                  sub: `in ${periodLabel.toLowerCase()}`,
+                  icon: faUsers,
+                  accent: 'text-sky-500',
+                  bg: 'bg-sky-50 dark:bg-sky-500/10',
+                  border: 'ring-sky-100 dark:ring-sky-500/20',
+                },
+                {
+                  label: 'Focus Time',
+                  value: loading ? '—' : `${fmt((periodTotals?.totalMinutes ?? 0) / 60)}h`,
+                  sub: 'across all users',
+                  icon: faClock,
+                  accent: 'text-violet-500',
+                  bg: 'bg-violet-50 dark:bg-violet-500/10',
+                  border: 'ring-violet-100 dark:ring-violet-500/20',
+                },
+                {
+                  label: 'Pomodoros',
+                  value: loading ? '—' : String(periodTotals?.totalPomodoros ?? 0),
+                  sub: 'completed sessions',
+                  icon: faFire,
+                  accent: 'text-rose-500',
+                  bg: 'bg-rose-50 dark:bg-rose-500/10',
+                  border: 'ring-rose-100 dark:ring-rose-500/20',
+                },
+              ] as const
+            ).map((stat) => (
+              <div
+                key={stat.label}
+                className="group relative overflow-hidden rounded-[24px] bg-white/80 p-6 flex items-center gap-5 ring-1 ring-slate-900/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] dark:bg-slate-900/60 dark:ring-white/10 dark:shadow-none"
+              >
+                <div
+                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${stat.bg} ${stat.accent}`}
                 >
-                  <div className="flex items-center justify-center w-8 h-8 bg-blue-500 text-white rounded-full text-sm font-bold">
-                    {currentUserRank.rank}
-                  </div>
-                  {currentUser?.avatarUrl ? (
-                    <Image 
-                      src={currentUser.avatarUrl} 
-                      alt={currentUser.username}
-                      width={40}
-                      height={40}
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
-                      {currentUser?.username.charAt(0).toUpperCase()}
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="font-semibold text-gray-900 dark:text-white">You</p>
-                    <p className="text-sm text-gray-600 dark:text-slate-400">{currentUserRank.totalHours}h / {currentUserRank.totalPomodoros} pomodoros</p>
-                  </div>
-                  <span className="text-xs text-blue-600 dark:text-blue-400 font-medium">Your rank</span>
+                  <FontAwesomeIcon icon={stat.icon} className="text-xl" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">{stat.label}</p>
+                  <p className="text-3xl font-black text-slate-900 dark:text-white leading-none">
+                    {stat.value}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{stat.sub}</p>
                 </div>
               </div>
-            )}
-
-            {/* <button 
-              className="w-full mt-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 rounded-lg font-medium hover:from-blue-600 hover:to-blue-700 transition-all"
-              onClick={() => router.push('/stats')}
-            >
-              Полный рейтинг
-            </button> */}
+            ))}
           </div>
-        </div>
-      </main>
-    </div>
+
+          {/* ─── LOADING ────────────────────────────────────────── */}
+          {loading ? (
+            <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_340px]">
+                <div className="overflow-hidden rounded-[32px] bg-white/60 ring-1 ring-slate-900/5 dark:bg-slate-900/40 dark:ring-white/10">
+                  {[...Array(5)].map((_, i) => (
+                    <RowSkeleton key={i} />
+                  ))}
+                </div>
+                <div className="h-[300px] animate-pulse rounded-[32px] bg-white/60 ring-1 ring-slate-900/5 dark:bg-slate-900/40 dark:ring-white/10" />
+            </div>
+          ) : error ? (
+            /* ─── ERROR ─────────────────────────────────────────── */
+            <div className="flex flex-col items-center justify-center gap-5 rounded-[32px] bg-white/80 py-20 text-center ring-1 ring-rose-200 shadow-sm backdrop-blur-xl dark:bg-slate-900/60 dark:ring-rose-500/30">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-rose-50 text-rose-500 dark:bg-rose-500/10">
+                <FontAwesomeIcon icon={faRotateRight} className="text-3xl" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Leaderboard Unavailable</h3>
+                <p className="mt-2 text-slate-500 dark:text-slate-400 text-lg">There was an issue fetching the ranking.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => window.location.reload()}
+                className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 dark:bg-white dark:text-slate-900"
+              >
+                <FontAwesomeIcon icon={faRotateRight} />
+                Try Again
+              </button>
+            </div>
+          ) : leaderboard.length === 0 ? (
+            /* ─── EMPTY ─────────────────────────────────────────── */
+            <div className="flex flex-col items-center justify-center gap-5 rounded-[32px] bg-white/80 py-28 text-center ring-1 ring-slate-900/5 shadow-sm backdrop-blur-xl dark:bg-slate-900/60 dark:ring-white/10">
+              <div className="flex h-24 w-24 items-center justify-center rounded-[2rem] bg-amber-50 text-4xl text-amber-500 shadow-inner dark:bg-amber-500/10">
+                <FontAwesomeIcon icon={faTrophy} />
+              </div>
+              <div>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white">Nobody here yet!</h3>
+                <p className="mt-3 max-w-md mx-auto text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
+                  Be the very first to complete a focus session and claim the highest rank for {periodLabel.toLowerCase()}.
+                </p>
+              </div>
+            </div>
+          ) : (
+            /* ─── MAIN CONTENT ──────────────────────────────────── */
+            <div className="space-y-8 lg:space-y-12">
+
+              {/* ── LOWER SECTION ───────────────────────────────────── */}
+              <div className="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
+                
+                {/* Full List Panel */}
+                <div className="overflow-hidden rounded-[32px] bg-white border border-slate-200/60 shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
+                  {/* Header + search */}
+                  <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:p-8 dark:border-slate-800/80 sm:flex-row sm:items-center sm:justify-between bg-slate-50/30 dark:bg-slate-800/20">
+                    <div>
+                      <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        Full Ranking
+                        <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
+                          {filtered.length}
+                        </span>
+                      </h2>
+                    </div>
+                    <div className="relative w-full sm:max-w-xs group">
+                      <FontAwesomeIcon
+                        icon={faMagnifyingGlass}
+                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors"
+                      />
+                      <input
+                        type="text"
+                        value={search}
+                        onChange={(e) => setSearch(e.target.value)}
+                        placeholder="Search users..."
+                        className="w-full rounded-2xl border-2 border-slate-100 bg-white py-3 pl-11 pr-4 text-sm font-semibold outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+
+                  {filtered.length === 0 ? (
+                    <div className="p-16 text-center">
+                      <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-400 dark:bg-slate-800">
+                        <FontAwesomeIcon icon={faMagnifyingGlass} />
+                      </div>
+                      <h4 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">No matches found</h4>
+                      <p className="mt-2 text-sm text-slate-500">
+                        Could not find any user matching &ldquo;<strong className="text-slate-700 dark:text-slate-300">{search}</strong>&rdquo;
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800/60 p-2 sm:p-4">
+                      {filtered.map((user) => {
+                        const isMe = currentUser?.id === user.id
+                        const isTop = user.rank <= 3
+                        const meta = isTop ? RANK_META[user.rank as 1 | 2 | 3] : null
+                        const pct = Math.max(2, Math.round((user.totalMinutes / maxMinutes) * 100))
+
+                        return (
+                          <div
+                            key={user.id}
+                            onClick={() => router.push(`/user/${user.id}`)}
+                            role="button"
+                            className={`group flex cursor-pointer items-center gap-4 sm:gap-5 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 ${isMe ? 'bg-sky-50/50 ring-1 ring-sky-200/60 shadow-sm dark:bg-sky-500/10 dark:ring-sky-500/20' : ''}`}
+                          >
+                            <div
+                              className={`flex h-[42px] w-[42px] sm:h-[48px] sm:w-[48px] shrink-0 items-center justify-center rounded-2xl text-lg font-black shadow-sm transition-transform group-hover:scale-105 ${
+                                meta
+                                  ? `${meta.platform} ${meta.platformText}`
+                                  : isMe ? 'bg-sky-500 text-white dark:bg-sky-500' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                              }`}
+                            >
+                              {user.rank}
+                            </div>
+
+                            <div className="shrink-0 relative">
+                              <Avatar user={user} size="h-[42px] w-[42px] sm:h-[48px] sm:w-[48px]" textSize="text-lg" />
+                              {isMe && (
+                                <div className="absolute -bottom-1 -right-1 rounded-full bg-sky-500 p-1 text-[8px] text-white border-2 border-white dark:border-slate-900 shadow-sm">
+                                  <FontAwesomeIcon icon={faUsers} />
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <div className="mb-2 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2 truncate">
+                                  <p className="truncate text-base sm:text-lg font-bold text-slate-900 dark:text-white">
+                                    {user.username}
+                                  </p>
+                                  {isMe && (
+                                    <span className="shrink-0 rounded-lg bg-sky-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
+                                      You
+                                    </span>
+                                  )}
+                                </div>
+                                <span className="shrink-0 text-sm font-black text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                                  {fmt(user.totalHours)}<span className="text-xs text-slate-400 font-bold ml-0.5 mr-1.5">h</span>
+                                  <span className="text-slate-200 dark:text-slate-700 font-normal mr-1.5">|</span>
+                                  {user.totalPomodoros} <span className="text-xs">🍅</span>
+                                </span>
+                              </div>
+                              <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100/80 dark:bg-slate-800">
+                                <div
+                                  className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out ${meta ? meta.bar : isMe ? 'bg-sky-500' : 'bg-slate-800 dark:bg-slate-500'}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <aside className="space-y-6 lg:sticky lg:top-8">
+                  <div className="overflow-hidden rounded-[32px] bg-white border border-slate-200/60 shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
+                    <div className="bg-slate-50/50 border-b border-slate-100 px-7 py-5 dark:bg-slate-800/20 dark:border-slate-800/80">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                        Your Status
+                      </h3>
+                    </div>
+                    {currentUserRank && currentUser ? (
+                      <div
+                        role="button"
+                        onClick={() => router.push('/profile')}
+                        className="group p-7 cursor-pointer hover:bg-slate-50/30 transition-colors dark:hover:bg-slate-800/30"
+                      >
+                        <div className="mb-6 flex items-center gap-5">
+                          <div className="relative">
+                            <Avatar
+                              user={{ username: currentUser.username, avatarUrl: currentUser.avatarUrl }}
+                              size="h-16 w-16"
+                              textSize="text-2xl"
+                            />
+                            <div className="absolute -bottom-2 -right-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-xl px-2 py-0.5 text-xs font-black shadow-sm border-2 border-white dark:border-slate-900">
+                              #{currentUserRank.rank}
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-xl font-black text-slate-900 dark:text-white group-hover:text-sky-600 transition-colors">
+                              {currentUser.username}
+                            </p>
+                            <p className="text-sm font-semibold text-sky-500 mt-1">
+                              Top {Math.max(1, Math.round((currentUserRank.rank / leaderboard.length) * 100))}%
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700/50">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Focus</p>
+                            <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
+                              {fmt(currentUserRank.totalHours)}<span className="text-sm text-slate-400 ml-0.5 font-bold">h</span>
+                            </p>
+                          </div>
+                          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700/50">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pomos</p>
+                            <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
+                              {currentUserRank.totalPomodoros}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/20">
+                          <div className="mb-2 flex items-center justify-between text-xs font-bold">
+                            <span className="text-slate-500">Progress to #1</span>
+                            <span className="text-slate-900 dark:text-white">
+                              {Math.round((currentUserRank.totalMinutes / maxMinutes) * 100)}%
+                            </span>
+                          </div>
+                          <div className="h-2.5 overflow-hidden rounded-full bg-slate-200/60 dark:bg-slate-700">
+                            <div
+                              className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-500 shadow-[inset_0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-1000"
+                              style={{
+                                width: `${Math.round((currentUserRank.totalMinutes / maxMinutes) * 100)}%`,
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center">
+                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50 text-slate-400 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700">
+                          <FontAwesomeIcon icon={faUsers} className="text-xl" />
+                        </div>
+                        <p className="text-sm font-bold leading-relaxed text-slate-600 dark:text-slate-300">
+                          {currentUser
+                            ? `Log a session to appear on the ${periodLabel.toLowerCase()} board.`
+                            : 'Log in and focus to see your position.'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Rules Card */}
+                  <div className="overflow-hidden rounded-[32px] bg-white border border-slate-200/60 shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
+                    <div className="bg-slate-50/50 border-b border-slate-100 px-7 py-5 dark:bg-slate-800/20 dark:border-slate-800/80">
+                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
+                        How It Works
+                      </h3>
+                    </div>
+                    <div className="p-7">
+                      <ul className="space-y-5 text-sm">
+                        <li className="flex gap-4">
+                          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-50 text-amber-500 dark:bg-amber-500/10">
+                            <FontAwesomeIcon icon={faCrown} className="text-[10px]" />
+                          </div>
+                          <div>
+                            <strong className="block text-slate-900 dark:text-white mb-1 font-bold">Primary Metric</strong>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Ranked strictly by effective tracked minutes.</p>
+                          </div>
+                        </li>
+                        <li className="flex gap-4">
+                          <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sky-50 text-sky-500 dark:bg-sky-500/10">
+                            <FontAwesomeIcon icon={faClock} className="text-xs" />
+                          </div>
+                          <div>
+                            <strong className="block text-slate-900 dark:text-white mb-1 font-bold">Tracking Periods</strong>
+                            <p className="text-slate-600 dark:text-slate-400 leading-relaxed">Day, Week (Mon-Sun), Month, and Year.</p>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                  
+                </aside>
+              </div>
+            </div>
+          )}
+        </main>
+      </div>
     </>
   )
 }

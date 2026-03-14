@@ -5,8 +5,54 @@ import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionSta
 
 export const dynamic = 'force-dynamic'
 
+type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year'
+
+const isLeaderboardPeriod = (value: string | null): value is LeaderboardPeriod => {
+  return value === 'day' || value === 'week' || value === 'month' || value === 'year'
+}
+
+const getPeriodStart = (period: LeaderboardPeriod) => {
+  const now = new Date()
+  const start = new Date(now)
+
+  if (period === 'day') {
+    start.setHours(0, 0, 0, 0)
+    return start
+  }
+
+  if (period === 'week') {
+    const day = start.getDay()
+    const diffToMonday = day === 0 ? 6 : day - 1
+    start.setDate(start.getDate() - diffToMonday)
+    start.setHours(0, 0, 0, 0)
+    return start
+  }
+
+  if (period === 'month') {
+    start.setDate(1)
+    start.setHours(0, 0, 0, 0)
+    return start
+  }
+
+  start.setMonth(0, 1)
+  start.setHours(0, 0, 0, 0)
+  return start
+}
+
+const getPeriodLabel = (period: LeaderboardPeriod) => {
+  if (period === 'day') return 'Today'
+  if (period === 'week') return 'This week'
+  if (period === 'month') return 'This month'
+  return 'This year'
+}
+
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const requestedPeriod = searchParams.get('period')
+    const period: LeaderboardPeriod = isLeaderboardPeriod(requestedPeriod) ? requestedPeriod : 'month'
+    const periodStart = getPeriodStart(period)
+
     // Получаем текущего пользователя если авторизован
     const authHeader = request.headers.get('authorization')
     const token = authHeader ? getTokenFromHeader(authHeader) : null
@@ -19,12 +65,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Дата 7 дней назад
-    const weekAgo = new Date()
-    weekAgo.setDate(weekAgo.getDate() - 7)
-
-    // Получаем всех пользователей с их фокус-сессиями за последнюю неделю
+    // Получаем всех пользователей с сессиями только за выбранный период.
     const users = await prisma.user.findMany({
+      where: {
+        isAnonymous: false,
+      },
       select: {
         id: true,
         username: true,
@@ -34,8 +79,8 @@ export async function GET(request: NextRequest) {
             status: { in: ['COMPLETED', 'CANCELLED'] },
             type: { in: ['WORK', 'TIME_TRACKING'] },
             OR: [
-              { completedAt: { gte: weekAgo } },
-              { endedAt: { gte: weekAgo } },
+              { completedAt: { gte: periodStart } },
+              { endedAt: { gte: periodStart } },
             ],
           },
           select: {
@@ -51,11 +96,12 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    // Вычисляем статистику для каждого пользователя за последнюю неделю (включая с нулевой активностью)
+    // Вычисляем статистику только по сессиям, которые действительно относятся к выбранному периоду.
     const usersWithStats = users.map(user => {
-      const totalMinutes = user.sessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
+      const periodSessions = user.sessions.filter((session) => getSessionAttributionDate(session) >= periodStart)
+      const totalMinutes = periodSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
       const totalHours = Math.round(totalMinutes / 60)
-      const totalPomodoros = user.sessions.filter((session) => session.type === 'WORK').length
+      const totalPomodoros = periodSessions.filter((session) => session.type === 'WORK').length
       
       return {
         id: user.id,
@@ -67,7 +113,7 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    const weekTotals = usersWithStats.reduce(
+    const periodTotals = usersWithStats.reduce(
       (acc, user) => {
         acc.totalMinutes += user.totalMinutes
         acc.totalPomodoros += user.totalPomodoros
@@ -95,12 +141,16 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json({
+      period,
+      periodLabel: getPeriodLabel(period),
+      periodStart: periodStart.toISOString(),
+      leaderboard,
       topUsers,
       currentUser,
       totalUsers: leaderboard.length,
-      weekTotals: {
-        ...weekTotals,
-        totalHours: Math.round(weekTotals.totalMinutes / 60),
+      periodTotals: {
+        ...periodTotals,
+        totalHours: Math.round(periodTotals.totalMinutes / 60),
       },
     })
 
