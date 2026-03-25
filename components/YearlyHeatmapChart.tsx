@@ -13,6 +13,7 @@ interface YearlyHeatmapChartProps {
     week: number
     dayOfWeek: number
     pomodoros: number
+    minutes: number
     date: string
   }>
 }
@@ -24,6 +25,12 @@ const YearlyHeatmapChart = memo(function YearlyHeatmapChart({
   yearlyHeatmap 
 }: YearlyHeatmapChartProps) {
   if (!Highcharts) return null
+
+  const formatDuration = (minutes: number) => {
+    const h = Math.floor(minutes / 60)
+    const m = Math.floor(minutes % 60)
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  }
 
   const heatmapOptions: Highcharts.Options = {
     chart: { 
@@ -55,7 +62,7 @@ const YearlyHeatmapChart = memo(function YearlyHeatmapChart({
     },
     colorAxis: {
       min: 0,
-      max: 10,
+      max: 8,
       stops: isDark ? [
         [0, '#334155'],
         [0.25, '#14532d'],
@@ -78,7 +85,7 @@ const YearlyHeatmapChart = memo(function YearlyHeatmapChart({
           item => item.week === point.x && item.dayOfWeek === point.y
         )
         const dateStr = dataPoint?.date || ''
-        return '<b>' + point.value + '</b> pomodoros<br>' + 
+        return '<b>' + formatDuration(dataPoint?.minutes || ((point.value as number) * 60)) + ' hours</b><br>' + 
                (dateStr ? new Date(dateStr).toLocaleDateString('en-US') : '')
       }
     },
@@ -91,7 +98,7 @@ const YearlyHeatmapChart = memo(function YearlyHeatmapChart({
     },
     series: [{
       type: 'heatmap',
-      name: 'Pomodoros',
+      name: 'Hours',
       data: heatmapData,
       colsize: 1,
       rowsize: 1

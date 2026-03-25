@@ -10,7 +10,7 @@ interface WeeklyActivityChartProps {
   weeklyData: number[]
   weeklyCategories: string[]
   isDark: boolean
-  weeklyActivity?: Array<{ date: string; pomodoros: number }>
+  weeklyActivity?: Array<{ date: string; pomodoros: number; minutes: number }>
 }
 
 const WeeklyActivityChart = memo(function WeeklyActivityChart({ 
@@ -21,6 +21,12 @@ const WeeklyActivityChart = memo(function WeeklyActivityChart({
   weeklyActivity 
 }: WeeklyActivityChartProps) {
   if (!Highcharts) return null
+
+  const formatDuration = (minutes: number) => {
+    const h = Math.floor(minutes / 60)
+    const m = Math.floor(minutes % 60)
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  }
 
   const weeklyOptions: Highcharts.Options = {
     chart: {
@@ -46,11 +52,14 @@ const WeeklyActivityChart = memo(function WeeklyActivityChart({
     },
     yAxis: {
       title: {
-        text: undefined,
+        text: 'Hours',
       },
       gridLineWidth: 1,
       gridLineColor: isDark ? '#334155' : '#f3f4f6',
       labels: {
+        formatter: function(this: Highcharts.AxisLabelsFormatterContextObject) {
+          return formatDuration((this.value as number) * 60)
+        },
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       }
     },
@@ -70,16 +79,17 @@ const WeeklyActivityChart = memo(function WeeklyActivityChart({
         const index = this.point?.index ?? 0
         const entry = weeklyActivity?.[index]
         if (!entry) {
-          return `<b>${this.x}</b><br/>Pomodoros: ${this.y || 0}`
+          return `<b>${this.x}</b><br/>${formatDuration((this.y || 0) * 60)} hours`
         }
         const [year, month, day] = entry.date.split('-').map(Number)
         const date = new Date(year, month - 1, day)
         const label = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-        return `<b>${label}</b><br/>Pomodoros: ${this.y || 0}`
+        return `<b>${label}</b><br/>${formatDuration(entry.minutes)} hours`
       }
     },
     series: [{
       type: 'column',
+      name: 'Hours',
       data: weeklyData,
     }]
   }

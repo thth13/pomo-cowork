@@ -159,7 +159,8 @@ export async function GET(request: NextRequest) {
         
         weeklyActivity.push({
           date: format(monthDate, 'yyyy-MM'),
-          pomodoros: monthSessions.length
+          pomodoros: monthSessions.length,
+          minutes: monthSessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
         })
       }
     } else {
@@ -176,7 +177,8 @@ export async function GET(request: NextRequest) {
         
         weeklyActivity.push({
           date: format(date, 'yyyy-MM-dd'),
-          pomodoros: daySessions.length
+          pomodoros: daySessions.length,
+          minutes: daySessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
         })
       }
     }
@@ -212,6 +214,7 @@ export async function GET(request: NextRequest) {
         week: weekIndex,
         dayOfWeek,
         pomodoros: daySessions.length,
+        minutes: daySessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0),
         date: format(currentDate, 'yyyy-MM-dd')
       })
       
@@ -240,7 +243,8 @@ export async function GET(request: NextRequest) {
       monthlyBreakdown.push({
         month: format(monthDate, 'MMM'),
         monthIndex: monthDate.getMonth(),
-        pomodoros: monthSessions.length
+        pomodoros: monthSessions.length,
+        minutes: monthSessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
       })
     }
 

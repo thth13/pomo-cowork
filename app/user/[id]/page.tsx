@@ -66,11 +66,13 @@ interface UserStats {
     week: number
     dayOfWeek: number
     pomodoros: number
+    minutes: number
     date: string
   }>
   weeklyActivity: Array<{
     date: string
     pomodoros: number
+    minutes: number
   }>
 }
 
@@ -330,7 +332,7 @@ export default function UserProfilePage() {
     return userStats.yearlyHeatmap.map(item => [
       item.week,
       item.dayOfWeek,
-      item.pomodoros
+      parseFloat((item.minutes / 60).toFixed(2))
     ] as [number, number, number])
   }, [userStats?.yearlyHeatmap])
 
@@ -338,7 +340,7 @@ export default function UserProfilePage() {
   const weeklyData = useMemo(() => {
     if (!userStats) return []
     
-    return userStats.weeklyActivity.map(item => item.pomodoros)
+    return userStats.weeklyActivity.map(item => parseFloat((item.minutes / 60).toFixed(4)))
   }, [userStats?.weeklyActivity])
 
   const totalPomodoros = userStats?.totalPomodoros || 0

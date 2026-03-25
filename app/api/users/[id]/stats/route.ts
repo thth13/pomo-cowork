@@ -127,6 +127,7 @@ export async function GET(
         week: weekIndex,
         dayOfWeek,
         pomodoros: daySessions.length,
+        minutes: daySessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0),
         date: format(currentDate, 'yyyy-MM-dd')
       })
       
@@ -155,7 +156,8 @@ export async function GET(
 
       weeklyActivity.push({
         date: format(date, 'yyyy-MM-dd'),
-        pomodoros: daySessions.length
+        pomodoros: daySessions.length,
+        minutes: daySessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
       })
     }
 

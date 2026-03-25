@@ -30,9 +30,9 @@ interface Stats {
   currentStreak: number
   avgMinutesPerDay: number
   focusTimeThisMonth: number
-  weeklyActivity: Array<{ date: string; pomodoros: number }>
-  yearlyHeatmap: Array<{ week: number; dayOfWeek: number; pomodoros: number; date: string }>
-  monthlyBreakdown: Array<{ month: string; monthIndex: number; pomodoros: number }>
+  weeklyActivity: Array<{ date: string; pomodoros: number; minutes: number }>
+  yearlyHeatmap: Array<{ week: number; dayOfWeek: number; pomodoros: number; minutes: number; date: string }>
+  monthlyBreakdown: Array<{ month: string; monthIndex: number; pomodoros: number; minutes: number }>
   lastSevenDaysTimeline: Array<{
     date: string
     dayLabel: string
@@ -195,13 +195,19 @@ export default function StatsPage() {
     }
   }, [authLoading, fetchStats, isAuthenticated, token])
 
+  const formatDuration = (minutes: number) => {
+    const h = Math.floor(minutes / 60)
+    const m = Math.floor(minutes % 60)
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  }
+
   const generateYearlyHeatmapData = () => {
     if (!stats?.yearlyHeatmap) return []
     
     return stats.yearlyHeatmap.map(item => [
       item.week,
       item.dayOfWeek,
-      item.pomodoros
+      parseFloat((item.minutes / 60).toFixed(2))
     ])
   }
 
@@ -236,15 +242,21 @@ export default function StatsPage() {
     },
     yAxis: {
       title: { 
-        text: 'Pomodoros',
+        text: 'Hours',
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       },
       gridLineColor: isDark ? '#334155' : '#f3f4f6',
       labels: {
+      formatter: function() { return formatDuration(this.value as number) },
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       }
     },
     legend: { enabled: false },
+    tooltip: {
+      formatter: function() {
+        return '<b>' + formatDuration((this.y as number) * 60) + ' hours</b>'
+      }
+    },
     plotOptions: {
       column: {
         borderRadius: 4,
@@ -254,8 +266,8 @@ export default function StatsPage() {
     },
     series: [{
       type: 'column',
-      name: 'Pomodoros',
-      data: stats?.weeklyActivity?.map(s => s.pomodoros) || [],
+      name: 'Hours',
+      data: stats?.weeklyActivity?.map(s => parseFloat((s.minutes / 60).toFixed(4))) || [],
       color: '#3b82f6'
     }]
   }
@@ -290,7 +302,7 @@ export default function StatsPage() {
     },
     colorAxis: {
       min: 0,
-      max: 10,
+      max: 8,
       stops: isDark ? [
         [0, '#334155'],
         [0.25, '#14532d'],
@@ -314,7 +326,8 @@ export default function StatsPage() {
           item => item.week === point.x && item.dayOfWeek === point.y
         )
         const dateStr = dataPoint?.date || ''
-        return '<b>' + point.value + '</b> pomodoros<br>' + 
+        const minutes = (point.value as number) * 60
+        return '<b>' + formatDuration(minutes) + ' hours</b><br>' + 
                (dateStr ? new Date(dateStr).toLocaleDateString('en-US') : '')
       }
     },
@@ -348,15 +361,21 @@ export default function StatsPage() {
     },
     yAxis: {
       title: { 
-        text: 'Pomodoros',
+        text: 'Hours',
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       },
       gridLineColor: isDark ? '#334155' : '#f3f4f6',
       labels: {
+        formatter: function() { return formatDuration((this.value as number) * 60) },
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       }
     },
     legend: { enabled: false },
+    tooltip: {
+      formatter: function() {
+        return '<b>' + formatDuration((this.y as number) * 60) + ' hours</b>'
+      }
+    },
     plotOptions: {
       line: {
         marker: {
@@ -368,8 +387,8 @@ export default function StatsPage() {
     },
     series: [{
       type: 'line',
-      name: 'Pomodoros per Month',
-      data: stats?.monthlyBreakdown?.map(m => m.pomodoros) || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+      name: 'Hours per Month',
+      data: stats?.monthlyBreakdown?.map(m => parseFloat((m.minutes / 60).toFixed(4))) || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       color: '#3b82f6'
     }]
   }
@@ -861,7 +880,7 @@ export default function StatsPage() {
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
                         <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
                           <div className="text-sm text-gray-600 dark:text-slate-300">
-                            <span className="font-medium">{totalPomodoros.toLocaleString()}</span> pomodoros in {new Date().getFullYear()}
+                            <span className="font-medium">{formatDuration(stats?.totalFocusMinutes || 0)}</span> hours in {new Date().getFullYear()}
                           </div>
                           <select className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
                             <option>{new Date().getFullYear()}</option>
@@ -887,11 +906,11 @@ export default function StatsPage() {
                         <div className="text-center">
                           <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                             {stats?.weeklyActivity && stats.weeklyActivity.length > 0
-                              ? Math.max(...stats.weeklyActivity.map(w => w.pomodoros))
-                              : 0}
+                              ? formatDuration(Math.max(...stats.weeklyActivity.map(w => w.minutes)))
+                              : '00:00'}
                           </div>
                           <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">Pomodoros</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">Hours</div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
@@ -1224,7 +1243,7 @@ export default function StatsPage() {
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
                     <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
                       <div className="text-sm text-gray-600 dark:text-slate-300">
-                        <span className="font-medium">{totalPomodoros.toLocaleString()}</span> pomodoros in {new Date().getFullYear()}
+                        <span className="font-medium">{formatDuration(stats?.totalFocusMinutes || 0)}</span> hours in {new Date().getFullYear()}
                       </div>
                       <select className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
                         <option>{new Date().getFullYear()}</option>
@@ -1250,11 +1269,11 @@ export default function StatsPage() {
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                         {stats?.weeklyActivity && stats.weeklyActivity.length > 0
-                          ? Math.max(...stats.weeklyActivity.map(w => w.pomodoros))
-                          : 0}
+                          ? formatDuration(Math.max(...stats.weeklyActivity.map(w => w.minutes)))
+                          : '00:00'}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">Pomodoros</div>
+                      <div className="text-xs text-gray-500 dark:text-slate-400">Hours</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
