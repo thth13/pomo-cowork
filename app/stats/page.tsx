@@ -32,6 +32,15 @@ interface Stats {
   focusTimeThisMonth: number
   weeklyActivity: Array<{ date: string; pomodoros: number; minutes: number }>
   yearlyHeatmap: Array<{ week: number; dayOfWeek: number; pomodoros: number; minutes: number; date: string }>
+  heatmapPeriod: {
+    selected: string
+    availableYears: number[]
+    totalMinutes: number
+    activeDays: number
+    bestDayMinutes: number
+    rangeStart: string
+    rangeEnd: string
+  }
   monthlyBreakdown: Array<{ month: string; monthIndex: number; pomodoros: number; minutes: number }>
   lastSevenDaysTimeline: Array<{
     date: string
@@ -81,6 +90,10 @@ interface Stats {
     task: string
     minutes: number
   }>
+  activityRange: {
+    start: string
+    end: string
+  }
 }
 
 export default function StatsPage() {
@@ -90,14 +103,21 @@ export default function StatsPage() {
   const [loading, setLoading] = useState(true)
   const [timelineLoading, setTimelineLoading] = useState(false)
   const [activityLoading, setActivityLoading] = useState(false)
+  const [heatmapLoading, setHeatmapLoading] = useState(false)
   const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
   const [chartReady, setChartReady] = useState(false)
   const [activityPeriod, setActivityPeriod] = useState<'7' | '30' | '365'>('7')
+  const [activityOffset, setActivityOffset] = useState(0)
+  const [activityDropdownOpen, setActivityDropdownOpen] = useState(false)
+  const [heatmapRange, setHeatmapRange] = useState('rolling')
   const [timelineOffset, setTimelineOffset] = useState(0)
   const [showPaywall, setShowPaywall] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const activityPeriodRef = useRef(activityPeriod)
+  const activityOffsetRef = useRef(activityOffset)
+  const heatmapRangeRef = useRef(heatmapRange)
   const timelineOffsetRef = useRef(timelineOffset)
+  const activityDropdownRef = useRef<HTMLDivElement>(null)
   
   const isDark = theme === 'dark'
   const isPro = Boolean(user?.isPro)
@@ -115,6 +135,24 @@ export default function StatsPage() {
   useEffect(() => {
     activityPeriodRef.current = activityPeriod
   }, [activityPeriod])
+
+  useEffect(() => {
+    activityOffsetRef.current = activityOffset
+  }, [activityOffset])
+
+  useEffect(() => {
+    heatmapRangeRef.current = heatmapRange
+  }, [heatmapRange])
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (activityDropdownRef.current && !activityDropdownRef.current.contains(e.target as Node)) {
+        setActivityDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     timelineOffsetRef.current = timelineOffset
@@ -140,27 +178,31 @@ export default function StatsPage() {
     }
   }, [])
 
-  type FetchMode = 'full' | 'timeline' | 'activity' | 'silent'
+  type FetchMode = 'full' | 'timeline' | 'activity' | 'heatmap' | 'silent'
 
-  const fetchStats = useCallback(async (options?: { mode?: FetchMode; period?: '7' | '30' | '365'; offset?: number }) => {
+  const fetchStats = useCallback(async (options?: { mode?: FetchMode; period?: '7' | '30' | '365'; offset?: number; heatmapRange?: string; activityOffset?: number }) => {
     if (!token) {
       return
     }
 
     const mode = options?.mode ?? 'full'
     const period = options?.period ?? activityPeriodRef.current
+    const selectedHeatmapRange = options?.heatmapRange ?? heatmapRangeRef.current
     const offset = Math.max(0, options?.offset ?? timelineOffsetRef.current)
+    const actOffset = Math.max(0, options?.activityOffset ?? activityOffsetRef.current)
 
     if (mode === 'timeline') {
       setTimelineLoading(true)
     } else if (mode === 'activity') {
       setActivityLoading(true)
+    } else if (mode === 'heatmap') {
+      setHeatmapLoading(true)
     } else if (mode === 'full') {
       setLoading(true)
     }
 
     try {
-      const response = await fetch(`/api/stats?period=${period}&timelineOffset=${offset}`, {
+      const response = await fetch(`/api/stats?period=${period}&timelineOffset=${offset}&heatmapRange=${selectedHeatmapRange}&activityOffset=${actOffset}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -168,6 +210,10 @@ export default function StatsPage() {
       if (response.ok) {
         const data = await response.json()
         setStats(data)
+        if (typeof data?.heatmapPeriod?.selected === 'string') {
+          setHeatmapRange(data.heatmapPeriod.selected)
+          heatmapRangeRef.current = data.heatmapPeriod.selected
+        }
         setHasFetchedOnce(true)
       }
     } catch (error) {
@@ -177,6 +223,8 @@ export default function StatsPage() {
         setTimelineLoading(false)
       } else if (mode === 'activity') {
         setActivityLoading(false)
+      } else if (mode === 'heatmap') {
+        setHeatmapLoading(false)
       } else if (mode === 'full') {
         setLoading(false)
       }
@@ -201,6 +249,16 @@ export default function StatsPage() {
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
   }
 
+  const formatHours = (minutes: number) => {
+    const hours = minutes / 60
+
+    if (Number.isInteger(hours)) {
+      return `${hours}h`
+    }
+
+    return `${hours.toFixed(1).replace(/\.0$/, '')}h`
+  }
+
   const generateYearlyHeatmapData = () => {
     if (!stats?.yearlyHeatmap) return []
     
@@ -218,12 +276,11 @@ export default function StatsPage() {
     xAxis: {
       categories: stats?.weeklyActivity?.map(item => {
         if (activityPeriod === '365') {
-          // For year, show months (item.date format 'yyyy-MM')
           const [year, month] = item.date.split('-')
           const date = new Date(parseInt(year), parseInt(month) - 1, 1)
           return date.toLocaleDateString('en-US', { month: 'short' })
         } else {
-          const date = new Date(item.date)
+          const date = new Date(item.date + 'T00:00:00')
           if (activityPeriod === '7') {
             const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
             return days[date.getDay()]
@@ -247,7 +304,7 @@ export default function StatsPage() {
       },
       gridLineColor: isDark ? '#334155' : '#f3f4f6',
       labels: {
-      formatter: function() { return formatDuration(this.value as number) },
+        formatter: function() { return formatDuration((this.value as number) * 60) },
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       }
     },
@@ -401,6 +458,7 @@ export default function StatsPage() {
     name: item.task,
     y: item.minutes,
     minutes: item.minutes,
+    hoursLabel: formatHours(item.minutes),
     percentage: totalTaskTimeMinutes > 0 ? (item.minutes / totalTaskTimeMinutes) * 100 : 0,
     color: taskTimePalette[index % taskTimePalette.length]
   }))
@@ -418,6 +476,7 @@ export default function StatsPage() {
         name: 'Other',
         y: otherMinutes,
         minutes: otherMinutes,
+        hoursLabel: formatHours(otherMinutes),
         percentage: totalTaskTimeMinutes > 0 ? (otherMinutes / totalTaskTimeMinutes) * 100 : 0,
         color: '#94a3b8'
       }
@@ -429,7 +488,7 @@ export default function StatsPage() {
     title: { text: '' },
     credits: { enabled: false },
     tooltip: {
-      pointFormat: '<b>{point.percentage:.1f}%</b> ({point.y:.0f} min)'
+      pointFormat: '<b>{point.options.hoursLabel}</b> ({point.percentage:.1f}%)'
     },
     legend: { enabled: false },
     plotOptions: {
@@ -453,8 +512,22 @@ export default function StatsPage() {
   const avgTimePerDay = stats?.avgMinutesPerDay || 0
   const focusTimeThisMonth = Math.floor((stats?.focusTimeThisMonth || 0) / 60)
   const focusTimeThisMonthMinutes = (stats?.focusTimeThisMonth || 0) % 60
+  const heatmapTotalMinutes = stats?.heatmapPeriod?.totalMinutes || 0
+  const heatmapBestDayMinutes = stats?.heatmapPeriod?.bestDayMinutes || 0
+  const heatmapActiveDays = stats?.heatmapPeriod?.activeDays || 0
+  const resolvedHeatmapRange = stats?.heatmapPeriod?.selected || heatmapRange
+  const heatmapRangeLabel = resolvedHeatmapRange === 'rolling' ? 'Last 365 days' : resolvedHeatmapRange
+  const heatmapSummaryLabel = resolvedHeatmapRange === 'rolling'
+    ? 'in the last 365 days'
+    : `in ${resolvedHeatmapRange}`
   const lastSevenDays = stats?.lastSevenDaysTimeline || []
   const bestDayName = stats?.productivityTrends?.bestDay?.name || 'No data'
+  const activityItems = stats?.weeklyActivity || []
+  const activityTotalMinutes = activityItems.reduce((sum, item) => sum + item.minutes, 0)
+  const activityActiveUnits = activityItems.filter((item) => item.minutes > 0).length
+  const activityActiveUnitsLabel = activityPeriod === '365'
+    ? `${activityActiveUnits} active months`
+    : `${activityActiveUnits} active days`
 
   const getSessionColor = (type: string) => {
     switch (type) {
@@ -499,7 +572,63 @@ export default function StatsPage() {
   const handleActivityPeriodChange = (period: '7' | '30' | '365') => {
     setActivityPeriod(period)
     activityPeriodRef.current = period
-    fetchStats({ mode: hasFetchedOnce ? 'activity' : 'full', period })
+    setActivityOffset(0)
+    activityOffsetRef.current = 0
+    setActivityDropdownOpen(false)
+    fetchStats({ mode: hasFetchedOnce ? 'activity' : 'full', period, activityOffset: 0 })
+  }
+
+  const handleActivityOffsetChange = (direction: 'prev' | 'next') => {
+    const newOffset = direction === 'prev' ? activityOffset + 1 : Math.max(0, activityOffset - 1)
+    setActivityOffset(newOffset)
+    activityOffsetRef.current = newOffset
+    fetchStats({ mode: hasFetchedOnce ? 'activity' : 'full', activityOffset: newOffset })
+  }
+
+  const getActivityRangeLabel = () => {
+    if (!stats?.activityRange) return ''
+    const start = new Date(stats.activityRange.start + 'T00:00:00')
+    const end = new Date(stats.activityRange.end + 'T00:00:00')
+    if (activityPeriod === '365') {
+      return start.getFullYear().toString()
+    }
+    if (activityPeriod === '30') {
+      return start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+    }
+
+    const startDay = start.getDate()
+    const endDay = end.getDate()
+    const startMonth = start.toLocaleDateString('en-US', { month: 'short' })
+    const endMonth = end.toLocaleDateString('en-US', { month: 'short' })
+    const startYear = start.getFullYear()
+    const endYear = end.getFullYear()
+
+    if (startMonth === endMonth && startYear === endYear) {
+      return `${startDay}-${endDay} ${endMonth} ${endYear}`
+    }
+
+    if (startYear === endYear) {
+      return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${endYear}`
+    }
+
+    return `${startDay} ${startMonth} ${startYear} - ${endDay} ${endMonth} ${endYear}`
+  }
+
+  const getActivityPeriodLabel = () => {
+    if (activityOffset === 0) {
+      if (activityPeriod === '7') return 'This week'
+      if (activityPeriod === '30') return 'This month'
+      return 'This year'
+    }
+    if (activityPeriod === '7') return 'Week'
+    if (activityPeriod === '30') return 'Month'
+    return 'Year'
+  }
+
+  const handleHeatmapRangeChange = (nextRange: string) => {
+    setHeatmapRange(nextRange)
+    heatmapRangeRef.current = nextRange
+    fetchStats({ mode: hasFetchedOnce ? 'heatmap' : 'full', heatmapRange: nextRange })
   }
 
   const SkeletonCard = () => (
@@ -875,15 +1004,31 @@ export default function StatsPage() {
                     </div>
 
                     {/* Yearly Heatmap */}
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8">
+                    <div
+                      className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8"
+                      aria-busy={heatmapLoading}
+                    >
+                      {heatmapLoading && (
+                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+                          <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        </div>
+                      )}
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
                         <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
                         <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
                           <div className="text-sm text-gray-600 dark:text-slate-300">
-                            <span className="font-medium">{formatDuration(stats?.totalFocusMinutes || 0)}</span> hours in {new Date().getFullYear()}
+                            <span className="font-medium">{formatDuration(heatmapTotalMinutes)}</span> Total hours {heatmapSummaryLabel}
                           </div>
-                          <select className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
-                            <option>{new Date().getFullYear()}</option>
+                          <select
+                            value={resolvedHeatmapRange}
+                            onChange={(event) => handleHeatmapRangeChange(event.target.value)}
+                            className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                            aria-label="Select heatmap year range"
+                          >
+                            <option value="rolling">Last 365 days</option>
+                            {(stats?.heatmapPeriod?.availableYears || []).map((year) => (
+                              <option key={year} value={year.toString()}>{year}</option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -905,19 +1050,17 @@ export default function StatsPage() {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
                         <div className="text-center">
                           <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                            {stats?.weeklyActivity && stats.weeklyActivity.length > 0
-                              ? formatDuration(Math.max(...stats.weeklyActivity.map(w => w.minutes)))
-                              : '00:00'}
+                            {formatDuration(heatmapBestDayMinutes)}
                           </div>
                           <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
                           <div className="text-xs text-gray-500 dark:text-slate-400">Hours</div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                            {stats?.yearlyHeatmap ? stats.yearlyHeatmap.filter(d => d.pomodoros > 0).length : 0}
+                            {heatmapActiveDays}
                           </div>
                           <div className="text-sm text-gray-600 dark:text-slate-300">Active Days</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">This year</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">{heatmapRangeLabel}</div>
                         </div>
                         <div className="text-center">
                           <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
@@ -1033,8 +1176,8 @@ export default function StatsPage() {
                                   />
                                   <span className="text-sm text-gray-800 dark:text-slate-100 truncate">{item.name}</span>
                                 </div>
-                                <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                                  {item.percentage.toFixed(1)}%
+                                <span className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+                                  {item.hoursLabel} ({item.percentage.toFixed(1)}%)
                                 </span>
                               </div>
                             ))}
@@ -1118,8 +1261,15 @@ export default function StatsPage() {
                       <div className="space-y-4">
                         {lastSevenDays.map(day => {
                           const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
+                          const dayLabel = new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', {
+                            day: 'numeric',
+                            month: 'short'
+                          })
                           return (
-                            <div key={day.date} className="flex items-center">
+                            <div key={day.date} className="flex items-center gap-2">
+                              <div className="shrink-0 text-right text-xs font-semibold text-gray-900 dark:text-white">
+                                {dayLabel}
+                              </div>
                               <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-[260px]">
                                 <div className="pointer-events-none absolute inset-0">
                                   {Array.from({ length: 25 }).map((_, idx) => {
@@ -1165,20 +1315,23 @@ export default function StatsPage() {
                       </div>
                     )}
 
-                    <div className="relative mt-2 h-5 text-[11px] text-gray-500 dark:text-slate-400">
-                      {timeLabels.map((label, idx) => {
-                        const left = (label / 24) * 100
-                        const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
-                        return (
-                          <span
-                            key={label}
-                            className="absolute top-0"
-                            style={{ left: `${left}%`, transform: `translateX(${translateX})` }}
-                          >
-                            {String(label).padStart(2, '0')}:00
-                          </span>
-                        )
-                      })}
+                    <div className="mt-2 flex items-start gap-2">
+                      <div className="w-12 shrink-0" />
+                      <div className="relative flex-1 h-5 text-[11px] text-gray-500 dark:text-slate-400 min-w-[260px]">
+                        {timeLabels.map((label, idx) => {
+                          const left = (label / 24) * 100
+                          const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
+                          return (
+                            <span
+                              key={label}
+                              className="absolute top-0"
+                              style={{ left: `${left}%`, transform: `translateX(${translateX})` }}
+                            >
+                              {String(label).padStart(2, '0')}:00
+                            </span>
+                          )
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1194,43 +1347,87 @@ export default function StatsPage() {
                         <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                        {activityPeriod === '7' && 'Weekly Activity'}
-                        {activityPeriod === '30' && 'Monthly Activity'}
-                        {activityPeriod === '365' && 'Yearly Activity'}
-                      </h3>
-                      <div className="flex items-center gap-2 flex-wrap">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+                      <div className="flex items-center gap-2 sm:gap-3">
                         <button
-                          onClick={() => handleActivityPeriodChange('7')}
-                          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                            activityPeriod === '7'
-                              ? 'text-white bg-blue-500'
-                              : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                          }`}
+                          type="button"
+                          onClick={() => handleActivityOffsetChange('prev')}
+                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                          aria-label="Previous period"
                         >
-                          7d
+                          &lt;
                         </button>
+
+                        <div className="relative" ref={activityDropdownRef}>
+                          <button
+                            type="button"
+                            onClick={() => setActivityDropdownOpen(prev => !prev)}
+                            className="inline-flex h-9 min-w-[190px] items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 px-4 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-center"
+                          >
+                            {getActivityRangeLabel() || getActivityPeriodLabel()}
+                          </button>
+
+                          {activityDropdownOpen && (
+                            <div className="absolute top-full left-0 mt-1 z-20 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[160px]">
+                              <button
+                                type="button"
+                                onClick={() => handleActivityPeriodChange('7')}
+                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                  activityPeriod === '7' && activityOffset === 0
+                                    ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 font-medium'
+                                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                This week
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleActivityPeriodChange('30')}
+                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                  activityPeriod === '30' && activityOffset === 0
+                                    ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 font-medium'
+                                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                This month
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleActivityPeriodChange('365')}
+                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                                  activityPeriod === '365' && activityOffset === 0
+                                    ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 font-medium'
+                                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                                }`}
+                              >
+                                This year
+                              </button>
+                            </div>
+                          )}
+                        </div>
+
                         <button
-                          onClick={() => handleActivityPeriodChange('30')}
-                          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                            activityPeriod === '30'
-                              ? 'text-white bg-blue-500'
-                              : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                          type="button"
+                          onClick={() => handleActivityOffsetChange('next')}
+                          disabled={activityOffset === 0}
+                          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
+                            activityOffset === 0
+                              ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
+                              : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                           }`}
+                          aria-label="Next period"
                         >
-                          30d
+                          &gt;
                         </button>
-                        <button
-                          onClick={() => handleActivityPeriodChange('365')}
-                          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                            activityPeriod === '365'
-                              ? 'text-white bg-blue-500'
-                              : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                          }`}
-                        >
-                          Year
-                        </button>
+                      </div>
+
+                      <div className="text-left sm:text-right">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {formatDuration(activityTotalMinutes)} Total hours
+                        </div>
+                        <div className="text-xs text-gray-500 dark:text-slate-400">
+                          {activityActiveUnitsLabel}
+                        </div>
                       </div>
                     </div>
                     <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
@@ -1238,15 +1435,31 @@ export default function StatsPage() {
                 </div>
 
                 {/* Yearly Heatmap */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8">
+                <div
+                  className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8"
+                  aria-busy={heatmapLoading}
+                >
+                  {heatmapLoading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+                      <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  )}
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
                     <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
                     <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
                       <div className="text-sm text-gray-600 dark:text-slate-300">
-                        <span className="font-medium">{formatDuration(stats?.totalFocusMinutes || 0)}</span> hours in {new Date().getFullYear()}
+                        <span className="font-medium">{formatDuration(heatmapTotalMinutes)}</span> Total hours {heatmapSummaryLabel}
                       </div>
-                      <select className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white">
-                        <option>{new Date().getFullYear()}</option>
+                      <select
+                        value={resolvedHeatmapRange}
+                        onChange={(event) => handleHeatmapRangeChange(event.target.value)}
+                        className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
+                        aria-label="Select heatmap year range"
+                      >
+                        <option value="rolling">Last 365 days</option>
+                        {(stats?.heatmapPeriod?.availableYears || []).map((year) => (
+                          <option key={year} value={year.toString()}>{year}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -1268,19 +1481,17 @@ export default function StatsPage() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                        {stats?.weeklyActivity && stats.weeklyActivity.length > 0
-                          ? formatDuration(Math.max(...stats.weeklyActivity.map(w => w.minutes)))
-                          : '00:00'}
+                        {formatDuration(heatmapBestDayMinutes)}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
                       <div className="text-xs text-gray-500 dark:text-slate-400">Hours</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                        {stats?.yearlyHeatmap ? stats.yearlyHeatmap.filter(d => d.pomodoros > 0).length : 0}
+                        {heatmapActiveDays}
                       </div>
                       <div className="text-sm text-gray-600 dark:text-slate-300">Active Days</div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">This year</div>
+                      <div className="text-xs text-gray-500 dark:text-slate-400">{heatmapRangeLabel}</div>
                     </div>
                     <div className="text-center">
                       <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
@@ -1396,8 +1607,8 @@ export default function StatsPage() {
                               />
                               <span className="text-sm text-gray-800 dark:text-slate-100 truncate">{item.name}</span>
                             </div>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                              {item.percentage.toFixed(1)}%
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+                              {item.hoursLabel} ({item.percentage.toFixed(1)}%)
                             </span>
                           </div>
                         ))}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
-import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, differenceInDays, format, addMinutes } from 'date-fns'
+import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, startOfWeek, endOfWeek, differenceInDays, format, addMinutes, subMonths, subYears, subWeeks } from 'date-fns'
 import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionStats'
 
 export const dynamic = 'force-dynamic'
@@ -30,6 +30,11 @@ export async function GET(request: NextRequest) {
     // Получаем период из query параметров
     const { searchParams } = new URL(request.url)
     const period = searchParams.get('period') || '7' // 7, 30, 365
+    const requestedHeatmapRange = searchParams.get('heatmapRange') || 'rolling'
+    const activityOffset = Math.max(
+      0,
+      parseInt(searchParams.get('activityOffset') || '0', 10) || 0
+    )
     const timelineOffset = Math.max(
       0,
       parseInt(searchParams.get('timelineOffset') || '0', 10) || 0
@@ -63,6 +68,18 @@ export async function GET(request: NextRequest) {
     })
 
     const allWorkSessions = allFocusSessions.filter((session) => session.type === 'WORK')
+    const availableHeatmapYears = Array.from(
+      new Set([
+        now.getFullYear(),
+        ...allWorkSessions.map((session) => getSessionAttributionDate(session).getFullYear())
+      ])
+    ).sort((a, b) => b - a)
+    const requestedHeatmapYear = /^\d{4}$/.test(requestedHeatmapRange)
+      ? parseInt(requestedHeatmapRange, 10)
+      : null
+    const selectedHeatmapRange = requestedHeatmapYear && availableHeatmapYears.includes(requestedHeatmapYear)
+      ? requestedHeatmapRange
+      : 'rolling'
 
     // Сессии за последние 7 дней (для таймлайна)
     const sevenDaysStart = timelineStart
@@ -141,14 +158,22 @@ export async function GET(request: NextRequest) {
     })
     const focusTimeThisMonth = thisMonthSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
 
-    // Активность за выбранный период
+    // Активность за выбранный период с поддержкой смещения
     const daysCount = parseInt(period)
     const weeklyActivity = []
+    let activityRangeStart = ''
+    let activityRangeEnd = ''
     
     if (daysCount === 365) {
-      // Для года - разбивка по месяцам за последние 12 месяцев
-      for (let i = 11; i >= 0; i--) {
-        const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      // Для года - разбивка по месяцам
+      const baseYear = subYears(now, activityOffset)
+      const yearStart = startOfYear(baseYear)
+      const yearEnd = activityOffset === 0 ? now : endOfDay(new Date(baseYear.getFullYear(), 11, 31))
+      activityRangeStart = format(yearStart, 'yyyy-MM-dd')
+      activityRangeEnd = format(yearEnd, 'yyyy-MM-dd')
+      
+      for (let i = 0; i < 12; i++) {
+        const monthDate = new Date(baseYear.getFullYear(), i, 1)
         const monthStartDate = startOfMonth(monthDate)
         const monthEndDate = endOfMonth(monthDate)
         
@@ -163,10 +188,43 @@ export async function GET(request: NextRequest) {
           minutes: monthSessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
         })
       }
+    } else if (daysCount === 30) {
+      // Для месяца - разбивка по дням
+      const baseMonth = subMonths(now, activityOffset)
+      const rangeStart = startOfMonth(baseMonth)
+      const rangeEnd = endOfMonth(baseMonth)
+      activityRangeStart = format(rangeStart, 'yyyy-MM-dd')
+      activityRangeEnd = format(rangeEnd, 'yyyy-MM-dd')
+      
+      let currentDay = rangeStart
+      while (currentDay <= rangeEnd) {
+        const dayStart = startOfDay(currentDay)
+        const dayEnd = endOfDay(currentDay)
+        
+        const daySessions = allWorkSessions.filter(session => {
+          const sessionDate = getSessionAttributionDate(session)
+          return sessionDate >= dayStart && sessionDate <= dayEnd
+        })
+        
+        weeklyActivity.push({
+          date: format(currentDay, 'yyyy-MM-dd'),
+          pomodoros: daySessions.length,
+          minutes: daySessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
+        })
+        currentDay = new Date(currentDay)
+        currentDay.setDate(currentDay.getDate() + 1)
+      }
     } else {
-      // Для 7 и 30 дней - разбивка по дням
-      for (let i = daysCount - 1; i >= 0; i--) {
-        const date = subDays(now, i)
+      // Для 7 дней (неделя) - Mon-Sun с поддержкой смещения
+      const baseWeek = subWeeks(now, activityOffset)
+      const rangeStart = startOfWeek(baseWeek, { weekStartsOn: 1 })
+      const rangeEnd = endOfWeek(baseWeek, { weekStartsOn: 1 })
+      activityRangeStart = format(rangeStart, 'yyyy-MM-dd')
+      activityRangeEnd = format(rangeEnd, 'yyyy-MM-dd')
+      
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(rangeStart)
+        date.setDate(rangeStart.getDate() + i)
         const dayStart = startOfDay(date)
         const dayEnd = endOfDay(date)
         
@@ -183,23 +241,20 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Карта активности за год (heatmap) - последние 53 недели
+    // Карта активности за год (heatmap) - последние 365 дней или выбранный календарный год
     const yearlyHeatmap = []
-    
-    // Начинаем с воскресенья 53 недели назад
-    const weeksAgo = 52
-    let startDate = subDays(now, weeksAgo * 7)
-    
-    // Находим ближайшее воскресенье в прошлом
-    while (startDate.getDay() !== 0) {
-      startDate = subDays(startDate, 1)
-    }
+    const heatmapRangeStart = selectedHeatmapRange === 'rolling'
+      ? startOfDay(subDays(now, 364))
+      : startOfYear(new Date(parseInt(selectedHeatmapRange, 10), 0, 1))
+    const heatmapRangeEnd = selectedHeatmapRange === 'rolling'
+      ? endOfDay(now)
+      : endOfDay(new Date(parseInt(selectedHeatmapRange, 10), 11, 31))
     
     // Генерируем данные для каждого дня
-    let currentDate = startDate
+    let currentDate = heatmapRangeStart
     let weekIndex = 0
     
-    while (currentDate <= now) {
+    while (currentDate <= heatmapRangeEnd) {
       const dayStart = startOfDay(currentDate)
       const dayEnd = endOfDay(currentDate)
       
@@ -223,10 +278,17 @@ export async function GET(request: NextRequest) {
       currentDate.setDate(currentDate.getDate() + 1)
       
       // Если начинается новая неделя (воскресенье), увеличиваем индекс недели
-      if (currentDate.getDay() === 0 && currentDate <= now) {
+      if (currentDate.getDay() === 0 && currentDate <= heatmapRangeEnd) {
         weekIndex++
       }
     }
+
+    const heatmapTotalMinutes = yearlyHeatmap.reduce((sum, day) => sum + day.minutes, 0)
+    const heatmapActiveDays = yearlyHeatmap.filter((day) => day.pomodoros > 0).length
+    const heatmapBestDayMinutes = yearlyHeatmap.reduce(
+      (max, day) => Math.max(max, day.minutes),
+      0
+    )
 
     // Разбивка по месяцам (последние 12 месяцев)
     const monthlyBreakdown = []
@@ -459,9 +521,22 @@ export async function GET(request: NextRequest) {
       
       // Активность за выбранный период
       weeklyActivity,
+      activityRange: {
+        start: activityRangeStart,
+        end: activityRangeEnd,
+      },
       
       // Карта активности за год
       yearlyHeatmap,
+      heatmapPeriod: {
+        selected: selectedHeatmapRange,
+        availableYears: availableHeatmapYears,
+        totalMinutes: heatmapTotalMinutes,
+        activeDays: heatmapActiveDays,
+        bestDayMinutes: heatmapBestDayMinutes,
+        rangeStart: format(heatmapRangeStart, 'yyyy-MM-dd'),
+        rangeEnd: format(heatmapRangeEnd, 'yyyy-MM-dd')
+      },
       
       // Разбивка по месяцам (последние 12 месяцев)
       monthlyBreakdown,
