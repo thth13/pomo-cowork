@@ -61,7 +61,7 @@ export default function SettingsPage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
   const billingPortalUrl = process.env.NEXT_PUBLIC_BILLING_PORTAL_URL
-  const isProMember = Boolean(user?.isPro)
+  const isProMember = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
   const shouldPromptRegister = !isAuthenticated || user?.isAnonymous
 
   const openPaywallOrRegister = () => {

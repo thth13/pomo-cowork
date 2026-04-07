@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getEffectiveMinutes } from '@/lib/sessionStats'
+import { syncExpiredProStatus } from '@/lib/pro'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,6 +23,7 @@ export async function GET(
         description: true,
         createdAt: true,
         isPro: true,
+        proExpiresAt: true,
         lastSeenAt: true,
         profileViews: true,
         _count: {
@@ -35,6 +37,8 @@ export async function GET(
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
+
+    const syncedUser = await syncExpiredProStatus(user)
 
     // Get user statistics (focus time includes WORK + TIME_TRACKING, including manual stops)
     const focusSessions = await prisma.pomodoroSession.findMany({
@@ -113,15 +117,15 @@ export async function GET(
 
     return NextResponse.json({
       user: {
-        id: user.id,
-        username: user.username,
-        avatarUrl: user.avatarUrl,
-        description: user.description,
-        createdAt: user.createdAt,
-        isPro: user.isPro,
-        lastSeenAt: user.lastSeenAt,
-        profileViews: user.profileViews,
-        totalSessions: user._count.sessions
+        id: syncedUser.id,
+        username: syncedUser.username,
+        avatarUrl: syncedUser.avatarUrl,
+        description: syncedUser.description,
+        createdAt: syncedUser.createdAt,
+        isPro: syncedUser.isPro,
+        lastSeenAt: syncedUser.lastSeenAt,
+        profileViews: syncedUser.profileViews,
+        totalSessions: syncedUser._count.sessions
       },
       stats: {
         totalSessions,

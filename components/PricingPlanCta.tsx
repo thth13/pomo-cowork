@@ -15,8 +15,8 @@ interface PricingPlanCtaProps {
 export default function PricingPlanCta({ planId, ctaLabel, ctaHref, highlighted }: PricingPlanCtaProps) {
   const { isAuthenticated, isLoading, user } = useAuthStore()
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
-  const isProMember = Boolean(user?.isPro)
   const proExpiresAt = user?.proExpiresAt ? new Date(user.proExpiresAt) : null
+  const isProMember = Boolean(user?.isPro && (!proExpiresAt || proExpiresAt > new Date()))
   const proExpiryLabel = proExpiresAt
     ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(proExpiresAt)
     : null

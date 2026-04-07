@@ -228,7 +228,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   } = useTimerStore()
 
   const { user, isAuthenticated, updateUserSettings } = useAuthStore()
-  const isProMember = Boolean(user?.isPro)
+  const isProMember = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
   const {
     currentRoomId,
     currentRoomName,

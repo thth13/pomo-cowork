@@ -1,7 +1,8 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { initializePaddle, Paddle, CheckoutEventNames, Environments } from '@paddle/paddle-js'
 import AuthModal from '@/components/AuthModal'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -14,13 +15,65 @@ interface PurchaseCTAProps {
 export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCTAProps) {
   const { isAuthenticated, isLoading, token, checkAuth, user } = useAuthStore()
   const router = useRouter()
+  const [paddle, setPaddle] = useState<Paddle | undefined>()
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isPurchaseModalOpen, setIsPurchaseModalOpen] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [checkoutDone, setCheckoutDone] = useState(false)
+  const [activationError, setActivationError] = useState<string | null>(null)
   const [vladikStep, setVladikStep] = useState<'question' | 'checking' | 'congrats'>('question')
   const vladikTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const isVladik = user?.id === 'cmg93grnk00009cz1m82i3091'
+
+  const activateTransaction = async (transactionId: string, authToken: string) => {
+    const response = await fetch('/api/paddle/activate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ transactionId }),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: 'Activation failed' }))
+      throw new Error(data.error ?? 'Activation failed')
+    }
+
+    await checkAuth()
+  }
+
+  useEffect(() => {
+    const clientToken = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
+    if (!clientToken) return
+    initializePaddle({
+      environment: (process.env.NEXT_PUBLIC_PADDLE_ENV as Environments) ?? 'sandbox',
+      token: clientToken,
+      eventCallback(event) {
+        if (event.name === CheckoutEventNames.CHECKOUT_COMPLETED) {
+          setCheckoutDone(true)
+          setActivationError(null)
+          const transactionId = (event.data as { transaction_id?: string } | undefined)?.transaction_id
+          const authToken = useAuthStore.getState().token ?? (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
+          if (transactionId && authToken) {
+            activateTransaction(transactionId, authToken)
+              .then(() => router.push('/'))
+              .catch(error => {
+                console.error('Paddle activation error:', error)
+                setCheckoutDone(false)
+                setActivationError('Payment succeeded, but Pro activation is still processing. Refresh the page in a few seconds.')
+              })
+          } else {
+            setCheckoutDone(false)
+            setActivationError('Payment succeeded, but transaction verification data is missing.')
+          }
+        }
+      },
+    }).then(instance => {
+      if (instance) setPaddle(instance)
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const clearVladikTimer = () => {
     if (vladikTimerRef.current) {
@@ -38,42 +91,78 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
     }, 3000)
   }
 
-  const handleContinue = async (options?: { redirectTo?: string }) => {
+  // Only used for the Vladik free-grant path
+  const handleVladikContinue = async () => {
     try {
       setIsProcessing(true)
       const authToken = token ?? (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
       const headers: Record<string, string> = { 'Content-Type': 'application/json' }
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`
-      }
-
-      await fetch('/api/purchase', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ planId }),
-      })
+      if (authToken) headers.Authorization = `Bearer ${authToken}`
+      await fetch('/api/purchase', { method: 'POST', headers, body: JSON.stringify({ planId }) })
       await checkAuth()
-      router.push(options?.redirectTo ?? '/')
+      router.push('/')
     } finally {
       setIsProcessing(false)
       setIsPurchaseModalOpen(false)
     }
   }
 
+  const handlePurchase = async () => {
+    if (!paddle || isProcessing) return
+    setIsProcessing(true)
+    setActivationError(null)
+    try {
+      const authToken = token ?? (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
+      const res = await fetch('/api/paddle/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        body: JSON.stringify({ planId: planId ?? 'pro-yearly' }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.transactionId) throw new Error(data.error ?? 'Checkout failed')
+      paddle.Checkout.open({ transactionId: data.transactionId })
+    } catch (err) {
+      console.error('Paddle checkout error:', err)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   return (
     <>
-      {isAuthenticated ? (
-        <button
-          type="button"
-          onClick={() => {
-            clearVladikTimer()
-            setVladikStep('question')
-            setIsPurchaseModalOpen(true)
-          }}
-          className="inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-500/20 transition-all hover:from-red-600 hover:to-amber-600"
-        >
-          Purchase for {priceLabel}
-        </button>
+      {checkoutDone ? (
+        <div className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500/10 px-4 py-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300">
+          Payment received — activating Pro…
+        </div>
+      ) : isAuthenticated ? (
+        <div className="space-y-2">
+          <button
+            type="button"
+            disabled={isProcessing || !paddle}
+            onClick={() => {
+              if (isVladik) {
+                clearVladikTimer()
+                setVladikStep('question')
+                setIsPurchaseModalOpen(true)
+              } else {
+                handlePurchase()
+              }
+            }}
+            className={`inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-amber-500 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-red-500/20 transition-all hover:from-red-600 hover:to-amber-600 ${
+              isProcessing || !paddle ? 'cursor-not-allowed opacity-70' : ''
+            }`}
+          >
+            {isProcessing ? 'Loading…' : `Purchase for ${priceLabel}`}
+          </button>
+          {activationError ? (
+            <p className="text-xs text-center text-red-600 dark:text-red-400">
+              {activationError}
+            </p>
+          ) : null}
+        </div>
       ) : (
         <button
           type="button"
@@ -169,7 +258,7 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
                       <div className="mt-6 flex gap-3">
                         <button
                           type="button"
-                          onClick={() => handleContinue({ redirectTo: '/' })}
+                          onClick={() => handleVladikContinue()}
                           disabled={isProcessing}
                           className={`inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-500/20 transition-all hover:from-red-600 hover:to-amber-600 ${
                             isProcessing ? 'cursor-not-allowed opacity-70' : ''
@@ -181,46 +270,7 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
                     </>
                   )}
                 </>
-              ) : (
-                <>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">
-                      Purchase successful
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsPurchaseModalOpen(false)}
-                      className="rounded-lg px-2 py-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                    >
-                      ✕
-                    </button>
-                  </div>
-
-                  <h3 className="mt-4 text-xl font-bold text-slate-900 dark:text-white">
-                    You now have Pro access 🎉
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
-                    Your {planName ?? 'Pro'} subscription is active.
-                  </p>
-
-                  <p className="mt-4 text-xs text-slate-500 dark:text-slate-400">
-                    Payments are temporarily unavailable. Your Pro access has been granted for free.
-                  </p>
-
-                  <div className="mt-6 flex gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleContinue()}
-                      disabled={isProcessing}
-                      className={`inline-flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-red-500 to-amber-500 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-red-500/20 transition-all hover:from-red-600 hover:to-amber-600 ${
-                        isProcessing ? 'cursor-not-allowed opacity-70' : ''
-                      }`}
-                    >
-                      {isProcessing ? 'Activating...' : 'Continue'}
-                    </button>
-                  </div>
-                </>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

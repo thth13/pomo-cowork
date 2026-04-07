@@ -669,7 +669,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
           </div>
         ) : timeEntries.length === 0 ? (
           <div className="text-center py-10 text-gray-500 dark:text-slate-400">
-            Нет записей времени
+            No activity yet
           </div>
         ) : (
           <>

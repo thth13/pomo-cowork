@@ -1,7 +1,10 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTimes, faCheck } from '@fortawesome/free-solid-svg-icons'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { initializePaddle, Paddle, CheckoutEventNames, Environments } from '@paddle/paddle-js'
+import { useAuthStore } from '@/store/useAuthStore'
+import AuthModal from '@/components/AuthModal'
 
 interface PaywallModalProps {
   onClose: () => void
@@ -9,11 +12,91 @@ interface PaywallModalProps {
 
 export const PaywallModal = ({ onClose }: PaywallModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly')
-  const checkoutHref = selectedPlan === 'yearly'
-    ? '/purchase?plan=pro-yearly'
-    : '/purchase?plan=pro-monthly'
+  const [paddle, setPaddle] = useState<Paddle | undefined>()
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [activationError, setActivationError] = useState<string | null>(null)
+  const { isAuthenticated, token, checkAuth } = useAuthStore()
+
+  const activateTransaction = async (transactionId: string, authToken: string) => {
+    const response = await fetch('/api/paddle/activate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ transactionId }),
+    })
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => ({ error: 'Activation failed' }))
+      throw new Error(data.error ?? 'Activation failed')
+    }
+
+    await checkAuth()
+  }
+
+  useEffect(() => {
+    const clientToken = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN
+    if (!clientToken) return
+    initializePaddle({
+      environment: (process.env.NEXT_PUBLIC_PADDLE_ENV as Environments) ?? 'sandbox',
+      token: clientToken,
+      eventCallback(event) {
+        if (event.name === CheckoutEventNames.CHECKOUT_COMPLETED) {
+          const transactionId = (event.data as { transaction_id?: string } | undefined)?.transaction_id
+          const authToken = useAuthStore.getState().token ?? (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
+          if (transactionId && authToken) {
+            setIsProcessing(true)
+            setActivationError(null)
+            activateTransaction(transactionId, authToken)
+              .then(() => onClose())
+              .catch(error => {
+                console.error('Paddle activation error:', error)
+                setActivationError('Payment succeeded, but Pro activation is still processing. Please wait a few seconds and refresh.')
+              })
+              .finally(() => setIsProcessing(false))
+          } else {
+            setActivationError('Payment succeeded, but transaction verification data is missing.')
+          }
+        }
+      },
+    }).then(instance => {
+      if (instance) setPaddle(instance)
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCheckout = async () => {
+    if (!isAuthenticated) {
+      setIsAuthModalOpen(true)
+      return
+    }
+    if (!paddle || isProcessing) return
+    setIsProcessing(true)
+    setActivationError(null)
+    try {
+      const authToken = token ?? (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
+      const planId = selectedPlan === 'yearly' ? 'pro-yearly' : 'pro-monthly'
+      const res = await fetch('/api/paddle/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+        body: JSON.stringify({ planId }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.transactionId) throw new Error(data.error ?? 'Checkout failed')
+      paddle.Checkout.open({ transactionId: data.transactionId })
+    } catch (err) {
+      console.error('Paddle checkout error:', err)
+    } finally {
+      setIsProcessing(false)
+    }
+  }
 
   return (
+    <>
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
       <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[96svh] sm:max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700">
         <button 
@@ -25,9 +108,6 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
 
         <div className="p-4 sm:p-8">
           <div className="text-center mb-6 sm:mb-8">
-            <div className="inline-flex items-center justify-center px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 mb-6 shadow-lg">
-              <span className="font-bold text-sm tracking-wide">Pro Plan</span>
-            </div>
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
               Upgrade to Pro
             </h2>
@@ -99,12 +179,15 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                 </div>
               </div>
               
-              <Link
-                href={checkoutHref}
-                className="w-full mt-4 py-3.5 px-4 inline-flex items-center justify-center bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/25 hover:shadow-amber-500/30 active:scale-95"
+              <button
+                onClick={handleCheckout}
+                disabled={isProcessing || !paddle}
+                className={`w-full mt-4 py-3.5 px-4 inline-flex items-center justify-center bg-gradient-to-r from-red-500 to-amber-500 hover:from-red-600 hover:to-amber-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-red-500/25 hover:shadow-amber-500/30 active:scale-95 ${
+                  isProcessing || !paddle ? 'cursor-not-allowed opacity-70' : ''
+                }`}
               >
-                Continue to checkout
-              </Link>
+                {isProcessing ? 'Loading…' : 'Continue to checkout'}
+              </button>
 
               <p className="text-[11px] text-center text-gray-500 dark:text-slate-400">
                 By continuing, you agree to our{' '}
@@ -116,10 +199,19 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                   Privacy Policy
                 </Link>.
               </p>
+
+              {activationError ? (
+                <p className="text-xs text-center text-red-600 dark:text-red-400">
+                  {activationError}
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
       </div>
     </div>
+
+    <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+  </>
   )
 }

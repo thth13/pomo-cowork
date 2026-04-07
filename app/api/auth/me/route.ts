@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
+import { syncExpiredProStatus } from '@/lib/pro'
 
 export const dynamic = 'force-dynamic'
 
@@ -39,8 +40,10 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    const syncedUser = await syncExpiredProStatus(user)
+
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user
+    const { password: _, ...userWithoutPassword } = syncedUser
 
     return NextResponse.json(userWithoutPassword)
 

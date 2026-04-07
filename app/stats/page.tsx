@@ -149,7 +149,7 @@ export default function StatsPage() {
   const activityDropdownRef = useRef<HTMLDivElement>(null)
   
   const isDark = theme === 'dark'
-  const isPro = Boolean(user?.isPro)
+  const isPro = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
   const shouldPromptRegister = !isAuthenticated || user?.isAnonymous
 
   const openPaywallOrRegister = () => {

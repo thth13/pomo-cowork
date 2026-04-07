@@ -48,7 +48,7 @@ export default function RoomsPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const { currentRoomId, currentRoomName, setCurrentRoom, resetToGlobal } = useRoomStore()
 
-  const isProMember = Boolean(user?.isPro)
+  const isProMember = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
 
   const shouldForceList = searchParams.get('list') === '1'
 

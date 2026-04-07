@@ -354,7 +354,7 @@ export default function Navbar() {
                       ) : (
                         <User className="w-4 h-4" />
                       )}
-                      {user.isPro && (
+                      {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
                         <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
                           <Crown className="w-3 h-3" />
                         </span>
@@ -477,7 +477,7 @@ export default function Navbar() {
                   ) : (
                     <User className="w-5 h-5" />
                   )}
-                  {user.isPro && (
+                  {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
                     <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
                       <Crown className="w-3 h-3" />
                     </span>
