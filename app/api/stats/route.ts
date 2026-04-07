@@ -256,6 +256,11 @@ export async function GET(request: NextRequest) {
     
     while (currentDate <= heatmapRangeEnd) {
       const dayStart = startOfDay(currentDate)
+      
+      if (selectedHeatmapRange === 'rolling' && dayStart > now) {
+        break
+      }
+      
       const dayEnd = endOfDay(currentDate)
       
       const daySessions = allWorkSessions.filter(session => {

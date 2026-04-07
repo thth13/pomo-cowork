@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
@@ -14,7 +14,6 @@ import { useConnectionStore } from '@/store/useConnectionStore'
 import Navbar from '@/components/Navbar'
 import ActiveSessionTimer from '@/components/ActiveSessionTimer'
 import WeeklyActivityChart from '@/components/WeeklyActivityChart'
-import YearlyHeatmapChart from '@/components/YearlyHeatmapChart'
 
 let Highcharts: any = null
 let isHeatmapInitialized = false
@@ -62,19 +61,41 @@ interface UserStats {
   activeDays: number
   focusTimeThisMonth: number
   currentStreak: number
-  yearlyHeatmap: Array<{
-    week: number
-    dayOfWeek: number
-    pomodoros: number
-    minutes: number
-    date: string
-  }>
+  yearlyHeatmap: HeatmapDay[]
   weeklyActivity: Array<{
     date: string
     pomodoros: number
     minutes: number
   }>
 }
+
+interface HeatmapDay {
+  week: number
+  dayOfWeek: number
+  pomodoros: number
+  minutes: number
+  date: string
+}
+
+interface HeatmapColumn {
+  week: number
+  days: Array<HeatmapDay | null>
+}
+
+interface HeatmapTooltip {
+  label: string
+  x: number
+  y: number
+}
+
+const heatmapDayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const heatmapCellClasses = [
+  'bg-[#E7ECF3] border border-[#D7DFEA]',
+  'bg-[#CFE0FF] border border-[#B8D0FF]',
+  'bg-[#9EC0FF] border border-[#86B1FF]',
+  'bg-[#5D95FF] border border-[#4B85F1]',
+  'bg-[#2563EB] border border-[#1D4ED8] shadow-[0_8px_18px_rgba(37,99,235,0.24)]'
+]
 
 interface WallMessage {
   id: string
@@ -108,6 +129,7 @@ export default function UserProfilePage() {
   const [wallDeletingId, setWallDeletingId] = useState<string | null>(null)
   const [wallHasMore, setWallHasMore] = useState(false)
   const [wallCursor, setWallCursor] = useState<string | null>(null)
+  const [heatmapTooltip, setHeatmapTooltip] = useState<HeatmapTooltip | null>(null)
 
   const userId = params?.id as string
   const isDark = theme === 'dark'
@@ -325,17 +347,6 @@ export default function UserProfilePage() {
     }
   }, [userId, isOwnProfile])
 
-  // Generate heatmap data for the year - memoized to prevent recalculation
-  const heatmapData = useMemo((): Array<[number, number, number]> => {
-    if (!userStats?.yearlyHeatmap) return []
-    
-    return userStats.yearlyHeatmap.map(item => [
-      item.week,
-      item.dayOfWeek,
-      parseFloat((item.minutes / 60).toFixed(2))
-    ] as [number, number, number])
-  }, [userStats?.yearlyHeatmap])
-
   // Generate weekly activity data - memoized to prevent recalculation
   const weeklyData = useMemo(() => {
     if (!userStats) return []
@@ -352,12 +363,56 @@ export default function UserProfilePage() {
   const avgPomodorosDisplay = Number.isFinite(avgPomodorosPerDay)
     ? (Number.isInteger(avgPomodorosPerDay) ? avgPomodorosPerDay.toString() : avgPomodorosPerDay.toFixed(1))
     : '0'
-  const weekDayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+  const yearlyHeatmap = userStats?.yearlyHeatmap || []
+  const heatmapMaxDailyMinutes = yearlyHeatmap.reduce((max, day) => Math.max(max, day.minutes), 0)
+  const totalHeatmapMinutes = yearlyHeatmap.reduce((sum, day) => sum + day.minutes, 0)
+  const totalHeatmapHours = Math.floor(totalHeatmapMinutes / 60)
+  const totalHeatmapRemainder = String(totalHeatmapMinutes % 60).padStart(2, '0')
+  const activeHeatmapDays = yearlyHeatmap.filter((day) => day.minutes > 0)
+
+  const heatmapColumnsMap = new Map<number, HeatmapColumn>()
+  yearlyHeatmap.forEach((day) => {
+    let column = heatmapColumnsMap.get(day.week)
+
+    if (!column) {
+      column = {
+        week: day.week,
+        days: Array.from({ length: 7 }, () => null)
+      }
+      heatmapColumnsMap.set(day.week, column)
+    }
+
+    column.days[day.dayOfWeek] = day
+  })
+
+  const heatmapColumns = Array.from(heatmapColumnsMap.values()).sort((left, right) => left.week - right.week)
+  const heatmapMonthMarkers: Array<{ label: string; column: number }> = []
+  let previousMonthKey = ''
+
+  heatmapColumns.forEach((column, columnIndex) => {
+    const firstTrackedDay = column.days.find((day): day is HeatmapDay => day !== null)
+
+    if (!firstTrackedDay) {
+      return
+    }
+
+    const date = new Date(firstTrackedDay.date + 'T00:00:00')
+    const monthKey = `${date.getFullYear()}-${date.getMonth()}`
+
+    if (monthKey !== previousMonthKey) {
+      previousMonthKey = monthKey
+      heatmapMonthMarkers.push({
+        label: date.toLocaleDateString('en-US', { month: 'short' }),
+        column: columnIndex
+      })
+    }
+  })
+
   const weeklyCategories = useMemo(() => {
     return userStats?.weeklyActivity?.map(item => {
       const [year, month, day] = item.date.split('-').map(Number)
       const date = new Date(year, month - 1, day)
-      return weekDayLabels[date.getDay()]
+      return heatmapDayLabels[date.getDay()]
     }) || []
   }, [userStats?.weeklyActivity])
 
@@ -378,6 +433,68 @@ export default function UserProfilePage() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const formatHeatmapHours = (minutes: number) => {
+    const hours = minutes / 60
+    return `${hours.toFixed(1).replace(/\.0$/, '')}h`
+  }
+
+  const getHeatmapIntensity = (minutes: number) => {
+    if (minutes <= 0 || heatmapMaxDailyMinutes <= 0) {
+      return 0
+    }
+
+    const ratio = minutes / heatmapMaxDailyMinutes
+
+    if (ratio >= 0.8) {
+      return 4
+    }
+
+    if (ratio >= 0.55) {
+      return 3
+    }
+
+    if (ratio >= 0.3) {
+      return 2
+    }
+
+    return 1
+  }
+
+  const formatHeatmapCellLabel = (day: HeatmapDay | null) => {
+    if (!day) {
+      return 'No tracked activity'
+    }
+
+    const formattedDate = new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+
+    if (day.minutes <= 0) {
+      return `${formattedDate}: 0h`
+    }
+
+    return `${formattedDate}: ${formatHeatmapHours(day.minutes)}`
+  }
+
+  const showHeatmapTooltipAt = (label: string, x: number, y: number) => {
+    setHeatmapTooltip({ label, x, y })
+  }
+
+  const showHeatmapTooltip = (label: string, event: ReactMouseEvent<HTMLButtonElement>) => {
+    showHeatmapTooltipAt(label, event.clientX, event.clientY)
+  }
+
+  const showHeatmapTooltipFromFocus = (label: string, event: ReactFocusEvent<HTMLButtonElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect()
+    showHeatmapTooltipAt(label, bounds.left + bounds.width / 2, bounds.top)
+  }
+
+  const hideHeatmapTooltip = () => {
+    setHeatmapTooltip(null)
   }
 
   const getSessionTypeLabel = (type: string) => {
@@ -825,27 +942,107 @@ export default function UserProfilePage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8"
+              className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 shadow-sm"
             >
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Yearly Activity</h3>
-              </div>
-              <YearlyHeatmapChart 
-                Highcharts={Highcharts} 
-                heatmapData={heatmapData} 
-                isDark={isDark}
-                yearlyHeatmap={userStats?.yearlyHeatmap}
-              />
-              <div className="flex items-center justify-between text-xs text-gray-500 dark:text-slate-400 mt-4">
-                <span>Less</span>
-                <div className="flex items-center space-x-1">
-                  <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
-                  <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
-                  <div className="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm"></div>
-                  <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
-                  <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
+              {heatmapTooltip && (
+                <div
+                  className="pointer-events-none fixed z-[70] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.14)]"
+                  style={{ left: heatmapTooltip.x + 12, top: heatmapTooltip.y - 36 }}
+                >
+                  {heatmapTooltip.label}
                 </div>
-                <span>More</span>
+              )}
+
+              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Yearly Activity</h3>
+                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {totalHeatmapHours}:{totalHeatmapRemainder} Total hours in the last 365 days
+                </div>
+              </div>
+
+              <div className="overflow-x-auto pb-2">
+                <div className="w-fit mx-auto">
+                  <div className="flex gap-2">
+                    <div className="mt-[24px] flex w-fit shrink-0 flex-col gap-[1px] md:gap-[2px] text-[10px] font-medium text-gray-400 dark:text-slate-500">
+                      {heatmapDayLabels.map((label, index) => (
+                        <div key={label} className="flex h-[10.4px] md:h-[11.4px] items-center justify-end pr-1 leading-none">
+                          {index % 2 === 1 ? label : ''}
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="w-fit shrink-0">
+                      <div className="relative mb-2 h-4 overflow-hidden">
+                        {heatmapMonthMarkers.map((marker, markerIndex) => {
+                          const left = heatmapColumns.length <= 1
+                            ? 0
+                            : (marker.column / Math.max(heatmapColumns.length - 1, 1)) * 100
+                          const isFirstMarker = markerIndex === 0
+                          const isLastMarker = markerIndex === heatmapMonthMarkers.length - 1
+
+                          return (
+                            <span
+                              key={`${marker.label}-${marker.column}`}
+                              className="absolute top-0 text-[10px] font-medium text-gray-500 dark:text-slate-400"
+                              style={{
+                                left: `${left}%`,
+                                transform: isFirstMarker
+                                  ? 'translateX(0)'
+                                  : isLastMarker
+                                    ? 'translateX(-100%)'
+                                    : 'translateX(-10%)'
+                              }}
+                            >
+                              {marker.label}
+                            </span>
+                          )
+                        })}
+                      </div>
+
+                      <div className="flex gap-[1px] md:gap-[2px]">
+                        {heatmapColumns.map((column) => (
+                          <div key={column.week} className="flex flex-col gap-[1px] md:gap-[2px]">
+                            {column.days.map((day, dayIndex) => {
+                              if (!day) {
+                                return <div key={`${column.week}-${dayIndex}-empty`} className="h-[10.4px] w-[10.4px] md:h-[11.4px] md:w-[11.4px]" />
+                              }
+
+                              const intensity = getHeatmapIntensity(day.minutes)
+                              const label = formatHeatmapCellLabel(day)
+
+                              return (
+                                <button
+                                  type="button"
+                                  key={`${column.week}-${dayIndex}`}
+                                  title={label}
+                                  aria-label={label}
+                                  onMouseEnter={(event) => showHeatmapTooltip(label, event)}
+                                  onMouseMove={(event) => showHeatmapTooltip(label, event)}
+                                  onMouseLeave={hideHeatmapTooltip}
+                                  onFocus={(event) => showHeatmapTooltipFromFocus(label, event)}
+                                  onBlur={hideHeatmapTooltip}
+                                  className={`h-[10.4px] w-[10.4px] md:h-[11.4px] md:w-[11.4px] rounded-[3px] transition-transform duration-150 hover:scale-110 focus:scale-110 focus:outline-none ${heatmapCellClasses[intensity]}`}
+                                />
+                              )
+                            })}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-2 flex justify-end text-xs text-gray-500 dark:text-slate-400">
+                <div className="flex items-center gap-2">
+                  <span>Less</span>
+                  <div className="flex items-center gap-[2px]">
+                    {heatmapCellClasses.map((cellClass, index) => (
+                      <div key={index} className={`h-[10.4px] w-[10.4px] rounded-[3px] md:h-[11.4px] md:w-[11.4px] ${cellClass}`} />
+                    ))}
+                  </div>
+                  <span>More</span>
+                </div>
               </div>
             </motion.div>
 

@@ -1,0 +1,13 @@
+--- app/stats/page.tsx
++++ app/stats/page.tsx
+@@ -442,6 +442,9 @@
+   const resolvedHeatmapRange = stats?.heatmapPeriod?.selected || heatmapRange
+   const yearlyHeatmap = stats?.yearlyHeatmap || []
+   const heatmapMaxDailyMinutes = yearlyHeatmap.reduce((max, day) => Math.max(max, day.minutes), 0)
++  
++  const totalHeatmapMinutes = yearlyHeatmap.reduce((sum, day) => sum + day.minutes, 0)
++  const totalHeatmapHours = Math.floor(totalHeatmapMinutes / 60)
++  const heatmapHourString = String(totalHeatmapMinutes % 60).padStart(2, '0')
+   const heatmapColumnsMap = new Map<number, HeatmapColumn>()
+ 
+   yearlyHeatmap.forEach((day) => {

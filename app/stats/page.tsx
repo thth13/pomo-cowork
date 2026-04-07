@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useThemeStore } from '@/store/useThemeStore'
@@ -31,7 +31,7 @@ interface Stats {
   avgMinutesPerDay: number
   focusTimeThisMonth: number
   weeklyActivity: Array<{ date: string; pomodoros: number; minutes: number }>
-  yearlyHeatmap: Array<{ week: number; dayOfWeek: number; pomodoros: number; minutes: number; date: string }>
+  yearlyHeatmap: HeatmapDay[]
   heatmapPeriod: {
     selected: string
     availableYears: number[]
@@ -96,6 +96,34 @@ interface Stats {
   }
 }
 
+interface HeatmapDay {
+  week: number
+  dayOfWeek: number
+  pomodoros: number
+  minutes: number
+  date: string
+}
+
+interface HeatmapColumn {
+  week: number
+  days: Array<HeatmapDay | null>
+}
+
+interface HeatmapTooltip {
+  label: string
+  x: number
+  y: number
+}
+
+const heatmapDayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const heatmapCellClasses = [
+  'bg-[#E7ECF3] border border-[#D7DFEA]',
+  'bg-[#CFE0FF] border border-[#B8D0FF]',
+  'bg-[#9EC0FF] border border-[#86B1FF]',
+  'bg-[#5D95FF] border border-[#4B85F1]',
+  'bg-[#2563EB] border border-[#1D4ED8] shadow-[0_8px_18px_rgba(37,99,235,0.24)]'
+]
+
 export default function StatsPage() {
   const { isAuthenticated, token, isLoading: authLoading, user } = useAuthStore()
   const { theme } = useThemeStore()
@@ -105,7 +133,7 @@ export default function StatsPage() {
   const [activityLoading, setActivityLoading] = useState(false)
   const [heatmapLoading, setHeatmapLoading] = useState(false)
   const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
-  const [chartReady, setChartReady] = useState(false)
+  const chartReady = true
   const [activityPeriod, setActivityPeriod] = useState<'7' | '30' | '365'>('7')
   const [activityOffset, setActivityOffset] = useState(0)
   const [activityDropdownOpen, setActivityDropdownOpen] = useState(false)
@@ -113,6 +141,7 @@ export default function StatsPage() {
   const [timelineOffset, setTimelineOffset] = useState(0)
   const [showPaywall, setShowPaywall] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [heatmapTooltip, setHeatmapTooltip] = useState<HeatmapTooltip | null>(null)
   const activityPeriodRef = useRef(activityPeriod)
   const activityOffsetRef = useRef(activityOffset)
   const heatmapRangeRef = useRef(heatmapRange)
@@ -161,22 +190,6 @@ export default function StatsPage() {
   useEffect(() => {
     setHasFetchedOnce(false)
   }, [token])
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // Динамически загружаем heatmap модуль только на клиенте
-      import('highcharts/modules/heatmap').then((module: any) => {
-        const heatmapFactory = module.default || module
-        if (typeof heatmapFactory === 'function') {
-          heatmapFactory(Highcharts)
-        }
-        setChartReady(true)
-      }).catch(err => {
-        console.error('Failed to load heatmap module:', err)
-        setChartReady(true) // Продолжаем работу даже если модуль не загрузился
-      })
-    }
-  }, [])
 
   type FetchMode = 'full' | 'timeline' | 'activity' | 'heatmap' | 'silent'
 
@@ -259,16 +272,6 @@ export default function StatsPage() {
     return `${hours.toFixed(1).replace(/\.0$/, '')}h`
   }
 
-  const generateYearlyHeatmapData = () => {
-    if (!stats?.yearlyHeatmap) return []
-    
-    return stats.yearlyHeatmap.map(item => [
-      item.week,
-      item.dayOfWeek,
-      parseFloat((item.minutes / 60).toFixed(2))
-    ])
-  }
-
   const weeklyChartOptions: Highcharts.Options = {
     chart: { type: 'column', backgroundColor: 'transparent' },
     title: { text: '' },
@@ -326,81 +329,6 @@ export default function StatsPage() {
       name: 'Hours',
       data: stats?.weeklyActivity?.map(s => parseFloat((s.minutes / 60).toFixed(4))) || [],
       color: '#3b82f6'
-    }]
-  }
-
-  const heatmapOptions: Highcharts.Options = {
-    chart: { 
-      type: 'heatmap', 
-      backgroundColor: 'transparent',
-      height: 140,
-      spacing: [0, 0, 0, 0]
-    },
-    title: { text: '' },
-    credits: { enabled: false },
-    xAxis: {
-      visible: false,
-      min: 0,
-      gridLineWidth: 0,
-      lineWidth: 0
-    },
-    yAxis: {
-      categories: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-      title: { text: '' },
-      reversed: true,
-      labels: {
-        style: { 
-          fontSize: '10px',
-          color: isDark ? '#cbd5e1' : '#6b7280'
-        }
-      },
-      gridLineWidth: 0,
-      lineWidth: 0
-    },
-    colorAxis: {
-      min: 0,
-      max: 8,
-      stops: isDark ? [
-        [0, '#334155'],
-        [0.25, '#14532d'],
-        [0.5, '#166534'],
-        [0.75, '#15803d'],
-        [1, '#22c55e']
-      ] : [
-        [0, '#ebedf0'],
-        [0.25, '#c6e48b'],
-        [0.5, '#7bc96f'],
-        [0.75, '#239a3b'],
-        [1, '#196127']
-      ]
-    },
-    legend: { enabled: false },
-    tooltip: {
-      formatter: function() {
-        const point = this as any
-        // Find date from data
-        const dataPoint = stats?.yearlyHeatmap?.find(
-          item => item.week === point.x && item.dayOfWeek === point.y
-        )
-        const dateStr = dataPoint?.date || ''
-        const minutes = (point.value as number) * 60
-        return '<b>' + formatDuration(minutes) + ' hours</b><br>' + 
-               (dateStr ? new Date(dateStr).toLocaleDateString('en-US') : '')
-      }
-    },
-    plotOptions: {
-      heatmap: {
-        borderWidth: 2,
-        borderColor: isDark ? '#1e293b' : '#ffffff',
-        dataLabels: { enabled: false }
-      }
-    },
-    series: [{
-      type: 'heatmap',
-      name: 'Pomodoros',
-      data: generateYearlyHeatmapData(),
-      colsize: 1,
-      rowsize: 1
     }]
   }
 
@@ -512,14 +440,142 @@ export default function StatsPage() {
   const avgTimePerDay = stats?.avgMinutesPerDay || 0
   const focusTimeThisMonth = Math.floor((stats?.focusTimeThisMonth || 0) / 60)
   const focusTimeThisMonthMinutes = (stats?.focusTimeThisMonth || 0) % 60
-  const heatmapTotalMinutes = stats?.heatmapPeriod?.totalMinutes || 0
-  const heatmapBestDayMinutes = stats?.heatmapPeriod?.bestDayMinutes || 0
-  const heatmapActiveDays = stats?.heatmapPeriod?.activeDays || 0
   const resolvedHeatmapRange = stats?.heatmapPeriod?.selected || heatmapRange
-  const heatmapRangeLabel = resolvedHeatmapRange === 'rolling' ? 'Last 365 days' : resolvedHeatmapRange
-  const heatmapSummaryLabel = resolvedHeatmapRange === 'rolling'
-    ? 'in the last 365 days'
-    : `in ${resolvedHeatmapRange}`
+  const yearlyHeatmap = stats?.yearlyHeatmap || []
+  const heatmapMaxDailyMinutes = yearlyHeatmap.reduce((max, day) => Math.max(max, day.minutes), 0)
+
+  const totalHeatmapMinutes = yearlyHeatmap.reduce((sum, day) => sum + day.minutes, 0)
+  const totalHeatmapHours = Math.floor(totalHeatmapMinutes / 60)
+  const totalHeatmapRemainderList = String(totalHeatmapMinutes % 60).padStart(2, '0')
+  const activeHeatmapDays = yearlyHeatmap.filter((day) => day.minutes > 0)
+  const heatmapBestDay = activeHeatmapDays.reduce<HeatmapDay | null>((bestDay, day) => {
+    if (!bestDay || day.minutes > bestDay.minutes) {
+      return day
+    }
+
+    return bestDay
+  }, null)
+  const heatmapLatestActiveDay = activeHeatmapDays.reduce<HeatmapDay | null>((latestDay, day) => {
+    if (!latestDay || day.date > latestDay.date) {
+      return day
+    }
+
+    return latestDay
+  }, null)
+
+  let heatmapCurrentStreak = 0
+  if (heatmapLatestActiveDay) {
+    const activeHeatmapDates = new Set(activeHeatmapDays.map((day) => day.date))
+    let streakDate = new Date(heatmapLatestActiveDay.date + 'T00:00:00')
+
+    while (activeHeatmapDates.has(streakDate.toISOString().slice(0, 10))) {
+      heatmapCurrentStreak += 1
+      streakDate.setDate(streakDate.getDate() - 1)
+    }
+  }
+
+  const heatmapRangeCaption = resolvedHeatmapRange === 'rolling' ? 'Last 365 days' : resolvedHeatmapRange
+
+  const heatmapColumnsMap = new Map<number, HeatmapColumn>()
+
+  yearlyHeatmap.forEach((day) => {
+    let column = heatmapColumnsMap.get(day.week)
+
+    if (!column) {
+      column = {
+        week: day.week,
+        days: Array.from({ length: 7 }, () => null)
+      }
+      heatmapColumnsMap.set(day.week, column)
+    }
+
+    column.days[day.dayOfWeek] = day
+  })
+
+  const heatmapColumns = Array.from(heatmapColumnsMap.values()).sort((left, right) => left.week - right.week)
+  const heatmapMonthMarkers: Array<{ label: string; column: number }> = []
+  let previousMonthKey = ''
+
+  heatmapColumns.forEach((column, columnIndex) => {
+    const firstTrackedDay = column.days.find((day): day is HeatmapDay => day !== null)
+
+    if (!firstTrackedDay) {
+      return
+    }
+
+    const date = new Date(firstTrackedDay.date + 'T00:00:00')
+    const monthKey = `${date.getFullYear()}-${date.getMonth()}`
+
+    if (monthKey !== previousMonthKey) {
+      previousMonthKey = monthKey
+      heatmapMonthMarkers.push({
+        label: date.toLocaleDateString('en-US', { month: 'short' }),
+        column: columnIndex
+      })
+    }
+  })
+
+  const getHeatmapIntensity = (minutes: number) => {
+    if (minutes <= 0 || heatmapMaxDailyMinutes <= 0) {
+      return 0
+    }
+
+    const ratio = minutes / heatmapMaxDailyMinutes
+
+    if (ratio >= 0.8) {
+      return 4
+    }
+
+    if (ratio >= 0.55) {
+      return 3
+    }
+
+    if (ratio >= 0.3) {
+      return 2
+    }
+
+    return 1
+  }
+
+  const formatHeatmapCellLabel = (day: HeatmapDay | null) => {
+    if (!day) {
+      return 'No tracked activity'
+    }
+
+    const formattedDate = new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    })
+
+    if (day.minutes <= 0) {
+      return `${formattedDate}: 0h`
+    }
+
+    return `${formattedDate}: ${formatHours(day.minutes)}`
+  }
+
+  const showHeatmapTooltipAt = (label: string, x: number, y: number) => {
+    setHeatmapTooltip({
+      label,
+      x,
+      y
+    })
+  }
+
+  const showHeatmapTooltip = (label: string, event: ReactMouseEvent<HTMLButtonElement>) => {
+    showHeatmapTooltipAt(label, event.clientX, event.clientY)
+  }
+
+  const showHeatmapTooltipFromFocus = (label: string, event: ReactFocusEvent<HTMLButtonElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect()
+    showHeatmapTooltipAt(label, bounds.left + bounds.width / 2, bounds.top)
+  }
+
+  const hideHeatmapTooltip = () => {
+    setHeatmapTooltip(null)
+  }
+
   const lastSevenDays = stats?.lastSevenDaysTimeline || []
   const bestDayName = stats?.productivityTrends?.bestDay?.name || 'No data'
   const activityItems = stats?.weeklyActivity || []
@@ -701,6 +757,152 @@ export default function StatsPage() {
               Sign in to purchase and activate Pro on your account.
             </div>
           )}
+        </div>
+      </div>
+    </div>
+  )
+
+  const HeatmapSection = (
+    <div
+      className="relative mb-8"
+      aria-busy={heatmapLoading}
+    >
+      {heatmapLoading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[24px] bg-white/70 backdrop-blur-sm">
+          <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        </div>
+      )}
+
+      {heatmapTooltip && (
+        <div
+          className="pointer-events-none fixed z-[70] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.14)]"
+          style={{ left: heatmapTooltip.x + 12, top: heatmapTooltip.y - 36 }}
+        >
+          {heatmapTooltip.label}
+        </div>
+      )}
+
+      <div className="relative rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6 shadow-sm">
+        <div className="mb-4 flex items-center justify-between">
+          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+            {totalHeatmapHours}:{totalHeatmapRemainderList} Total hours {resolvedHeatmapRange === 'rolling' ? 'in the last 365 days' : `in ${resolvedHeatmapRange}`}
+          </div>
+          <select
+            value={resolvedHeatmapRange}
+            onChange={(event) => handleHeatmapRangeChange(event.target.value)}
+            className="h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-sm font-medium text-gray-700 dark:text-slate-300 outline-none transition-colors hover:border-gray-300 dark:hover:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 focus:ring-2 focus:ring-indigo-500"
+            aria-label="Select heatmap year range"
+          >
+            <option value="rolling">Last 365 days</option>
+            {(stats?.heatmapPeriod?.availableYears || []).map((year) => (
+              <option key={year} value={year.toString()}>{year}</option>
+            ))}
+          </select>
+        </div>
+
+        <div className="overflow-x-auto pb-2">
+          <div className="w-fit mx-auto">
+            <div className="flex gap-3">
+              <div className="mt-[28px] flex w-fit shrink-0 flex-col gap-[3px] md:gap-[4px] text-[10px] font-medium text-gray-400 dark:text-slate-500">
+                {heatmapDayLabels.map((label, index) => (
+                  <div key={label} className="flex h-[16px] md:h-[17px] items-center justify-end pr-1 leading-none">
+                    {index % 2 === 1 ? label : ''}
+                  </div>
+                ))}
+              </div>
+
+              <div className="w-fit shrink-0">
+                <div className="relative mb-3 h-4 overflow-hidden">
+                  {heatmapMonthMarkers.map((marker, markerIndex) => {
+                    const left = heatmapColumns.length <= 1
+                      ? 0
+                      : (marker.column / Math.max(heatmapColumns.length - 1, 1)) * 100
+                    const isFirstMarker = markerIndex === 0
+                    const isLastMarker = markerIndex === heatmapMonthMarkers.length - 1
+
+                    return (
+                      <span
+                        key={`${marker.label}-${marker.column}`}
+                        className="absolute top-0 text-xs font-medium text-gray-500 dark:text-slate-400"
+                        style={{
+                          left: `${left}%`,
+                          transform: isFirstMarker
+                            ? 'translateX(0)'
+                            : isLastMarker
+                              ? 'translateX(-100%)'
+                              : 'translateX(-10%)'
+                        }}
+                      >
+                        {marker.label}
+                      </span>
+                    )
+                  })}
+                </div>
+
+                <div className="flex gap-[3px] md:gap-[4px]">
+                  {heatmapColumns.map((column) => (
+                    <div key={column.week} className="flex flex-col gap-[3px] md:gap-[4px]">
+                      {column.days.map((day, dayIndex) => {
+                        if (!day) {
+                          return <div key={`${column.week}-${dayIndex}-empty`} className="h-[16px] w-[16px] md:h-[17px] md:w-[17px]" />
+                        }
+
+                        const intensity = getHeatmapIntensity(day.minutes)
+                        const label = formatHeatmapCellLabel(day)
+
+                        return (
+                          <button
+                            type="button"
+                            key={`${column.week}-${dayIndex}`}
+                            title={label}
+                            aria-label={label}
+                            onMouseEnter={(event) => showHeatmapTooltip(label, event)}
+                            onMouseMove={(event) => showHeatmapTooltip(label, event)}
+                            onMouseLeave={hideHeatmapTooltip}
+                            onFocus={(event) => showHeatmapTooltipFromFocus(label, event)}
+                            onBlur={hideHeatmapTooltip}
+                            className={`h-[16px] w-[16px] md:h-[17px] md:w-[17px] rounded-[4px] transition-transform duration-150 hover:scale-110 focus:scale-110 focus:outline-none ${heatmapCellClasses[intensity]}`}
+                          />
+                        )
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex justify-end text-xs text-gray-500 dark:text-slate-400">
+          <div className="flex items-center gap-2">
+            <span>Less</span>
+            <div className="flex items-center gap-[3px]">
+              {heatmapCellClasses.map((cellClass, index) => (
+                <div key={index} className={`h-[15px] w-[15px] rounded-[3px] md:h-[16px] md:w-[16px] ${cellClass}`} />
+              ))}
+            </div>
+            <span>More</span>
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-3">
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-center">
+            <div className="text-2xl font-bold text-slate-900">{formatDuration(heatmapBestDay?.minutes || 0)}</div>
+            <div className="text-sm font-medium text-slate-700">Best Day</div>
+            <div className="text-xs text-slate-500">Hours</div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-center">
+            <div className="text-2xl font-bold text-slate-900">{activeHeatmapDays.length}</div>
+            <div className="text-sm font-medium text-slate-700">Active Days</div>
+            <div className="text-xs text-slate-500">{heatmapRangeCaption}</div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-center">
+            <div className="text-2xl font-bold text-slate-900">{heatmapCurrentStreak}</div>
+            <div className="text-sm font-medium text-slate-700">Current Streak</div>
+            <div className="text-xs text-slate-500">days in a row</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1003,72 +1205,7 @@ export default function StatsPage() {
                       </div>
                     </div>
 
-                    {/* Yearly Heatmap */}
-                    <div
-                      className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8"
-                      aria-busy={heatmapLoading}
-                    >
-                      {heatmapLoading && (
-                        <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                          <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                        </div>
-                      )}
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
-                        <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
-                          <div className="text-sm text-gray-600 dark:text-slate-300">
-                            <span className="font-medium">{formatDuration(heatmapTotalMinutes)}</span> Total hours {heatmapSummaryLabel}
-                          </div>
-                          <select
-                            value={resolvedHeatmapRange}
-                            onChange={(event) => handleHeatmapRangeChange(event.target.value)}
-                            className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                            aria-label="Select heatmap year range"
-                          >
-                            <option value="rolling">Last 365 days</option>
-                            {(stats?.heatmapPeriod?.availableYears || []).map((year) => (
-                              <option key={year} value={year.toString()}>{year}</option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-
-                      <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
-
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 dark:text-slate-400 mt-4 gap-3 sm:gap-0">
-                        <span>Less</span>
-                        <div className="flex items-center space-x-1">
-                          <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
-                          <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
-                          <div className="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm"></div>
-                          <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
-                          <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
-                        </div>
-                        <span>More</span>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                            {formatDuration(heatmapBestDayMinutes)}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">Hours</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                            {heatmapActiveDays}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-slate-300">Active Days</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">{heatmapRangeLabel}</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
-                          <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">days in a row</div>
-                        </div>
-                      </div>
-                    </div>
+                    {HeatmapSection}
 
                     {/* Productivity Trends & Monthly Breakdown */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
@@ -1434,72 +1571,7 @@ export default function StatsPage() {
                   </div>
                 </div>
 
-                {/* Yearly Heatmap */}
-                <div
-                  className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 mb-8"
-                  aria-busy={heatmapLoading}
-                >
-                  {heatmapLoading && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                      <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  )}
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Yearly Activity Map</h3>
-                    <div className="flex items-start sm:items-center flex-wrap gap-3 sm:gap-4">
-                      <div className="text-sm text-gray-600 dark:text-slate-300">
-                        <span className="font-medium">{formatDuration(heatmapTotalMinutes)}</span> Total hours {heatmapSummaryLabel}
-                      </div>
-                      <select
-                        value={resolvedHeatmapRange}
-                        onChange={(event) => handleHeatmapRangeChange(event.target.value)}
-                        className="text-sm border border-gray-200 dark:border-slate-600 rounded-lg px-3 py-1 bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
-                        aria-label="Select heatmap year range"
-                      >
-                        <option value="rolling">Last 365 days</option>
-                        {(stats?.heatmapPeriod?.availableYears || []).map((year) => (
-                          <option key={year} value={year.toString()}>{year}</option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <HighchartsReact highcharts={Highcharts} options={heatmapOptions} />
-
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 dark:text-slate-400 mt-4 gap-3 sm:gap-0">
-                    <span>Less</span>
-                    <div className="flex items-center space-x-1">
-                      <div className="w-3 h-3 bg-gray-100 dark:bg-slate-700 rounded-sm"></div>
-                      <div className="w-3 h-3 bg-green-200 dark:bg-green-900 rounded-sm"></div>
-                      <div className="w-3 h-3 bg-green-400 dark:bg-green-700 rounded-sm"></div>
-                      <div className="w-3 h-3 bg-green-600 dark:bg-green-500 rounded-sm"></div>
-                      <div className="w-3 h-3 bg-green-800 dark:bg-green-400 rounded-sm"></div>
-                    </div>
-                    <span>More</span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6 pt-6 border-t border-gray-100 dark:border-slate-700">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                        {formatDuration(heatmapBestDayMinutes)}
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-slate-300">Best Day</div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">Hours</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                        {heatmapActiveDays}
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-slate-300">Active Days</div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">{heatmapRangeLabel}</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
-                      <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">days in a row</div>
-                    </div>
-                  </div>
-                </div>
+                {HeatmapSection}
 
                 {/* Productivity Trends & Monthly Breakdown */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
