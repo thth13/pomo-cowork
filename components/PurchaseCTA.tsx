@@ -123,7 +123,10 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
       })
       const data = await res.json()
       if (!res.ok || !data.transactionId) throw new Error(data.error ?? 'Checkout failed')
-      paddle.Checkout.open({ transactionId: data.transactionId })
+      paddle.Checkout.open({
+        transactionId: data.transactionId,
+        customer: user?.email ? { email: user.email } : undefined,
+      })
     } catch (err) {
       console.error('Paddle checkout error:', err)
     } finally {
