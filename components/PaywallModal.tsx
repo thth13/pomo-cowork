@@ -115,7 +115,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
               Upgrade to Pro
             </h2>
             <p className="text-gray-600 dark:text-slate-300 max-w-md mx-auto">
-              Unlock the full power of your productivity journey with advanced tools and insights.
+              Unlock the full power of your productivity journey with advanced tools and insights. Every plan starts with a 14-day free trial.
             </p>
           </div>
 
@@ -161,7 +161,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">$49.99</span>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-slate-400 mb-3">
-                  $4.17/month · Save ~17%
+                  14-day free trial, then $4.17/month · Save ~17%
                 </div>
               </div>
 
@@ -178,7 +178,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                   <span className="text-xl font-bold text-gray-900 dark:text-white">$4.99</span>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-slate-400">
-                  Billed monthly
+                  14-day free trial, then billed monthly
                 </div>
               </div>
               
