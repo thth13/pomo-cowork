@@ -55,13 +55,18 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [testMessage, setTestMessage] = useState('')
+  const [subscriptionMessage, setSubscriptionMessage] = useState('')
+  const [isCancellingSubscription, setIsCancellingSubscription] = useState(false)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [showPaywall, setShowPaywall] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
 
-  const billingPortalUrl = process.env.NEXT_PUBLIC_BILLING_PORTAL_URL
   const isProMember = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
+  const hasScheduledCancellation = Boolean(
+    user?.paddleCancelAt && new Date(user.paddleCancelAt) > new Date()
+  )
   const shouldPromptRegister = !isAuthenticated || user?.isAnonymous
 
   const openPaywallOrRegister = () => {
@@ -77,6 +82,54 @@ export default function SettingsPage() {
     if (!dateString) return 'N/A'
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' })
+  }
+
+  const handleCancelSubscription = async () => {
+    setSubscriptionMessage('')
+    setIsCancellingSubscription(true)
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/paddle/cancel', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      const data = await response.json().catch(() => ({}))
+
+      if (!response.ok) {
+        setSubscriptionMessage(data.error || 'Failed to cancel subscription')
+        return
+      }
+
+      useAuthStore.setState((state) => {
+        if (!state.user) {
+          return state
+        }
+
+        return {
+          ...state,
+          user: {
+            ...state.user,
+            paddleSubscriptionId: data.paddleSubscriptionId ?? state.user.paddleSubscriptionId ?? null,
+            paddleCancelAt: data.paddleCancelAt ?? state.user.paddleCancelAt ?? null,
+          },
+        }
+      })
+
+      setSubscriptionMessage(
+        data.paddleCancelAt
+          ? `Subscription will end on ${formatProExpiryDate(data.paddleCancelAt)}.`
+          : 'Subscription cancellation scheduled.'
+      )
+    } catch (error) {
+      console.error('Failed to cancel subscription:', error)
+      setSubscriptionMessage('Failed to cancel subscription')
+    } finally {
+      setIsCancellingSubscription(false)
+    }
   }
 
   const subscriptionDetails: SubscriptionDetail[] = [
@@ -98,6 +151,17 @@ export default function SettingsPage() {
             helper: user?.proExpiresAt
               ? 'Your Pro subscription is valid until this date.'
               : 'Expiration date not available.',
+          },
+        ]
+      : []),
+    ...(hasScheduledCancellation
+      ? [
+          {
+            label: 'Renewal',
+            value: 'Canceled',
+            helper: user?.paddleCancelAt
+              ? `Your subscription will stay active until ${formatProExpiryDate(user.paddleCancelAt)}.`
+              : 'Your subscription will not renew.',
           },
         ]
       : []),
@@ -709,15 +773,21 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {isProMember && billingPortalUrl ? (
-                  <a
-                    href={billingPortalUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center justify-center rounded-full bg-primary-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
-                  >
-                    Manage subscription
-                  </a>
+                {isProMember ? (
+                  <div className="flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowCancelConfirm(true)}
+                      disabled={isCancellingSubscription || hasScheduledCancellation}
+                      className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white px-5 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:border-red-300 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/70 disabled:cursor-not-allowed disabled:border-slate-200 disabled:text-slate-400 dark:border-slate-600 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:border-red-400/60 dark:hover:text-red-300 dark:disabled:border-slate-700 dark:disabled:text-slate-500"
+                    >
+                      {hasScheduledCancellation
+                        ? 'Cancellation scheduled'
+                        : isCancellingSubscription
+                          ? 'Cancelling…'
+                          : 'Cancel subscription'}
+                    </button>
+                  </div>
                 ) : !isProMember ? (
                   <button
                     type="button"
@@ -738,7 +808,18 @@ export default function SettingsPage() {
                 )}
               </div>
 
-              <div className={`grid gap-4 ${isProMember ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
+              {subscriptionMessage && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  role="status"
+                  className={`text-sm ${subscriptionMessage.includes('Failed') ? 'text-red-600 dark:text-red-400' : 'text-slate-500 dark:text-slate-400'}`}
+                >
+                  {subscriptionMessage}
+                </motion.p>
+              )}
+
+              <div className={`grid gap-4 ${subscriptionDetails.length >= 3 ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                 {subscriptionDetails.map(({ label, value, helper }) => (
                   <div
                     key={label}
@@ -815,6 +896,49 @@ export default function SettingsPage() {
       </main>
       {showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
+
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="relative w-full max-w-md rounded-3xl border border-slate-200/80 bg-white p-8 shadow-2xl dark:border-slate-700/70 dark:bg-slate-900"
+          >
+            <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+              Cancel your subscription?
+            </h3>
+            <p className="mt-3 text-sm text-slate-600 dark:text-slate-300">
+              Your Pro access will remain active until{' '}
+              <span className="font-semibold text-slate-900 dark:text-white">
+                {user?.proExpiresAt
+                  ? formatProExpiryDate(user.proExpiresAt)
+                  : 'the end of your current billing period'}
+              </span>
+              . After that you will be switched to the free plan. This action cannot be undone.
+            </p>
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => setShowCancelConfirm(false)}
+                className="inline-flex items-center justify-center rounded-full border border-slate-300/80 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70 dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200 dark:hover:bg-slate-800"
+              >
+                Keep Pro
+              </button>
+              <button
+                type="button"
+                disabled={isCancellingSubscription}
+                onClick={async () => {
+                  setShowCancelConfirm(false)
+                  await handleCancelSubscription()
+                }}
+                className="inline-flex items-center justify-center rounded-full bg-red-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-red-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500/70 disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                {isCancellingSubscription ? 'Cancelling…' : 'Yes, cancel subscription'}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   )
 }

@@ -46,6 +46,13 @@ function getTransactionPriceId(transaction: Record<string, any>): string | undef
     ?? transaction?.items?.[0]?.price_id
 }
 
+function getTransactionSubscriptionId(transaction: Record<string, any>): string | undefined {
+  return transaction?.subscription_id
+    ?? transaction?.subscription?.id
+    ?? transaction?.subscription?.subscription_id
+    ?? transaction?.details?.subscription?.id
+}
+
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -85,6 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     const priceId = getTransactionPriceId(transaction)
+    const subscriptionId = getTransactionSubscriptionId(transaction)
     const billingEndsAt = transaction?.billing_period?.ends_at as string | undefined
     const now = new Date()
     const proExpiresAt = billingEndsAt
@@ -95,12 +103,27 @@ export async function POST(request: NextRequest) {
           ? addMonths(now, 12)
           : addMonths(now, 1)
 
+    const updateData: {
+      isPro: boolean
+      proExpiresAt: Date
+      paddleCancelAt: null
+      paddleSubscriptionId?: string
+    } = {
+      isPro: true,
+      proExpiresAt,
+      paddleCancelAt: null,
+    }
+
+    if (subscriptionId) {
+      updateData.paddleSubscriptionId = subscriptionId
+    }
+
     await prisma.user.update({
       where: { id: payload.userId },
-      data: { isPro: true, proExpiresAt },
+      data: updateData,
     })
 
-    return NextResponse.json({ success: true, proExpiresAt })
+    return NextResponse.json({ success: true, proExpiresAt, paddleSubscriptionId: subscriptionId ?? null })
   } catch (error) {
     console.error('Paddle activation error:', error)
     return NextResponse.json({ error: 'Activation failed' }, { status: 500 })

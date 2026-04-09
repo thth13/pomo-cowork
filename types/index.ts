@@ -8,6 +8,8 @@ export interface User {
   isAnonymous?: boolean
   isPro?: boolean
   proExpiresAt?: string | null
+  paddleSubscriptionId?: string | null
+  paddleCancelAt?: string | null
   lastSeenAt?: string | null
   settings?: UserSettings
 }

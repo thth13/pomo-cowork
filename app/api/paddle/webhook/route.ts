@@ -43,6 +43,32 @@ function getPriceId(data: Record<string, unknown>): string | undefined {
     ?? items?.[0]?.price_id
 }
 
+function getSubscriptionId(data: Record<string, unknown>): string | undefined {
+  const details = data.details as Record<string, any> | undefined
+
+  return (data.id as string | undefined)
+    ?? (data.subscription_id as string | undefined)
+    ?? details?.subscription?.id
+}
+
+function getScheduledCancelDate(data: Record<string, unknown>): Date | null {
+  const scheduledChange = data.scheduled_change as Record<string, any> | null
+  const effectiveAt = scheduledChange?.action === 'cancel'
+    ? scheduledChange?.effective_at as string | undefined
+    : undefined
+  const canceledAt = data.canceled_at as string | undefined
+
+  if (effectiveAt) {
+    return new Date(effectiveAt)
+  }
+
+  if (canceledAt) {
+    return new Date(canceledAt)
+  }
+
+  return null
+}
+
 export async function POST(request: NextRequest) {
   const rawBody = await request.text()
   const signatureHeader = request.headers.get('paddle-signature')
@@ -77,6 +103,7 @@ export async function POST(request: NextRequest) {
 
     const billingPeriod = data.billing_period as { ends_at?: string } | null
     const priceId = getPriceId(data)
+    const subscriptionId = getSubscriptionId(data)
     const proExpiresAt = billingPeriod?.ends_at
       ? new Date(billingPeriod.ends_at)
       : priceId === YEARLY_PRICE_ID
@@ -85,9 +112,24 @@ export async function POST(request: NextRequest) {
           ? addMonths(new Date(), 1)
           : addMonths(new Date(), 1)
 
+    const updateData: {
+      isPro: boolean
+      proExpiresAt: Date
+      paddleCancelAt: null
+      paddleSubscriptionId?: string
+    } = {
+      isPro: true,
+      proExpiresAt,
+      paddleCancelAt: null,
+    }
+
+    if (subscriptionId) {
+      updateData.paddleSubscriptionId = subscriptionId
+    }
+
     await prisma.user.update({
       where: { id: userId },
-      data: { isPro: true, proExpiresAt },
+      data: updateData,
     })
   } else if (eventType === 'subscription.activated' || eventType === 'subscription.renewed') {
     if (!userId) {
@@ -96,11 +138,27 @@ export async function POST(request: NextRequest) {
     }
 
     const nextBilledAt = data.next_billed_at as string | null
+    const subscriptionId = getSubscriptionId(data)
     const proExpiresAt = nextBilledAt ? new Date(nextBilledAt) : addMonths(new Date(), 1)
+
+    const updateData: {
+      isPro: boolean
+      proExpiresAt: Date
+      paddleCancelAt: null
+      paddleSubscriptionId?: string
+    } = {
+      isPro: true,
+      proExpiresAt,
+      paddleCancelAt: null,
+    }
+
+    if (subscriptionId) {
+      updateData.paddleSubscriptionId = subscriptionId
+    }
 
     await prisma.user.update({
       where: { id: userId },
-      data: { isPro: true, proExpiresAt },
+      data: updateData,
     })
   } else if (eventType === 'subscription.canceled') {
     if (!userId) {
@@ -110,8 +168,17 @@ export async function POST(request: NextRequest) {
 
     // User paid through period — let proExpiresAt expire naturally, just clear Pro flag if already expired
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { proExpiresAt: true } })
+    const paddleCancelAt = getScheduledCancelDate(data)
     if (user && user.proExpiresAt && user.proExpiresAt < new Date()) {
-      await prisma.user.update({ where: { id: userId }, data: { isPro: false } })
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isPro: false, paddleSubscriptionId: null, paddleCancelAt },
+      })
+    } else {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { paddleSubscriptionId: null, paddleCancelAt },
+      })
     }
   } else if (eventType === 'subscription.past_due') {
     if (!userId) {

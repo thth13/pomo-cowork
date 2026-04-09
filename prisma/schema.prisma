@@ -8,19 +8,21 @@ datasource db {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  username     String    @unique
-  password     String
-  avatarUrl    String?
-  description  String?
-  isAnonymous  Boolean   @default(false)
-  isPro        Boolean   @default(false)
-  proExpiresAt DateTime?
-  profileViews Int       @default(0)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  lastSeenAt   DateTime?
+  id                   String    @id @default(cuid())
+  email                String    @unique
+  username             String    @unique
+  password             String
+  avatarUrl            String?
+  description          String?
+  isAnonymous          Boolean   @default(false)
+  isPro                Boolean   @default(false)
+  proExpiresAt         DateTime?
+  paddleSubscriptionId String?   @unique
+  paddleCancelAt       DateTime?
+  profileViews         Int       @default(0)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  lastSeenAt           DateTime?
 
   // Settings
   workDuration   Int @default(25) // minutes
@@ -36,13 +38,13 @@ model User {
   ownedRooms      Room[]       @relation("RoomOwner")
   roomMemberships RoomMember[]
 
-  invitesSent     RoomInvite[]     @relation("RoomInviteInviter")
-  invitesReceived RoomInvite[]     @relation("RoomInviteInvitee")
-  notifications   Notification[]
-  supportMessages SupportMessage[]
-  chatMessages    ChatMessage[]    @relation("ChatMessages")
-  referralLinks   ReferralLink[]
-  referralSignups ReferralSignup[]
+  invitesSent          RoomInvite[]      @relation("RoomInviteInviter")
+  invitesReceived      RoomInvite[]      @relation("RoomInviteInvitee")
+  notifications        Notification[]
+  supportMessages      SupportMessage[]
+  chatMessages         ChatMessage[]     @relation("ChatMessages")
+  referralLinks        ReferralLink[]
+  referralSignups      ReferralSignup[]
   wallMessagesReceived UserWallMessage[] @relation("WallProfileUser")
   wallMessagesSent     UserWallMessage[] @relation("WallAuthorUser")
 
@@ -177,8 +179,8 @@ model Notification {
   readAt    DateTime?
   createdAt DateTime         @default(now())
 
-  roomInviteId String?
-  roomInvite   RoomInvite? @relation(fields: [roomInviteId], references: [id], onDelete: SetNull)
+  roomInviteId  String?
+  roomInvite    RoomInvite?      @relation(fields: [roomInviteId], references: [id], onDelete: SetNull)
   wallMessageId String?
   wallMessage   UserWallMessage? @relation("WallMessageNotifications", fields: [wallMessageId], references: [id], onDelete: SetNull)
 
@@ -298,8 +300,8 @@ model UserWallMessage {
   message       String
   createdAt     DateTime @default(now())
 
-  profileUser User @relation("WallProfileUser", fields: [profileUserId], references: [id], onDelete: Cascade)
-  author      User @relation("WallAuthorUser", fields: [authorId], references: [id], onDelete: Cascade)
+  profileUser   User           @relation("WallProfileUser", fields: [profileUserId], references: [id], onDelete: Cascade)
+  author        User           @relation("WallAuthorUser", fields: [authorId], references: [id], onDelete: Cascade)
   notifications Notification[] @relation("WallMessageNotifications")
 
   @@index([profileUserId, createdAt])
