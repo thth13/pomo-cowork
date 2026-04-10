@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
+import { isUsernameTaken, normalizeUsername } from '@/lib/username'
 
 export const dynamic = 'force-dynamic'
 
@@ -85,20 +86,23 @@ export async function PUT(request: NextRequest) {
       const updateData: any = {}
       
       if (data.username !== undefined) {
-        // Check if username is already taken
-        const existingUser = await prisma.user.findFirst({
-          where: {
-            username: data.username,
-            NOT: { id: payload.userId }
-          }
-        })
+        const normalizedUsername = normalizeUsername(data.username)
+
+        if (!normalizedUsername) {
+          return NextResponse.json(
+            { error: 'Username cannot be empty' },
+            { status: 400 }
+          )
+        }
+
+        const existingUser = await isUsernameTaken(normalizedUsername, payload.userId)
         if (existingUser) {
           return NextResponse.json(
             { error: 'Username already taken' },
             { status: 400 }
           )
         }
-        updateData.username = data.username
+        updateData.username = normalizedUsername
       }
 
       if (data.email !== undefined) {

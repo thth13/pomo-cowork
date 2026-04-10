@@ -4,6 +4,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { generateToken, hashPassword } from '@/lib/auth'
 import { recordReferralSignup } from '@/lib/referrals'
+import { generateUniqueUsername } from '@/lib/username'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
@@ -60,33 +61,6 @@ const verifyGoogleToken = async (token: string): Promise<GoogleTokenPayload | nu
     console.error('Failed to verify Google token:', error)
     return null
   }
-}
-
-const sanitizeUsername = (value: string): string => {
-  const normalized = value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '_')
-    .replace(/^_+|_+$/g, '')
-
-  return normalized || 'user'
-}
-
-const generateUniqueUsername = async (base: string): Promise<string> => {
-  const sanitizedBase = sanitizeUsername(base)
-  let candidate = sanitizedBase
-  let attempt = 1
-
-  while (attempt <= 50) {
-    const existing = await prisma.user.findUnique({ where: { username: candidate } })
-    if (!existing) {
-      return candidate
-    }
-
-    candidate = `${sanitizedBase}${attempt}`
-    attempt += 1
-  }
-
-  return `${sanitizedBase}${crypto.randomBytes(2).toString('hex')}`
 }
 
 const buildUserPayload = (user: UserWithSettings) => {

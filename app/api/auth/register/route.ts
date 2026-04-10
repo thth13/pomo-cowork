@@ -2,14 +2,23 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { hashPassword, generateToken } from '@/lib/auth'
 import { recordReferralSignup } from '@/lib/referrals'
+import { isUsernameTaken, normalizeUsername } from '@/lib/username'
 
 export async function POST(request: NextRequest) {
   try {
     const { email, username, password, anonymousId, referralCode } = await request.json()
+    const normalizedUsername = typeof username === 'string' ? normalizeUsername(username) : ''
 
     if (!email || !username || !password) {
       return NextResponse.json(
         { error: 'All fields are required' },
+        { status: 400 }
+      )
+    }
+
+    if (!normalizedUsername) {
+      return NextResponse.json(
+        { error: 'Username cannot be empty' },
         { status: 400 }
       )
     }
@@ -22,21 +31,16 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already exists (excluding the current anonymous user)
+    const usernameTaken = await isUsernameTaken(normalizedUsername, anonymousId || undefined)
+
     const existingUser = await prisma.user.findFirst({
       where: {
-        AND: [
-          {
-            OR: [
-              { email },
-              { username }
-            ]
-          },
-          anonymousId ? { id: { not: anonymousId } } : {}
-        ]
+        email,
+        ...(anonymousId ? { id: { not: anonymousId } } : {})
       }
     })
 
-    if (existingUser) {
+    if (existingUser || usernameTaken) {
       return NextResponse.json(
         { error: 'User with this email or username already exists' },
         { status: 400 }
@@ -60,7 +64,7 @@ export async function POST(request: NextRequest) {
           where: { id: anonymousId },
           data: {
             email,
-            username,
+            username: normalizedUsername,
             password: hashedPassword,
             isAnonymous: false,
           },
@@ -89,13 +93,13 @@ export async function POST(request: NextRequest) {
           data: { username: user.username }
         })
 
-        console.log(`Successfully converted anonymous user to ${username}`)
+        console.log(`Successfully converted anonymous user to ${normalizedUsername}`)
       } else {
         // Anonymous user not found, create new user
         user = await prisma.user.create({
           data: {
             email,
-            username,
+            username: normalizedUsername,
             password: hashedPassword,
             settings: {
               create: {
@@ -128,7 +132,7 @@ export async function POST(request: NextRequest) {
       user = await prisma.user.create({
         data: {
           email,
-          username,
+          username: normalizedUsername,
           password: hashedPassword,
           settings: {
             create: {
