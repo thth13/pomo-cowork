@@ -116,7 +116,7 @@ export async function GET(
       const dayStart = startOfDay(currentDate)
       const dayEnd = endOfDay(currentDate)
       
-      const daySessions = allWorkSessions.filter(session => {
+      const daySessions = allFocusSessions.filter(session => {
         const sessionDate = getSessionAttributionDate(session)
         return sessionDate >= dayStart && sessionDate <= dayEnd
       })
@@ -126,7 +126,7 @@ export async function GET(
       yearlyHeatmap.push({
         week: weekIndex,
         dayOfWeek,
-        pomodoros: daySessions.length,
+        pomodoros: daySessions.filter(s => s.type === 'WORK').length,
         minutes: daySessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0),
         date: format(currentDate, 'yyyy-MM-dd')
       })
@@ -149,14 +149,14 @@ export async function GET(
       const dayStart = startOfDay(date)
       const dayEnd = endOfDay(date)
 
-      const daySessions = allWorkSessions.filter(session => {
-        const sessionDate = new Date(session.completedAt || session.createdAt)
+      const daySessions = allFocusSessions.filter(session => {
+        const sessionDate = getSessionAttributionDate(session)
         return sessionDate >= dayStart && sessionDate <= dayEnd
       })
 
       weeklyActivity.push({
         date: format(date, 'yyyy-MM-dd'),
-        pomodoros: daySessions.length,
+        pomodoros: daySessions.filter(s => s.type === 'WORK').length,
         minutes: daySessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
       })
     }

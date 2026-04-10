@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
     const availableHeatmapYears = Array.from(
       new Set([
         now.getFullYear(),
-        ...allWorkSessions.map((session) => getSessionAttributionDate(session).getFullYear())
+        ...allFocusSessions.map((session) => getSessionAttributionDate(session).getFullYear())
       ])
     ).sort((a, b) => b - a)
     const requestedHeatmapYear = /^\d{4}$/.test(requestedHeatmapRange)
@@ -177,14 +177,14 @@ export async function GET(request: NextRequest) {
         const monthStartDate = startOfMonth(monthDate)
         const monthEndDate = endOfMonth(monthDate)
         
-        const monthSessions = allWorkSessions.filter(session => {
+        const monthSessions = allFocusSessions.filter(session => {
           const sessionDate = getSessionAttributionDate(session)
           return sessionDate >= monthStartDate && sessionDate <= monthEndDate
         })
         
         weeklyActivity.push({
           date: format(monthDate, 'yyyy-MM'),
-          pomodoros: monthSessions.length,
+          pomodoros: monthSessions.filter(s => s.type === 'WORK').length,
           minutes: monthSessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
         })
       }
@@ -201,14 +201,14 @@ export async function GET(request: NextRequest) {
         const dayStart = startOfDay(currentDay)
         const dayEnd = endOfDay(currentDay)
         
-        const daySessions = allWorkSessions.filter(session => {
+        const daySessions = allFocusSessions.filter(session => {
           const sessionDate = getSessionAttributionDate(session)
           return sessionDate >= dayStart && sessionDate <= dayEnd
         })
         
         weeklyActivity.push({
           date: format(currentDay, 'yyyy-MM-dd'),
-          pomodoros: daySessions.length,
+          pomodoros: daySessions.filter(s => s.type === 'WORK').length,
           minutes: daySessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
         })
         currentDay = new Date(currentDay)
@@ -228,14 +228,14 @@ export async function GET(request: NextRequest) {
         const dayStart = startOfDay(date)
         const dayEnd = endOfDay(date)
         
-        const daySessions = allWorkSessions.filter(session => {
+        const daySessions = allFocusSessions.filter(session => {
           const sessionDate = getSessionAttributionDate(session)
           return sessionDate >= dayStart && sessionDate <= dayEnd
         })
         
         weeklyActivity.push({
           date: format(date, 'yyyy-MM-dd'),
-          pomodoros: daySessions.length,
+          pomodoros: daySessions.filter(s => s.type === 'WORK').length,
           minutes: daySessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
         })
       }
@@ -263,7 +263,7 @@ export async function GET(request: NextRequest) {
       
       const dayEnd = endOfDay(currentDate)
       
-      const daySessions = allWorkSessions.filter(session => {
+      const daySessions = allFocusSessions.filter(session => {
         const sessionDate = getSessionAttributionDate(session)
         return sessionDate >= dayStart && sessionDate <= dayEnd
       })
@@ -273,7 +273,7 @@ export async function GET(request: NextRequest) {
       yearlyHeatmap.push({
         week: weekIndex,
         dayOfWeek,
-        pomodoros: daySessions.length,
+        pomodoros: daySessions.filter(s => s.type === 'WORK').length,
         minutes: daySessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0),
         date: format(currentDate, 'yyyy-MM-dd')
       })
@@ -289,7 +289,7 @@ export async function GET(request: NextRequest) {
     }
 
     const heatmapTotalMinutes = yearlyHeatmap.reduce((sum, day) => sum + day.minutes, 0)
-    const heatmapActiveDays = yearlyHeatmap.filter((day) => day.pomodoros > 0).length
+    const heatmapActiveDays = yearlyHeatmap.filter((day) => day.minutes > 0).length
     const heatmapBestDayMinutes = yearlyHeatmap.reduce(
       (max, day) => Math.max(max, day.minutes),
       0
@@ -302,7 +302,7 @@ export async function GET(request: NextRequest) {
       const monthStartDate = startOfMonth(monthDate)
       const monthEndDate = endOfMonth(monthDate)
       
-      const monthSessions = allWorkSessions.filter(session => {
+      const monthSessions = allFocusSessions.filter(session => {
         const sessionDate = getSessionAttributionDate(session)
         return sessionDate >= monthStartDate && sessionDate <= monthEndDate
       })
@@ -310,7 +310,7 @@ export async function GET(request: NextRequest) {
       monthlyBreakdown.push({
         month: format(monthDate, 'MMM'),
         monthIndex: monthDate.getMonth(),
-        pomodoros: monthSessions.length,
+        pomodoros: monthSessions.filter(s => s.type === 'WORK').length,
         minutes: monthSessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
       })
     }
