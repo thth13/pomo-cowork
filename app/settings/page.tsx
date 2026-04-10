@@ -146,11 +146,15 @@ export default function SettingsPage() {
     ...(isProMember
       ? [
           {
-            label: 'Expires',
+            label: hasScheduledCancellation ? 'Access until' : 'Next payment',
             value: user?.proExpiresAt ? formatProExpiryDate(user.proExpiresAt) : '—',
             helper: user?.proExpiresAt
-              ? 'Your Pro subscription is valid until this date.'
-              : 'Expiration date not available.',
+              ? hasScheduledCancellation
+                ? 'Your Pro access remains active until this date.'
+                : 'Your next Pro payment is scheduled for this date.'
+              : hasScheduledCancellation
+                ? 'Access end date not available.'
+                : 'Next payment date not available.',
           },
         ]
       : []),
