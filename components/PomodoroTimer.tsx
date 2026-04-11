@@ -357,11 +357,12 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
   const filteredTaskOptions = useMemo(() => {
     const query = taskSearch.trim().toLowerCase()
+    const sorted = [...taskOptions].sort((a, b) => (b.focusMinutes ?? 0) - (a.focusMinutes ?? 0))
     if (!query) {
-      return taskOptions
+      return sorted
     }
 
-    return taskOptions.filter((taskOption) => {
+    return sorted.filter((taskOption) => {
       const haystack = `${taskOption.title} ${taskOption.description ?? ''}`.toLowerCase()
       return haystack.includes(query)
     })

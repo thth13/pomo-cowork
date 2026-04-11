@@ -118,6 +118,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       title: task.title,
       description: task.description,
       completed: task.completed,
+      focusMinutes: task.focusMinutes,
     })))
   }, [tasks, setTaskOptions])
 

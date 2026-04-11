@@ -8,6 +8,7 @@ interface TimerTaskOption {
   title: string
   description?: string
   completed?: boolean
+  focusMinutes?: number
 }
 
 interface TimerState {
