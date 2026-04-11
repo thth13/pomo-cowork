@@ -142,6 +142,12 @@ export default function StatsPage() {
   const [showPaywall, setShowPaywall] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [heatmapTooltip, setHeatmapTooltip] = useState<HeatmapTooltip | null>(null)
+  const [taskSessionsList, setTaskSessionsList] = useState<Array<{ id: string; title: string; completed: boolean; priority: string; focusMinutes: number }>>([])
+  const [taskSessionsListLoading, setTaskSessionsListLoading] = useState(false)
+  const [selectedTaskName, setSelectedTaskName] = useState<string | null>(null)
+  const [taskSessions, setTaskSessions] = useState<Array<{ id: string; task: string; type: string; status: string; duration: number; startedAt: string; completedAt: string | null; effectiveMinutes: number }>>([])
+  const [taskSessionsTotalMinutes, setTaskSessionsTotalMinutes] = useState(0)
+  const [taskSessionsLoading, setTaskSessionsLoading] = useState(false)
   const activityPeriodRef = useRef(activityPeriod)
   const activityOffsetRef = useRef(activityOffset)
   const heatmapRangeRef = useRef(heatmapRange)
@@ -685,6 +691,55 @@ export default function StatsPage() {
     setHeatmapRange(nextRange)
     heatmapRangeRef.current = nextRange
     fetchStats({ mode: hasFetchedOnce ? 'heatmap' : 'full', heatmapRange: nextRange })
+  }
+
+  const fetchTaskSessionsList = useCallback(async () => {
+    if (!token) return
+    setTaskSessionsListLoading(true)
+    try {
+      const res = await fetch('/api/tasks/sessions', {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setTaskSessionsList(data.tasks ?? [])
+      }
+    } catch {
+      // ignore
+    } finally {
+      setTaskSessionsListLoading(false)
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (isPro && token) {
+      fetchTaskSessionsList()
+    }
+  }, [isPro, token, fetchTaskSessionsList])
+
+  const fetchTaskSessions = useCallback(async (taskName: string) => {
+    if (!token) return
+    setTaskSessionsLoading(true)
+    try {
+      const res = await fetch(`/api/tasks/sessions?taskName=${encodeURIComponent(taskName)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setTaskSessions(data.sessions ?? [])
+        setTaskSessionsTotalMinutes(data.totalMinutes ?? 0)
+      }
+    } catch {
+      // ignore
+    } finally {
+      setTaskSessionsLoading(false)
+    }
+  }, [token])
+
+  const handleSelectTaskForSessions = (taskName: string) => {
+    if (selectedTaskName === taskName) return
+    setSelectedTaskName(taskName)
+    fetchTaskSessions(taskName)
   }
 
   const SkeletonCard = () => (
@@ -1684,6 +1739,105 @@ export default function StatsPage() {
                             </span>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Task Sessions Explorer */}
+                <div className="mt-8 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Task Sessions</h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">Select a task to view its sessions</p>
+                  </div>
+
+                  {taskSessionsListLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                    </div>
+                  ) : taskSessionsList.length === 0 ? (
+                    <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
+                      No tasks found.
+                    </div>
+                  ) : (
+                    <div className="flex flex-col lg:flex-row gap-4">
+                      {/* Left: task list */}
+                      <div className="lg:w-64 shrink-0 flex flex-col gap-1 overflow-y-auto max-h-[420px] pr-1">
+                        {taskSessionsList.map((task) => {
+                          const isSelected = selectedTaskName === task.title
+                          const hours = Math.floor(task.focusMinutes / 60)
+                          const mins = task.focusMinutes % 60
+                          const label = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
+                          return (
+                            <button
+                              key={task.id}
+                              type="button"
+                              onClick={() => handleSelectTaskForSessions(task.title)}
+                              className={`flex flex-col items-start rounded-xl px-3 py-2.5 text-left transition-colors ${
+                                isSelected
+                                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300'
+                                  : 'hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200'
+                              }`}
+                            >
+                              <span className={`text-sm font-medium truncate max-w-full ${task.completed ? 'line-through opacity-60' : ''}`}>
+                                {task.title}
+                              </span>
+                              <span className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{label} tracked</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+
+                      {/* Right: sessions list */}
+                      <div className="flex-1 min-w-0">
+                        {!selectedTaskName ? (
+                          <div className="flex items-center justify-center h-full py-12 text-sm text-gray-400 dark:text-slate-500">
+                            Select a task to see sessions
+                          </div>
+                        ) : taskSessionsLoading ? (
+                          <div className="flex items-center justify-center py-12">
+                            <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                          </div>
+                        ) : taskSessions.length === 0 ? (
+                          <div className="flex items-center justify-center py-12 text-sm text-gray-400 dark:text-slate-500">
+                            No sessions recorded for this task.
+                          </div>
+                        ) : (
+                          <div className="flex flex-col gap-2 overflow-y-auto max-h-[420px] pr-1">
+                            <div className="flex items-center justify-between mb-2 px-1">
+                              <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{selectedTaskName}</span>
+                              <span className="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap ml-2">
+                                {taskSessions.length} sessions · {formatHours(taskSessionsTotalMinutes)} total
+                              </span>
+                            </div>
+                            {taskSessions.map((session) => {
+                              const sessionDate = new Date(session.startedAt)
+                              const endDate = session.completedAt ? new Date(session.completedAt) : null
+                              const dateLabel = sessionDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
+                              const timeLabel = sessionDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                              const endLabel = endDate
+                                ? endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                                : '—'
+                              const mins = session.effectiveMinutes
+                              const hrsLabel = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`
+                              return (
+                                <div
+                                  key={session.id}
+                                  className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-3 py-2.5"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <span className={`w-2 h-2 rounded-full shrink-0 ${session.type === 'TIME_TRACKING' ? 'bg-indigo-500' : 'bg-red-500'}`} />
+                                    <div className="flex flex-col min-w-0">
+                                      <span className="text-xs font-medium text-gray-800 dark:text-slate-100">{dateLabel}</span>
+                                      <span className="text-xs text-gray-400 dark:text-slate-500">{timeLabel} — {endLabel}</span>
+                                    </div>
+                                  </div>
+                                  <span className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">{hrsLabel}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
