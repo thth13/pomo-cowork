@@ -130,8 +130,7 @@ const getMyReactionsForUser = (userId: string) => {
   return result
 }
 
-const clearReactionsForUser = (userId: string, ioServer: IOServer) => {
-  // Remove reactions targeting this user.
+const clearReactionsTargetingUser = (userId: string, ioServer: IOServer) => {
   const targetMap = reactionsByTarget.get(userId)
   if (targetMap) {
     targetMap.forEach((emoji, fromUserId) => {
@@ -147,27 +146,6 @@ const clearReactionsForUser = (userId: string, ioServer: IOServer) => {
     })
     reactionsByTarget.delete(userId)
   }
-
-  // Remove reactions authored by this user on others.
-  reactionsByTarget.forEach((map, targetUserId) => {
-    if (!map.has(userId)) return
-    const emoji = map.get(userId) ?? null
-    if (!emoji) return
-    map.delete(userId)
-    if (map.size === 0) {
-      reactionsByTarget.delete(targetUserId)
-    } else {
-      reactionsByTarget.set(targetUserId, map)
-    }
-    ioServer.emit('reaction-update', {
-      action: 'remove',
-      toUserId: targetUserId,
-      fromUserId: userId,
-      emoji,
-      previousEmoji: emoji,
-      counts: buildReactionCounts(map)
-    })
-  })
 }
 
 // URL to Next.js API
@@ -630,7 +608,7 @@ io.on('connection', async (socket) => {
     const anonymousId = anonymousSockets.get(socket.id)
 
     if (userId) {
-      clearReactionsForUser(userId, io)
+      clearReactionsTargetingUser(userId, io)
     }
 
     // Clean up any existing sessions for this user
@@ -803,10 +781,6 @@ io.on('connection', async (socket) => {
       return // Session doesn't exist, nothing to do
     }
 
-    if (session.userId) {
-      clearReactionsForUser(session.userId, io)
-    }
-
     const shouldRemoveActivity = reason === 'manual' && (
       payload?.removeActivity ||
       (Date.now() - session.startTime < 60 * 1000)
@@ -887,6 +861,10 @@ io.on('connection', async (socket) => {
     if (session.socketId === socket.id) {
       sessions.delete(sessionId)
       io.emit('session-update', serializeSessions())
+
+      if (session.userId) {
+        clearReactionsTargetingUser(session.userId, io)
+      }
     }
   })
 
