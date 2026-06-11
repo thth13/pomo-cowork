@@ -203,7 +203,7 @@ export default async function UzerzPage({
                 <thead className="bg-slate-100/80 text-xs uppercase tracking-wider text-slate-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th className="px-5 py-4 font-bold">User</th>
-                    <th className="px-5 py-4 font-bold">Registered, Kyiv time</th>
+                    <th className="px-5 py-4 font-bold">Registered</th>
                     <th className="px-5 py-4 font-bold">Last seen</th>
                     <th className="px-5 py-4 text-right font-bold">Focus time</th>
                     <th className="px-5 py-4 text-right font-bold">Pomodoros</th>
