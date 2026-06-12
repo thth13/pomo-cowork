@@ -142,6 +142,7 @@ export interface ActiveSession {
   userId: string
   username: string
   avatarUrl?: string
+  registeredAt?: string | null
   roomId?: string | null
   task: string
   duration: number

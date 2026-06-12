@@ -14,6 +14,7 @@ import { useSocket } from '@/hooks/useSocket'
 import NotificationToast from './NotificationToast'
 import EmojiPicker from 'emoji-picker-react'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
+import { useI18n } from './I18nProvider'
 
 interface TomatoAnimation {
   id: string
@@ -54,6 +55,7 @@ function SessionCard({
   onReactionClick: (emoji: string, e: React.MouseEvent) => void;
 }) {
   const router = useRouter()
+  const { language, t } = useI18n()
   const cardRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -145,15 +147,15 @@ function SessionCard({
   const getSessionTypeLabel = (type: SessionType): string => {
     switch (type) {
       case SessionType.WORK:
-        return 'Working'
+        return t.activeSessions.working
       case SessionType.SHORT_BREAK:
-        return 'Short break'
+        return t.activeSessions.shortBreak
       case SessionType.LONG_BREAK:
-        return 'Long break'
+        return t.activeSessions.longBreak
       case SessionType.TIME_TRACKING:
-        return 'Time tracking'
+        return t.activeSessions.timeTracking
       default:
-        return 'Working'
+        return t.activeSessions.working
     }
   }
 
@@ -171,6 +173,18 @@ function SessionCard({
         return 'bg-primary-50 dark:bg-primary-900/20 border-primary-200 dark:border-primary-800/50 text-primary-700 dark:text-primary-400'
     }
   }
+
+  const formattedRegistrationDate = session.registeredAt
+    ? new Intl.DateTimeFormat(language === 'es' ? 'es-ES' : 'en-GB', {
+        timeZone: 'Europe/Kyiv',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      }).format(new Date(session.registeredAt))
+    : null
 
   // If time has run out, don't show the card
   if (currentTimeRemaining <= 0) {
@@ -280,7 +294,7 @@ function SessionCard({
               <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">{session.username}</h3>
               {isCurrentUser && (
                 <span className="text-xs px-2 py-0.5 sm:py-1 rounded-full font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 whitespace-nowrap">
-                  You
+                  {t.activeSessions.you}
                 </span>
               )}
               <span className={`text-xs px-2 py-0.5 sm:py-1 rounded-full font-medium ${getBadgeColor(session.type)} whitespace-nowrap`}>
@@ -288,21 +302,26 @@ function SessionCard({
               </span>
               {sessionStatus === SessionStatus.PAUSED && (
                 <span className="text-xs px-2 py-0.5 sm:py-1 rounded-full font-medium bg-amber-100 text-amber-600">
-                  Paused
+                  {t.activeSessions.paused}
                 </span>
               )}
             </div>
             <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300 mb-1 truncate">
-              Task: {session.task}
+              {t.activeSessions.task}: {session.task}
             </div>
             <div className="text-xs text-gray-500 dark:text-slate-400">
               {session.startedAt
-                ? `Started: ${new Date(session.startedAt).toLocaleTimeString('en-US', {
+                ? `${t.activeSessions.started}: ${new Date(session.startedAt).toLocaleTimeString(language === 'es' ? 'es-ES' : 'en-US', {
                     hour: '2-digit',
                     minute: '2-digit'
                   })}`
-                : 'Start time unavailable'}
+                : t.activeSessions.startTimeUnavailable}
             </div>
+            {formattedRegistrationDate && (
+              <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">
+                {t.activeSessions.registered}: {formattedRegistrationDate} (Kyiv)
+              </div>
+            )}
           </div>
         </div>
         <div className="text-right flex-shrink-0">
@@ -316,7 +335,11 @@ function SessionCard({
             ></div>
           </div>
           <div className="text-xs text-gray-500 dark:text-slate-400">
-            {sessionStatus === SessionStatus.PAUSED ? 'paused' : isTimeTracking ? 'elapsed' : 'remaining'}
+            {sessionStatus === SessionStatus.PAUSED
+              ? t.activeSessions.paused.toLowerCase()
+              : isTimeTracking
+                ? t.activeSessions.elapsed
+                : t.activeSessions.remaining}
           </div>
         </div>
       </div>
@@ -325,8 +348,9 @@ function SessionCard({
 }
 
 export default function ActiveSessions() {
+  const { t } = useI18n()
   const { activeSessions } = useTimerStore()
-  const { user } = useAuthStore()
+  const { user, token } = useAuthStore()
   const anonymousId = useMemo(() => {
     if (user || typeof window === 'undefined') {
       return null
@@ -348,6 +372,7 @@ export default function ActiveSessions() {
     offReactionSnapshot
   } = useSocket()
   const [localSessions, setLocalSessions] = useState<ActiveSession[]>([])
+  const [registeredAtByUser, setRegisteredAtByUser] = useState<Record<string, string>>({})
   const [hasSocketActivity, setHasSocketActivity] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     show: false,
@@ -371,6 +396,13 @@ export default function ActiveSessions() {
       setLocalSessions([])
     }
   }, [activeSessions.length])
+
+  useEffect(() => {
+    setRegisteredAtByUser({})
+    setLocalSessions((sessions) =>
+      sessions.map((session) => ({ ...session, registeredAt: null }))
+    )
+  }, [token])
 
   // Close context menu on click outside
   useEffect(() => {
@@ -508,33 +540,35 @@ export default function ActiveSessions() {
     const fetchActiveSessions = async () => {
       try {
         const response = await fetch('/api/sessions/active', {
-          cache: 'no-store'
+          cache: 'no-store',
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         })
         if (response.ok && isMounted) {
-          const sessions = await response.json()
-          setLocalSessions(sessions)
+          const sessions = await response.json() as ActiveSession[]
+          setRegisteredAtByUser(
+            Object.fromEntries(
+              sessions.flatMap((session) =>
+                session.registeredAt ? [[session.userId, session.registeredAt]] : []
+              )
+            )
+          )
+          if (!hasSocketActivity) {
+            setLocalSessions(sessions)
+          }
         }
       } catch (error) {
         console.error('Failed to fetch active sessions:', error)
       }
     }
 
-    // If no active sessions from WebSocket, load from API
-    if (!hasSocketActivity && activeSessions.length === 0) {
-      fetchActiveSessions()
-      // Update every 30 seconds for guests
-      interval = setInterval(() => {
-        if (isMounted && !hasSocketActivity) {
-          fetchActiveSessions()
-        }
-      }, 30000)
-    }
+    fetchActiveSessions()
+    interval = setInterval(fetchActiveSessions, 30000)
 
     return () => {
       isMounted = false
       if (interval) clearInterval(interval)
     }
-  }, [activeSessions.length, hasSocketActivity])
+  }, [activeSessions.length, hasSocketActivity, token])
 
   const handleContextMenu = (e: React.MouseEvent, targetUserId: string, element: HTMLElement) => {
     e.preventDefault()
@@ -560,7 +594,7 @@ export default function ActiveSessions() {
     const isInWorkSession = userSession && userSession.type === SessionType.WORK && userSession.status !== SessionStatus.PAUSED
     
     if (!isInWorkSession) {
-      setToastMessage('You can only throw tomatoes during an active work session!')
+      setToastMessage(t.activeSessions.throwTomatoWorkOnly)
       setShowToast(true)
       setContextMenu(prev => ({ ...prev, show: false }))
       return
@@ -662,7 +696,12 @@ export default function ActiveSessions() {
   }, [])
 
   // Use sessions from WebSocket if available, otherwise from API
-  const sessionsToShow = activeSessions.length > 0 ? activeSessions : localSessions
+  const sessionsToShow = (activeSessions.length > 0 ? activeSessions : localSessions).map((session) => ({
+    ...session,
+    registeredAt: session.registeredAt
+      ?? registeredAtByUser[session.userId]
+      ?? null,
+  }))
 
   const sessionsInRoom = sessionsToShow.filter((session) => (session.roomId ?? null) === currentRoomId)
 
@@ -709,10 +748,10 @@ export default function ActiveSessions() {
         <div className="text-center py-8">
           <User className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-300 mb-2">
-            No active sessions
+            {t.activeSessions.noActiveSessions}
           </h3>
           <p className="text-gray-500 dark:text-slate-400">
-            Start the timer to see your activity here!
+            {t.activeSessions.noActiveSessionsDescription}
           </p>
         </div>
       </div>
@@ -749,9 +788,9 @@ export default function ActiveSessions() {
             className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 text-gray-700 dark:text-slate-200"
           >
             <span className="text-lg">🍅</span>
-            Throw a tomato
+            {t.activeSessions.throwTomato}
           </button>
-          <div className="px-3 pt-2 pb-1 text-xs text-gray-500 dark:text-slate-400">Reactions</div>
+          <div className="px-3 pt-2 pb-1 text-xs text-gray-500 dark:text-slate-400">{t.activeSessions.reactions}</div>
           <div className="px-2 pb-2">
             <EmojiPicker
               onEmojiClick={(emojiData) => handleAddReaction(emojiData.emoji)}
@@ -768,10 +807,10 @@ export default function ActiveSessions() {
       
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
       <div className="flex items-center justify-between mb-6 sm:mb-8">
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Currently Working</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t.activeSessions.title}</h2>
         <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">
           <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
-          <span>{allActiveSessions.length} online</span>
+          <span>{allActiveSessions.length} {t.activeSessions.online}</span>
         </div>
       </div>
       

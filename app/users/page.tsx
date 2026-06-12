@@ -22,6 +22,8 @@ import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import { DayPicker, DateRange } from 'react-day-picker'
 import 'react-day-picker/dist/style.css'
+import { es } from 'date-fns/locale'
+import { useI18n } from '@/components/I18nProvider'
 
 type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year' | 'custom'
 
@@ -52,13 +54,6 @@ interface LeaderboardResponse {
   currentUser: LeaderboardUser | null
   periodTotals: PeriodTotals
 }
-
-const PERIODS: { value: LeaderboardPeriod; label: string; icon: any }[] = [
-  { value: 'day', label: 'Today', icon: faCalendarDay },
-  { value: 'week', label: 'Week', icon: faCalendarWeek },
-  { value: 'month', label: 'Month', icon: faCalendarDays },
-  { value: 'year', label: 'Year', icon: faCalendar },
-]
 
 const RANK_META = {
   1: {
@@ -142,6 +137,13 @@ function RowSkeleton() {
 export default function UsersPage() {
   const router = useRouter()
   const { user: currentUser, token } = useAuthStore()
+  const { language, t } = useI18n()
+  const periods = [
+    { value: 'day' as const, label: t.leaderboard.today, icon: faCalendarDay },
+    { value: 'week' as const, label: t.leaderboard.week, icon: faCalendarWeek },
+    { value: 'month' as const, label: t.leaderboard.month, icon: faCalendarDays },
+    { value: 'year' as const, label: t.leaderboard.year, icon: faCalendar },
+  ]
 
   const [period, setPeriod] = useState<LeaderboardPeriod>('month')
   const [periodOffset, setPeriodOffset] = useState(0)
@@ -162,7 +164,7 @@ export default function UsersPage() {
 
     const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
 
-    let url = `/api/stats/leaderboard?period=${period}&offset=${periodOffset}`
+    let url = `/api/stats/leaderboard?period=${period}&offset=${periodOffset}&locale=${language}`
     if (period === 'custom' && dateRange?.from && dateRange?.to) {
       url += `&startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`
     }
@@ -182,7 +184,7 @@ export default function UsersPage() {
       .catch((err: unknown) => {
         if (ctrl.signal.aborted) return
         console.error(err)
-        setError('Failed to load leaderboard')
+        setError(t.leaderboard.failedToLoad)
         setLeaderboard([])
         setCurrentUserRank(null)
       })
@@ -191,7 +193,7 @@ export default function UsersPage() {
       })
 
     return () => ctrl.abort()
-  }, [period, periodOffset, dateRange?.from, dateRange?.to, token])
+  }, [period, periodOffset, dateRange?.from, dateRange?.to, token, language, t.leaderboard.failedToLoad])
 
   const maxMinutes = leaderboard[0]?.totalMinutes || 1
   const filtered = leaderboard.filter((u) =>
@@ -211,14 +213,14 @@ export default function UsersPage() {
           {/* ─── HEADER ─────────────────────────────────────────── */}
           <div className="mb-8 flex flex-col items-center text-center">
             <h1 className="mb-6 text-4xl font-black text-slate-900 dark:text-white sm:text-5xl">
-              Leaderboard
+              {t.leaderboard.title}
             </h1>
 
             {/* Combined Controls */}
             <div className="relative z-50 flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-900/80 dark:ring-white/10 backdrop-blur-xl transition-all">
               {/* Period selection */}
               <div className="flex items-center">
-                {PERIODS.map((p) => (
+                {periods.map((p) => (
                   <button
                     key={p.value}
                     type="button"
@@ -262,7 +264,7 @@ export default function UsersPage() {
 
                 {showCustomRange && (
                   <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-[99] w-max rounded-3xl bg-white p-4 shadow-2xl ring-1 ring-slate-900/10 dark:bg-slate-900 dark:ring-white/10 flex flex-col gap-3">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">Custom Range</h3>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t.leaderboard.customRange}</h3>
                     <div className="flex flex-col gap-2">
                       <style>{`
                         .rdp-root { 
@@ -281,6 +283,7 @@ export default function UsersPage() {
                         mode="range"
                         selected={dateRange}
                         onSelect={setDateRange}
+                        locale={language === 'es' ? es : undefined}
                         className="text-slate-900 dark:text-white"
                       />
                       <div className="flex gap-2 mt-2">
@@ -294,14 +297,14 @@ export default function UsersPage() {
                           }}
                           className="flex-1 rounded-xl bg-slate-900 py-2.5 text-sm font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 transition"
                         >
-                          Apply
+                          {t.leaderboard.apply}
                         </button>
                         <button
                           type="button"
                           onClick={() => setShowCustomRange(false)}
                           className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-bold text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-white transition"
                         >
-                          Cancel
+                          {t.leaderboard.cancel}
                         </button>
                       </div>
                     </div>
@@ -326,9 +329,9 @@ export default function UsersPage() {
             {(
               [
                 {
-                  label: 'Active Users',
+                  label: t.leaderboard.activeUsers,
                   value: loading ? '—' : String(leaderboard.length),
-                  sub: `in ${periodLabel.toLowerCase()}`,
+                  sub: `${t.leaderboard.inPeriod} ${periodLabel.toLowerCase()}`,
                   icon: faUsers,
                   accent: 'text-sky-500',
                   bg: 'bg-sky-50 dark:bg-sky-500/10',
@@ -336,9 +339,9 @@ export default function UsersPage() {
                   valueClass: 'text-3xl',
                 },
                 {
-                  label: 'Focus Time',
+                  label: t.leaderboard.focusTime,
                   value: loading ? '—' : `${formatTime(periodTotals?.totalMinutes ?? 0)}`,
-                  sub: 'across all users',
+                  sub: t.leaderboard.acrossAllUsers,
                   icon: faClock,
                   accent: 'text-violet-500',
                   bg: 'bg-violet-50 dark:bg-violet-500/10',
@@ -346,9 +349,9 @@ export default function UsersPage() {
                   valueClass: 'text-3xl',
                 },
                 {
-                  label: 'Pomodoros',
+                  label: t.leaderboard.pomodoros,
                   value: loading ? '—' : String(periodTotals?.totalPomodoros ?? 0),
-                  sub: 'completed sessions',
+                  sub: t.leaderboard.completedSessions,
                   icon: faFire,
                   accent: 'text-rose-500',
                   bg: 'bg-rose-50 dark:bg-rose-500/10',
@@ -394,8 +397,8 @@ export default function UsersPage() {
                 <FontAwesomeIcon icon={faRotateRight} className="text-3xl" />
               </div>
               <div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">Leaderboard Unavailable</h3>
-                <p className="mt-2 text-slate-500 dark:text-slate-400 text-lg">There was an issue fetching the ranking.</p>
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{t.leaderboard.errorTitle}</h3>
+                <p className="mt-2 text-slate-500 dark:text-slate-400 text-lg">{t.leaderboard.errorDescription}</p>
               </div>
               <button
                 type="button"
@@ -403,7 +406,7 @@ export default function UsersPage() {
                 className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 dark:bg-white dark:text-slate-900"
               >
                 <FontAwesomeIcon icon={faRotateRight} />
-                Try Again
+                {t.leaderboard.tryAgain}
               </button>
             </div>
           ) : leaderboard.length === 0 ? (
@@ -413,9 +416,9 @@ export default function UsersPage() {
                 <FontAwesomeIcon icon={faTrophy} />
               </div>
               <div>
-                <h3 className="text-3xl font-black text-slate-900 dark:text-white">Nobody here yet!</h3>
+                <h3 className="text-3xl font-black text-slate-900 dark:text-white">{t.leaderboard.emptyTitle}</h3>
                 <p className="mt-3 max-w-md mx-auto text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
-                  Be the very first to log focus time and claim the highest rank for {periodLabel}.
+                  {t.leaderboard.emptyDescriptionPrefix} {periodLabel}.
                 </p>
               </div>
             </div>
@@ -432,7 +435,7 @@ export default function UsersPage() {
                   <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:p-8 dark:border-slate-800/80 sm:flex-row sm:items-center sm:justify-between bg-slate-50/30 dark:bg-slate-800/20">
                     <div>
                       <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                        Full Ranking
+                        {t.leaderboard.fullRanking}
                         <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
                           {filtered.length}
                         </span>
@@ -447,7 +450,7 @@ export default function UsersPage() {
                         type="text"
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        placeholder="Search users..."
+                        placeholder={t.leaderboard.searchUsers}
                         className="w-full rounded-2xl border-2 border-slate-100 bg-white py-3 pl-11 pr-4 text-sm font-semibold outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-sky-500"
                       />
                     </div>
@@ -458,9 +461,9 @@ export default function UsersPage() {
                       <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-400 dark:bg-slate-800">
                         <FontAwesomeIcon icon={faMagnifyingGlass} />
                       </div>
-                      <h4 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">No matches found</h4>
+                      <h4 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">{t.leaderboard.noMatchesTitle}</h4>
                       <p className="mt-2 text-sm text-slate-500">
-                        Could not find any user matching &ldquo;<strong className="text-slate-700 dark:text-slate-300">{search}</strong>&rdquo;
+                        {t.leaderboard.noMatchesDescription} &ldquo;<strong className="text-slate-700 dark:text-slate-300">{search}</strong>&rdquo;
                       </p>
                     </div>
                   ) : (
@@ -505,7 +508,7 @@ export default function UsersPage() {
                                   </p>
                                   {isMe && (
                                     <span className="shrink-0 rounded-lg bg-sky-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
-                                      You
+                                      {t.leaderboard.you}
                                     </span>
                                   )}
                                 </div>
@@ -533,7 +536,7 @@ export default function UsersPage() {
                   <div className="overflow-hidden rounded-[32px] bg-white border border-slate-200/60 shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
                     <div className="bg-slate-50/50 border-b border-slate-100 px-7 py-5 dark:bg-slate-800/20 dark:border-slate-800/80">
                       <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                        Your Status
+                        {t.leaderboard.yourStatus}
                       </h3>
                     </div>
                     {currentUserRank && currentUser ? (
@@ -558,20 +561,20 @@ export default function UsersPage() {
                               {currentUser.username}
                             </p>
                             <p className="text-sm font-semibold text-sky-500 mt-1">
-                              Top {Math.max(1, Math.round((currentUserRank.rank / leaderboard.length) * 100))}%
+                              {t.leaderboard.top} {Math.max(1, Math.round((currentUserRank.rank / leaderboard.length) * 100))}%
                             </p>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3 mb-6">
                           <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700/50">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Focus</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.leaderboard.focus}</p>
                             <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
                               {formatTime(currentUserRank.totalMinutes)}<span className="text-sm text-slate-400 ml-0.5 font-bold">h</span>
                             </p>
                           </div>
                           <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700/50">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Pomos</p>
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.leaderboard.pomos}</p>
                             <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
                               {currentUserRank.totalPomodoros}
                             </p>
@@ -580,7 +583,7 @@ export default function UsersPage() {
 
                         <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/20">
                           <div className="mb-2 flex items-center justify-between text-xs font-bold">
-                            <span className="text-slate-500">Progress to #1</span>
+                            <span className="text-slate-500">{t.leaderboard.progressToFirst}</span>
                             <span className="text-slate-900 dark:text-white">
                               {currentUserProgress}%
                             </span>
@@ -602,8 +605,8 @@ export default function UsersPage() {
                         </div>
                         <p className="text-sm font-bold leading-relaxed text-slate-600 dark:text-slate-300">
                           {currentUser
-                            ? `Log focus time to appear on the ${periodLabel} board.`
-                            : 'Log in and focus to see your position.'}
+                            ? `${t.leaderboard.timeToAppearPrefix} ${periodLabel} ${t.leaderboard.timeToAppearSuffix}`.trim()
+                            : t.leaderboard.loginToSeePosition}
                         </p>
                       </div>
                     )}

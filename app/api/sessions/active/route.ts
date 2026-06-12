@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
-import ActiveSessions from '@/components/ActiveSessions'
+import { getTokenFromHeader, verifyToken } from '@/lib/auth'
+import { isAdminUser } from '@/lib/admin'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +13,7 @@ type ActiveSession = Prisma.PomodoroSessionGetPayload<{
         id: true
         username: true
         avatarUrl: true
+        createdAt: true
       }
     }
   }
@@ -21,6 +23,7 @@ interface SessionWithTimeRemaining {
   id: ActiveSession['id']
   userId: ActiveSession['userId']
   username: ActiveSession['user']['username']
+  registeredAt?: ActiveSession['user']['createdAt']
   roomId: ActiveSession['roomId']
   task: ActiveSession['task']
   type: ActiveSession['type']
@@ -34,6 +37,18 @@ interface SessionWithTimeRemaining {
 // GET /api/sessions/active - Get all active sessions
 export async function GET(request: NextRequest) {
   try {
+    const token = getTokenFromHeader(request.headers.get('authorization'))
+    const payload = token ? verifyToken(token) : null
+    const requestingUser = payload
+      ? await prisma.user.findUnique({
+          where: { id: payload.userId },
+          select: { id: true, email: true }
+        })
+      : null
+    const canViewRegistrationDate = requestingUser
+      ? isAdminUser(requestingUser)
+      : false
+
     const activeSessions = await prisma.pomodoroSession.findMany({
       where: {
         status: {
@@ -48,7 +63,8 @@ export async function GET(request: NextRequest) {
           select: {
             id: true,
             username: true,
-            avatarUrl: true
+            avatarUrl: true,
+            createdAt: true
           }
         }
       },
@@ -72,6 +88,7 @@ export async function GET(request: NextRequest) {
         userId: session.userId,
         username: session.user.username,
         avatarUrl: session.user.avatarUrl,
+        ...(canViewRegistrationDate ? { registeredAt: session.user.createdAt } : {}),
         roomId: session.roomId,
         task: session.task,
         type: session.type,

@@ -1,12 +1,13 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { defaultLanguage } from '@/lib/i18n/translations'
 import { domTranslations } from '@/lib/i18n/domTranslations'
 import type { LanguageCode } from '@/lib/i18n/translations'
 
 const attributeDataPrefix = 'i18nOriginalAttr'
 const translatableAttributes = ['placeholder', 'title', 'aria-label'] as const
+const ignoredTextParents = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'TEMPLATE'])
 const originalTextByNode = new WeakMap<Text, string>()
 
 function withOriginalWhitespace(original: string, translated: string) {
@@ -17,7 +18,9 @@ function withOriginalWhitespace(original: string, translated: string) {
 
 function translateTextNode(node: Text, textMap: Record<string, string>, language: string) {
   const parent = node.parentElement
-  if (!parent) return
+  if (!parent || ignoredTextParents.has(parent.tagName) || parent.closest('[data-i18n-ignore]')) {
+    return
+  }
 
   const current = node.nodeValue ?? ''
   const storedOriginal = originalTextByNode.get(node)
@@ -125,7 +128,17 @@ function translateTree(root: ParentNode, language: string) {
 }
 
 export default function DomTranslationBridge({ language }: { language: LanguageCode }) {
+  const previousLanguageRef = useRef<LanguageCode>(defaultLanguage)
+
   useEffect(() => {
+    const previousLanguage = previousLanguageRef.current
+    previousLanguageRef.current = language
+
+    // There is nothing to restore on the initial English render.
+    if (language === defaultLanguage && previousLanguage === defaultLanguage) {
+      return
+    }
+
     translateTree(document.body, language)
 
     // English is rendered directly by React. Observing it would compete with

@@ -13,6 +13,8 @@ interface PeriodWindow {
   label: string
 }
 
+type SupportedLocale = 'en-US' | 'es-ES'
+
 const isLeaderboardPeriod = (value: string | null): value is LeaderboardPeriod => {
   return value === 'day' || value === 'week' || value === 'month' || value === 'year' || value === 'custom'
 }
@@ -29,43 +31,43 @@ const addDays = (date: Date, days: number) => {
   return result
 }
 
-const formatShortDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
+const formatShortDate = (date: Date, locale: SupportedLocale) => {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
   }).format(date)
 }
 
-const formatFullDate = (date: Date) => {
-  return new Intl.DateTimeFormat('en-US', {
+const formatFullDate = (date: Date, locale: SupportedLocale) => {
+  return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   }).format(date)
 }
 
-const formatDateRange = (start: Date, endExclusive: Date) => {
+const formatDateRange = (start: Date, endExclusive: Date, locale: SupportedLocale) => {
   const end = addDays(endExclusive, -1)
   const sameYear = start.getFullYear() === end.getFullYear()
   const sameMonth = sameYear && start.getMonth() === end.getMonth()
   const sameDay = sameMonth && start.getDate() === end.getDate()
 
   if (sameDay) {
-    return formatFullDate(start)
+    return formatFullDate(start, locale)
   }
 
   if (sameMonth) {
-    return `${start.toLocaleString('en-US', { month: 'short' })} ${start.getDate()}-${end.getDate()}, ${start.getFullYear()}`
+    return `${start.toLocaleString(locale, { month: 'short' })} ${start.getDate()}-${end.getDate()}, ${start.getFullYear()}`
   }
 
   if (sameYear) {
-    return `${formatShortDate(start)} - ${formatShortDate(end)}, ${start.getFullYear()}`
+    return `${formatShortDate(start, locale)} - ${formatShortDate(end, locale)}, ${start.getFullYear()}`
   }
 
-  return `${formatFullDate(start)} - ${formatFullDate(end)}`
+  return `${formatFullDate(start, locale)} - ${formatFullDate(end, locale)}`
 }
 
-const getPeriodWindow = (period: LeaderboardPeriod, offset: number, customStart?: string, customEnd?: string): PeriodWindow => {
+const getPeriodWindow = (period: LeaderboardPeriod, offset: number, locale: SupportedLocale, customStart?: string, customEnd?: string): PeriodWindow => {
   const now = new Date()
   const safeOffset = Math.max(0, offset)
 
@@ -75,7 +77,7 @@ const getPeriodWindow = (period: LeaderboardPeriod, offset: number, customStart?
     return {
       start,
       end,
-      label: formatDateRange(start, end),
+      label: formatDateRange(start, end, locale),
     }
   }
 
@@ -85,7 +87,7 @@ const getPeriodWindow = (period: LeaderboardPeriod, offset: number, customStart?
     return {
       start,
       end,
-      label: formatDateRange(start, end),
+      label: formatDateRange(start, end, locale),
     }
   }
 
@@ -98,7 +100,7 @@ const getPeriodWindow = (period: LeaderboardPeriod, offset: number, customStart?
     return {
       start,
       end,
-      label: formatDateRange(start, end),
+      label: formatDateRange(start, end, locale),
     }
   }
 
@@ -108,7 +110,7 @@ const getPeriodWindow = (period: LeaderboardPeriod, offset: number, customStart?
     return {
       start,
       end,
-      label: formatDateRange(start, end),
+      label: formatDateRange(start, end, locale),
     }
   }
 
@@ -117,7 +119,7 @@ const getPeriodWindow = (period: LeaderboardPeriod, offset: number, customStart?
   return {
     start,
     end,
-    label: formatDateRange(start, end),
+    label: formatDateRange(start, end, locale),
   }
 }
 
@@ -129,7 +131,8 @@ export async function GET(request: NextRequest) {
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0', 10) || 0)
     const customStart = searchParams.get('startDate') || undefined
     const customEnd = searchParams.get('endDate') || undefined
-    const periodWindow = getPeriodWindow(period, offset, customStart, customEnd)
+    const locale: SupportedLocale = searchParams.get('locale') === 'es' ? 'es-ES' : 'en-US'
+    const periodWindow = getPeriodWindow(period, offset, locale, customStart, customEnd)
     const { start: periodStart, end: periodEnd, label: periodLabel } = periodWindow
 
     // Получаем текущего пользователя если авторизован

@@ -23,6 +23,7 @@ import {
 import LatestActivity from '@/components/LatestActivity'
 import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
+import { useI18n } from '@/components/I18nProvider'
 
 interface Stats {
   totalPomodoros: number
@@ -115,7 +116,6 @@ interface HeatmapTooltip {
   y: number
 }
 
-const heatmapDayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const heatmapCellClasses = [
   'bg-[#E7ECF3] border border-[#D7DFEA]',
   'bg-[#CFE0FF] border border-[#B8D0FF]',
@@ -127,6 +127,11 @@ const heatmapCellClasses = [
 export default function StatsPage() {
   const { isAuthenticated, token, isLoading: authLoading, user } = useAuthStore()
   const { theme } = useThemeStore()
+  const { language, t } = useI18n()
+  const locale = language === 'es' ? 'es-ES' : 'en-US'
+  const heatmapDayLabels = language === 'es'
+    ? ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
+    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
   const [stats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [timelineLoading, setTimelineLoading] = useState(false)
@@ -287,11 +292,13 @@ export default function StatsPage() {
         if (activityPeriod === '365') {
           const [year, month] = item.date.split('-')
           const date = new Date(parseInt(year), parseInt(month) - 1, 1)
-          return date.toLocaleDateString('en-US', { month: 'short' })
+          return date.toLocaleDateString(locale, { month: 'short' })
         } else {
           const date = new Date(item.date + 'T00:00:00')
           if (activityPeriod === '7') {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+            const days = language === 'es'
+              ? ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
+              : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
             return days[date.getDay()]
           } else {
             return date.getDate().toString()
@@ -308,7 +315,7 @@ export default function StatsPage() {
     },
     yAxis: {
       title: { 
-        text: 'Hours',
+        text: t.stats.hours,
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       },
       gridLineColor: isDark ? '#334155' : '#f3f4f6',
@@ -320,7 +327,7 @@ export default function StatsPage() {
     legend: { enabled: false },
     tooltip: {
       formatter: function() {
-        return '<b>' + formatDuration((this.y as number) * 60) + ' hours</b>'
+        return '<b>' + formatDuration((this.y as number) * 60) + ` ${t.stats.hoursLowercase}</b>`
       }
     },
     plotOptions: {
@@ -332,7 +339,7 @@ export default function StatsPage() {
     },
     series: [{
       type: 'column',
-      name: 'Hours',
+      name: t.stats.hours,
       data: stats?.weeklyActivity?.map(s => parseFloat((s.minutes / 60).toFixed(4))) || [],
       color: '#3b82f6'
     }]
@@ -343,7 +350,10 @@ export default function StatsPage() {
     title: { text: '' },
     credits: { enabled: false },
     xAxis: {
-      categories: stats?.monthlyBreakdown?.map(m => m.month) || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+      categories: stats?.monthlyBreakdown?.map((m) => {
+        const date = new Date(2026, m.monthIndex, 1)
+        return date.toLocaleDateString(locale, { month: 'short' })
+      }) || Array.from({ length: 12 }, (_, month) => new Date(2026, month, 1).toLocaleDateString(locale, { month: 'short' })),
       lineColor: isDark ? '#475569' : '#e5e7eb',
       tickColor: isDark ? '#475569' : '#e5e7eb',
       labels: {
@@ -352,7 +362,7 @@ export default function StatsPage() {
     },
     yAxis: {
       title: { 
-        text: 'Hours',
+        text: t.stats.hours,
         style: { color: isDark ? '#cbd5e1' : '#6b7280' }
       },
       gridLineColor: isDark ? '#334155' : '#f3f4f6',
@@ -364,7 +374,7 @@ export default function StatsPage() {
     legend: { enabled: false },
     tooltip: {
       formatter: function() {
-        return '<b>' + formatDuration((this.y as number) * 60) + ' hours</b>'
+        return '<b>' + formatDuration((this.y as number) * 60) + ` ${t.stats.hoursLowercase}</b>`
       }
     },
     plotOptions: {
@@ -378,7 +388,7 @@ export default function StatsPage() {
     },
     series: [{
       type: 'line',
-      name: 'Hours per Month',
+      name: t.stats.hoursPerMonth,
       data: stats?.monthlyBreakdown?.map(m => parseFloat((m.minutes / 60).toFixed(4))) || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
       color: '#3b82f6'
     }]
@@ -407,7 +417,7 @@ export default function StatsPage() {
     return [
       ...topItems,
       {
-        name: 'Other',
+        name: t.stats.other,
         y: otherMinutes,
         minutes: otherMinutes,
         hoursLabel: formatHours(otherMinutes),
@@ -434,7 +444,7 @@ export default function StatsPage() {
     },
     series: [{
       type: 'pie',
-      name: 'Focus time',
+      name: t.stats.focusTime,
       data: taskTimeDisplayData as any
     }]
   }
@@ -480,7 +490,7 @@ export default function StatsPage() {
     }
   }
 
-  const heatmapRangeCaption = resolvedHeatmapRange === 'rolling' ? 'Last 365 days' : resolvedHeatmapRange
+  const heatmapRangeCaption = resolvedHeatmapRange === 'rolling' ? t.stats.last365Days : resolvedHeatmapRange
 
   const heatmapColumnsMap = new Map<number, HeatmapColumn>()
 
@@ -515,7 +525,7 @@ export default function StatsPage() {
     if (monthKey !== previousMonthKey) {
       previousMonthKey = monthKey
       heatmapMonthMarkers.push({
-        label: date.toLocaleDateString('en-US', { month: 'short' }),
+        label: date.toLocaleDateString(locale, { month: 'short' }),
         column: columnIndex
       })
     }
@@ -545,10 +555,10 @@ export default function StatsPage() {
 
   const formatHeatmapCellLabel = (day: HeatmapDay | null) => {
     if (!day) {
-      return 'No tracked activity'
+      return t.stats.noTrackedActivity
     }
 
-    const formattedDate = new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', {
+    const formattedDate = new Date(day.date + 'T00:00:00').toLocaleDateString(locale, {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
@@ -583,13 +593,25 @@ export default function StatsPage() {
   }
 
   const lastSevenDays = stats?.lastSevenDaysTimeline || []
-  const bestDayName = stats?.productivityTrends?.bestDay?.name || 'No data'
+  const translatedWeekdays: Record<string, string> = language === 'es'
+    ? {
+        Sunday: 'Domingo',
+        Monday: 'Lunes',
+        Tuesday: 'Martes',
+        Wednesday: 'Miércoles',
+        Thursday: 'Jueves',
+        Friday: 'Viernes',
+        Saturday: 'Sábado',
+      }
+    : {}
+  const rawBestDayName = stats?.productivityTrends?.bestDay?.name
+  const bestDayName = rawBestDayName ? translatedWeekdays[rawBestDayName] ?? rawBestDayName : t.stats.noData
   const activityItems = stats?.weeklyActivity || []
   const activityTotalMinutes = activityItems.reduce((sum, item) => sum + item.minutes, 0)
   const activityActiveUnits = activityItems.filter((item) => item.minutes > 0).length
   const activityActiveUnitsLabel = activityPeriod === '365'
-    ? `${activityActiveUnits} active months`
-    : `${activityActiveUnits} active days`
+    ? `${activityActiveUnits} ${t.stats.activeMonths}`
+    : `${activityActiveUnits} ${t.stats.activeDays}`
 
   const getSessionColor = (type: string) => {
     switch (type) {
@@ -608,8 +630,8 @@ export default function StatsPage() {
 
   const formatTimeRange = (start: string, end: string) => {
     const opts: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' }
-    const startStr = new Date(start).toLocaleTimeString('en-US', opts)
-    const endStr = new Date(end).toLocaleTimeString('en-US', opts)
+    const startStr = new Date(start).toLocaleTimeString(locale, opts)
+    const endStr = new Date(end).toLocaleTimeString(locale, opts)
     return `${startStr} - ${endStr}`
   }
 
@@ -621,7 +643,7 @@ export default function StatsPage() {
     const minDate = new Date(Math.min(...timestamps))
     const maxDate = new Date(Math.max(...timestamps))
     const formatOpts: Intl.DateTimeFormatOptions = { day: 'numeric', month: 'short' }
-    return `${minDate.toLocaleDateString('en-US', formatOpts)} — ${maxDate.toLocaleDateString('en-US', formatOpts)}`
+    return `${minDate.toLocaleDateString(locale, formatOpts)} — ${maxDate.toLocaleDateString(locale, formatOpts)}`
   }
 
   const handleTimelineOffsetChange = (nextOffset: number) => {
@@ -655,13 +677,13 @@ export default function StatsPage() {
       return start.getFullYear().toString()
     }
     if (activityPeriod === '30') {
-      return start.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      return start.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
     }
 
     const startDay = start.getDate()
     const endDay = end.getDate()
-    const startMonth = start.toLocaleDateString('en-US', { month: 'short' })
-    const endMonth = end.toLocaleDateString('en-US', { month: 'short' })
+    const startMonth = start.toLocaleDateString(locale, { month: 'short' })
+    const endMonth = end.toLocaleDateString(locale, { month: 'short' })
     const startYear = start.getFullYear()
     const endYear = end.getFullYear()
 
@@ -678,13 +700,13 @@ export default function StatsPage() {
 
   const getActivityPeriodLabel = () => {
     if (activityOffset === 0) {
-      if (activityPeriod === '7') return 'This week'
-      if (activityPeriod === '30') return 'This month'
-      return 'This year'
+      if (activityPeriod === '7') return t.stats.thisWeek
+      if (activityPeriod === '30') return t.stats.thisMonth
+      return t.stats.thisYear
     }
-    if (activityPeriod === '7') return 'Week'
-    if (activityPeriod === '30') return 'Month'
-    return 'Year'
+    if (activityPeriod === '7') return t.stats.week
+    if (activityPeriod === '30') return t.stats.month
+    return t.stats.year
   }
 
   const handleHeatmapRangeChange = (nextRange: string) => {
@@ -786,10 +808,10 @@ export default function StatsPage() {
             PRO
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
-            Upgrade to Pro to unlock extended statistics
+            {t.stats.proTitle}
           </h2>
           <p className="text-sm text-gray-600 dark:text-slate-300 mb-6">
-            Heatmap, activity timelines, productivity trends, and task analytics are available in Pro.
+            {t.stats.proDescription}
           </p>
 
           <div className="flex flex-col sm:flex-row gap-3">
@@ -797,7 +819,7 @@ export default function StatsPage() {
               onClick={openPaywallOrRegister}
               className="inline-flex items-center justify-center rounded-xl bg-red-500 hover:bg-red-600 text-white px-4 py-2 text-sm font-semibold transition-colors"
             >
-              Buy Pro
+              {t.stats.buyPro}
             </button>
             {/* <a
               href="/settings"
@@ -809,7 +831,7 @@ export default function StatsPage() {
 
           {!isAuthenticated && (
             <div className="mt-4 text-xs text-gray-500 dark:text-slate-400">
-              Sign in to purchase and activate Pro on your account.
+              {t.stats.proSignIn}
             </div>
           )}
         </div>
@@ -840,15 +862,15 @@ export default function StatsPage() {
       <div className="relative rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between">
           <div className="text-sm font-semibold text-gray-900 dark:text-white">
-            {totalHeatmapHours}:{totalHeatmapRemainderList} Total hours {resolvedHeatmapRange === 'rolling' ? 'in the last 365 days' : `in ${resolvedHeatmapRange}`}
+            {totalHeatmapHours}:{totalHeatmapRemainderList} {t.stats.totalHours} {resolvedHeatmapRange === 'rolling' ? t.stats.inTheLast365Days : `${t.stats.inPeriod} ${resolvedHeatmapRange}`}
           </div>
           <select
             value={resolvedHeatmapRange}
             onChange={(event) => handleHeatmapRangeChange(event.target.value)}
             className="h-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 text-sm font-medium text-gray-700 dark:text-slate-300 outline-none transition-colors hover:border-gray-300 dark:hover:border-slate-600 hover:bg-gray-50 dark:hover:bg-slate-700 focus:ring-2 focus:ring-indigo-500"
-            aria-label="Select heatmap year range"
+            aria-label={t.stats.heatmapRangeLabel}
           >
-            <option value="rolling">Last 365 days</option>
+            <option value="rolling">{t.stats.last365Days}</option>
             {(stats?.heatmapPeriod?.availableYears || []).map((year) => (
               <option key={year} value={year.toString()}>{year}</option>
             ))}
@@ -943,8 +965,8 @@ export default function StatsPage() {
         <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-3">
           <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-center">
             <div className="text-2xl font-bold text-slate-900">{formatDuration(heatmapBestDay?.minutes || 0)}</div>
-            <div className="text-sm font-medium text-slate-700">Best Day</div>
-            <div className="text-xs text-slate-500">Hours</div>
+            <div className="text-sm font-medium text-slate-700">{t.stats.bestDay}</div>
+            <div className="text-xs text-slate-500">{t.stats.hours}</div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-center">
@@ -1110,7 +1132,7 @@ export default function StatsPage() {
                               type="button"
                               onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
                               className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                              aria-label="Previous week"
+                              aria-label={t.stats.previousWeek}
                             >
                               &lt;
                             </button>
@@ -1126,7 +1148,7 @@ export default function StatsPage() {
                                   ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
                                   : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                               }`}
-                              aria-label="Next week"
+                              aria-label={t.stats.nextWeek}
                             >
                               &gt;
                             </button>
@@ -1135,7 +1157,7 @@ export default function StatsPage() {
 
                         {lastSevenDays.length === 0 ? (
                           <div className="text-sm text-gray-500 dark:text-slate-400 text-center py-10">
-                            No sessions for the last week yet.
+                            {t.stats.noSessionsForLastWeek}
                           </div>
                         ) : (
                           <div className="space-y-4">
@@ -1219,9 +1241,9 @@ export default function StatsPage() {
                         )}
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
                           <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                            {activityPeriod === '7' && 'Weekly Activity'}
-                            {activityPeriod === '30' && 'Monthly Activity'}
-                            {activityPeriod === '365' && 'Yearly Activity'}
+                            {activityPeriod === '7' && t.stats.weeklyActivity}
+                            {activityPeriod === '30' && t.stats.monthlyActivity}
+                            {activityPeriod === '365' && t.stats.yearlyActivity}
                           </h3>
                           <div className="flex items-center gap-2 flex-wrap">
                             <button
@@ -1252,7 +1274,7 @@ export default function StatsPage() {
                                   : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                               }`}
                             >
-                              Year
+                              {t.stats.year}
                             </button>
                           </div>
                         </div>
@@ -1274,7 +1296,7 @@ export default function StatsPage() {
                                 <FontAwesomeIcon icon={faArrowUp} className="text-green-600 dark:text-green-400 text-sm" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">Best Time</div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestTime}</div>
                                 <div className="text-xs text-gray-500 dark:text-slate-400">
                                   {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
                                 </div>
@@ -1292,7 +1314,7 @@ export default function StatsPage() {
                                 <FontAwesomeIcon icon={faCalendar} className="text-blue-600 dark:text-blue-400 text-sm" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">Best Day</div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestDay}</div>
                                 <div className="text-xs text-gray-500 dark:text-slate-400">{bestDayName}</div>
                               </div>
                             </div>
@@ -1324,13 +1346,13 @@ export default function StatsPage() {
                                 <FontAwesomeIcon icon={faTasks} className="text-orange-600 dark:text-orange-400 text-sm" />
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">Completed Tasks</div>
+                                <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.completedTasks}</div>
                                 <div className="text-xs text-gray-500 dark:text-slate-400">This week</div>
                               </div>
                             </div>
                             <div className="text-right">
                               <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
-                              <div className="text-xs text-gray-500 dark:text-slate-400">of {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
+                              <div className="text-xs text-gray-500 dark:text-slate-400">{t.stats.of} {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
                             </div>
                           </div>
                         </div>
@@ -1351,7 +1373,7 @@ export default function StatsPage() {
 
                       {taskTimeDisplayData.length === 0 ? (
                         <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
-                          No tracked focus time by task yet.
+                          {t.stats.noTrackedTaskTime}
                         </div>
                       ) : (
                         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 sm:gap-6 items-center">
@@ -1422,7 +1444,7 @@ export default function StatsPage() {
                           type="button"
                           onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
                           className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                          aria-label="Previous week"
+                          aria-label={t.stats.previousWeek}
                         >
                           &lt;
                         </button>
@@ -1438,7 +1460,7 @@ export default function StatsPage() {
                               ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
                               : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                           }`}
-                          aria-label="Next week"
+                          aria-label={t.stats.nextWeek}
                         >
                           &gt;
                         </button>
@@ -1447,13 +1469,13 @@ export default function StatsPage() {
 
                     {lastSevenDays.length === 0 ? (
                       <div className="text-sm text-gray-500 dark:text-slate-400 text-center py-10">
-                        No sessions for the last week yet.
+                        {t.stats.noSessionsForLastWeek}
                       </div>
                     ) : (
                       <div className="space-y-4">
                         {lastSevenDays.map(day => {
                           const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
-                          const dayLabel = new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', {
+                          const dayLabel = new Date(day.date + 'T00:00:00').toLocaleDateString(locale, {
                             day: 'numeric',
                             month: 'short'
                           })
@@ -1545,7 +1567,7 @@ export default function StatsPage() {
                           type="button"
                           onClick={() => handleActivityOffsetChange('prev')}
                           className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                          aria-label="Previous period"
+                          aria-label={t.stats.previousPeriod}
                         >
                           &lt;
                         </button>
@@ -1570,7 +1592,7 @@ export default function StatsPage() {
                                     : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                                 }`}
                               >
-                                This week
+                                {t.stats.thisWeek}
                               </button>
                               <button
                                 type="button"
@@ -1581,7 +1603,7 @@ export default function StatsPage() {
                                     : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                                 }`}
                               >
-                                This month
+                                {t.stats.thisMonth}
                               </button>
                               <button
                                 type="button"
@@ -1592,7 +1614,7 @@ export default function StatsPage() {
                                     : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                                 }`}
                               >
-                                This year
+                                {t.stats.thisYear}
                               </button>
                             </div>
                           )}
@@ -1607,7 +1629,7 @@ export default function StatsPage() {
                               ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
                               : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                           }`}
-                          aria-label="Next period"
+                          aria-label={t.stats.nextPeriod}
                         >
                           &gt;
                         </button>
@@ -1615,7 +1637,7 @@ export default function StatsPage() {
 
                       <div className="text-left sm:text-right">
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {formatDuration(activityTotalMinutes)} Total hours
+                          {formatDuration(activityTotalMinutes)} {t.stats.totalHours}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-slate-400">
                           {activityActiveUnitsLabel}
@@ -1640,7 +1662,7 @@ export default function StatsPage() {
                             <FontAwesomeIcon icon={faArrowUp} className="text-green-600 dark:text-green-400 text-sm" />
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">Best Time</div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestTime}</div>
                             <div className="text-xs text-gray-500 dark:text-slate-400">
                               {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
                             </div>
@@ -1658,7 +1680,7 @@ export default function StatsPage() {
                             <FontAwesomeIcon icon={faCalendar} className="text-blue-600 dark:text-blue-400 text-sm" />
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">Best Day</div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestDay}</div>
                             <div className="text-xs text-gray-500 dark:text-slate-400">{bestDayName}</div>
                           </div>
                         </div>
@@ -1690,13 +1712,13 @@ export default function StatsPage() {
                             <FontAwesomeIcon icon={faTasks} className="text-orange-600 dark:text-orange-400 text-sm" />
                           </div>
                           <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">Completed Tasks</div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.completedTasks}</div>
                             <div className="text-xs text-gray-500 dark:text-slate-400">This week</div>
                           </div>
                         </div>
                         <div className="text-right">
                           <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">of {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
+                          <div className="text-xs text-gray-500 dark:text-slate-400">{t.stats.of} {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
                         </div>
                       </div>
                     </div>
@@ -1717,7 +1739,7 @@ export default function StatsPage() {
 
                   {taskTimeDisplayData.length === 0 ? (
                     <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
-                      No tracked focus time by task yet.
+                      {t.stats.noTrackedTaskTime}
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 sm:gap-6 items-center">
@@ -1757,7 +1779,7 @@ export default function StatsPage() {
                     </div>
                   ) : taskSessionsList.length === 0 ? (
                     <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
-                      No tasks found.
+                      {t.stats.noTasksFound}
                     </div>
                   ) : (
                     <div className="flex flex-col lg:flex-row gap-4">
@@ -1782,7 +1804,7 @@ export default function StatsPage() {
                               <span className={`text-sm font-medium truncate max-w-full ${task.completed ? 'line-through opacity-60' : ''}`}>
                                 {task.title}
                               </span>
-                              <span className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{label} tracked</span>
+                              <span className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{label} {t.stats.tracked}</span>
                             </button>
                           )
                         })}
@@ -1792,7 +1814,7 @@ export default function StatsPage() {
                       <div className="flex-1 min-w-0">
                         {!selectedTaskName ? (
                           <div className="flex items-center justify-center h-full py-12 text-sm text-gray-400 dark:text-slate-500">
-                            Select a task to see sessions
+                            {t.stats.selectTask}
                           </div>
                         ) : taskSessionsLoading ? (
                           <div className="flex items-center justify-center py-12">
@@ -1800,23 +1822,23 @@ export default function StatsPage() {
                           </div>
                         ) : taskSessions.length === 0 ? (
                           <div className="flex items-center justify-center py-12 text-sm text-gray-400 dark:text-slate-500">
-                            No sessions recorded for this task.
+                            {t.stats.noSessionsForTask}
                           </div>
                         ) : (
                           <div className="flex flex-col gap-2 overflow-y-auto max-h-[420px] pr-1">
                             <div className="flex items-center justify-between mb-2 px-1">
                               <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{selectedTaskName}</span>
                               <span className="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap ml-2">
-                                {taskSessions.length} sessions · {formatHours(taskSessionsTotalMinutes)} total
+                                {taskSessions.length} {t.stats.sessions} · {formatHours(taskSessionsTotalMinutes)} {t.stats.total}
                               </span>
                             </div>
                             {taskSessions.map((session) => {
                               const sessionDate = new Date(session.startedAt)
                               const endDate = session.completedAt ? new Date(session.completedAt) : null
-                              const dateLabel = sessionDate.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })
-                              const timeLabel = sessionDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                              const dateLabel = sessionDate.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })
+                              const timeLabel = sessionDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
                               const endLabel = endDate
-                                ? endDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                                ? endDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
                                 : '—'
                               const mins = session.effectiveMinutes
                               const hrsLabel = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`

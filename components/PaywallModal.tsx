@@ -1,10 +1,11 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faTimes, faCheck } from '@fortawesome/free-solid-svg-icons'
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { initializePaddle, Paddle, CheckoutEventNames, Environments } from '@paddle/paddle-js'
 import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from '@/components/AuthModal'
+import { useI18n } from '@/components/I18nProvider'
 
 interface PaywallModalProps {
   onClose: () => void
@@ -17,6 +18,19 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [activationError, setActivationError] = useState<string | null>(null)
   const { isAuthenticated, token, checkAuth, user } = useAuthStore()
+  const { t } = useI18n()
+  const paywallTranslationsRef = useRef(t.paywall)
+  paywallTranslationsRef.current = t.paywall
+
+  const features = [
+    t.paywall.createPrivateRooms,
+    t.paywall.advancedStatistics,
+    t.paywall.manualTimeEntry,
+    t.paywall.prioritySupport,
+    t.paywall.supportProject,
+    t.paywall.proBadge,
+    t.paywall.timeTrackerMode,
+  ]
 
   const activateTransaction = async (transactionId: string, authToken: string) => {
     const response = await fetch('/api/paddle/activate', {
@@ -53,11 +67,11 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
               .then(() => onClose())
               .catch(error => {
                 console.error('Paddle activation error:', error)
-                setActivationError('Payment succeeded, but Pro activation is still processing. Please wait a few seconds and refresh.')
+                setActivationError(paywallTranslationsRef.current.activationPending)
               })
               .finally(() => setIsProcessing(false))
           } else {
-            setActivationError('Payment succeeded, but transaction verification data is missing.')
+            setActivationError(paywallTranslationsRef.current.activationMissing)
           }
         }
       },
@@ -104,6 +118,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
       <div className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[96svh] sm:max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700">
         <button 
           onClick={onClose}
+          aria-label={t.common.close}
           className="absolute top-4 right-4 p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10"
         >
           <FontAwesomeIcon icon={faTimes} className="text-xl" />
@@ -112,28 +127,20 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
         <div className="p-4 sm:p-8">
           <div className="text-center mb-6 sm:mb-8">
             <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-3">
-              Upgrade to Pro
+              {t.paywall.title}
             </h2>
             <p className="text-gray-600 dark:text-slate-300 max-w-md mx-auto">
-              Unlock the full power of your productivity journey with advanced tools and insights. Every plan starts with a 14-day free trial.
+              {t.paywall.subtitle}
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 gap-6 sm:gap-8 mb-6">
             <div className="space-y-3 sm:space-y-6">
               <h3 className="hidden sm:flex font-bold text-gray-900 dark:text-white items-center gap-2">
-                What&apos;s included
+                {t.paywall.whatsIncluded}
               </h3>
               <ul className="grid grid-cols-2 sm:grid-cols-1 gap-x-4 gap-y-2 sm:gap-y-3">
-                {[
-                  "Create private rooms",
-                  "Advanced statistics & heatmap",
-                  "Manual time entry & editing",
-                  "Priority support",
-                  "Support the project ❤️",
-                  "Pro badge on profile",
-                  "Time tracker mode"
-                ].map((feature, idx) => (
+                {features.map((feature, idx) => (
                   <li key={idx} className="flex items-start gap-2 text-[14px] sm:text-sm text-gray-600 dark:text-slate-300">
                     <div className="mt-0.5 min-w-[18px] text-green-500">
                        <FontAwesomeIcon icon={faCheck} className="text-sm" />
@@ -154,14 +161,14 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                 }`}
               >
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] uppercase font-bold px-3 py-1 rounded-full shadow-md">
-                  Best Value
+                  {t.paywall.bestValue}
                 </div>
                 <div className="flex justify-between items-center mb-1 mt-1">
-                  <span className="font-semibold text-gray-900 dark:text-white">12 months</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{t.paywall.yearlyPlan}</span>
                   <span className="text-2xl font-bold text-gray-900 dark:text-white">$49.99</span>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-slate-400 mb-3">
-                  14-day free trial, then $4.17/month · Save ~17%
+                  {t.paywall.yearlyBilling}
                 </div>
               </div>
 
@@ -174,11 +181,11 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                 }`}
               >
                 <div className="flex justify-between items-center mb-1">
-                  <span className="font-semibold text-gray-900 dark:text-white">1 month</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{t.paywall.monthlyPlan}</span>
                   <span className="text-xl font-bold text-gray-900 dark:text-white">$4.99</span>
                 </div>
                 <div className="text-xs text-gray-500 dark:text-slate-400">
-                  14-day free trial, then billed monthly
+                  {t.paywall.monthlyBilling}
                 </div>
               </div>
               
@@ -189,17 +196,17 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
                   isProcessing || !paddle ? 'cursor-not-allowed opacity-70' : ''
                 }`}
               >
-                {isProcessing ? 'Loading…' : 'Continue to checkout'}
+                {isProcessing ? t.paywall.loading : t.paywall.checkout}
               </button>
 
               <p className="text-[11px] text-center text-gray-500 dark:text-slate-400">
-                By continuing, you agree to our{' '}
+                {t.paywall.agreePrefix}{' '}
                 <Link href="/terms" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-slate-200">
-                  Terms
+                  {t.paywall.terms}
                 </Link>{' '}
-                and{' '}
+                {t.paywall.and}{' '}
                 <Link href="/privacy" className="underline underline-offset-2 hover:text-gray-700 dark:hover:text-slate-200">
-                  Privacy Policy
+                  {t.paywall.privacyPolicy}
                 </Link>.
               </p>
 
