@@ -19,22 +19,42 @@ function translateTextNode(node: Text, textMap: Record<string, string>, language
   const parent = node.parentElement
   if (!parent) return
 
-  const original = originalTextByNode.get(node) ?? node.nodeValue ?? ''
-  if (!originalTextByNode.has(node) && original.trim()) {
-    originalTextByNode.set(node, original)
+  const current = node.nodeValue ?? ''
+  const storedOriginal = originalTextByNode.get(node)
+
+  if (language === defaultLanguage) {
+    if (storedOriginal !== undefined && current !== storedOriginal) {
+      node.nodeValue = storedOriginal
+    }
+    originalTextByNode.delete(node)
+    return
   }
 
-  const source = originalTextByNode.get(node) ?? original
+  if (storedOriginal !== undefined) {
+    const storedTranslation = textMap[storedOriginal.trim()]
+    const expectedValue = storedTranslation
+      ? withOriginalWhitespace(storedOriginal, storedTranslation)
+      : storedOriginal
+
+    if (current === storedOriginal || current === expectedValue) {
+      if (storedTranslation && current !== expectedValue) {
+        node.nodeValue = expectedValue
+      }
+      return
+    }
+
+    // React reused this text node for new content. Treat the new value as source text.
+    originalTextByNode.delete(node)
+  }
+
+  const source = current
   const key = source.trim()
   const translated = textMap[key]
-  const nextValue =
-    language === defaultLanguage
-      ? source
-      : translated
-        ? withOriginalWhitespace(source, translated)
-        : null
+  if (!translated) return
 
-  if (nextValue !== null && node.nodeValue !== nextValue) {
+  originalTextByNode.set(node, source)
+  const nextValue = withOriginalWhitespace(source, translated)
+  if (current !== nextValue) {
     node.nodeValue = nextValue
   }
 }
@@ -50,13 +70,34 @@ function translateElementAttributes(
 
     const dataKey = `${attributeDataPrefix}${attribute.replace('-', '')}`
     const htmlElement = element as HTMLElement
-    const original = htmlElement.dataset[dataKey] ?? value
-    if (!htmlElement.dataset[dataKey]) {
-      htmlElement.dataset[dataKey] = original
+    const storedOriginal = htmlElement.dataset[dataKey]
+
+    if (language === defaultLanguage) {
+      if (storedOriginal !== undefined && value !== storedOriginal) {
+        element.setAttribute(attribute, storedOriginal)
+      }
+      if (storedOriginal !== undefined) {
+        delete htmlElement.dataset[dataKey]
+      }
+      continue
     }
 
-    const translated = language === defaultLanguage ? original : attributeMap[original]
-    if (translated && value !== translated) {
+    let original = storedOriginal ?? value
+    if (storedOriginal !== undefined) {
+      const storedTranslation = attributeMap[storedOriginal]
+      if (value !== storedOriginal && value !== storedTranslation) {
+        delete htmlElement.dataset[dataKey]
+        original = value
+      }
+    }
+
+    const translated = attributeMap[original]
+    if (!translated) continue
+
+    if (htmlElement.dataset[dataKey] === undefined) {
+      htmlElement.dataset[dataKey] = original
+    }
+    if (value !== translated) {
       element.setAttribute(attribute, translated)
     }
   }
@@ -87,16 +128,22 @@ export default function DomTranslationBridge({ language }: { language: LanguageC
   useEffect(() => {
     translateTree(document.body, language)
 
+    // English is rendered directly by React. Observing it would compete with
+    // dynamic text updates such as timers and online-user counters.
+    if (language === defaultLanguage) {
+      return
+    }
+
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
         if (mutation.type === 'characterData') {
-          translateTextNode(mutation.target as Text, language === 'es' ? domTranslations.es.text : {}, language)
+          translateTextNode(mutation.target as Text, domTranslations.es.text, language)
           continue
         }
 
         mutation.addedNodes.forEach((node) => {
           if (node.nodeType === Node.TEXT_NODE) {
-            translateTextNode(node as Text, language === 'es' ? domTranslations.es.text : {}, language)
+            translateTextNode(node as Text, domTranslations.es.text, language)
             return
           }
 
