@@ -3,7 +3,6 @@
 import { memo } from 'react'
 import { Play, Square, Pause } from 'lucide-react'
 import { PomodoroSession, SessionType } from '@/types'
-import { useI18n } from '@/components/I18nProvider'
 
 interface TimerControlsProps {
   currentSession: PomodoroSession | null
@@ -36,8 +35,6 @@ export const TimerControls = memo(function TimerControls({
   isRunning,
   isPaused,
 }: TimerControlsProps) {
-  const { t } = useI18n()
-
   return (
     <>
       <div className="flex flex-col items-center gap-3 sm:gap-4 mb-6 sm:mb-8 px-4 sm:px-0 w-full sm:w-auto">
@@ -51,7 +48,7 @@ export const TimerControls = memo(function TimerControls({
               }`}
             >
               <Play size={20} />
-              <span>{isStarting ? t.timer.starting : t.timer.start}</span>
+              <span>{isStarting ? 'Starting...' : 'Start'}</span>
             </button>
           ) : (
             <div className="flex w-full sm:w-auto gap-3">
@@ -63,7 +60,7 @@ export const TimerControls = memo(function TimerControls({
                 }`}
               >
                 <Square size={20} />
-                <span>{isStopping ? t.timer.stopping : t.timer.stop}</span>
+                <span>{isStopping ? 'Stopping...' : 'Stop'}</span>
               </button>
               {!isPaused && (
                 <button
@@ -74,7 +71,7 @@ export const TimerControls = memo(function TimerControls({
                   }`}
                 >
                   <Pause size={20} />
-                  <span>{isPausing ? t.timer.pausing : t.timer.pause}</span>
+                  <span>{isPausing ? 'Pausing...' : 'Pause'}</span>
                 </button>
               )}
               {isPaused && (
@@ -86,7 +83,7 @@ export const TimerControls = memo(function TimerControls({
                   }`}
                 >
                   <Play size={20} />
-                  <span>{isResuming ? t.timer.resuming : t.timer.resume}</span>
+                  <span>{isResuming ? 'Resuming...' : 'Resume'}</span>
                 </button>
               )}
             </div>
@@ -100,10 +97,10 @@ export const TimerControls = memo(function TimerControls({
           const isActive = sessionType === type
           const label =
             type === SessionType.WORK
-              ? t.timer.focus
+              ? 'Focus'
               : type === SessionType.SHORT_BREAK
-                ? t.timer.shortBreak
-                : t.timer.longBreak
+                ? 'Short Break'
+                : 'Long Break'
 
           return (
             <button

@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
-import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 export default function SiteFooter() {
   const pathname = usePathname()
@@ -29,8 +28,6 @@ export default function SiteFooter() {
         <Link href="/privacy" className="transition-colors hover:text-gray-800 dark:hover:text-slate-200">
           Privacy policy
         </Link>
-        <span className="text-gray-300 dark:text-slate-600">•</span>
-        <LanguageSwitcher />
       </div>
     </footer>
   )

@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { Crown } from 'lucide-react'
 import { memo, useRef, type MouseEvent } from 'react'
-import { useI18n } from '@/components/I18nProvider'
 
 interface TimerSettingsForm {
   workDuration: number
@@ -42,7 +41,6 @@ export const SettingsModal = memo(function SettingsModal({
   isProMember,
 }: SettingsModalProps) {
   const shouldCloseRef = useRef(false)
-  const { t } = useI18n()
   const isTimeTrackerLocked = !isProMember
   const isTimeTrackerToggleDisabled = isTimerRunning
 
@@ -77,10 +75,10 @@ export const SettingsModal = memo(function SettingsModal({
         <div className="flex items-center justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{t.settingsModal.title}</h3>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Timer settings</h3>
             </div>
             <p className="text-sm text-gray-500 dark:text-slate-400">
-              {t.settingsModal.description}
+              Adjust durations in minutes for each session type
             </p>
           </div>
           <button
@@ -88,7 +86,7 @@ export const SettingsModal = memo(function SettingsModal({
             onClick={onClose}
             className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {t.common.close}
+            Close
           </button>
         </div>
 
@@ -96,13 +94,13 @@ export const SettingsModal = memo(function SettingsModal({
           <div className="relative flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
             <div>
               <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 flex items-center gap-2">
-                {t.settingsModal.timeTrackerMode}
+                Time tracker mode
                 <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
                   Beta
                 </span>
               </p>
               <p className="text-xs text-gray-500 dark:text-slate-400 mr-5">
-                {t.settingsModal.timeTrackerDescription}
+                Switch to a simple time tracker. Pomodoro options will be hidden while enabled.
               </p>
             </div>
             <button
@@ -131,10 +129,10 @@ export const SettingsModal = memo(function SettingsModal({
               aria-pressed={isTimeTrackerMode}
               title={
                 isTimeTrackerToggleDisabled
-                  ? t.settingsModal.stopTimerToSwitch
+                  ? 'Stop the timer to switch modes'
                   : isTimeTrackerMode
-                    ? t.settingsModal.timeTrackerEnabled
-                    : t.settingsModal.timeTrackerDisabled
+                    ? 'Time tracker enabled'
+                    : 'Time tracker disabled'
               }
             >
               <span
@@ -157,7 +155,7 @@ export const SettingsModal = memo(function SettingsModal({
                     : 'text-gray-700 dark:text-slate-200'
                 }`}
               >
-                {isTimeTrackerMode ? t.common.enabled : t.common.disabled}
+                {isTimeTrackerMode ? 'Enabled' : 'Disabled'}
               </span>
             </button>
 
@@ -174,7 +172,7 @@ export const SettingsModal = memo(function SettingsModal({
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <label className="block">
                   <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                    {t.timer.focusLength}
+                    Focus length
                   </span>
                   <input
                     type="number"
@@ -190,7 +188,7 @@ export const SettingsModal = memo(function SettingsModal({
 
                 <label className="block">
                   <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                    {t.timer.shortBreakInput}
+                    Short break
                   </span>
                   <input
                     type="number"
@@ -206,7 +204,7 @@ export const SettingsModal = memo(function SettingsModal({
 
                 <label className="block">
                   <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                    {t.timer.longBreakInput}
+                    Long break
                   </span>
                   <input
                     type="number"
@@ -222,7 +220,7 @@ export const SettingsModal = memo(function SettingsModal({
 
                 <label className="block">
                   <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                    {t.timer.sessionsBeforeLongBreak}
+                    Sessions before long break
                   </span>
                   <input
                     type="number"
@@ -239,9 +237,9 @@ export const SettingsModal = memo(function SettingsModal({
 
               <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
                 <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-slate-100">{t.settingsModal.autoStart}</p>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-slate-100">Auto start</p>
                   <p className="text-xs text-gray-500 dark:text-slate-400 mr-5">
-                    {t.settingsModal.autoStartDescription}
+                    Automatically begin the next session when the current one ends.
                   </p>
                 </div>
                 <button
@@ -253,7 +251,7 @@ export const SettingsModal = memo(function SettingsModal({
                       : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-100 focus-visible:ring-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-700'
                   }`}
                   aria-pressed={isAutoStartEnabled}
-                  title={isAutoStartEnabled ? t.settingsModal.autoStartEnabled : t.settingsModal.autoStartDisabled}
+                  title={isAutoStartEnabled ? 'Auto start enabled' : 'Auto start disabled'}
                 >
                   <span
                     className={`relative flex items-center justify-center w-7 h-7 rounded-full border text-[10px] font-bold ${
@@ -265,7 +263,7 @@ export const SettingsModal = memo(function SettingsModal({
                     {isAutoStartEnabled ? 'ON' : 'OFF'}
                   </span>
                   <span className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-                    {isAutoStartEnabled ? t.common.enabled : t.common.disabled}
+                    {isAutoStartEnabled ? 'Enabled' : 'Disabled'}
                   </span>
                 </button>
               </div>
@@ -279,14 +277,14 @@ export const SettingsModal = memo(function SettingsModal({
             onClick={onClose}
             className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
           >
-            {t.common.cancel}
+            Cancel
           </button>
           <button
             type="button"
             onClick={onSave}
             className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
           >
-            {t.common.saveChanges}
+            Save changes
           </button>
         </div>
       </div>

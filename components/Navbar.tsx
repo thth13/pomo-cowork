@@ -15,7 +15,6 @@ import { useRoomStore } from '@/store/useRoomStore'
 import { NotificationItem } from '@/types'
 import NotificationsMenu from './NotificationsMenu'
 import { TomatoMascot } from '@/components/TomatoMascot'
-import { useI18n } from '@/components/I18nProvider'
 import {
   faArrowRightFromBracket,
   faArrowUpRightFromSquare,
@@ -44,7 +43,6 @@ export default function Navbar() {
   const { user, isAuthenticated, logout, token } = useAuthStore()
   const { setCurrentRoom, currentRoomId } = useRoomStore()
   const { totalOnlineCount, isConnected, isChecking } = useConnectionStore()
-  const { t } = useI18n()
   const pathname = usePathname()
   const connectionStatusClass = isChecking
     ? 'bg-yellow-400'
@@ -275,7 +273,7 @@ export default function Navbar() {
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
-              <FontAwesomeIcon icon={faClock} className="mr-2" />{t.nav.timer}
+              <FontAwesomeIcon icon={faClock} className="mr-2" />Timer
             </Link>
             <Link 
               href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
@@ -287,9 +285,9 @@ export default function Navbar() {
             >
               <FontAwesomeIcon icon={faUsers} className="mr-2" />
               <span className="relative inline-flex items-center">
-                <span>{t.nav.rooms}</span>
+                <span>Rooms</span>
                 <span className="pointer-events-none absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 rounded-full border border-amber-200 bg-amber-50 px-1 py-[1px] text-[8px] font-semibold uppercase leading-none tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
-                  {t.common.beta}
+                  beta
                 </span>
               </span>
             </Link>
@@ -301,7 +299,7 @@ export default function Navbar() {
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
-              <FontAwesomeIcon icon={faUsers} className="mr-2" />{t.nav.coworkers}
+              <FontAwesomeIcon icon={faUsers} className="mr-2" />Coworkers
             </Link>
             <Link
               href="/stats"
@@ -311,7 +309,7 @@ export default function Navbar() {
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
-              <FontAwesomeIcon icon={faChartLine} className="mr-2 text-xs" />{t.nav.stats}
+              <FontAwesomeIcon icon={faChartLine} className="mr-2 text-xs" />Stats
             </Link>
           </nav>
           
@@ -319,7 +317,7 @@ export default function Navbar() {
             <div className="hidden lg:flex items-center space-x-6">
             <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">
               <div className={`w-2 h-2 rounded-full pulse-dot ${connectionStatusClass}`}></div>
-              <span>{totalOnlineCount} {t.nav.online}</span>
+              <span>{totalOnlineCount} online</span>
             </div>
             
             <div className="flex items-center space-x-3">
@@ -375,7 +373,7 @@ export default function Navbar() {
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
                         >
-                          <span>{t.nav.profile}</span>
+                          <span>Profile</span>
                           <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xs" />
                         </Link>
                         <Link
@@ -384,11 +382,11 @@ export default function Navbar() {
                           className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
                         >
                           <FontAwesomeIcon icon={faCog} className="text-xs" />
-                          <span>{t.nav.settings}</span>
+                          <span>Settings</span>
                         </Link>
                         <div className="px-4 py-3 border-t border-gray-100 dark:border-slate-700">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400">{t.common.theme}</span>
+                            <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-slate-400">Theme</span>
                             <ThemeToggle />
                           </div>
                         </div>
@@ -398,7 +396,7 @@ export default function Navbar() {
                           className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20"
                         >
                           <FontAwesomeIcon icon={faArrowRightFromBracket} className="text-xs" />
-                          <span>{t.nav.logout}</span>
+                          <span>Log out</span>
                         </button>
                       </div>
                     </div>
@@ -410,7 +408,7 @@ export default function Navbar() {
                   onClick={() => setIsAuthModalOpen(true)}
                   className="btn-primary text-sm px-4 py-2"
                 >
-                  {t.nav.login}
+                  Login
                 </button>
               )}
             </div>
@@ -456,7 +454,7 @@ export default function Navbar() {
                 onClick={() => setIsAuthModalOpen(true)}
                 className="btn-primary text-sm px-3 py-2"
               >
-                {t.nav.login}
+                Login
               </button>
             )}
           </div>
@@ -504,7 +502,7 @@ export default function Navbar() {
                 }`}
               >
                 <FontAwesomeIcon icon={faClock} className="mr-3 w-4" />
-                {t.nav.timer}
+                Timer
               </Link>
               <Link 
                 href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
@@ -517,9 +515,9 @@ export default function Navbar() {
               >
                 <FontAwesomeIcon icon={faUsers} className="mr-3 w-4" />
                 <span className="relative inline-flex items-center">
-                  <span>{t.nav.rooms}</span>
+                  <span>Rooms</span>
                   <span className="pointer-events-none absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 rounded-full border border-amber-200 bg-amber-50 px-1 py-[1px] text-[8px] font-semibold uppercase leading-none tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
-                    {t.common.beta}
+                    beta
                   </span>
                 </span>
               </Link>
@@ -533,7 +531,7 @@ export default function Navbar() {
                 }`}
               >
                 <FontAwesomeIcon icon={faUsers} className="mr-3 w-4" />
-                {t.nav.coworkers}
+                Coworkers
               </Link>
               <Link
                 href="/stats"
@@ -545,7 +543,7 @@ export default function Navbar() {
                 }`}
               >
                 <FontAwesomeIcon icon={faChartLine} className="mr-3 w-4 text-xs" />
-                {t.nav.stats}
+                Stats
               </Link>
             </nav>
 
@@ -559,7 +557,7 @@ export default function Navbar() {
                 onClick={handleMobileLinkClick}
                 className="flex items-center justify-between px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
-                <span>{t.nav.profile}</span>
+                <span>Profile</span>
                 <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xs" />
               </Link>
               <Link
@@ -568,12 +566,12 @@ export default function Navbar() {
                 className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 <FontAwesomeIcon icon={faCog} className="mr-3 text-xs w-4" />
-                <span>{t.nav.settings}</span>
+                <span>Settings</span>
               </Link>
               
               {/* Theme Toggle */}
               <div className="px-4 py-3 flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-slate-300">{t.common.theme}</span>
+                <span className="text-sm text-gray-700 dark:text-slate-300">Theme</span>
                 <ThemeToggle />
               </div>
 
@@ -584,7 +582,7 @@ export default function Navbar() {
                 className="flex w-full items-center px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
               >
                 <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-3 text-xs w-4" />
-                <span>{t.nav.logout}</span>
+                <span>Log out</span>
               </button>
             </div>
           </div>
