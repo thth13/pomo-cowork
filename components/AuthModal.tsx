@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { reportConversion } from '@/lib/gtm'
+import { useI18n } from '@/components/I18nProvider'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -27,6 +28,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   const [isGoogleProcessing, setIsGoogleProcessing] = useState(false)
 
   const { login, register } = useAuthStore()
+  const { t } = useI18n()
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
   useEffect(() => {
@@ -53,18 +55,18 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       if (isLogin) {
         success = await login(formData.email, formData.password)
         if (!success) {
-          setError('Invalid email or password')
+          setError(t.auth.invalidCredentials)
         }
       } else {
         reportConversion()
         if (!formData.username.trim()) {
-          setError('Username is required')
+          setError(t.auth.usernameRequired)
           setIsLoading(false)
           return
         }
         success = await register(formData.email, formData.username, formData.password)
         if (!success) {
-          setError('Registration error. Please try again.')
+          setError(t.auth.registrationError)
         }
       }
 
@@ -73,7 +75,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
         setFormData({ email: '', username: '', password: '' })
       }
     } catch (error) {
-      setError('An error occurred. Please try again.')
+      setError(t.auth.unexpectedError)
     } finally {
       setIsLoading(false)
     }
@@ -97,7 +99,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
     setError('')
 
     if (!googleClientId) {
-      setError('Google login is not configured.')
+      setError(t.auth.googleNotConfigured)
       return
     }
 
@@ -151,10 +153,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                 Pomo Cowork
               </p>
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {isLogin ? 'Sign in' : 'Create account'}
+                {isLogin ? t.auth.signIn : t.auth.createAccount}
               </h2>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Sign in faster with Google or continue with email
+                {t.auth.subtitle}
               </p>
             </div>
             <button
@@ -197,7 +199,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                   fill="#EA4335"
                 />
               </svg>
-              <span>{isGoogleProcessing ? 'Connecting...' : 'Continue with Google'}</span>
+              <span>{isGoogleProcessing ? t.auth.connecting : t.auth.connectWithGoogle}</span>
             </button>
 
             {!showEmailForm && (
@@ -208,7 +210,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                   onClick={() => setShowEmailForm(true)}
                   className="font-medium text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400"
                 >
-                  or use email
+                  {t.auth.orUseEmail}
                 </button>
                 <span className="h-px w-12 bg-slate-200 dark:bg-slate-700" />
               </div>
@@ -232,7 +234,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Email
+                  {t.auth.email}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
@@ -252,7 +254,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
               {!isLogin && (
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    Username
+                    {t.auth.username}
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
@@ -262,7 +264,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                       value={formData.username}
                       onChange={handleInputChange}
                       className="input pl-10"
-                      placeholder="Your name"
+                      placeholder={t.auth.usernamePlaceholder}
                       required={!isLogin}
                     />
                   </div>
@@ -272,7 +274,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
               {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  Password
+                  {t.auth.password}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
@@ -282,7 +284,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                     value={formData.password}
                     onChange={handleInputChange}
                     className="input pl-10 pr-10"
-                    placeholder="Your password"
+                    placeholder={t.auth.passwordPlaceholder}
                     required
                     minLength={4}
                   />
@@ -296,7 +298,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                 </div>
                 {!isLogin && (
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Minimum 4 characters
+                    {t.auth.minimumPassword}
                   </p>
                 )}
               </div>
@@ -312,10 +314,10 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                 {isLoading ? (
                   <div className="flex items-center justify-center space-x-2">
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Loading...</span>
+                    <span>{t.common.loading}...</span>
                   </div>
                 ) : (
-                  isLogin ? 'Login' : 'Register'
+                  isLogin ? t.auth.login : t.auth.register
                 )}
               </motion.button>
 
@@ -327,30 +329,30 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
             <div className="mt-6 text-center space-y-2 text-xs text-slate-500 dark:text-slate-400">
               {!isLogin && (
                 <p className="leading-5">
-                  By continuing, you agree to our{' '}
+                  {t.auth.termsCopy}{' '}
                   <Link
                     href="/terms"
                     className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white"
                   >
-                    Terms
+                    {t.auth.terms}
                   </Link>{' '}
                   and{' '}
                   <Link
                     href="/privacy"
                     className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white"
                   >
-                    Privacy Policy
+                    {t.auth.privacyPolicy}
                   </Link>.
                 </p>
               )}
               <p>
-                {isLogin ? "Don't have an account?" : 'Already have an account?'}
+                {isLogin ? t.auth.noAccount : t.auth.alreadyHaveAccount}
                 {' '}
                 <button
                   onClick={toggleMode}
                   className="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
                 >
-                  {isLogin ? 'Register' : 'Login'}
+                  {isLogin ? t.auth.register : t.auth.login}
                 </button>
               </p>
             </div>

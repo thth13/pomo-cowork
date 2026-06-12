@@ -13,6 +13,7 @@ import InitialLoader from '@/components/InitialLoader'
 import SiteFooter from '@/components/SiteFooter'
 import FeedbackWidget from '@/components/FeedbackWidget'
 import GtmClient from '@/components/GtmClient'
+import { I18nProvider } from '@/components/I18nProvider'
 
 config.autoAddCss = false
 
@@ -61,7 +62,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ru">
+    <html lang="en">
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <Script async src="https://www.googletagmanager.com/gtag/js?id=G-TEKE22N2N5" />
@@ -94,17 +95,19 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <ThemeProvider>
-          <AuthProvider>
-            <GtmClient />
-            <InitialLoader />
-            {children}
-            <SiteFooter />
-            <div className="hidden sm:block">
-              <FeedbackWidget />
-            </div>
-            <ConnectionDebug />
-            <OfflineToast />
-          </AuthProvider>
+          <I18nProvider>
+            <AuthProvider>
+              <GtmClient />
+              <InitialLoader />
+              {children}
+              <SiteFooter />
+              <div className="hidden sm:block">
+                <FeedbackWidget />
+              </div>
+              <ConnectionDebug />
+              <OfflineToast />
+            </AuthProvider>
+          </I18nProvider>
         </ThemeProvider>
       </body>
     </html>
