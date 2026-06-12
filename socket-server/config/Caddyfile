@@ -1,3 +1,0 @@
-ws.pomo-co.work {
-    reverse_proxy api:8000
-}
