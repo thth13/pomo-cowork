@@ -25,6 +25,7 @@ import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
 import { TimerErrorBoundary } from '@/components/TimerErrorBoundary'
 import { useThrottle } from '@/hooks/useThrottle'
+import { useI18n } from '@/components/I18nProvider'
 
 interface PomodoroTimerProps {
   onSessionComplete?: () => void
@@ -204,6 +205,7 @@ const useTaskMenu = (isDisabled: boolean) => {
 }
 
 function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
+  const { t } = useI18n()
   const {
     isRunning,
     timeRemaining,
@@ -449,17 +451,17 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   const getSessionTypeLabel = useCallback((type: SessionType): string => {
     switch (type) {
       case SessionType.WORK:
-        return 'Work'
+        return t.timer.work
       case SessionType.SHORT_BREAK:
-        return 'Short break'
+        return t.timer.shortBreak
       case SessionType.LONG_BREAK:
-        return 'Long break'
+        return t.timer.longBreak
       case SessionType.TIME_TRACKING:
-        return 'Time tracking'
+        return t.timer.timeTracking
       default:
-        return 'Work'
+        return t.timer.work
     }
-  }, [])
+  }, [t])
 
   const timeTrackerDurationSeconds = TIME_TRACKER_DURATION_MINUTES * 60
   const activeSessionType = currentSession?.type ?? (isTimeTrackerMode ? SessionType.TIME_TRACKING : sessionType)
@@ -503,9 +505,9 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     const duration = getSessionDuration(type)
     const taskName =
       type === SessionType.TIME_TRACKING
-        ? selectedTask?.title || 'Time tracking'
+        ? selectedTask?.title || t.timer.timeTracking
         : type === SessionType.WORK
-          ? selectedTask?.title || 'Work Session'
+          ? selectedTask?.title || t.timer.workSession
           : getSessionTypeLabel(type)
 
     const userId = user?.id || getOrCreateAnonymousId()
@@ -593,6 +595,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     mutateSessions,
     selectedTask?.title,
     startSession,
+    t.timer.timeTracking,
+    t.timer.workSession,
     user,
   ])
 
@@ -754,7 +758,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       const duration = getSessionDuration(startType)
       const taskName =
         startType === SessionType.TIME_TRACKING
-          ? selectedTask?.title || 'Time tracking'
+          ? selectedTask?.title || t.timer.timeTracking
           : selectedTask?.title || getSessionTypeLabel(startType)
 
       // Get user ID or anonymous ID
@@ -1153,20 +1157,20 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     const completionTitle = (() => {
       switch (completedType) {
         case SessionType.WORK:
-          return 'Pomodoro completed 🍅'
+          return t.timer.workCompleted
         case SessionType.SHORT_BREAK:
-          return 'Short break completed'
+          return t.timer.shortBreakCompleted
         case SessionType.LONG_BREAK:
-          return 'Long break completed'
+          return t.timer.longBreakCompleted
         default:
-          return `${getSessionTypeLabel(completedType)} completed`
+          return `${getSessionTypeLabel(completedType)} ${t.timer.completed}`
       }
     })()
 
     const nextLabel = getSessionTypeLabel(nextType)
     const notificationBody = isAutoStartEnabled
-      ? `${nextLabel} up next.`
-      : 'Start the next session when you are ready.'
+      ? `${nextLabel} ${t.timer.nextUp}`
+      : t.timer.nextSessionReady
 
     showNotification(completionTitle, notificationBody)
 
@@ -1201,6 +1205,12 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     showNotification,
     setSessionType,
     mutateSessions,
+    t.timer.longBreakCompleted,
+    t.timer.completed,
+    t.timer.nextSessionReady,
+    t.timer.nextUp,
+    t.timer.shortBreakCompleted,
+    t.timer.workCompleted,
   ])
 
   useTimerSync({
@@ -1296,14 +1306,14 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           className="mb-3 text-xs sm:text-sm text-gray-600 dark:text-slate-300 disabled:opacity-60"
           title={
             isRoomSwitchDisabled
-              ? 'Stop/pause the timer to switch rooms'
+              ? t.room.stopToSwitch
               : currentRoomId
-                ? 'Switch to Global'
-                : `Switch to ${lastRoomName}`
+                ? `${t.room.switchTo} ${t.room.global}`
+                : `${t.room.switchTo} ${lastRoomName}`
           }
         >
-          Room:{' '}
-          <span className="font-semibold underline underline-offset-2">{currentRoomId ? currentRoomName : 'Global'}</span>
+          {t.room.label}:{' '}
+          <span className="font-semibold underline underline-offset-2">{currentRoomId ? currentRoomName : t.room.global}</span>
         </button>
       )}
 
@@ -1360,8 +1370,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           type="button"
           onClick={openSettings}
           className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700"
-          aria-label="Adjust timer settings"
-          title="Adjust timer settings"
+          aria-label={t.settingsModal.title}
+          title={t.settingsModal.title}
         >
           <Settings size={18} />
         </button>

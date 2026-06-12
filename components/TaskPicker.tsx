@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { SessionType } from '@/types'
 import { TaskOption } from '@/types/task'
+import { useI18n } from '@/components/I18nProvider'
 
 interface TaskPickerProps {
   sessionType: SessionType
@@ -35,6 +36,8 @@ export const TaskPicker = memo(function TaskPicker({
   onTaskSearchChange,
   hasTaskOptions,
 }: TaskPickerProps) {
+  const { t } = useI18n()
+
   if (sessionType !== SessionType.WORK && sessionType !== SessionType.TIME_TRACKING) {
     return null
   }
@@ -48,7 +51,7 @@ export const TaskPicker = memo(function TaskPicker({
   return (
     <div className="mb-6 sm:mb-8 w-full max-w-md px-4 sm:px-0">
       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-        Current Task
+        {t.timer.currentTask}
       </label>
       <div className="relative" ref={taskPickerRef}>
         <button
@@ -67,7 +70,7 @@ export const TaskPicker = memo(function TaskPicker({
         >
           <div className="flex items-center justify-between gap-3">
             <span className="truncate text-gray-700 dark:text-slate-200">
-              {selectedTask ? selectedTask.title : 'Select a task from the list'}
+              {selectedTask ? selectedTask.title : t.timer.selectTask}
             </span>
             <motion.span
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 transition group-hover:bg-blue-100 group-hover:text-blue-600 dark:bg-slate-700 dark:text-slate-300 dark:group-hover:bg-blue-900/40 dark:group-hover:text-blue-300"
@@ -125,9 +128,9 @@ export const TaskPicker = memo(function TaskPicker({
                   }`}
                 >
                   <div className="flex flex-col">
-                    <span className="font-medium">No task selected</span>
+                    <span className="font-medium">{t.timer.noTaskSelected}</span>
                     <span className="text-xs text-gray-400 dark:text-slate-500">
-                      Timer will run without task binding
+                      {t.timer.noTaskSubtitle}
                     </span>
                   </div>
                 </button>
@@ -164,14 +167,14 @@ export const TaskPicker = memo(function TaskPicker({
                   })
                 ) : (
                   <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-slate-500">
-                    No tasks match your search.
+                    {t.timer.noMatchingTasks}
                   </div>
                 )}
               </div>
 
               {!hasTaskOptions && (
                 <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
-                  Add tasks in the list to populate this menu.
+                  {t.timer.taskMenuEmpty}
                 </div>
               )}
             </motion.div>

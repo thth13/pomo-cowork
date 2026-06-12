@@ -278,6 +278,11 @@ function SessionCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 sm:mb-2 flex-wrap">
               <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">{session.username}</h3>
+              {isCurrentUser && (
+                <span className="text-xs px-2 py-0.5 sm:py-1 rounded-full font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 whitespace-nowrap">
+                  You
+                </span>
+              )}
               <span className={`text-xs px-2 py-0.5 sm:py-1 rounded-full font-medium ${getBadgeColor(session.type)} whitespace-nowrap`}>
                 {getSessionTypeLabel(session.type)}
               </span>
@@ -691,6 +696,13 @@ export default function ActiveSessions() {
     return timeRemaining > 0
   })
 
+  const orderedActiveSessions = currentUserId
+    ? [
+        ...allActiveSessions.filter(session => session.userId === currentUserId),
+        ...allActiveSessions.filter(session => session.userId !== currentUserId)
+      ]
+    : allActiveSessions
+
   if (allActiveSessions.length === 0) {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
@@ -765,7 +777,7 @@ export default function ActiveSessions() {
       
       <div className="space-y-4">
         <AnimatePresence mode="popLayout">
-          {allActiveSessions.map((session, index) => (
+          {orderedActiveSessions.map((session, index) => (
             <SessionCard 
               key={session.id} 
               session={session} 
