@@ -39,7 +39,7 @@ export function useSessionRestore({
   const ignoredSessionId = ignoreSessionIdRef?.current
 
   const { data: sessions, mutate } = useSWR<PomodoroSession[]>(
-    user ? '/api/sessions' : null,
+    user ? '/api/sessions?activeOnly=1' : null,
     fetcher,
     {
       revalidateOnFocus: false,

@@ -75,6 +75,9 @@ const chatMessagesByRoom = new Map<string, ChatMessage[]>()
 const reactionsByTarget = new Map<string, Map<string, string>>()
 
 const MAX_CHAT_HISTORY = 100
+const ACTIVE_SESSIONS_DB_REFRESH_MS = 60 * 1000
+let lastActiveSessionsDbLoadAt = 0
+let activeSessionsDbLoad: Promise<number> | null = null
 
 const normalizeRoomId = (roomId?: string | null) => {
   if (typeof roomId !== 'string') return null
@@ -265,83 +268,90 @@ const removeAnonymousConnectionBySocket = (socketId: string) => {
 }
 
 // Function to load active sessions from DB
-const loadActiveSessionsFromDB = async () => {
-  try {
-    const response = await axios.get(`${API_URL}/api/sessions/active`)
-    const dbSessions = response.data as Array<{
-      id: string
-      userId: string
-      username: string
-      avatarUrl?: string
-      roomId?: string | null
-      task: string
-      type: string
-      duration: number
-      timeRemaining: number
-      startedAt: string
-    }>
+const loadActiveSessionsFromDB = async (force = false) => {
+  const cacheIsFresh = Date.now() - lastActiveSessionsDbLoadAt < ACTIVE_SESSIONS_DB_REFRESH_MS
+  if (!force && cacheIsFresh) {
+    return sessions.size
+  }
+  if (activeSessionsDbLoad) {
+    return activeSessionsDbLoad
+  }
 
-    // Update local session cache
-    for (const dbSession of dbSessions) {
-      // Check if this session already exists in memory
-      const existingSession = sessions.get(dbSession.id)
-      
-      if (!existingSession) {
-        // Add new session from DB
-        const startTime = new Date(dbSession.startedAt).getTime()
-        const now = Date.now()
-        const elapsed = Math.floor((now - startTime) / 1000)
-        const calculatedStartTime = now - (dbSession.duration * 60 * 1000 - dbSession.timeRemaining * 1000)
-        
-        sessions.set(dbSession.id, {
-          id: dbSession.id,
-          userId: dbSession.userId,
-          username: dbSession.username,
-          avatarUrl: dbSession.avatarUrl ?? userAvatars.get(dbSession.userId),
-          roomId: dbSession.roomId ?? null,
-          task: dbSession.task,
-          type: dbSession.type,
-          duration: dbSession.duration,
-          timeRemaining: dbSession.timeRemaining,
-          startedAt: dbSession.startedAt,
-          startTime: calculatedStartTime,
-          lastUpdate: now
-        })
-      } else {
-        // Update existing session with data from DB
-        existingSession.timeRemaining = dbSession.timeRemaining
-        existingSession.lastUpdate = Date.now()
+  activeSessionsDbLoad = (async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/sessions/active`)
+      const dbSessions = response.data as Array<{
+        id: string
+        userId: string
+        username: string
+        avatarUrl?: string
+        roomId?: string | null
+        task: string
+        type: string
+        duration: number
+        timeRemaining: number
+        startedAt: string
+      }>
 
-        existingSession.roomId = dbSession.roomId ?? existingSession.roomId ?? null
+      for (const dbSession of dbSessions) {
+        const existingSession = sessions.get(dbSession.id)
 
-        // Always update avatarUrl from DB if available
+        if (!existingSession) {
+          const now = Date.now()
+          const calculatedStartTime = now - (dbSession.duration * 60 * 1000 - dbSession.timeRemaining * 1000)
+
+          sessions.set(dbSession.id, {
+            id: dbSession.id,
+            userId: dbSession.userId,
+            username: dbSession.username,
+            avatarUrl: dbSession.avatarUrl ?? userAvatars.get(dbSession.userId),
+            roomId: dbSession.roomId ?? null,
+            task: dbSession.task,
+            type: dbSession.type,
+            duration: dbSession.duration,
+            timeRemaining: dbSession.timeRemaining,
+            startedAt: dbSession.startedAt,
+            startTime: calculatedStartTime,
+            lastUpdate: now
+          })
+        } else {
+          existingSession.timeRemaining = dbSession.timeRemaining
+          existingSession.lastUpdate = Date.now()
+          existingSession.roomId = dbSession.roomId ?? existingSession.roomId ?? null
+
+          if (dbSession.avatarUrl) {
+            existingSession.avatarUrl = dbSession.avatarUrl
+          }
+        }
+
         if (dbSession.avatarUrl) {
-          existingSession.avatarUrl = dbSession.avatarUrl
+          userAvatars.set(dbSession.userId, dbSession.avatarUrl)
         }
       }
 
-      if (dbSession.avatarUrl) {
-        userAvatars.set(dbSession.userId, dbSession.avatarUrl)
-      }
-    }
-
-    // Remove sessions that are no longer in DB
-    const dbSessionIds = new Set(dbSessions.map(s => s.id))
-    for (const [sessionId, session] of sessions.entries()) {
-      if (!dbSessionIds.has(sessionId)) {
-        // Check if session is outdated (more than 5 minutes without update)
-        if (session.lastUpdate && Date.now() - session.lastUpdate > 5 * 60 * 1000) {
+      const dbSessionIds = new Set(dbSessions.map(s => s.id))
+      for (const [sessionId, session] of sessions.entries()) {
+        if (
+          !dbSessionIds.has(sessionId)
+          && session.lastUpdate
+          && Date.now() - session.lastUpdate > 5 * 60 * 1000
+        ) {
           sessions.delete(sessionId)
         }
       }
-    }
 
-    console.log(`Loaded ${dbSessions.length} active sessions from database`)
-    return dbSessions.length
-  } catch (error) {
-    console.error('Failed to load active sessions from database:', error)
-    return 0
-  }
+      lastActiveSessionsDbLoadAt = Date.now()
+      console.log(`Loaded ${dbSessions.length} active sessions from database`)
+      return dbSessions.length
+    } catch (error) {
+      console.error('Failed to load active sessions from database:', error)
+      return sessions.size
+    } finally {
+      activeSessionsDbLoad = null
+    }
+  })()
+
+  return activeSessionsDbLoad
 }
 
 const serializeSessions = () =>
@@ -382,11 +392,11 @@ const serializeSessions = () =>
 // }, 5000)
 
 
-// Periodic DB synchronization (every 30 seconds)
+// Periodic DB synchronization. Connection bursts share the same cached load.
 setInterval(async () => {
-  await loadActiveSessionsFromDB()
+  await loadActiveSessionsFromDB(true)
   io.emit('session-update', serializeSessions())
-}, 30000)
+}, ACTIVE_SESSIONS_DB_REFRESH_MS)
 
 // Periodic cleanup of outdated sessions (every minute)
 setInterval(() => {

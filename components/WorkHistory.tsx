@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
-import { Calendar, Trash2 } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import ConfirmModal from './ConfirmModal'
 import Image from 'next/image'
 
@@ -24,6 +24,28 @@ interface Session {
   }
 }
 
+interface WorkHistoryResponse {
+  sessions: Session[]
+  pagination: {
+    page: number
+    pageSize: number
+    total: number
+    totalPages: number
+  }
+  stats: {
+    work: number
+    shortBreak: number
+    longBreak: number
+  }
+}
+
+const HISTORY_REFRESH_MS = 5 * 60 * 1000
+const emptyStats = {
+  work: 0,
+  shortBreak: 0,
+  longBreak: 0,
+}
+
 export default function WorkHistory() {
   const { user } = useAuthStore()
   const { currentRoomId } = useRoomStore()
@@ -31,8 +53,19 @@ export default function WorkHistory() {
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmingId, setConfirmingId] = useState<string | null>(null)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [totalSessions, setTotalSessions] = useState(0)
+  const [stats, setStats] = useState(emptyStats)
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
+    setPage(1)
+  }, [user?.id, currentRoomId])
+
+  useEffect(() => {
+    let active = true
+
     const fetchTodaySessions = async () => {
       try {
         const token = localStorage.getItem('token')
@@ -48,6 +81,7 @@ export default function WorkHistory() {
         dayEnd.setDate(dayEnd.getDate() + 1)
         url.searchParams.set('dayStart', dayStart.toISOString())
         url.searchParams.set('dayEnd', dayEnd.toISOString())
+        url.searchParams.set('page', String(page))
         if (currentRoomId) {
           url.searchParams.set('roomId', currentRoomId)
         }
@@ -56,23 +90,46 @@ export default function WorkHistory() {
           headers
         })
 
-        if (response.ok) {
-          const data = await response.json()
-          setSessions(data)
+        if (response.ok && active) {
+          const data = (await response.json()) as WorkHistoryResponse
+          setSessions(data.sessions)
+          setTotalPages(data.pagination.totalPages)
+          setTotalSessions(data.pagination.total)
+          setStats(data.stats)
+
+          if (page > data.pagination.totalPages) {
+            setPage(data.pagination.totalPages)
+          }
         }
       } catch (error) {
-        console.error('Failed to fetch today sessions:', error)
+        if (active) {
+          console.error('Failed to fetch today sessions:', error)
+        }
       } finally {
-        setLoading(false)
+        if (active) {
+          setLoading(false)
+        }
       }
     }
 
-    fetchTodaySessions()
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchTodaySessions()
+      }
+    }
 
-    // Update every 30 seconds
-    const interval = setInterval(fetchTodaySessions, 30000)
-    return () => clearInterval(interval)
-  }, [user, currentRoomId])
+    void fetchTodaySessions()
+    const interval = window.setInterval(refreshWhenVisible, HISTORY_REFRESH_MS)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    window.addEventListener('session-completed', refreshWhenVisible)
+
+    return () => {
+      active = false
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+      window.removeEventListener('session-completed', refreshWhenVisible)
+    }
+  }, [currentRoomId, page, refreshKey, user?.id])
 
   const handleDeleteConfirmed = async () => {
     if (!confirmingId) return
@@ -93,8 +150,11 @@ export default function WorkHistory() {
       })
 
       if (response.ok) {
-        // Remove from local state
-        setSessions(prev => prev.filter(s => s.id !== confirmingId))
+        if (sessions.length === 1 && page > 1) {
+          setPage((currentPage) => currentPage - 1)
+        } else {
+          setRefreshKey((key) => key + 1)
+        }
       } else {
         const error = await response.json()
         alert(error.error || 'Failed to delete entry')
@@ -191,18 +251,6 @@ export default function WorkHistory() {
     }
   }
 
-  const calculateStats = () => {
-    const workSessions = sessions.filter(s => s.type === 'WORK' && s.status === 'COMPLETED')
-    const shortBreaks = sessions.filter(s => s.type === 'SHORT_BREAK' && s.status === 'COMPLETED')
-    const longBreaks = sessions.filter(s => s.type === 'LONG_BREAK' && s.status === 'COMPLETED')
-
-    return {
-      work: workSessions.length,
-      shortBreak: shortBreaks.length,
-      longBreak: longBreaks.length
-    }
-  }
-
   if (loading) {
     return (
       <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700">
@@ -247,8 +295,6 @@ export default function WorkHistory() {
       </div>
     )
   }
-
-  const stats = calculateStats()
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700">
@@ -352,6 +398,34 @@ export default function WorkHistory() {
           ))
         )}
       </div>
+
+      {totalSessions > 10 && (
+        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3 dark:border-slate-700">
+          <span className="text-xs text-gray-500 dark:text-slate-400">
+            Page {page} of {totalPages}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((currentPage) => Math.max(1, currentPage - 1))}
+              disabled={page === 1}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+              aria-label="Previous page"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setPage((currentPage) => Math.min(totalPages, currentPage + 1))}
+              disabled={page === totalPages}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200 text-gray-600 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700"
+              aria-label="Next page"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         open={Boolean(confirmingId)}

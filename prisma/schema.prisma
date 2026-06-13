@@ -234,6 +234,7 @@ model Task {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([userId, completed, createdAt])
   @@map("tasks")
 }
 
@@ -261,6 +262,9 @@ model PomodoroSession {
   updatedAt DateTime @updatedAt
 
   @@index([roomId])
+  @@index([status, startedAt])
+  @@index([userId, createdAt])
+  @@index([userId, status, startedAt])
   @@map("pomodoro_sessions")
 }
 

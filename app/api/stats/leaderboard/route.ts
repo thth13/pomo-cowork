@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
-import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionStats'
+import { getEffectiveSessionMinutesSql } from '@/lib/sessionStatsSql'
 
 export const dynamic = 'force-dynamic'
 
@@ -11,6 +12,14 @@ interface PeriodWindow {
   start: Date
   end: Date
   label: string
+}
+
+interface LeaderboardRow {
+  id: string
+  username: string
+  avatarUrl: string | null
+  totalMinutes: number
+  totalPomodoros: number
 }
 
 type SupportedLocale = 'en-US' | 'es-ES'
@@ -147,54 +156,41 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Получаем всех пользователей с сессиями только за выбранный период.
-    const users = await prisma.user.findMany({
-      where: {
-        isAnonymous: false,
-      },
-      select: {
-        id: true,
-        username: true,
-        avatarUrl: true,
-        sessions: {
-          where: {
-            status: { in: ['COMPLETED', 'CANCELLED'] },
-            type: { in: ['WORK', 'TIME_TRACKING'] },
-            OR: [
-              { completedAt: { gte: periodStart, lt: periodEnd } },
-              { endedAt: { gte: periodStart, lt: periodEnd } },
-              { startedAt: { gte: periodStart, lt: periodEnd } },
-            ],
-          },
-          select: {
-            startedAt: true,
-            endedAt: true,
-            completedAt: true,
-            duration: true,
-            remainingSeconds: true,
-            pausedAt: true,
-            type: true,
-          }
-        }
-      }
-    })
+    const effectiveMinutes = getEffectiveSessionMinutesSql('s')
+    const users = await prisma.$queryRaw<LeaderboardRow[]>(Prisma.sql`
+      SELECT
+        "u"."id",
+        "u"."username",
+        "u"."avatarUrl",
+        COALESCE("stats"."totalMinutes", 0)::integer AS "totalMinutes",
+        COALESCE("stats"."totalPomodoros", 0)::integer AS "totalPomodoros"
+      FROM "users" AS "u"
+      LEFT JOIN (
+        SELECT
+          "s"."userId",
+          COALESCE(SUM(${effectiveMinutes}), 0)::integer AS "totalMinutes",
+          COUNT(*) FILTER (WHERE "s"."type" = 'WORK')::integer AS "totalPomodoros"
+        FROM "pomodoro_sessions" AS "s"
+        WHERE "s"."status" IN ('COMPLETED', 'CANCELLED')
+          AND "s"."type" IN ('WORK', 'TIME_TRACKING')
+          AND COALESCE("s"."completedAt", "s"."endedAt", "s"."startedAt") >= ${periodStart}
+          AND COALESCE("s"."completedAt", "s"."endedAt", "s"."startedAt") < ${periodEnd}
+        GROUP BY "s"."userId"
+      ) AS "stats" ON "stats"."userId" = "u"."id"
+      WHERE "u"."isAnonymous" = false
+      ORDER BY "totalMinutes" DESC, "u"."id" ASC
+    `)
 
-    // Вычисляем статистику только по сессиям, которые действительно относятся к выбранному периоду.
     const usersWithStats = users.map(user => {
-      const periodSessions = user.sessions.filter((session) => {
-        const attributionDate = getSessionAttributionDate(session)
-        return attributionDate >= periodStart && attributionDate < periodEnd
-      })
-      const totalMinutes = periodSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
+      const totalMinutes = user.totalMinutes
       const totalHours = Math.round((totalMinutes / 60) * 10) / 10
-      const totalPomodoros = periodSessions.filter((session) => session.type === 'WORK').length
       
       return {
         id: user.id,
         username: user.username,
         avatarUrl: user.avatarUrl,
         totalHours,
-        totalPomodoros,
+        totalPomodoros: user.totalPomodoros,
         totalMinutes
       }
     })
@@ -208,11 +204,8 @@ export async function GET(request: NextRequest) {
       { totalMinutes: 0, totalPomodoros: 0 }
     )
 
-    // Сортируем по минутам для точности (пользователи без активности будут внизу)
-    const sortedUsers = usersWithStats.sort((a, b) => b.totalMinutes - a.totalMinutes)
-
     // Добавляем ранги
-    const leaderboard = sortedUsers.map((user, index) => ({
+    const leaderboard = usersWithStats.map((user, index) => ({
       ...user,
       rank: index + 1
     }))

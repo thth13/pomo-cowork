@@ -146,6 +146,10 @@ export const sessionService = {
       }
     }
 
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('session-completed'))
+    }
+
     return result
   },
 }

@@ -1,9 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { getEffectiveMinutes } from '@/lib/sessionStats'
+import { getEffectiveSessionMinutesSql } from '@/lib/sessionStatsSql'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
+
+interface TaskFocusRow {
+  task: string
+  focusMinutes: number
+}
 
 // GET /api/tasks/sessions?taskName=xxx
 // Returns sessions for a given task name, plus all tasks summary list
@@ -26,33 +33,27 @@ export async function GET(request: NextRequest) {
 
     if (!taskName) {
       // Return tasks summary list sorted by focus time
-      const tasks = await prisma.task.findMany({
-        where: { userId: decoded.userId },
-        orderBy: { createdAt: 'desc' },
-      })
-
-      const sessions = await prisma.pomodoroSession.findMany({
-        where: {
-          userId: decoded.userId,
-          type: { in: ['WORK', 'TIME_TRACKING'] },
-          status: { in: ['COMPLETED', 'CANCELLED'] },
-        },
-        select: {
-          task: true,
-          duration: true,
-          startedAt: true,
-          endedAt: true,
-          completedAt: true,
-          pausedAt: true,
-          remainingSeconds: true,
-          createdAt: true,
-        },
-      })
+      const effectiveMinutes = getEffectiveSessionMinutesSql('s')
+      const [tasks, taskFocusRows] = await Promise.all([
+        prisma.task.findMany({
+          where: { userId: decoded.userId },
+          orderBy: { createdAt: 'desc' },
+        }),
+        prisma.$queryRaw<TaskFocusRow[]>(Prisma.sql`
+          SELECT
+            "s"."task",
+            COALESCE(SUM(${effectiveMinutes}), 0)::integer AS "focusMinutes"
+          FROM "pomodoro_sessions" AS "s"
+          WHERE "s"."userId" = ${decoded.userId}
+            AND "s"."type" IN ('WORK', 'TIME_TRACKING')
+            AND "s"."status" IN ('COMPLETED', 'CANCELLED')
+          GROUP BY "s"."task"
+        `),
+      ])
 
       const focusMinutesByTask = new Map<string, number>()
-      sessions.forEach((session) => {
-        const minutes = getEffectiveMinutes(session)
-        focusMinutesByTask.set(session.task, (focusMinutesByTask.get(session.task) ?? 0) + minutes)
+      taskFocusRows.forEach((row) => {
+        focusMinutesByTask.set(row.task, row.focusMinutes)
       })
 
       const tasksWithStats = tasks

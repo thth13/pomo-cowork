@@ -26,6 +26,8 @@ import {
   faUsers
 } from '@fortawesome/free-solid-svg-icons'
 
+const NOTIFICATIONS_REFRESH_MS = 2 * 60 * 1000
+
 export default function Navbar() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -111,12 +113,20 @@ export default function Navbar() {
       return
     }
 
-    fetchNotifications()
-    const id = window.setInterval(() => {
-      fetchNotifications()
-    }, 30000)
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchNotifications()
+      }
+    }
 
-    return () => window.clearInterval(id)
+    void fetchNotifications()
+    const id = window.setInterval(refreshWhenVisible, NOTIFICATIONS_REFRESH_MS)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authHeaders])
 

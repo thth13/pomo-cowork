@@ -544,9 +544,8 @@ export default function ActiveSessions() {
     requestReactions({ userId: currentUserId ?? null })
   }, [requestReactions, currentUserId])
 
-  // Load active sessions on mount for guests
+  // Keep a slow API fallback for socket outages and refresh rank metadata.
   useEffect(() => {
-    let interval: NodeJS.Timeout
     let isMounted = true
 
     const fetchActiveSessions = async () => {
@@ -578,14 +577,22 @@ export default function ActiveSessions() {
       }
     }
 
-    fetchActiveSessions()
-    interval = setInterval(fetchActiveSessions, 30000)
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchActiveSessions()
+      }
+    }
+
+    void fetchActiveSessions()
+    const interval = window.setInterval(refreshWhenVisible, 5 * 60 * 1000)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
 
     return () => {
       isMounted = false
-      if (interval) clearInterval(interval)
+      window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
     }
-  }, [activeSessions.length, hasSocketActivity, token])
+  }, [hasSocketActivity, token])
 
   const handleContextMenu = (e: React.MouseEvent, targetUserId: string, element: HTMLElement) => {
     e.preventDefault()

@@ -20,9 +20,9 @@ export async function GET(request: NextRequest) {
     }
 
     const notifications = await prisma.notification.findMany({
-      where: { userId: payload.userId },
+      where: { userId: payload.userId, readAt: null },
       orderBy: { createdAt: 'desc' },
-      take: 30,
+      take: 20,
       select: {
         id: true,
         type: true,
@@ -58,11 +58,7 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    const unreadCount = await prisma.notification.count({
-      where: { userId: payload.userId, readAt: null },
-    })
-
-    return NextResponse.json({ unreadCount, notifications })
+    return NextResponse.json({ unreadCount: notifications.length, notifications })
   } catch (error) {
     console.error('List notifications error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

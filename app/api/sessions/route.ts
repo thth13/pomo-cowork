@@ -35,6 +35,18 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    if (searchParams.get('activeOnly') === '1') {
+      const activeSession = await prisma.pomodoroSession.findFirst({
+        where: {
+          userId: payload.userId,
+          status: { in: ['ACTIVE', 'PAUSED'] },
+        },
+        orderBy: { startedAt: 'desc' },
+      })
+
+      return NextResponse.json(activeSession ? [activeSession] : [])
+    }
+
     const total = await prisma.pomodoroSession.count({
       where: { userId: payload.userId },
     })

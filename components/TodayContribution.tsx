@@ -4,26 +4,9 @@ import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ArrowUpRight, Check, Flame, HelpCircle, Medal, Pencil, Plus, Target, Trash2, Users } from 'lucide-react'
 import { getRankProgress } from '@/lib/ranks'
-import { getEffectiveMinutes } from '@/lib/sessionStats'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
 import AuthModal from '@/components/AuthModal'
-
-interface Session {
-  id: string
-  type: string
-  status: string
-  duration: number
-  startedAt: string
-  endedAt?: string | null
-  completedAt?: string | null
-  pausedAt?: string | null
-  remainingSeconds?: number | null
-  createdAt?: string
-  user?: {
-    id: string
-  } | null
-}
 
 interface ContributionTotals {
   pomodoros: number
@@ -34,16 +17,22 @@ interface ContributionMeta {
   activeUsers: number
 }
 
-interface TodayLeaderboardResponse {
-  currentUser?: {
-    rank: number
-    totalPomodoros: number
-    totalMinutes: number
+interface TodayStatsResponse {
+  community: {
+    pomodoros: number
+    focusMinutes: number
+    activeUsers: number
+  }
+  currentUser: {
+    rank: number | null
+    pomodoros: number
+    focusMinutes: number
   } | null
 }
 
 const DEFAULT_DAY_GOAL = 4
 const DEFAULT_TIME_GOAL = 2
+const TODAY_STATS_REFRESH_MS = 5 * 60 * 1000
 type DayGoalType = 'pomodoros' | 'time'
 
 const emptyTotals: ContributionTotals = {
@@ -118,10 +107,9 @@ export default function TodayContribution() {
   useEffect(() => {
     let active = true
 
-    const fetchTodayTotals = async () => {
+    const fetchTodayStats = async () => {
       try {
         setError(false)
-        const token = localStorage.getItem('token')
         const headers: Record<string, string> = {}
         if (token) {
           headers.Authorization = `Bearer ${token}`
@@ -132,7 +120,7 @@ export default function TodayContribution() {
         const dayEnd = new Date(dayStart)
         dayEnd.setDate(dayEnd.getDate() + 1)
 
-        const url = new URL('/api/sessions/today', window.location.origin)
+        const url = new URL('/api/stats/today', window.location.origin)
         url.searchParams.set('dayStart', dayStart.toISOString())
         url.searchParams.set('dayEnd', dayEnd.toISOString())
 
@@ -141,111 +129,50 @@ export default function TodayContribution() {
           throw new Error('Failed to load sessions')
         }
 
-        const data = (await response.json()) as Session[]
-
+        const data = (await response.json()) as TodayStatsResponse
         if (!active) return
 
-        const isWithinToday = (session: Session) => {
-          const timestamp = session.completedAt ?? session.endedAt ?? session.startedAt
-          const date = timestamp ? new Date(timestamp) : null
-          if (!date || Number.isNaN(date.getTime())) return false
-          return date >= dayStart && date < dayEnd
-        }
-
-        const completedSessions = data.filter(
-          (session) => session.status === 'COMPLETED' && isWithinToday(session)
-        )
-        const completedPomodoros = completedSessions.filter((session) => session.type === 'WORK')
-        const focusSessions = completedSessions.filter(
-          (session) => session.type === 'WORK' || session.type === 'TIME_TRACKING'
-        )
-
-        const focusMinutes = focusSessions.reduce((sum, session) => {
-          return sum + getEffectiveMinutes(session)
-        }, 0)
-
-        const uniqueUsers = new Set(
-          completedSessions
-            .map((session) => session.user?.id)
-            .filter((id): id is string => Boolean(id))
-        )
-
         setTotals({
-          pomodoros: completedPomodoros.length,
-          focusMinutes,
+          pomodoros: data.community.pomodoros,
+          focusMinutes: data.community.focusMinutes,
         })
-        setMeta({ activeUsers: uniqueUsers.size })
+        setMeta({ activeUsers: data.community.activeUsers })
+        setTodayRank(data.currentUser?.rank ?? null)
+        setTodayPomodoros(data.currentUser?.pomodoros ?? 0)
+        setTodayFocusMinutes(data.currentUser?.focusMinutes ?? 0)
       } catch (fetchError) {
         if (active) {
           setError(true)
+          setTodayRank(null)
         }
       } finally {
         if (active) {
           setLoading(false)
-        }
-      }
-    }
-
-    fetchTodayTotals()
-    const interval = setInterval(fetchTodayTotals, 30000)
-
-    return () => {
-      active = false
-      clearInterval(interval)
-    }
-  }, [])
-
-  useEffect(() => {
-    let active = true
-
-    const fetchTodayRank = async () => {
-      if (!token || !user) {
-        if (active) {
-          setTodayRank(null)
-          setRankLoading(false)
-        }
-        return
-      }
-
-      try {
-        const response = await fetch('/api/stats/leaderboard?period=day&offset=0&locale=en', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-
-        if (!response.ok) {
-          throw new Error('Failed to load today rank')
-        }
-
-        const data = (await response.json()) as TodayLeaderboardResponse
-        if (active) {
-          setTodayRank(data.currentUser?.rank ?? null)
-          setTodayPomodoros(data.currentUser?.totalPomodoros ?? 0)
-          setTodayFocusMinutes(data.currentUser?.totalMinutes ?? 0)
-        }
-      } catch {
-        if (active) {
-          setTodayRank(null)
-          setTodayPomodoros(0)
-          setTodayFocusMinutes(0)
-        }
-      } finally {
-        if (active) {
           setRankLoading(false)
         }
       }
     }
 
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') {
+        void fetchTodayStats()
+      }
+    }
+
+    setLoading(true)
     setRankLoading(true)
-    void fetchTodayRank()
-    const interval = window.setInterval(fetchTodayRank, 30000)
+    void fetchTodayStats()
+    const interval = window.setInterval(refreshWhenVisible, TODAY_STATS_REFRESH_MS)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+    window.addEventListener('session-completed', refreshWhenVisible)
 
     return () => {
       active = false
       window.clearInterval(interval)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+      window.removeEventListener('session-completed', refreshWhenVisible)
     }
-  }, [token, user])
+  }, [token])
 
   const formattedPomodoros = useMemo(() => {
     return totals.pomodoros.toLocaleString(language === 'es' ? 'es-ES' : 'en-US')
