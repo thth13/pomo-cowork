@@ -16,6 +16,7 @@ import { NotificationItem } from '@/types'
 import NotificationsMenu from './NotificationsMenu'
 import { TomatoMascot } from '@/components/TomatoMascot'
 import { useI18n } from '@/components/I18nProvider'
+import RankAvatarFrame from '@/components/RankAvatarFrame'
 import {
   faArrowRightFromBracket,
   faArrowUpRightFromSquare,
@@ -118,6 +119,16 @@ export default function Navbar() {
     return () => window.clearInterval(id)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated, authHeaders])
+
+  useEffect(() => {
+    const handleRankUp = () => {
+      void fetchNotifications()
+    }
+
+    window.addEventListener('rank-up', handleRankUp)
+    return () => window.removeEventListener('rank-up', handleRankUp)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authHeaders])
 
   // todo: remove
   useEffect(() => {
@@ -347,15 +358,25 @@ export default function Navbar() {
                     <button
                       type="button"
                       onClick={() => setIsMenuOpen(prev => !prev)}
-                      className="relative w-9 h-9 rounded-full overflow-visible bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold hover:ring-2 hover:ring-primary-500 transition-all"
+                      className="relative w-10 h-10 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold transition-transform hover:scale-105"
                       aria-haspopup="true"
                       aria-expanded={isMenuOpen}
                     >
-                      {user.avatarUrl ? (
-                        <Image src={user.avatarUrl} alt={user.username} width={48} height={48} className="w-full h-full object-cover rounded-full" />
-                      ) : (
-                        <User className="w-4 h-4" />
-                      )}
+                      <RankAvatarFrame
+                        experience={user.experience}
+                        thickness={3}
+                        tooltip="progress"
+                        tooltipAlign="right"
+                        className="h-full w-full"
+                      >
+                        {user.avatarUrl ? (
+                          <Image src={user.avatarUrl} alt={user.username} width={48} height={48} className="h-full w-full object-cover" />
+                        ) : (
+                          <span className="flex h-full w-full items-center justify-center bg-gray-300 dark:bg-slate-600">
+                            <User className="w-4 h-4" />
+                          </span>
+                        )}
+                      </RankAvatarFrame>
                       {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
                         <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
                           <Crown className="w-3 h-3" />
@@ -471,14 +492,20 @@ export default function Navbar() {
             {/* User Info */}
             <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-slate-700 rounded-xl">
               <div className="flex items-center space-x-3">
-                <div className="relative w-10 h-10 rounded-full overflow-visible bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold">
-                  {user.avatarUrl ? (
-                    <span className="block w-full h-full rounded-full overflow-hidden">
-                      <Image src={user.avatarUrl} alt={user.username} width={40} height={40} className="w-full h-full object-cover" />
-                    </span>
-                  ) : (
-                    <User className="w-5 h-5" />
-                  )}
+                <div className="relative w-11 h-11 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold">
+                  <RankAvatarFrame
+                    experience={user.experience}
+                    thickness={3}
+                    className="h-full w-full"
+                  >
+                    {user.avatarUrl ? (
+                      <Image src={user.avatarUrl} alt={user.username} width={44} height={44} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center bg-gray-300 dark:bg-slate-600">
+                        <User className="w-5 h-5" />
+                      </span>
+                    )}
+                  </RankAvatarFrame>
                   {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
                     <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
                       <Crown className="w-3 h-3" />

@@ -15,6 +15,7 @@ import NotificationToast from './NotificationToast'
 import EmojiPicker from 'emoji-picker-react'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { useI18n } from './I18nProvider'
+import RankAvatarFrame from './RankAvatarFrame'
 
 interface TomatoAnimation {
   id: string
@@ -69,6 +70,7 @@ function SessionCard({
   
   const sessionStatus = session.status ?? SessionStatus.ACTIVE
   const isTimeTracking = session.type === SessionType.TIME_TRACKING
+  const isUnregistered = /^Guest(?:\s*#|-)/i.test(session.username)
 
   const statusDotClass = sessionStatus === SessionStatus.PAUSED ? 'bg-amber-400' : 'bg-green-400'
 
@@ -274,19 +276,28 @@ function SessionCard({
       <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
           <div className="relative flex-shrink-0">
-            {session.avatarUrl ? (
-              <Image 
-                src={session.avatarUrl} 
-                alt={session.username}
-                width={48}
-                height={48}
-                className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gray-300 dark:bg-slate-500 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold text-sm sm:text-base">
-                {session.username.charAt(0).toUpperCase()}
-              </div>
-            )}
+            <RankAvatarFrame
+              experience={session.experience}
+              thickness={2}
+              tooltip="rank"
+              tooltipPosition="top"
+              unregistered={isUnregistered}
+              className="h-10 w-10 sm:h-12 sm:w-12"
+            >
+              {session.avatarUrl ? (
+                <Image
+                  src={session.avatarUrl}
+                  alt={session.username}
+                  width={48}
+                  height={48}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-gray-300 text-sm font-semibold text-gray-700 dark:bg-slate-500 dark:text-slate-200 sm:text-base">
+                  {session.username.charAt(0).toUpperCase()}
+                </div>
+              )}
+            </RankAvatarFrame>
             <div className={`absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 ${statusDotClass} rounded-full border-2 border-white dark:border-slate-700`}></div>
           </div>
           <div className="flex-1 min-w-0">
@@ -373,6 +384,7 @@ export default function ActiveSessions() {
   } = useSocket()
   const [localSessions, setLocalSessions] = useState<ActiveSession[]>([])
   const [registeredAtByUser, setRegisteredAtByUser] = useState<Record<string, string>>({})
+  const [experienceByUser, setExperienceByUser] = useState<Record<string, number>>({})
   const [hasSocketActivity, setHasSocketActivity] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     show: false,
@@ -552,6 +564,11 @@ export default function ActiveSessions() {
               )
             )
           )
+          setExperienceByUser(
+            Object.fromEntries(
+              sessions.map((session) => [session.userId, session.experience ?? 0])
+            )
+          )
           if (!hasSocketActivity) {
             setLocalSessions(sessions)
           }
@@ -701,6 +718,10 @@ export default function ActiveSessions() {
     registeredAt: session.registeredAt
       ?? registeredAtByUser[session.userId]
       ?? null,
+    experience: session.experience
+      ?? experienceByUser[session.userId]
+      ?? (session.userId === user?.id ? user.experience : 0)
+      ?? 0,
   }))
 
   const sessionsInRoom = sessionsToShow.filter((session) => (session.roomId ?? null) === currentRoomId)

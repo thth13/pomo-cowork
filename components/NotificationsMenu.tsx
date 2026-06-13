@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEnvelope } from '@fortawesome/free-solid-svg-icons'
+import { faEnvelope, faTrophy } from '@fortawesome/free-solid-svg-icons'
 import { ClipLoader } from 'react-spinners'
 import Image from 'next/image'
 import type { NotificationItem } from '@/types'
@@ -83,6 +83,7 @@ export default function NotificationsMenu({
                 const isDeclining = inviteAction?.id === n.id && inviteAction.kind === 'decline'
                 const isInviteBusy = isAccepting || isDeclining
                 const isWallMessage = n.type === 'WALL_MESSAGE' && n.wallMessage
+                const isRankUp = n.type === 'RANK_UP'
                 const avatarUrl = n.wallMessage?.author?.avatarUrl
                 const avatarFallback = n.wallMessage?.author?.username?.[0]?.toUpperCase() ?? '?'
                 return (
@@ -92,7 +93,17 @@ export default function NotificationsMenu({
                       isUnread ? 'bg-gray-50 dark:bg-slate-800/60' : 'bg-transparent'
                     }`}
                   >
-                    {isWallMessage ? (
+                    {isRankUp ? (
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 via-rose-400 to-violet-500 text-white shadow-sm">
+                          <FontAwesomeIcon icon={faTrophy} className="text-sm" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white">{n.title}</div>
+                          <div className="mt-0.5 text-xs text-gray-500 dark:text-slate-400">{n.message}</div>
+                        </div>
+                      </div>
+                    ) : isWallMessage ? (
                       <button
                         type="button"
                         onClick={() => onNotificationClick?.(n)}

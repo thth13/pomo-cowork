@@ -20,6 +20,10 @@ model User {
   paddleSubscriptionId String?   @unique
   paddleCancelAt       DateTime?
   profileViews         Int       @default(0)
+  experience           Int       @default(0)
+  currentStreak        Int       @default(0)
+  longestStreak        Int       @default(0)
+  lastStreakDate       DateTime?
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   lastSeenAt           DateTime?
@@ -110,6 +114,7 @@ enum RoomInviteStatus {
 enum NotificationType {
   ROOM_INVITE
   WALL_MESSAGE
+  RANK_UP
 }
 
 model Room {
@@ -249,7 +254,8 @@ model PomodoroSession {
   endedAt          DateTime?
   completedAt      DateTime?
   pausedAt         DateTime?
-  remainingSeconds Int?
+  remainingSeconds  Int?
+  experienceAwarded Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

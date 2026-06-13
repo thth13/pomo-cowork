@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { randomUUID } from 'crypto'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { resolveExistingOrAnonymousUserId } from '@/lib/anonymousServer'
 import { SessionStatus, SessionType } from '@/types'
+import {
+  calculateExperienceReward,
+  getRank,
+  getNextStreak,
+  getUtcDayStart,
+} from '@/lib/ranks'
 
 export const dynamic = 'force-dynamic'
 
@@ -130,6 +137,185 @@ export async function PUT(
         return NextResponse.json({ error: 'Invalid type' }, { status: 400 })
       }
       updateData.type = type
+    }
+
+    if (status === SessionStatus.COMPLETED) {
+      const completionResult = await prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`
+          SELECT 1::int AS lock_acquired
+          FROM pg_advisory_xact_lock(hashtext(${params.id}))
+        `
+
+        const session = await tx.pomodoroSession.findFirst({
+          where: {
+            id: params.id,
+            userId: effectiveUserId,
+          },
+        })
+
+        if (!session) {
+          return null
+        }
+
+        const user = await tx.user.findUnique({
+          where: { id: effectiveUserId },
+          select: {
+            experience: true,
+            currentStreak: true,
+            longestStreak: true,
+            lastStreakDate: true,
+            isAnonymous: true,
+          },
+        })
+
+        if (!user) {
+          return null
+        }
+
+        if (session.status === SessionStatus.COMPLETED) {
+          return {
+            session,
+            progression: {
+              experience: user.experience,
+              currentStreak: user.currentStreak,
+              longestStreak: user.longestStreak,
+              experienceAwarded: session.experienceAwarded,
+              awardedNow: false,
+              rankUp: null,
+            },
+          }
+        }
+
+        if (
+          session.status !== SessionStatus.ACTIVE &&
+          session.status !== SessionStatus.PAUSED
+        ) {
+          return {
+            session,
+            progression: {
+              experience: user.experience,
+              currentStreak: user.currentStreak,
+              longestStreak: user.longestStreak,
+              experienceAwarded: 0,
+              awardedNow: false,
+              rankUp: null,
+            },
+          }
+        }
+
+        const progressionDate = new Date()
+        const completionUpdateData = {
+          ...updateData,
+          completedAt: updateData.completedAt ?? progressionDate,
+          endedAt: updateData.endedAt ?? progressionDate,
+          pausedAt: null,
+          remainingSeconds: 0,
+        }
+        const earnsExperience =
+          session.type === SessionType.WORK ||
+          session.type === SessionType.TIME_TRACKING
+        const extendsStreak = session.type === SessionType.WORK
+        const nextStreak = extendsStreak
+          ? getNextStreak(
+              user.currentStreak,
+              user.lastStreakDate,
+              progressionDate
+            )
+          : user.currentStreak
+        const experienceAwarded = earnsExperience
+          ? calculateExperienceReward(
+              session.duration,
+              extendsStreak ? nextStreak : 1
+            )
+          : 0
+        const longestStreak = Math.max(user.longestStreak, nextStreak)
+        const previousRank = getRank(user.experience)
+        const updatedExperience = user.experience + experienceAwarded
+        const updatedRank = getRank(updatedExperience)
+        const rankChanged = updatedRank.id !== previousRank.id
+
+        const [updatedSession, updatedUser] = await Promise.all([
+          tx.pomodoroSession.update({
+            where: { id: session.id },
+            data: {
+              ...completionUpdateData,
+              experienceAwarded,
+            },
+          }),
+          tx.user.update({
+            where: { id: effectiveUserId },
+            data: {
+              experience: { increment: experienceAwarded },
+              ...(extendsStreak
+                ? {
+                    currentStreak: nextStreak,
+                    longestStreak,
+                    lastStreakDate: getUtcDayStart(progressionDate),
+                  }
+                : {}),
+            },
+            select: {
+              experience: true,
+              currentStreak: true,
+              longestStreak: true,
+            },
+          }),
+        ])
+
+        return {
+          session: updatedSession,
+          progression: {
+            ...updatedUser,
+            experienceAwarded,
+            awardedNow: experienceAwarded > 0,
+            rankUp: rankChanged
+              ? {
+                  previousRank: previousRank.id,
+                  rank: updatedRank.id,
+                  rankName: updatedRank.name,
+                  experience: updatedExperience,
+                  shouldNotify: !user.isAnonymous,
+                }
+              : null,
+          },
+        }
+      })
+
+      if (!completionResult) {
+        return NextResponse.json({
+          id: params.id,
+          status,
+          alreadyRemoved: true,
+        })
+      }
+
+      const rankUp = completionResult.progression.rankUp
+      if (rankUp?.shouldNotify) {
+        try {
+          const title = `New rank: ${rankUp.rankName}`
+          const message = `Congratulations! You reached ${rankUp.rankName} with ${rankUp.experience.toLocaleString('en-US')} XP.`
+
+          // Raw SQL avoids stale generated-client enum validation in long-running dev processes.
+          await prisma.$executeRaw`
+            INSERT INTO "notifications" ("id", "userId", "type", "title", "message", "createdAt")
+            VALUES (
+              ${randomUUID()},
+              ${effectiveUserId},
+              CAST('RANK_UP' AS "NotificationType"),
+              ${title},
+              ${message},
+              CURRENT_TIMESTAMP
+            )
+          `
+        } catch (error) {
+          console.error('Failed to create rank-up notification:', error)
+        }
+      }
+
+      return NextResponse.json({
+        ...completionResult.session,
+        progression: completionResult.progression,
+      })
     }
 
     const result = await prisma.pomodoroSession.updateMany({

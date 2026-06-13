@@ -14,6 +14,7 @@ type ActiveSession = Prisma.PomodoroSessionGetPayload<{
         username: true
         avatarUrl: true
         createdAt: true
+        experience: true
       }
     }
   }
@@ -32,6 +33,7 @@ interface SessionWithTimeRemaining {
   startedAt: ActiveSession['startedAt']
   status: ActiveSession['status']
   avatarUrl?: ActiveSession['user']['avatarUrl']
+  experience: ActiveSession['user']['experience']
 }
 
 // GET /api/sessions/active - Get all active sessions
@@ -64,7 +66,8 @@ export async function GET(request: NextRequest) {
             id: true,
             username: true,
             avatarUrl: true,
-            createdAt: true
+            createdAt: true,
+            experience: true
           }
         }
       },
@@ -88,6 +91,7 @@ export async function GET(request: NextRequest) {
         userId: session.userId,
         username: session.user.username,
         avatarUrl: session.user.avatarUrl,
+        experience: session.user.experience,
         ...(canViewRegistrationDate ? { registeredAt: session.user.createdAt } : {}),
         roomId: session.roomId,
         task: session.task,

@@ -11,6 +11,10 @@ export interface User {
   paddleSubscriptionId?: string | null
   paddleCancelAt?: string | null
   lastSeenAt?: string | null
+  experience?: number
+  currentStreak?: number
+  longestStreak?: number
+  lastStreakDate?: string | null
   settings?: UserSettings
 }
 
@@ -85,7 +89,7 @@ export interface RoomInvite {
 
 export interface NotificationItem {
   id: string
-  type: 'ROOM_INVITE' | 'WALL_MESSAGE'
+  type: 'ROOM_INVITE' | 'WALL_MESSAGE' | 'RANK_UP'
   title: string
   message: string
   readAt: string | null
@@ -142,6 +146,7 @@ export interface ActiveSession {
   userId: string
   username: string
   avatarUrl?: string
+  experience?: number
   registeredAt?: string | null
   roomId?: string | null
   task: string

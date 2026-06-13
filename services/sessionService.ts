@@ -85,7 +85,7 @@ export const sessionService = {
 
   async complete(id: string) {
     if (id.startsWith('temp_')) {
-      return
+      return null
     }
 
     const token = useAuthStore.getState().token
@@ -111,5 +111,41 @@ export const sessionService = {
     if (!response.ok) {
       throw new Error(`Failed to complete session ${id}, status ${response.status}`)
     }
+
+    const result = await response.json() as {
+      progression?: {
+        experience: number
+        currentStreak: number
+        longestStreak: number
+        rankUp?: {
+          previousRank: string
+          rank: string
+          rankName: string
+          experience: number
+          shouldNotify: boolean
+        } | null
+      }
+    }
+
+    if (result.progression) {
+      useAuthStore.setState((state) => ({
+        user: state.user
+          ? {
+              ...state.user,
+              experience: result.progression?.experience,
+              currentStreak: result.progression?.currentStreak,
+              longestStreak: result.progression?.longestStreak,
+            }
+          : null,
+      }))
+
+      if (result.progression.rankUp && typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('rank-up', {
+          detail: result.progression.rankUp,
+        }))
+      }
+    }
+
+    return result
   },
 }

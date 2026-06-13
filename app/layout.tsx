@@ -15,6 +15,7 @@ import FeedbackWidget from '@/components/FeedbackWidget'
 import GtmClient from '@/components/GtmClient'
 import { I18nProvider } from '@/components/I18nProvider'
 import PremiumPromoModal from '@/components/PremiumPromoModal'
+import RankUpModal from '@/components/RankUpModal'
 
 config.autoAddCss = false
 
@@ -101,6 +102,7 @@ export default function RootLayout({
               <GtmClient />
               <InitialLoader />
               <PremiumPromoModal />
+              <RankUpModal />
               {children}
               <SiteFooter />
               <div className="hidden sm:block">
