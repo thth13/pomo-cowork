@@ -14,6 +14,7 @@ import SiteFooter from '@/components/SiteFooter'
 import FeedbackWidget from '@/components/FeedbackWidget'
 import GtmClient from '@/components/GtmClient'
 import { I18nProvider } from '@/components/I18nProvider'
+import PremiumPromoModal from '@/components/PremiumPromoModal'
 
 config.autoAddCss = false
 
@@ -99,6 +100,7 @@ export default function RootLayout({
             <AuthProvider>
               <GtmClient />
               <InitialLoader />
+              <PremiumPromoModal />
               {children}
               <SiteFooter />
               <div className="hidden sm:block">
