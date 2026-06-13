@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import NotificationToast from '@/components/NotificationToast'
+import { getAnonymousId, getOrCreateAnonymousId } from '@/lib/anonymousUser'
 
 interface Task {
   id: string
@@ -22,6 +23,32 @@ interface Task {
 const getTaskCanonicalId = (task: Task): string => task.backendId ?? task.id
 
 const SELECTED_TASK_STORAGE_KEY = 'selectedTask'
+
+const buildTaskHeaders = (
+  token: string | null,
+  includeContentType = false,
+  createAnonymous = false
+): Record<string, string> => {
+  const headers: Record<string, string> = {}
+
+  if (includeContentType) {
+    headers['Content-Type'] = 'application/json'
+  }
+
+  if (token) {
+    headers.Authorization = `Bearer ${token}`
+  } else {
+    const anonymousId = createAnonymous
+      ? getOrCreateAnonymousId()
+      : getAnonymousId()
+
+    if (anonymousId) {
+      headers['X-Anonymous-Id'] = anonymousId
+    }
+  }
+
+  return headers
+}
 
 const priorityColors = {
   'Critical': 'text-red-600',
@@ -50,7 +77,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const [toastMessage, setToastMessage] = useState('')
   const [showToast, setShowToast] = useState(false)
   const { selectedTask, setSelectedTask, setTaskOptions, isRunning } = useTimerStore()
-  const { user } = useAuthStore()
+  const { user, token } = useAuthStore()
   const hasRestoredSelectedTask = useRef(false)
   const deleteConfirmTimeoutRef = useRef<number | null>(null)
 
@@ -102,7 +129,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
 
   // Load tasks on mount
   useEffect(() => {
-    if (user) {
+    if (user || token || getAnonymousId()) {
       loadTasks()
     } else {
       setTasks([])
@@ -110,7 +137,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       setSelectedTask(null)
       setIsLoading(false)
     }
-  }, [user, setSelectedTask, setTaskOptions])
+  }, [user, token, setSelectedTask, setTaskOptions])
 
   useEffect(() => {
     setTaskOptions(tasks.map((task) => ({
@@ -162,16 +189,16 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const loadTasks = async () => {
     console.log('TaskList: Loading tasks...')
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        console.log('TaskList: No token found, skipping load')
+      const headers = buildTaskHeaders(token)
+      if (!headers.Authorization && !headers['X-Anonymous-Id']) {
+        console.log('TaskList: No user identity found, skipping load')
+        setTasks([])
+        setTaskOptions([])
         return
       }
 
       const response = await fetch('/api/tasks', {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers
       })
 
       if (response.ok) {
@@ -239,15 +266,9 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
     }
 
     try {
-      const token = localStorage.getItem('token')
-      if (!token) return
-
       const response = await fetch(`/api/tasks/${task.backendId}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        headers: buildTaskHeaders(token, true),
         body: JSON.stringify({ completed: newCompleted })
       })
 
@@ -280,14 +301,9 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
     }
 
     try {
-      const token = localStorage.getItem('token')
-      if (!token) return
-
       const response = await fetch(`/api/tasks/${task.backendId}`, {
         method: 'DELETE',
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
+        headers: buildTaskHeaders(token)
       })
 
       if (!response.ok) {
@@ -360,19 +376,9 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
     setNewTaskPriority('Medium')
 
     try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        alert('Login to save tasks')
-        setTasks(prev => prev.filter(t => t.id !== tempId))
-        return
-      }
-
       const response = await fetch('/api/tasks', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
+        headers: buildTaskHeaders(token, true, true),
         body: JSON.stringify({
           title: optimisticTask.title,
           description: optimisticTask.description,

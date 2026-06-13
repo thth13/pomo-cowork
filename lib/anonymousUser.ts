@@ -5,6 +5,10 @@ import { buildAnonymousProfile } from './anonymousProfile'
 const ANONYMOUS_ID_KEY = 'anonymous_user_id'
 
 const generateAnonymousId = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `anon_${crypto.randomUUID()}`
+  }
+
   return `anon_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`
 }
 
@@ -21,6 +25,14 @@ export const getOrCreateAnonymousId = (): string => {
   const newId = generateAnonymousId()
   window.localStorage.setItem(ANONYMOUS_ID_KEY, newId)
   return newId
+}
+
+export const getAnonymousId = (): string | null => {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  return window.localStorage.getItem(ANONYMOUS_ID_KEY)
 }
 
 export const getAnonymousProfile = () => {

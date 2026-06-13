@@ -1,35 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getEffectiveMinutes } from '@/lib/sessionStats'
-import { verifyToken, getTokenFromHeader } from '@/lib/auth'
+import { resolveTaskUserId } from '@/lib/taskAuth'
 
 export const dynamic = 'force-dynamic'
+
+const TASK_PRIORITIES = new Set(['Critical', 'High', 'Medium', 'Low'])
 
 // GET - получить все задачи пользователя
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const token = getTokenFromHeader(authHeader)
-    
-    if (!token) {
+    const userId = await resolveTaskUserId(request)
+
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    const decoded = verifyToken(token)
-    
-    if (!decoded) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      )
-    }
-
     const tasks = await prisma.task.findMany({
       where: {
-        userId: decoded.userId
+        userId
       },
       orderBy: [
         { completed: 'asc' },
@@ -39,7 +31,7 @@ export async function GET(request: NextRequest) {
 
     const sessions = await prisma.pomodoroSession.findMany({
       where: {
-        userId: decoded.userId,
+        userId,
         type: 'WORK',
         status: { in: ['COMPLETED', 'CANCELLED'] }
       },
@@ -80,21 +72,11 @@ export async function GET(request: NextRequest) {
 // POST - создать новую задачу
 export async function POST(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const token = getTokenFromHeader(authHeader)
-    
-    if (!token) {
+    const userId = await resolveTaskUserId(request, { createAnonymous: true })
+
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const decoded = verifyToken(token)
-    
-    if (!decoded) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
         { status: 401 }
       )
     }
@@ -102,20 +84,32 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { title, description, pomodoros, priority } = body
 
-    if (!title || !title.trim()) {
+    if (typeof title !== 'string' || !title.trim()) {
       return NextResponse.json(
         { error: 'Title is required' },
         { status: 400 }
       )
     }
 
+    if (description !== undefined && typeof description !== 'string') {
+      return NextResponse.json({ error: 'Invalid description' }, { status: 400 })
+    }
+
+    if (pomodoros !== undefined && (!Number.isInteger(pomodoros) || pomodoros < 1)) {
+      return NextResponse.json({ error: 'Invalid pomodoros' }, { status: 400 })
+    }
+
+    if (priority !== undefined && !TASK_PRIORITIES.has(priority)) {
+      return NextResponse.json({ error: 'Invalid priority' }, { status: 400 })
+    }
+
     const task = await prisma.task.create({
       data: {
-        userId: decoded.userId,
+        userId,
         title: title.trim(),
-        description: description || '',
-        pomodoros: pomodoros || 1,
-        priority: priority || 'Средний',
+        description: description ?? '',
+        pomodoros: pomodoros ?? 1,
+        priority: priority ?? 'Medium',
         completed: false
       }
     })

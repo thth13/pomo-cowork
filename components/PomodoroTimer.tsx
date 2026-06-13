@@ -540,6 +540,16 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       })
       void mutateSessions()
       if (requestId !== startRequestIdRef.current) {
+        void sessionService
+          .update(dbSession.id, {
+            status: SessionStatus.CANCELLED,
+            endedAt: new Date().toISOString(),
+            pausedAt: null,
+            timeRemaining: useTimerStore.getState().timeRemaining,
+          })
+          .catch((error) => {
+            console.error('Failed to cancel superseded session:', error)
+          })
         return
       }
 
@@ -795,6 +805,16 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         const dbSession = await sessionService.create(sessionPayload)
         void mutateSessions()
         if (requestId !== startRequestIdRef.current) {
+          void sessionService
+            .update(dbSession.id, {
+              status: SessionStatus.CANCELLED,
+              endedAt: new Date().toISOString(),
+              pausedAt: null,
+              timeRemaining: useTimerStore.getState().timeRemaining,
+            })
+            .catch((error) => {
+              console.error('Failed to cancel superseded session:', error)
+            })
           return
         }
 
@@ -850,6 +870,10 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
   const handlePause = async () => {
     if (!currentSession || currentSession.status === SessionStatus.PAUSED) {
+      return
+    }
+
+    if (currentSession.id.startsWith('temp_')) {
       return
     }
 
@@ -1112,12 +1136,10 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         selectedTask,
       })
       
-      const token = localStorage.getItem('token')
       if (
         completedType === SessionType.WORK &&
         selectedTask &&
-        selectedTask.id &&
-        token
+        selectedTask.id
       ) {
         try {
           console.log('Incrementing pomodoro for task:', selectedTask.id)

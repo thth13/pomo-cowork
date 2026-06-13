@@ -7,6 +7,16 @@ export interface AnonymousProfile {
 const ANONYMOUS_EMAIL_DOMAIN = 'guest.local'
 const USERNAME_PREFIX = 'Guest #'
 const USERNAME_SEGMENT_LENGTH = 10
+const LEGACY_ANONYMOUS_ID_PATTERN = /^anon_\d+_[a-z0-9]+$/
+const UUID_ANONYMOUS_ID_PATTERN =
+  /^anon_[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+export const isValidAnonymousId = (anonymousId: unknown): anonymousId is string => {
+  return typeof anonymousId === 'string' && (
+    LEGACY_ANONYMOUS_ID_PATTERN.test(anonymousId) ||
+    UUID_ANONYMOUS_ID_PATTERN.test(anonymousId)
+  )
+}
 
 const sanitizeAnonymousId = (anonymousId: string): string => {
   return anonymousId.replace(/[^a-zA-Z0-9]/g, '')
@@ -38,4 +48,3 @@ export const buildAnonymousProfile = (anonymousId: string): AnonymousProfile => 
 export const isAnonymousEmail = (email: string): boolean => {
   return email.endsWith(`@${ANONYMOUS_EMAIL_DOMAIN}`)
 }
-

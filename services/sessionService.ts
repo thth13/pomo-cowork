@@ -1,5 +1,6 @@
 import { PomodoroSession, SessionType } from '@/types'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
+import { useAuthStore } from '@/store/useAuthStore'
 
 export interface SessionData {
   task: string
@@ -24,7 +25,7 @@ const buildHeaders = (token?: string | null) => {
 
 export const sessionService = {
   async create(data: SessionData): Promise<PomodoroSession> {
-    const token = localStorage.getItem('token')
+    const token = useAuthStore.getState().token
     const body: Record<string, any> = {
       task: data.task,
       duration: data.duration,
@@ -57,7 +58,11 @@ export const sessionService = {
   },
 
   async update(id: string, data: Record<string, any>) {
-    const token = localStorage.getItem('token')
+    if (id.startsWith('temp_')) {
+      return
+    }
+
+    const token = useAuthStore.getState().token
 
     const body = {
       ...data,
@@ -79,7 +84,11 @@ export const sessionService = {
   },
 
   async complete(id: string) {
-    const token = localStorage.getItem('token')
+    if (id.startsWith('temp_')) {
+      return
+    }
+
+    const token = useAuthStore.getState().token
 
     const body: Record<string, any> = {
       status: 'COMPLETED',

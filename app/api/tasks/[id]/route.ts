@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { verifyToken, getTokenFromHeader } from '@/lib/auth'
+import { resolveTaskUserId } from '@/lib/taskAuth'
 
 export const dynamic = 'force-dynamic'
+
+const TASK_PRIORITIES = new Set(['Critical', 'High', 'Medium', 'Low'])
 
 // PUT - обновить задачу
 export async function PUT(
@@ -10,21 +12,11 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const token = getTokenFromHeader(authHeader)
-    
-    if (!token) {
+    const userId = await resolveTaskUserId(request)
+
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
-        { status: 401 }
-      )
-    }
-
-    const decoded = verifyToken(token)
-    
-    if (!decoded) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
         { status: 401 }
       )
     }
@@ -32,44 +24,68 @@ export async function PUT(
     const body = await request.json()
     const { title, description, pomodoros, priority, completed, incrementPomodoro } = body
 
-    // Проверяем, что задача принадлежит пользователю
-    const existingTask = await prisma.task.findFirst({
+    if (incrementPomodoro !== undefined && typeof incrementPomodoro !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid incrementPomodoro value' }, { status: 400 })
+    }
+
+    if (title !== undefined && (typeof title !== 'string' || !title.trim())) {
+      return NextResponse.json({ error: 'Invalid title' }, { status: 400 })
+    }
+
+    if (description !== undefined && typeof description !== 'string') {
+      return NextResponse.json({ error: 'Invalid description' }, { status: 400 })
+    }
+
+    if (pomodoros !== undefined && (!Number.isInteger(pomodoros) || pomodoros < 1)) {
+      return NextResponse.json({ error: 'Invalid pomodoros' }, { status: 400 })
+    }
+
+    if (priority !== undefined && !TASK_PRIORITIES.has(priority)) {
+      return NextResponse.json({ error: 'Invalid priority' }, { status: 400 })
+    }
+
+    if (completed !== undefined && typeof completed !== 'boolean') {
+      return NextResponse.json({ error: 'Invalid completed value' }, { status: 400 })
+    }
+
+    const result = await prisma.task.updateMany({
       where: {
         id: params.id,
-        userId: decoded.userId
+        userId,
+      },
+      data: {
+        ...(incrementPomodoro && {
+          completedPomodoros: {
+            increment: 1
+          }
+        }),
+        ...(!incrementPomodoro && {
+          ...(title !== undefined && { title: title.trim() }),
+          ...(description !== undefined && { description }),
+          ...(pomodoros !== undefined && { pomodoros }),
+          ...(priority !== undefined && { priority }),
+          ...(completed !== undefined && { completed })
+        })
       }
     })
 
-    if (!existingTask) {
+    if (result.count === 0) {
       return NextResponse.json(
         { error: 'Task not found' },
         { status: 404 }
       )
     }
 
-    // Если нужно увеличить счетчик помидоров
-    if (incrementPomodoro) {
-      const task = await prisma.task.update({
-        where: { id: params.id },
-        data: {
-          completedPomodoros: {
-            increment: 1
-          }
-        }
-      })
-      return NextResponse.json(task)
-    }
-
-    const task = await prisma.task.update({
+    const task = await prisma.task.findUnique({
       where: { id: params.id },
-      data: {
-        ...(title !== undefined && { title: title.trim() }),
-        ...(description !== undefined && { description }),
-        ...(pomodoros !== undefined && { pomodoros }),
-        ...(priority !== undefined && { priority }),
-        ...(completed !== undefined && { completed })
-      }
     })
+
+    if (!task) {
+      return NextResponse.json(
+        { error: 'Task not found' },
+        { status: 404 }
+      )
+    }
 
     return NextResponse.json(task)
   } catch (error) {
@@ -87,43 +103,28 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const token = getTokenFromHeader(authHeader)
-    
-    if (!token) {
+    const userId = await resolveTaskUserId(request)
+
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    const decoded = verifyToken(token)
-    
-    if (!decoded) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      )
-    }
-
-    // Проверяем, что задача принадлежит пользователю
-    const existingTask = await prisma.task.findFirst({
+    const result = await prisma.task.deleteMany({
       where: {
         id: params.id,
-        userId: decoded.userId
+        userId,
       }
     })
 
-    if (!existingTask) {
+    if (result.count === 0) {
       return NextResponse.json(
         { error: 'Task not found' },
         { status: 404 }
       )
     }
-
-    await prisma.task.delete({
-      where: { id: params.id }
-    })
 
     return NextResponse.json({ success: true })
   } catch (error) {

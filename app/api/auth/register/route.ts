@@ -3,10 +3,18 @@ import { prisma } from '@/lib/db'
 import { hashPassword, generateToken } from '@/lib/auth'
 import { recordReferralSignup } from '@/lib/referrals'
 import { isUsernameTaken, normalizeUsername } from '@/lib/username'
+import { isValidAnonymousId } from '@/lib/anonymousProfile'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, username, password, anonymousId, referralCode } = await request.json()
+    const {
+      email,
+      username,
+      password,
+      anonymousId: rawAnonymousId,
+      referralCode
+    } = await request.json()
+    const anonymousId = isValidAnonymousId(rawAnonymousId) ? rawAnonymousId : null
     const normalizedUsername = typeof username === 'string' ? normalizeUsername(username) : ''
 
     if (!email || !username || !password) {

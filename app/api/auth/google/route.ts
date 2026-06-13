@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import { generateToken, hashPassword } from '@/lib/auth'
 import { recordReferralSignup } from '@/lib/referrals'
 import { generateUniqueUsername } from '@/lib/username'
+import { isValidAnonymousId } from '@/lib/anonymousProfile'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 
@@ -74,7 +75,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Google OAuth is not configured' }, { status: 500 })
     }
 
-    const { token, anonymousId, referralCode } = await request.json()
+    const {
+      token,
+      anonymousId: rawAnonymousId,
+      referralCode
+    } = await request.json()
+    const anonymousId = isValidAnonymousId(rawAnonymousId) ? rawAnonymousId : null
 
     if (!token) {
       return NextResponse.json({ error: 'Google token is required' }, { status: 400 })

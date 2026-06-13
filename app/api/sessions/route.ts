@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
-import { ensureAnonymousUser } from '@/lib/anonymousServer'
+import { resolveExistingOrAnonymousUserId } from '@/lib/anonymousServer'
 import { SessionType, SessionStatus } from '@/types'
 
 export const dynamic = 'force-dynamic'
+
+const SESSION_TYPES = new Set(Object.values(SessionType))
 
 // GET /api/sessions - Get user's sessions
 export async function GET(request: NextRequest) {
@@ -68,65 +70,45 @@ export async function POST(request: NextRequest) {
     const token = getTokenFromHeader(authHeader)
     const { task, duration, type, anonymousId, startedAt, roomId } = await request.json()
 
-    if (!task || !duration || !type) {
+    if (
+      typeof task !== 'string' ||
+      !task.trim() ||
+      !Number.isInteger(duration) ||
+      duration < 1 ||
+      !SESSION_TYPES.has(type)
+    ) {
       return NextResponse.json(
-        { error: 'Task, duration and type are required' },
+        { error: 'Invalid task, duration or type' },
         { status: 400 }
       )
     }
 
-    let userId: string
-
-    // Check if user is authenticated
-    if (token) {
-      const payload = verifyToken(token)
-      if (payload) {
-        userId = payload.userId
-      } else if (anonymousId) {
-        const anonymousUser = await ensureAnonymousUser(prisma, anonymousId)
-        userId = anonymousUser.id
-      } else {
-        return NextResponse.json(
-          { error: 'Anonymous ID required for unauthenticated users' },
-          { status: 400 }
-        )
-      }
-    } else {
-      // No token, use anonymous ID
-      if (!anonymousId) {
-        return NextResponse.json(
-          { error: 'Anonymous ID required for unauthenticated users' },
-          { status: 400 }
-        )
-      }
-
-      const anonymousUser = await ensureAnonymousUser(prisma, anonymousId)
-      userId = anonymousUser.id
+    const userId = await resolveExistingOrAnonymousUserId(
+      prisma,
+      token,
+      anonymousId,
+      { createAnonymous: true }
+    )
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'Authentication or anonymous ID required' },
+        { status: 401 }
+      )
     }
 
-    // End any existing active sessions for this user (authenticated or anonymous)
-    // This ensures each user has only one active session at a time
-    await prisma.pomodoroSession.updateMany({
-      where: {
-        userId,
-        status: {
-          in: ['ACTIVE', 'PAUSED']
-        }
-      },
-      data: {
-        status: 'CANCELLED',
-        endedAt: new Date()
-      }
-    })
-
     const normalizedStartedAt = (() => {
-      if (!startedAt) return null
+      if (startedAt === undefined) return undefined
+      if (typeof startedAt !== 'string') return null
       const dt = new Date(startedAt)
       if (Number.isNaN(dt.getTime())) {
         return null
       }
       return dt
     })()
+
+    if (normalizedStartedAt === null) {
+      return NextResponse.json({ error: 'Invalid startedAt' }, { status: 400 })
+    }
 
     const normalizedRoomId = (() => {
       if (typeof roomId !== 'string') return null
@@ -145,24 +127,44 @@ export async function POST(request: NextRequest) {
       }
 
       if (room.privacy === 'PRIVATE') {
-        const payload = token ? verifyToken(token) : null
-        if (!payload || payload.userId !== room.ownerId) {
+        if (userId !== room.ownerId) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
       }
     }
 
-    const session = await prisma.pomodoroSession.create({
-      data: {
-        userId,
-        ...(normalizedRoomId ? { roomId: normalizedRoomId } : {}),
-        task,
-        duration,
-        type: type as string,
-        status: 'ACTIVE',
-        remainingSeconds: duration * 60,
-        ...(normalizedStartedAt ? { startedAt: normalizedStartedAt } : {}),
-      }
+    const session = await prisma.$transaction(async (tx) => {
+      // Serialize session creation per user, including concurrent browser tabs.
+      await tx.$queryRaw`
+        SELECT 1::int AS lock_acquired
+        FROM pg_advisory_xact_lock(hashtext(${userId}))
+      `
+
+      await tx.pomodoroSession.updateMany({
+        where: {
+          userId,
+          status: {
+            in: ['ACTIVE', 'PAUSED']
+          }
+        },
+        data: {
+          status: 'CANCELLED',
+          endedAt: new Date()
+        }
+      })
+
+      return tx.pomodoroSession.create({
+        data: {
+          userId,
+          ...(normalizedRoomId ? { roomId: normalizedRoomId } : {}),
+          task: task.trim(),
+          duration,
+          type: type as string,
+          status: 'ACTIVE',
+          remainingSeconds: duration * 60,
+          ...(normalizedStartedAt ? { startedAt: normalizedStartedAt } : {}),
+        }
+      })
     })
 
     return NextResponse.json(session)

@@ -319,7 +319,7 @@ function SessionCard({
             </div>
             {formattedRegistrationDate && (
               <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">
-                {t.activeSessions.registered}: {formattedRegistrationDate} (Kyiv)
+                {t.activeSessions.registered}: {formattedRegistrationDate}
               </div>
             )}
           </div>

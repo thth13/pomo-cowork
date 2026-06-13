@@ -1,3 +1,6 @@
+import { getAnonymousId, getOrCreateAnonymousId } from '@/lib/anonymousUser'
+import { useAuthStore } from '@/store/useAuthStore'
+
 const buildHeaders = (token?: string) => {
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -5,6 +8,8 @@ const buildHeaders = (token?: string) => {
 
   if (token) {
     headers.Authorization = `Bearer ${token}`
+  } else {
+    headers['X-Anonymous-Id'] = getAnonymousId() ?? getOrCreateAnonymousId()
   }
 
   return headers
@@ -12,10 +17,7 @@ const buildHeaders = (token?: string) => {
 
 export const taskService = {
   async incrementPomodoro(taskId: string) {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      throw new Error('Authentication required to increment task pomodoro')
-    }
+    const token = useAuthStore.getState().token ?? undefined
 
     const response = await fetch(`/api/tasks/${taskId}`, {
       method: 'PUT',
