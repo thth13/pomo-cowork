@@ -54,6 +54,8 @@ export default function AdminReferralManager() {
   const [supportLoading, setSupportLoading] = useState(false)
   const [proUsers, setProUsers] = useState<ProUserEntry[]>([])
   const [proUsersLoading, setProUsersLoading] = useState(false)
+  const [premiumEmail, setPremiumEmail] = useState('')
+  const [isGrantingPremium, setIsGrantingPremium] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'warning'>('info')
   const [showToast, setShowToast] = useState(false)
@@ -177,6 +179,55 @@ export default function AdminReferralManager() {
       void fetchProUsers()
     }
   }, [isAuthenticated])
+
+  const handleGrantPremium = async () => {
+    if (isGrantingPremium) {
+      return
+    }
+
+    const email = premiumEmail.trim()
+    if (!email) {
+      setToastType('warning')
+      setToastMessage('Enter a user email')
+      setShowToast(true)
+      return
+    }
+
+    setIsGrantingPremium(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/admin/pro-users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+        body: JSON.stringify({ email }),
+      })
+      const body = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        throw new Error(body?.error ?? 'Failed to grant Premium')
+      }
+
+      const updatedUser = body?.user as ProUserEntry | undefined
+      setPremiumEmail('')
+      setToastType('success')
+      setToastMessage(
+        body?.status === 'already_lifetime'
+          ? `${updatedUser?.email ?? email} already has Premium with no expiry`
+          : `Premium active for ${updatedUser?.email ?? email} until ${formatShortDate(updatedUser?.proExpiresAt)}`
+      )
+      setShowToast(true)
+      await fetchProUsers()
+    } catch (err) {
+      setToastType('error')
+      setToastMessage(err instanceof Error ? err.message : 'Failed to grant Premium')
+      setShowToast(true)
+    } finally {
+      setIsGrantingPremium(false)
+    }
+  }
 
   const handleCreate = async () => {
     setIsSubmitting(true)
@@ -696,9 +747,43 @@ export default function AdminReferralManager() {
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Pro users</h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Pro users</h2>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Grant one month of Premium by user email.
+            </p>
+          </div>
           <span className="text-xs text-slate-400">{proUsers.length} total</span>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+          <label className="sr-only" htmlFor="premium-user-email">
+            User email
+          </label>
+          <input
+            id="premium-user-email"
+            type="email"
+            value={premiumEmail}
+            onChange={(event) => setPremiumEmail(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.preventDefault()
+                void handleGrantPremium()
+              }
+            }}
+            placeholder="user@example.com"
+            disabled={isGrantingPremium}
+            className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-amber-500 dark:focus:ring-amber-500/40"
+          />
+          <button
+            type="button"
+            onClick={() => void handleGrantPremium()}
+            disabled={isGrantingPremium || !premiumEmail.trim()}
+            className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-amber-300 dark:text-slate-950"
+          >
+            {isGrantingPremium ? 'Granting...' : 'Grant Premium for 1 month'}
+          </button>
         </div>
 
         <div className="mt-4 space-y-3">

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 import { isAdminUser } from '@/lib/admin'
+import { addMonths } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
@@ -59,5 +60,82 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Failed to load pro users', error)
     return NextResponse.json({ error: 'Failed to load pro users' }, { status: 500 })
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const adminResult = await getAdminUser(request)
+    if (adminResult.error) {
+      return adminResult.error
+    }
+
+    const body = await request.json().catch(() => null)
+    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
+
+    if (!email) {
+      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    }
+
+    const user = await prisma.user.findFirst({
+      where: {
+        email: {
+          equals: email,
+          mode: 'insensitive',
+        },
+        isAnonymous: false,
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatarUrl: true,
+        isPro: true,
+        proExpiresAt: true,
+        createdAt: true,
+        lastSeenAt: true,
+      },
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
+
+    if (user.isPro && !user.proExpiresAt) {
+      return NextResponse.json({
+        status: 'already_lifetime',
+        user,
+      })
+    }
+
+    const now = new Date()
+    const startsAt =
+      user.isPro && user.proExpiresAt && user.proExpiresAt > now ? user.proExpiresAt : now
+    const proExpiresAt = addMonths(startsAt, 1)
+
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        isPro: true,
+        proExpiresAt,
+      },
+      select: {
+        id: true,
+        username: true,
+        email: true,
+        avatarUrl: true,
+        proExpiresAt: true,
+        createdAt: true,
+        lastSeenAt: true,
+      },
+    })
+
+    return NextResponse.json({
+      status: 'granted',
+      user: updatedUser,
+    })
+  } catch (error) {
+    console.error('Failed to grant pro access', error)
+    return NextResponse.json({ error: 'Failed to grant pro access' }, { status: 500 })
   }
 }
