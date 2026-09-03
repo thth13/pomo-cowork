@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { verifyToken, getTokenFromHeader } from '@/lib/auth'
+import { getTokenFromHeader } from '@/lib/auth'
 import { resolveExistingOrAnonymousUserId } from '@/lib/anonymousServer'
 import { SessionType, SessionStatus } from '@/types'
 
@@ -11,10 +11,11 @@ const SESSION_TYPES = new Set(Object.values(SessionType))
 // GET /api/sessions - Get user's sessions
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization')
-    const token = getTokenFromHeader(authHeader)
+    const token = getTokenFromHeader(request.headers.get('authorization'))
+    const anonymousId = request.headers.get('x-anonymous-id')
+    const userId = await resolveExistingOrAnonymousUserId(prisma, token, anonymousId)
 
-    if (!token) {
+    if (!userId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -27,18 +28,10 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(Math.max(limitParam, 1), 100)
     const skip = (page - 1) * limit
 
-    const payload = verifyToken(token)
-    if (!payload) {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      )
-    }
-
     if (searchParams.get('activeOnly') === '1') {
       const activeSession = await prisma.pomodoroSession.findFirst({
         where: {
-          userId: payload.userId,
+          userId,
           status: { in: ['ACTIVE', 'PAUSED'] },
         },
         orderBy: { startedAt: 'desc' },
@@ -48,11 +41,11 @@ export async function GET(request: NextRequest) {
     }
 
     const total = await prisma.pomodoroSession.count({
-      where: { userId: payload.userId },
+      where: { userId },
     })
 
     const sessions = await prisma.pomodoroSession.findMany({
-      where: { userId: payload.userId },
+      where: { userId },
       orderBy: { createdAt: 'desc' },
       skip,
       take: limit
@@ -80,9 +73,13 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const token = getTokenFromHeader(authHeader)
-    const { task, duration, type, anonymousId, startedAt, roomId } = await request.json()
+    const { id, task, duration, type, anonymousId, startedAt, roomId } = await request.json()
 
     if (
+      (id !== undefined && (
+        typeof id !== 'string' ||
+        !/^client_[a-zA-Z0-9_-]{8,100}$/.test(id)
+      )) ||
       typeof task !== 'string' ||
       !task.trim() ||
       !Number.isInteger(duration) ||
@@ -152,21 +149,55 @@ export async function POST(request: NextRequest) {
         FROM pg_advisory_xact_lock(hashtext(${userId}))
       `
 
-      await tx.pomodoroSession.updateMany({
+      if (id) {
+        const existingSession = await tx.pomodoroSession.findUnique({
+          where: { id },
+        })
+
+        if (existingSession) {
+          if (existingSession.userId !== userId) {
+            throw new Error('SESSION_ID_CONFLICT')
+          }
+
+          return existingSession
+        }
+      }
+
+      const activeSessions = await tx.pomodoroSession.findMany({
         where: {
           userId,
-          status: {
-            in: ['ACTIVE', 'PAUSED']
-          }
+          status: { in: ['ACTIVE', 'PAUSED'] },
         },
-        data: {
-          status: 'CANCELLED',
-          endedAt: new Date()
-        }
+        select: { id: true },
+        orderBy: { id: 'asc' },
       })
+
+      // Use the same per-session locks as pause/resume/complete so a late
+      // update cannot resurrect a session cancelled by this new start.
+      for (const activeSession of activeSessions) {
+        await tx.$queryRaw`
+          SELECT 1::int AS lock_acquired
+          FROM pg_advisory_xact_lock(hashtext(${activeSession.id}))
+        `
+      }
+
+      if (activeSessions.length > 0) {
+        await tx.pomodoroSession.updateMany({
+          where: {
+            id: { in: activeSessions.map((activeSession) => activeSession.id) },
+            userId,
+            status: { in: ['ACTIVE', 'PAUSED'] },
+          },
+          data: {
+            status: 'CANCELLED',
+            endedAt: new Date()
+          }
+        })
+      }
 
       return tx.pomodoroSession.create({
         data: {
+          ...(id ? { id } : {}),
           userId,
           ...(normalizedRoomId ? { roomId: normalizedRoomId } : {}),
           task: task.trim(),
@@ -183,6 +214,13 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Create session error:', error)
+    if (error instanceof Error && error.message === 'SESSION_ID_CONFLICT') {
+      return NextResponse.json(
+        { error: 'Session ID conflict' },
+        { status: 409 }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Server error' },
       { status: 500 }

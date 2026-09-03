@@ -318,15 +318,48 @@ export async function PUT(
       })
     }
 
-    const result = await prisma.pomodoroSession.updateMany({
-      where: {
-        id: params.id,
-        userId: effectiveUserId,
-      },
-      data: updateData,
+    const updatedSession = await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`
+        SELECT 1::int AS lock_acquired
+        FROM pg_advisory_xact_lock(hashtext(${params.id}))
+      `
+
+      const existingSession = await tx.pomodoroSession.findFirst({
+        where: {
+          id: params.id,
+          userId: effectiveUserId,
+        },
+      })
+
+      if (!existingSession) {
+        return null
+      }
+
+      const isExistingTerminal =
+        existingSession.status === SessionStatus.CANCELLED ||
+        existingSession.status === SessionStatus.COMPLETED
+
+      // Terminal states are immutable. Delayed pause/resume/stop requests must
+      // never resurrect or downgrade a completed/cancelled session.
+      if (isExistingTerminal) {
+        return existingSession
+      }
+
+      await tx.pomodoroSession.updateMany({
+        where: {
+          id: existingSession.id,
+          userId: effectiveUserId,
+          status: { in: [SessionStatus.ACTIVE, SessionStatus.PAUSED] },
+        },
+        data: updateData,
+      })
+
+      return tx.pomodoroSession.findUnique({
+        where: { id: existingSession.id },
+      })
     })
 
-    if (result.count === 0) {
+    if (!updatedSession) {
       const isTerminalUpdate =
         status === SessionStatus.CANCELLED ||
         status === SessionStatus.COMPLETED
@@ -339,17 +372,6 @@ export async function PUT(
         })
       }
 
-      return NextResponse.json(
-        { error: 'Session not found' },
-        { status: 404 }
-      )
-    }
-
-    const updatedSession = await prisma.pomodoroSession.findUnique({
-      where: { id: params.id },
-    })
-
-    if (!updatedSession) {
       return NextResponse.json(
         { error: 'Session not found' },
         { status: 404 }

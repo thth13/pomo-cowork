@@ -24,7 +24,6 @@ import { SettingsModal } from '@/components/SettingsModal'
 import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
 import { TimerErrorBoundary } from '@/components/TimerErrorBoundary'
-import { useThrottle } from '@/hooks/useThrottle'
 import { useI18n } from '@/components/I18nProvider'
 
 interface PomodoroTimerProps {
@@ -229,7 +228,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     taskOptions,
   } = useTimerStore()
 
-  const { user, isAuthenticated, updateUserSettings } = useAuthStore()
+  const { user, token, isAuthenticated, updateUserSettings } = useAuthStore()
   const isProMember = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
   const {
     currentRoomId,
@@ -262,7 +261,10 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   const completedSessionIdRef = useRef<string | null>(null)
   const startRequestIdRef = useRef(0)
   const lastStoppedSessionIdRef = useRef<string | null>(null)
-  const canTriggerAction = useThrottle(1000)
+  const startOperationRef = useRef(false)
+  const stopOperationRef = useRef(false)
+  const pauseOperationRef = useRef(false)
+  const resumeOperationRef = useRef(false)
   const [isPausing, setIsPausing] = useState(false)
   const [isResuming, setIsResuming] = useState(false)
   const [isPaywallOpen, setIsPaywallOpen] = useState(false)
@@ -344,6 +346,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
   const { mutateSessions } = useSessionRestore({
     user,
+    token,
     currentSession,
     restoreSession,
     setSessionType,
@@ -547,6 +550,10 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
             pausedAt: null,
             timeRemaining: useTimerStore.getState().timeRemaining,
           })
+          .then(() => {
+            emitSessionEnd(dbSession.id, 'reset')
+            void mutateSessions()
+          })
           .catch((error) => {
             console.error('Failed to cancel superseded session:', error)
           })
@@ -565,6 +572,24 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           },
         }
       })
+
+      if (useTimerStore.getState().currentSession?.id !== dbSession.id) {
+        void sessionService
+          .update(dbSession.id, {
+            status: SessionStatus.CANCELLED,
+            endedAt: new Date().toISOString(),
+            pausedAt: null,
+            timeRemaining: duration * 60,
+          })
+          .then(() => {
+            emitSessionEnd(dbSession.id, 'reset')
+            void mutateSessions()
+          })
+          .catch((error) => {
+            console.error('Failed to cancel detached session:', error)
+          })
+        return
+      }
 
       sendMessageToServiceWorker({
         type: 'UPDATE_SESSION_ID',
@@ -595,10 +620,16 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       if (requestId !== startRequestIdRef.current) {
         return
       }
-      // Already started optimistically; keep running.
+
+      if (useTimerStore.getState().currentSession?.id === tempId) {
+        cancelSession()
+        sendMessageToServiceWorker({ type: 'STOP_TIMER' })
+      }
     }
   }, [
+    cancelSession,
     currentRoomId,
+    emitSessionEnd,
     emitSessionStart,
     getSessionDuration,
     getSessionTypeLabel,
@@ -723,13 +754,13 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
   }
 
   const handleStart = async () => {
-    // Prevent multiple rapid clicks (throttled)
-    if (isStarting || !canTriggerAction()) return
+    if (startOperationRef.current) return
     
     clearAutoStart()
 
     const requestId = ++startRequestIdRef.current
 
+    startOperationRef.current = true
     setIsStarting(true)
 
     try {
@@ -812,6 +843,10 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
               pausedAt: null,
               timeRemaining: useTimerStore.getState().timeRemaining,
             })
+            .then(() => {
+              emitSessionEnd(dbSession.id, 'reset')
+              void mutateSessions()
+            })
             .catch((error) => {
               console.error('Failed to cancel superseded session:', error)
             })
@@ -830,6 +865,24 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
             },
           }
         })
+
+        if (useTimerStore.getState().currentSession?.id !== dbSession.id) {
+          void sessionService
+            .update(dbSession.id, {
+              status: SessionStatus.CANCELLED,
+              endedAt: new Date().toISOString(),
+              pausedAt: null,
+              timeRemaining: duration * 60,
+            })
+            .then(() => {
+              emitSessionEnd(dbSession.id, 'reset')
+              void mutateSessions()
+            })
+            .catch((error) => {
+              console.error('Failed to cancel detached session:', error)
+            })
+          return
+        }
 
         sendMessageToServiceWorker({
           type: 'UPDATE_SESSION_ID',
@@ -858,13 +911,19 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         emitSessionStart(sessionData)
       } catch (error) {
         console.error('Failed to create session:', error)
-        // Already started optimistically; keep running.
+        if (
+          requestId === startRequestIdRef.current
+          && useTimerStore.getState().currentSession?.id === tempId
+        ) {
+          cancelSession()
+          sendMessageToServiceWorker({ type: 'STOP_TIMER' })
+        }
       }
     } finally {
-      // Add minimum delay to prevent too rapid clicks
-      setTimeout(() => {
+      if (requestId === startRequestIdRef.current) {
+        startOperationRef.current = false
         setIsStarting(false)
-      }, 500)
+      }
     }
   }
 
@@ -877,8 +936,9 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       return
     }
 
-    if (isPausing || !canTriggerAction()) return
+    if (pauseOperationRef.current) return
 
+    pauseOperationRef.current = true
     setIsPausing(true)
     clearAutoStart()
 
@@ -914,14 +974,25 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         status: SessionStatus.PAUSED,
       })
 
-      await sessionService.update(sessionId, {
+      const updatedSession = await sessionService.update(sessionId, {
         status: SessionStatus.PAUSED,
         pausedAt: new Date().toISOString(),
         timeRemaining: currentTimeRemaining,
       })
+      if (updatedSession?.status !== SessionStatus.PAUSED) {
+        cancelSession()
+        sendMessageToServiceWorker({ type: 'STOP_TIMER' })
+        emitSessionEnd(sessionId, 'reset')
+        void mutateSessions()
+        return
+      }
       void mutateSessions()
     } catch (error) {
       console.error('Failed to pause session:', error)
+      if (useTimerStore.getState().currentSession?.id !== sessionId) {
+        return
+      }
+
       resumeSession()
 
       const resumedSession = useTimerStore.getState().currentSession
@@ -949,9 +1020,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         status: SessionStatus.ACTIVE,
       })
     } finally {
-      setTimeout(() => {
-        setIsPausing(false)
-      }, 300)
+      pauseOperationRef.current = false
+      setIsPausing(false)
     }
   }
 
@@ -960,8 +1030,9 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       return
     }
 
-    if (isResuming || !canTriggerAction()) return
+    if (resumeOperationRef.current) return
 
+    resumeOperationRef.current = true
     setIsResuming(true)
 
     const sessionSnapshot = currentSession
@@ -999,15 +1070,26 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         status: SessionStatus.ACTIVE,
       })
 
-      await sessionService.update(sessionId, {
+      const updatedSession = await sessionService.update(sessionId, {
         status: SessionStatus.ACTIVE,
         pausedAt: null,
         timeRemaining: currentTimeRemaining,
         startedAt: resumedStartedAt,
       })
+      if (updatedSession?.status !== SessionStatus.ACTIVE) {
+        cancelSession()
+        sendMessageToServiceWorker({ type: 'STOP_TIMER' })
+        emitSessionEnd(sessionId, 'reset')
+        void mutateSessions()
+        return
+      }
       void mutateSessions()
     } catch (error) {
       console.error('Failed to resume session:', error)
+      if (useTimerStore.getState().currentSession?.id !== sessionId) {
+        return
+      }
+
       pauseSession()
       sendMessageToServiceWorker({
         type: 'PAUSE_TIMER',
@@ -1028,38 +1110,44 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         status: SessionStatus.PAUSED,
       })
     } finally {
-      setTimeout(() => {
-        setIsResuming(false)
-      }, 300)
+      resumeOperationRef.current = false
+      setIsResuming(false)
     }
   }
 
   const handleStop = async () => {
-    // Prevent multiple rapid clicks (throttled)
-    if (isStopping || !canTriggerAction()) return
+    if (stopOperationRef.current) return
     
     clearAutoStart()
     startRequestIdRef.current += 1
+    startOperationRef.current = false
+    pauseOperationRef.current = false
+    resumeOperationRef.current = false
+    setIsStarting(false)
+    setIsPausing(false)
+    setIsResuming(false)
 
-    const previousSessionType = currentSession?.type ?? sessionType
+    const sessionSnapshot = useTimerStore.getState().currentSession
+    const previousSessionType = sessionSnapshot?.type ?? sessionType
+    stopOperationRef.current = true
     setIsStopping(true)
 
     try {
-      if (currentSession) {
-        const sessionId = currentSession.id
+      if (sessionSnapshot) {
+        const sessionId = sessionSnapshot.id
         lastStoppedSessionIdRef.current = sessionId
-        const startedAtMs = currentSession.startedAt ? new Date(currentSession.startedAt).getTime() : null
+        const startedAtMs = sessionSnapshot.startedAt ? new Date(sessionSnapshot.startedAt).getTime() : null
         const isEarlyStop = startedAtMs ? Date.now() - startedAtMs < 60 * 1000 : false
         const currentTimeRemaining = useTimerStore.getState().timeRemaining
 
         const elapsedSeconds = (() => {
-          if (currentSession.type === SessionType.TIME_TRACKING) {
+          if (sessionSnapshot.type === SessionType.TIME_TRACKING) {
             // Time tracking uses a long countdown; elapsed is derived from remaining (pause-safe).
             return Math.max(0, timeTrackerDurationSeconds - currentTimeRemaining)
           }
 
           // Regular sessions: derive elapsed from remaining (pause-safe).
-          return Math.max(0, currentSession.duration * 60 - currentTimeRemaining)
+          return Math.max(0, sessionSnapshot.duration * 60 - currentTimeRemaining)
         })()
 
         const elapsedMinutes = Math.max(0, Math.round(elapsedSeconds / 60))
@@ -1085,11 +1173,16 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
             timeRemaining: currentTimeRemaining,
           }
 
-          if (currentSession.type === SessionType.TIME_TRACKING) {
+          if (sessionSnapshot.type === SessionType.TIME_TRACKING) {
             updatePayload.duration = elapsedMinutes
           }
 
           await sessionService.update(sessionId, updatePayload)
+          // Repeat after persistence in case the socket server reloaded the still-active
+          // database row between the optimistic event and this update.
+          emitSessionEnd(sessionId, 'manual', {
+            removeActivity: isEarlyStop,
+          })
           void mutateSessions()
         } catch (error) {
           console.error('Failed to update session:', error)
@@ -1104,10 +1197,8 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         previewSessionType(SessionType.WORK)
       }
 
-      // Add minimum delay to prevent too rapid clicks
-      setTimeout(() => {
-        setIsStopping(false)
-      }, 500)
+      stopOperationRef.current = false
+      setIsStopping(false)
     }
   }
 
@@ -1121,13 +1212,19 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       return
     }
 
+    startRequestIdRef.current += 1
+    startOperationRef.current = false
+    setIsStarting(false)
     completedSessionIdRef.current = currentSession.id
+    lastStoppedSessionIdRef.current = currentSession.id
 
     const completedType = currentSession.type
     const sessionSnapshot = currentSession
+    let completionPersisted = false
     
     try {
-      await sessionService.complete(sessionSnapshot.id)
+      const completionResult = await sessionService.complete(sessionSnapshot.id)
+      completionPersisted = Boolean(completionResult)
       void mutateSessions()
 
       console.log('Checking pomodoro increment conditions:', {
@@ -1137,6 +1234,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       })
       
       if (
+        completionPersisted &&
         completedType === SessionType.WORK &&
         selectedTask &&
         selectedTask.id
@@ -1155,7 +1253,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       console.error('Failed to update session:', error)
     }
     
-    emitSessionEnd(sessionSnapshot.id, 'completed')
+    emitSessionEnd(sessionSnapshot.id, completionPersisted ? 'completed' : 'manual')
     
     completeSession()
 
@@ -1225,6 +1323,7 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     scheduleAutoStart,
     selectedTask,
     showNotification,
+    setIsStarting,
     setSessionType,
     mutateSessions,
     t.timer.longBreakCompleted,

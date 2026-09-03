@@ -16,6 +16,7 @@ import EmojiPicker from 'emoji-picker-react'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { useI18n } from './I18nProvider'
 import RankAvatarFrame from './RankAvatarFrame'
+import { useConnectionStore } from '@/store/useConnectionStore'
 
 interface TomatoAnimation {
   id: string
@@ -361,6 +362,7 @@ function SessionCard({
 export default function ActiveSessions() {
   const { t } = useI18n()
   const { activeSessions } = useTimerStore()
+  const { hasReceivedActiveSessions } = useConnectionStore()
   const { user, token } = useAuthStore()
   const anonymousId = useMemo(() => {
     if (user || typeof window === 'undefined') {
@@ -385,7 +387,6 @@ export default function ActiveSessions() {
   const [localSessions, setLocalSessions] = useState<ActiveSession[]>([])
   const [registeredAtByUser, setRegisteredAtByUser] = useState<Record<string, string>>({})
   const [experienceByUser, setExperienceByUser] = useState<Record<string, number>>({})
-  const [hasSocketActivity, setHasSocketActivity] = useState(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     show: false,
     x: 0,
@@ -401,13 +402,28 @@ export default function ActiveSessions() {
   const [showToast, setShowToast] = useState(false)
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const sessionCardsRef = useRef<Map<string, HTMLElement>>(new Map())
+  const endedSessionIdsRef = useRef<Set<string>>(new Set())
 
   useEffect(() => {
-    if (activeSessions.length > 0) {
-      setHasSocketActivity(true)
+    if (hasReceivedActiveSessions) {
       setLocalSessions([])
     }
-  }, [activeSessions.length])
+  }, [hasReceivedActiveSessions])
+
+  useEffect(() => {
+    const handleSessionEnd = (event: Event) => {
+      const sessionId = (event as CustomEvent<{ sessionId?: string }>).detail?.sessionId
+      if (!sessionId) return
+
+      endedSessionIdsRef.current.add(sessionId)
+      setLocalSessions((sessions) => sessions.filter((session) => session.id !== sessionId))
+    }
+
+    window.addEventListener('session-ended', handleSessionEnd)
+    return () => {
+      window.removeEventListener('session-ended', handleSessionEnd)
+    }
+  }, [])
 
   useEffect(() => {
     setRegisteredAtByUser({})
@@ -556,6 +572,9 @@ export default function ActiveSessions() {
         })
         if (response.ok && isMounted) {
           const sessions = await response.json() as ActiveSession[]
+          const visibleSessions = sessions.filter(
+            (session) => !endedSessionIdsRef.current.has(session.id)
+          )
           setRegisteredAtByUser(
             Object.fromEntries(
               sessions.flatMap((session) =>
@@ -568,8 +587,8 @@ export default function ActiveSessions() {
               sessions.map((session) => [session.userId, session.experience ?? 0])
             )
           )
-          if (!hasSocketActivity) {
-            setLocalSessions(sessions)
+          if (!hasReceivedActiveSessions) {
+            setLocalSessions(visibleSessions)
           }
         }
       } catch (error) {
@@ -592,7 +611,7 @@ export default function ActiveSessions() {
       window.clearInterval(interval)
       document.removeEventListener('visibilitychange', refreshWhenVisible)
     }
-  }, [hasSocketActivity, token])
+  }, [hasReceivedActiveSessions, token])
 
   const handleContextMenu = (e: React.MouseEvent, targetUserId: string, element: HTMLElement) => {
     e.preventDefault()

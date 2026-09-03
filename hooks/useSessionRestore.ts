@@ -1,11 +1,13 @@
-import { MutableRefObject, useEffect } from 'react'
+import { MutableRefObject, useCallback, useEffect, useMemo } from 'react'
 import useSWR, { KeyedMutator } from 'swr'
 import { PomodoroSession, SessionStatus, SessionType, User } from '@/types'
 import { sessionService } from '@/services/sessionService'
-import { fetcher } from '@/lib/fetcher'
+import { getAnonymousProfile } from '@/lib/anonymousUser'
+import { sendMessageToServiceWorker } from '@/lib/serviceWorker'
 
 interface UseSessionRestoreOptions {
   user: User | null
+  token: string | null
   currentSession: PomodoroSession | null
   restoreSession: (session: PomodoroSession) => void
   setSessionType: (type: SessionType) => void
@@ -26,10 +28,11 @@ interface UseSessionRestoreOptions {
 }
 
 /**
- * Restores an active Pomodoro session for the authenticated user on mount.
+ * Restores an active Pomodoro session for the current user on mount.
  */
 export function useSessionRestore({
   user,
+  token,
   currentSession,
   restoreSession,
   setSessionType,
@@ -37,17 +40,43 @@ export function useSessionRestore({
   ignoreSessionIdRef,
 }: UseSessionRestoreOptions) {
   const ignoredSessionId = ignoreSessionIdRef?.current
+  const anonymousProfile = useMemo(
+    () => (user || typeof window === 'undefined' ? null : getAnonymousProfile()),
+    [user]
+  )
+  const currentUserId = user?.id ?? anonymousProfile?.id ?? null
+  const currentUsername = user?.username ?? anonymousProfile?.username ?? null
+  const currentAvatarUrl = user?.avatarUrl
+
+  const fetchSessions = useCallback(async (url: string): Promise<PomodoroSession[]> => {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    }
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    } else if (anonymousProfile) {
+      headers['X-Anonymous-Id'] = anonymousProfile.id
+    }
+
+    const response = await fetch(url, { headers })
+    if (!response.ok) {
+      throw new Error(`Failed to fetch active sessions, status ${response.status}`)
+    }
+
+    return response.json()
+  }, [anonymousProfile, token])
 
   const { data: sessions, mutate } = useSWR<PomodoroSession[]>(
-    user ? '/api/sessions?activeOnly=1' : null,
-    fetcher,
+    currentUserId ? '/api/sessions?activeOnly=1' : null,
+    fetchSessions,
     {
       revalidateOnFocus: false,
     }
   )
 
   useEffect(() => {
-    if (!user || currentSession || !sessions) {
+    if (!currentUserId || !currentUsername || currentSession || !sessions) {
       return
     }
 
@@ -57,7 +86,7 @@ export function useSessionRestore({
       try {
         const activeSession = sessions.find(
           (session) =>
-            session.userId === user.id &&
+            session.userId === currentUserId &&
             (session.status === SessionStatus.ACTIVE || session.status === SessionStatus.PAUSED)
         )
 
@@ -100,15 +129,29 @@ export function useSessionRestore({
         })
         setSessionType(activeSession.type as SessionType)
 
+        sendMessageToServiceWorker({
+          type: 'START_TIMER',
+          payload: {
+            sessionId: activeSession.id,
+            duration: activeSession.duration,
+            timeRemaining: currentTimeRemaining,
+            startedAt: activeSession.startedAt,
+          },
+        })
+
+        if (isPaused) {
+          sendMessageToServiceWorker({ type: 'PAUSE_TIMER' })
+        }
+
         emitSessionSync({
           id: activeSession.id,
           roomId: activeSession.roomId ?? null,
           task: activeSession.task,
           duration: activeSession.duration,
           type: activeSession.type,
-          userId: user.id,
-          username: user.username,
-          avatarUrl: user.avatarUrl,
+          userId: currentUserId,
+          username: currentUsername,
+          avatarUrl: currentAvatarUrl,
           timeRemaining: currentTimeRemaining,
           startedAt: activeSession.startedAt,
           status: activeSession.status,
@@ -127,7 +170,9 @@ export function useSessionRestore({
     }
   }, [
     sessions,
-    user,
+    currentUserId,
+    currentUsername,
+    currentAvatarUrl,
     currentSession,
     restoreSession,
     setSessionType,

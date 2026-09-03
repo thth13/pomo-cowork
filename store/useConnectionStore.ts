@@ -3,12 +3,14 @@ import { create } from 'zustand'
 interface ConnectionState {
   isConnected: boolean
   isChecking: boolean
+  hasReceivedActiveSessions: boolean
   onlineUserIds: Record<string, true>
   onlineUserCount: number
   anonymousOnlineCount: number
   totalOnlineCount: number
   setIsChecking: (isChecking: boolean) => void
   setConnectionStatus: (isConnected: boolean) => void
+  setHasReceivedActiveSessions: (hasReceived: boolean) => void
   setOnlineUsersFromList: (userIds: string[]) => void
   setPresenceCounts: (counts: { userCount?: number; anonymousCount?: number; total?: number }) => void
   updateUserPresence: (userId: string, online: boolean) => void
@@ -19,12 +21,14 @@ interface ConnectionState {
 export const useConnectionStore = create<ConnectionState>((set) => ({
   isConnected: false,
   isChecking: true,
+  hasReceivedActiveSessions: false,
   onlineUserIds: {},
   onlineUserCount: 0,
   anonymousOnlineCount: 0,
   totalOnlineCount: 0,
   setIsChecking: (isChecking) => set({ isChecking }),
   setConnectionStatus: (isConnected) => set({ isConnected, isChecking: false }),
+  setHasReceivedActiveSessions: (hasReceivedActiveSessions) => set({ hasReceivedActiveSessions }),
   setOnlineUsersFromList: (userIds) => {
     const normalized = userIds.reduce<Record<string, true>>((acc, id) => {
       acc[id] = true
@@ -88,4 +92,3 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
     }
   }
 }))
-

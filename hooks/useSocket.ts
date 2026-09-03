@@ -11,9 +11,16 @@ import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUse
 // Singleton socket to avoid multiple connections per tab
 let sharedSocket: Socket | null = null
 let initialized = false
-let authSubscribed = false
+let lastClientSessionEventAt = 0
+const SOCKET_ACK_TIMEOUT_MS = 3000
+const SOCKET_ACK_RETRIES = 2
 
 const getSocketUrl = () => process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000'
+
+const getNextClientSessionEventAt = () => {
+  lastClientSessionEventAt = Math.max(Date.now(), lastClientSessionEventAt + 1)
+  return lastClientSessionEventAt
+}
 
 const buildPresencePayload = (user: User | null): { userId: string | null; anonymousId?: string | null; username?: string; avatarUrl?: string | null } => {
   if (user?.id) {
@@ -21,6 +28,42 @@ const buildPresencePayload = (user: User | null): { userId: string | null; anony
   }
   const anonymousId = getOrCreateAnonymousId()
   return { userId: null, anonymousId, username: getAnonymousUsername(), avatarUrl: null }
+}
+
+const emitWithAck = (
+  event: 'session-start' | 'session-sync' | 'session-end',
+  payload: unknown,
+  attempt = 0
+) => {
+  if (typeof window === 'undefined') return
+
+  initSocketOnce()
+  const socket = sharedSocket
+  if (!socket) return
+
+  const send = () => {
+    socket.timeout(SOCKET_ACK_TIMEOUT_MS).emit(
+      event,
+      payload,
+      (error: Error | null, response?: { ok?: boolean }) => {
+        if (!error && response?.ok) {
+          return
+        }
+
+        if (attempt < SOCKET_ACK_RETRIES) {
+          window.setTimeout(() => {
+            emitWithAck(event, payload, attempt + 1)
+          }, 500 * (attempt + 1))
+        }
+      }
+    )
+  }
+
+  if (socket.connected) {
+    send()
+  } else {
+    socket.once('connect', send)
+  }
 }
 
 const initSocketOnce = () => {
@@ -43,6 +86,7 @@ const initSocketOnce = () => {
   // Stores (non-hook access)
   const setActiveSessions = useTimerStore.getState().setActiveSessions
   const setConnectionStatus = useConnectionStore.getState().setConnectionStatus
+  const setHasReceivedActiveSessions = useConnectionStore.getState().setHasReceivedActiveSessions
   const setIsChecking = useConnectionStore.getState().setIsChecking
   const setOnlineUsersFromList = useConnectionStore.getState().setOnlineUsersFromList
   const updateUserPresence = useConnectionStore.getState().updateUserPresence
@@ -50,13 +94,13 @@ const initSocketOnce = () => {
   const setPresenceCounts = useConnectionStore.getState().setPresenceCounts
 
   socket.on('connect', () => {
-    // Request initial data
-    socket.emit('get-active-sessions')
-    socket.emit('get-online-users')
-
     // Presence identify
     const user = useAuthStore.getState().user
     socket.emit('join-presence', buildPresencePayload(user))
+
+    // Request initial data after identifying this socket
+    socket.emit('get-active-sessions')
+    socket.emit('get-online-users')
 
     setConnectionStatus(true)
   })
@@ -70,6 +114,7 @@ const initSocketOnce = () => {
 
   socket.on('session-update', (sessions: ActiveSession[]) => {
     setActiveSessions(sessions)
+    setHasReceivedActiveSessions(true)
   })
 
   socket.on('user-online', (data: { userId: string, online: boolean }) => {
@@ -92,6 +137,8 @@ const initSocketOnce = () => {
 
   socket.on('disconnect', () => {
     setConnectionStatus(false)
+    setHasReceivedActiveSessions(false)
+    setActiveSessions([])
     resetPresence()
     setIsChecking(false)
   })
@@ -114,11 +161,17 @@ export function useSocket() {
   }, [user])
 
   const emitSessionStart = (sessionData: any) => {
-    sharedSocket?.emit('session-start', sessionData)
+    emitWithAck('session-start', {
+      ...sessionData,
+      clientUpdatedAt: getNextClientSessionEventAt(),
+    })
   }
 
   const emitSessionSync = (sessionData: any) => {
-    sharedSocket?.emit('session-sync', sessionData)
+    emitWithAck('session-sync', {
+      ...sessionData,
+      clientUpdatedAt: getNextClientSessionEventAt(),
+    })
   }
 
   const emitSessionPause = (sessionId: string) => {
@@ -130,7 +183,17 @@ export function useSocket() {
     reason: 'manual' | 'completed' | 'reset' = 'manual',
     options?: { removeActivity?: boolean }
   ) => {
-    sharedSocket?.emit('session-end', {
+    useTimerStore.setState((state) => ({
+      activeSessions: state.activeSessions.filter((session) => session.id !== sessionId),
+    }))
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('session-ended', {
+        detail: { sessionId },
+      }))
+    }
+
+    emitWithAck('session-end', {
       sessionId,
       reason,
       ...(options?.removeActivity ? { removeActivity: true } : {}),

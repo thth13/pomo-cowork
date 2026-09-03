@@ -25,6 +25,7 @@ interface PomodoroSession {
   startTime: number
   chatMessageId?: string
   disconnectedAt?: number // timestamp when user disconnected while paused
+  clientUpdatedAt?: number
 }
 
 interface ChatMessage {
@@ -47,6 +48,8 @@ interface LastSeenResponse {
   success: boolean
   lastSeenAt?: string | null
 }
+
+type SocketAck = (response: { ok: boolean; error?: string }) => void
 
 const app = express()
 const server: Server = http.createServer(app)
@@ -76,6 +79,8 @@ const reactionsByTarget = new Map<string, Map<string, string>>()
 
 const MAX_CHAT_HISTORY = 100
 const ACTIVE_SESSIONS_DB_REFRESH_MS = 60 * 1000
+const ENDED_SESSION_TOMBSTONE_MS = 10 * 60 * 1000
+const endedSessions = new Map<string, number>()
 let lastActiveSessionsDbLoadAt = 0
 let activeSessionsDbLoad: Promise<number> | null = null
 
@@ -279,6 +284,13 @@ const loadActiveSessionsFromDB = async (force = false) => {
 
   activeSessionsDbLoad = (async () => {
     try {
+      const loadStartedAt = Date.now()
+      for (const [sessionId, endedAt] of endedSessions.entries()) {
+        if (loadStartedAt - endedAt > ENDED_SESSION_TOMBSTONE_MS) {
+          endedSessions.delete(sessionId)
+        }
+      }
+
       const response = await axios.get(`${API_URL}/api/sessions/active`)
       const dbSessions = response.data as Array<{
         id: string
@@ -291,9 +303,15 @@ const loadActiveSessionsFromDB = async (force = false) => {
         duration: number
         timeRemaining: number
         startedAt: string
+        status?: 'PAUSED' | 'ACTIVE'
       }>
 
       for (const dbSession of dbSessions) {
+        if (endedSessions.has(dbSession.id)) {
+          sessions.delete(dbSession.id)
+          continue
+        }
+
         const existingSession = sessions.get(dbSession.id)
 
         if (!existingSession) {
@@ -311,13 +329,24 @@ const loadActiveSessionsFromDB = async (force = false) => {
             duration: dbSession.duration,
             timeRemaining: dbSession.timeRemaining,
             startedAt: dbSession.startedAt,
+            status: dbSession.status ?? 'ACTIVE',
             startTime: calculatedStartTime,
-            lastUpdate: now
+            lastUpdate: loadStartedAt
           })
-        } else {
+        } else if (
+          !existingSession.socketId
+          && (!existingSession.lastUpdate || existingSession.lastUpdate <= loadStartedAt)
+        ) {
+          existingSession.userId = dbSession.userId
+          existingSession.username = dbSession.username
+          existingSession.task = dbSession.task
+          existingSession.type = dbSession.type
+          existingSession.duration = dbSession.duration
           existingSession.timeRemaining = dbSession.timeRemaining
           existingSession.lastUpdate = Date.now()
           existingSession.roomId = dbSession.roomId ?? existingSession.roomId ?? null
+          existingSession.startedAt = dbSession.startedAt
+          existingSession.status = dbSession.status ?? 'ACTIVE'
 
           if (dbSession.avatarUrl) {
             existingSession.avatarUrl = dbSession.avatarUrl
@@ -333,8 +362,8 @@ const loadActiveSessionsFromDB = async (force = false) => {
       for (const [sessionId, session] of sessions.entries()) {
         if (
           !dbSessionIds.has(sessionId)
-          && session.lastUpdate
-          && Date.now() - session.lastUpdate > 5 * 60 * 1000
+          && !endedSessions.has(sessionId)
+          && (!session.lastUpdate || session.lastUpdate <= loadStartedAt)
         ) {
           sessions.delete(sessionId)
         }
@@ -402,6 +431,10 @@ setInterval(async () => {
 setInterval(() => {
   let cleaned = 0
   sessions.forEach((session, sessionId) => {
+    if (session.status === 'PAUSED') {
+      return
+    }
+
     const elapsed = (Date.now() - session.startTime) / 1000
     if (elapsed > session.duration * 60 + 300) {
       sessions.delete(sessionId)
@@ -494,12 +527,13 @@ const emitPresenceSnapshot = () => {
   })
 }
 
-io.on('connection', async (socket) => {
+io.on('connection', (socket) => {
   emitPresenceSnapshot()
   
   // On connection, load actual sessions from DB and send to client
-  await loadActiveSessionsFromDB()
-  socket.emit('session-update', serializeSessions())
+  void loadActiveSessionsFromDB().then(() => {
+    socket.emit('session-update', serializeSessions())
+  })
 
   socket.on('join-presence', (payload?: { userId: string | null; anonymousId?: string | null; username?: string | null; avatarUrl?: string | null }) => {
     const userId = payload?.userId ?? null
@@ -507,16 +541,26 @@ io.on('connection', async (socket) => {
     const username = payload?.username ?? null
     const avatarUrl = payload?.avatarUrl ?? null
 
+    const previousUserId = socketUserMap.get(socket.id)
+
+    if (previousUserId && previousUserId !== userId) {
+      socket.leave(`user-${previousUserId}`)
+      socketUserMap.delete(socket.id)
+      decrementUserConnection(previousUserId)
+    }
+
     if (userId) {
       socket.join(`user-${userId}`)
-      socketUserMap.set(socket.id, userId)
+      if (previousUserId !== userId) {
+        socketUserMap.set(socket.id, userId)
+        incrementUserConnection(userId)
+      }
       if (username) {
         userNames.set(userId, username)
       }
       if (avatarUrl) {
         userAvatars.set(userId, avatarUrl)
       }
-      incrementUserConnection(userId)
     }
 
     if (anonymousId) {
@@ -612,35 +656,77 @@ io.on('connection', async (socket) => {
     })
   })
 
-  socket.on('session-start', async (sessionData: PomodoroSession) => {
+  socket.on('session-start', (sessionData: PomodoroSession, ack?: SocketAck) => {
+    if (!sessionData?.id || endedSessions.has(sessionData.id)) {
+      ack?.({ ok: true })
+      return
+    }
+
+    const alreadyStarted = sessions.get(sessionData.id)
+    if (alreadyStarted) {
+      const socketIdentity = socketUserMap.get(socket.id)
+        ?? anonymousSockets.get(socket.id)
+        ?? sessionData.userId
+      if (alreadyStarted.userId !== socketIdentity) {
+        ack?.({ ok: false, error: 'session_owner_mismatch' })
+        return
+      }
+
+      alreadyStarted.socketId = socket.id
+      alreadyStarted.lastUpdate = Date.now()
+      alreadyStarted.username = sessionData.username || alreadyStarted.username
+      alreadyStarted.avatarUrl = sessionData.avatarUrl || alreadyStarted.avatarUrl
+      io.emit('session-update', serializeSessions())
+      ack?.({ ok: true })
+      return
+    }
+
     // Remove any existing sessions for this user/socket to prevent duplicates
-    const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
+    const userId = socketUserMap.get(socket.id)
+      ?? anonymousSockets.get(socket.id)
+      ?? sessionData.userId
+      ?? null
     const anonymousId = anonymousSockets.get(socket.id)
 
     if (userId) {
       clearReactionsTargetingUser(userId, io)
     }
 
-    // Clean up any existing sessions for this user
+    let newerSessionExists = false
+
+    // Clean up any older session for this user.
     sessions.forEach((existingSession, existingSessionId) => {
-      const isSameUser = (
-        (userId && existingSession.userId === userId) ||
-        (anonymousId && existingSession.socketId === socket.id)
-      )
+      const isSameUser = Boolean(userId && existingSession.userId === userId)
 
       if (isSameUser && existingSessionId !== sessionData.id) {
+        if (
+          new Date(existingSession.startedAt).getTime()
+          > new Date(sessionData.startedAt).getTime()
+        ) {
+          newerSessionExists = true
+          return
+        }
+
         console.log(`Removing duplicate session ${existingSessionId} for user ${userId || anonymousId}`)
         sessions.delete(existingSessionId)
+        endedSessions.set(existingSessionId, Date.now())
       }
     })
+
+    if (newerSessionExists) {
+      ack?.({ ok: true })
+      return
+    }
 
     const startTime = Date.now()
     const sessionRecord: PomodoroSession = {
       ...sessionData,
+      userId: userId ?? sessionData.userId,
       status: sessionData.status ?? 'ACTIVE',
       timeRemaining: sessionData.timeRemaining ?? sessionData.duration * 60,
       socketId: socket.id,
       startTime,
+      lastUpdate: startTime,
     }
 
     // Send system message about session start - use data from sessionData
@@ -699,56 +785,101 @@ io.on('connection', async (socket) => {
       }
     }
 
-    // Store locally and broadcast
+    // Store and broadcast the session before any slow chat/database work.
     const tempId = systemMessage.id
     pushChatMessageForRoom(systemMessage)
+    sessionRecord.chatMessageId = tempId
+    sessions.set(sessionData.id, sessionRecord)
+    io.emit('session-update', serializeSessions())
+    ack?.({ ok: true })
 
-    // Save to database
-    const savedMessage = await saveSystemMessageToDB(systemMessage)
-    if (savedMessage?.id) {
-      systemMessage.id = savedMessage.id
-    }
-    sessionRecord.chatMessageId = systemMessage.id
-
-    // Replace message in per-room history with persisted ID if needed
-    if (systemMessage.id !== tempId) {
+    void (async () => {
+      const savedMessage = await saveSystemMessageToDB(systemMessage)
+      const currentSession = sessions.get(sessionData.id)
       const key = getRoomKey(systemMessage.roomId ?? null)
       const history = chatMessagesByRoom.get(key)
-      if (history) {
-        const idx = history.findIndex((m) => m.id === tempId)
+
+      if (!currentSession || endedSessions.has(sessionData.id)) {
+        if (history) {
+          const idx = history.findIndex((message) => message.id === tempId)
+          if (idx !== -1) {
+            history.splice(idx, 1)
+            chatMessagesByRoom.set(key, history)
+          }
+        }
+
+        if (savedMessage?.id) {
+          await deleteSystemMessageFromDB(savedMessage.id, sessionData.id)
+        }
+        return
+      }
+
+      if (savedMessage?.id) {
+        systemMessage.id = savedMessage.id
+        currentSession.chatMessageId = savedMessage.id
+
+        const idx = history?.findIndex((message) => message.id === tempId) ?? -1
         if (idx !== -1) {
-          history[idx] = systemMessage
-          chatMessagesByRoom.set(key, history)
+          history![idx] = systemMessage
+          chatMessagesByRoom.set(key, history!)
         }
       }
-    }
 
-    sessions.set(sessionData.id, sessionRecord)
-    
-    io.emit('chat-new', systemMessage)
-
-    io.emit('session-update', serializeSessions())
+      io.emit('chat-new', systemMessage)
+    })()
   })
 
-  socket.on('session-sync', (sessionData: PomodoroSession) => {
+  socket.on('session-sync', (sessionData: PomodoroSession, ack?: SocketAck) => {
+    if (!sessionData?.id || endedSessions.has(sessionData.id)) {
+      ack?.({ ok: true })
+      return
+    }
+
     // Remove any existing sessions for this user/socket to prevent duplicates
-    const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
-    const anonymousId = anonymousSockets.get(socket.id)
+    const userId = socketUserMap.get(socket.id)
+      ?? anonymousSockets.get(socket.id)
+      ?? sessionData.userId
+      ?? null
     
-    // Clean up any existing sessions for this user (but don't remove the one we're syncing)
+    let newerSessionExists = false
+
+    // Clean up any older session for this user (but don't remove the one we're syncing).
     sessions.forEach((existingSession, existingSessionId) => {
-      const isSameUser = (
-        (userId && existingSession.userId === userId) ||
-        (anonymousId && existingSession.socketId === socket.id)
-      )
+      const isSameUser = Boolean(userId && existingSession.userId === userId)
       
       if (isSameUser && existingSessionId !== sessionData.id) {
-        console.log(`Removing duplicate session ${existingSessionId} during sync for user ${userId || anonymousId}`)
+        if (
+          new Date(existingSession.startedAt).getTime()
+          > new Date(sessionData.startedAt).getTime()
+        ) {
+          newerSessionExists = true
+          return
+        }
+
+        console.log(`Removing duplicate session ${existingSessionId} during sync for user ${userId}`)
         sessions.delete(existingSessionId)
+        endedSessions.set(existingSessionId, Date.now())
       }
     })
 
+    if (newerSessionExists) {
+      ack?.({ ok: true })
+      return
+    }
+
     const existingSession = sessions.get(sessionData.id)
+    if (existingSession && userId && existingSession.userId !== userId) {
+      ack?.({ ok: false, error: 'session_owner_mismatch' })
+      return
+    }
+    if (
+      existingSession?.clientUpdatedAt
+      && sessionData.clientUpdatedAt
+      && existingSession.clientUpdatedAt > sessionData.clientUpdatedAt
+    ) {
+      ack?.({ ok: true })
+      return
+    }
 
     // Sync existing session without sending system message
     const effectiveTimeRemaining = typeof sessionData.timeRemaining === 'number'
@@ -759,10 +890,12 @@ io.on('connection', async (socket) => {
 
     sessions.set(sessionData.id, {
       ...sessionData,
+      userId: userId ?? sessionData.userId,
       status: sessionData.status ?? existingSession?.status ?? 'ACTIVE',
       timeRemaining: effectiveTimeRemaining,
       socketId: socket.id,
       startTime: syncStartTime,
+      lastUpdate: Date.now(),
       chatMessageId: existingSession?.chatMessageId,
       username: existingSession?.username || sessionData.username,
       avatarUrl: existingSession?.avatarUrl || sessionData.avatarUrl,
@@ -770,6 +903,7 @@ io.on('connection', async (socket) => {
     })
 
     io.emit('session-update', serializeSessions())
+    ack?.({ ok: true })
   })
 
   socket.on('session-pause', (sessionId: string) => {
@@ -778,23 +912,63 @@ io.on('connection', async (socket) => {
       return
     }
 
+    const socketIdentity = socketUserMap.get(socket.id) ?? anonymousSockets.get(socket.id)
+    if (session.socketId !== socket.id && session.userId !== socketIdentity) {
+      return
+    }
+
     session.status = 'PAUSED'
+    session.lastUpdate = Date.now()
+    session.socketId = socket.id
     io.emit('session-update', serializeSessions())
   })
 
-  socket.on('session-end', async (payload: { sessionId: string; reason?: 'manual' | 'completed' | 'reset'; removeActivity?: boolean }) => {
+  socket.on('session-end', (
+    payload: { sessionId: string; reason?: 'manual' | 'completed' | 'reset'; removeActivity?: boolean },
+    ack?: SocketAck
+  ) => {
     const sessionId = payload?.sessionId
     const reason = payload?.reason ?? 'manual'
+    if (!sessionId) {
+      ack?.({ ok: false, error: 'session_id_required' })
+      return
+    }
+
     const session = sessions.get(sessionId)
     
     if (!session) {
-      return // Session doesn't exist, nothing to do
+      endedSessions.set(sessionId, Date.now())
+      ack?.({ ok: true })
+      return
     }
+
+    const socketUserId = socketUserMap.get(socket.id)
+    const socketAnonymousId = anonymousSockets.get(socket.id)
+    const isSessionOwner = (
+      session.socketId === socket.id
+      || (socketUserId !== undefined && session.userId === socketUserId)
+      || (socketAnonymousId !== undefined && session.userId === socketAnonymousId)
+    )
+
+    if (!isSessionOwner) {
+      ack?.({ ok: false, error: 'session_owner_mismatch' })
+      return
+    }
+
+    endedSessions.set(sessionId, Date.now())
 
     const shouldRemoveActivity = reason === 'manual' && (
       payload?.removeActivity ||
       (Date.now() - session.startTime < 60 * 1000)
     )
+
+    // Removing the session and notifying clients must not wait for chat/database I/O.
+    sessions.delete(sessionId)
+    io.emit('session-update', serializeSessions())
+    if (session.userId) {
+      clearReactionsTargetingUser(session.userId, io)
+    }
+    ack?.({ ok: true })
 
     // Send system message only when session is completed (timer finished)
     if (reason === 'completed' && session.type === 'WORK') {
@@ -831,26 +1005,25 @@ io.on('connection', async (socket) => {
 
       // Store locally and broadcast
       pushChatMessageForRoom(systemMessage)
-      
-      // Save to database (best-effort)
-      const tempId = systemMessage.id
-      const saved = await saveSystemMessageToDB(systemMessage)
-      if (saved?.id) {
-        systemMessage.id = saved.id
+      void (async () => {
+        const tempId = systemMessage.id
+        const saved = await saveSystemMessageToDB(systemMessage)
+        if (saved?.id) {
+          systemMessage.id = saved.id
 
-        // Replace message in per-room history with persisted ID if needed
-        const key = getRoomKey(systemMessage.roomId ?? null)
-        const history = chatMessagesByRoom.get(key)
-        if (history) {
-          const idx = history.findIndex((m) => m.id === tempId)
-          if (idx !== -1) {
-            history[idx] = systemMessage
-            chatMessagesByRoom.set(key, history)
+          const key = getRoomKey(systemMessage.roomId ?? null)
+          const history = chatMessagesByRoom.get(key)
+          if (history) {
+            const idx = history.findIndex((message) => message.id === tempId)
+            if (idx !== -1) {
+              history[idx] = systemMessage
+              chatMessagesByRoom.set(key, history)
+            }
           }
         }
-      }
-      
-      io.emit('chat-new', systemMessage)
+
+        io.emit('chat-new', systemMessage)
+      })()
     }
 
     if (shouldRemoveActivity && session.chatMessageId) {
@@ -864,17 +1037,7 @@ io.on('connection', async (socket) => {
         }
       }
       io.emit('chat-remove', session.chatMessageId)
-      await deleteSystemMessageFromDB(session.chatMessageId, session.id)
-    }
-
-    // Only delete the specific session that belongs to this socket
-    if (session.socketId === socket.id) {
-      sessions.delete(sessionId)
-      io.emit('session-update', serializeSessions())
-
-      if (session.userId) {
-        clearReactionsTargetingUser(session.userId, io)
-      }
+      void deleteSystemMessageFromDB(session.chatMessageId, session.id)
     }
   })
 
@@ -882,6 +1045,11 @@ io.on('connection', async (socket) => {
     if (!payload?.sessionId) return
     const session = sessions.get(payload.sessionId)
     if (!session) {
+      return
+    }
+
+    const socketIdentity = socketUserMap.get(socket.id) ?? anonymousSockets.get(socket.id)
+    if (session.socketId !== socket.id && session.userId !== socketIdentity) {
       return
     }
 
