@@ -279,7 +279,7 @@ const loadActiveSessionsFromDB = async (force = false) => {
 
   activeSessionsDbLoad = (async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/sessions/active`)
+      const response = await axios.get(`${API_URL}/api/sessions/active`, { timeout: 10000 })
       const dbSessions = response.data as Array<{
         id: string
         userId: string
@@ -494,32 +494,39 @@ const emitPresenceSnapshot = () => {
   })
 }
 
-io.on('connection', async (socket) => {
+io.on('connection', (socket) => {
   emitPresenceSnapshot()
-  
-  // On connection, load actual sessions from DB and send to client
-  await loadActiveSessionsFromDB()
-  socket.emit('session-update', serializeSessions())
 
   socket.on('join-presence', (payload?: { userId: string | null; anonymousId?: string | null; username?: string | null; avatarUrl?: string | null }) => {
     const userId = payload?.userId ?? null
     const anonymousId = payload?.anonymousId ?? null
     const username = payload?.username ?? null
     const avatarUrl = payload?.avatarUrl ?? null
+    const previousUserId = socketUserMap.get(socket.id)
+
+    if (previousUserId && previousUserId !== userId) {
+      socket.leave(`user-${previousUserId}`)
+      socketUserMap.delete(socket.id)
+      decrementUserConnection(previousUserId)
+    }
 
     if (userId) {
-      socket.join(`user-${userId}`)
-      socketUserMap.set(socket.id, userId)
+      if (previousUserId !== userId) {
+        socket.join(`user-${userId}`)
+        socketUserMap.set(socket.id, userId)
+        incrementUserConnection(userId)
+      }
       if (username) {
         userNames.set(userId, username)
       }
       if (avatarUrl) {
         userAvatars.set(userId, avatarUrl)
+      } else {
+        userAvatars.delete(userId)
       }
-      incrementUserConnection(userId)
     }
 
-    if (anonymousId) {
+    if (!userId && anonymousId) {
       addAnonymousConnection(anonymousId, socket.id)
     } else {
       removeAnonymousConnectionBySocket(socket.id)
@@ -999,6 +1006,12 @@ io.on('connection', async (socket) => {
     removeAnonymousConnectionBySocket(socket.id)
 
     emitPresenceSnapshot()
+  })
+
+  // Register handlers before waiting for the API, otherwise initial client events
+  // (including presence and reactions) can arrive while no listener exists.
+  void loadActiveSessionsFromDB().then(() => {
+    if (socket.connected) socket.emit('session-update', serializeSessions())
   })
 })
 

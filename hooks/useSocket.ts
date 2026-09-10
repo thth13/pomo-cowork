@@ -11,7 +11,6 @@ import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUse
 // Singleton socket to avoid multiple connections per tab
 let sharedSocket: Socket | null = null
 let initialized = false
-let authSubscribed = false
 
 const getSocketUrl = () => process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000'
 
@@ -50,22 +49,11 @@ const initSocketOnce = () => {
   const setPresenceCounts = useConnectionStore.getState().setPresenceCounts
 
   socket.on('connect', () => {
-    // Request initial data
-    socket.emit('get-active-sessions')
-    socket.emit('get-online-users')
-
-    // Presence identify
+    // The server sends initial sessions and broadcasts presence after identification.
     const user = useAuthStore.getState().user
     socket.emit('join-presence', buildPresencePayload(user))
 
     setConnectionStatus(true)
-  })
-
-  socket.on('reconnect', () => {
-    // On reconnect, also update presence
-    const user = useAuthStore.getState().user
-    socket.emit('join-presence', buildPresencePayload(user))
-    socket.emit('get-online-users')
   })
 
   socket.on('session-update', (sessions: ActiveSession[]) => {
@@ -96,167 +84,173 @@ const initSocketOnce = () => {
     setIsChecking(false)
   })
 
-  // Note: React hook below will re-emit presence on user changes
+  // One subscription per shared socket, regardless of how many components use it.
+  useAuthStore.subscribe((state, previousState) => {
+    const user = state.user
+    const previousUser = previousState.user
+    if (
+      socket.connected &&
+      (user?.id !== previousUser?.id ||
+        user?.username !== previousUser?.username ||
+        user?.avatarUrl !== previousUser?.avatarUrl)
+    ) {
+      socket.emit('join-presence', buildPresencePayload(user))
+    }
+  })
+}
+
+// Stable callbacks keep consumers from restarting subscriptions and timers on each render.
+const emitSessionStart = (sessionData: any) => {
+  sharedSocket?.emit('session-start', sessionData)
+}
+
+const emitSessionSync = (sessionData: any) => {
+  sharedSocket?.emit('session-sync', sessionData)
+}
+
+const emitSessionPause = (sessionId: string) => {
+  sharedSocket?.emit('session-pause', sessionId)
+}
+
+const emitSessionEnd = (
+  sessionId: string,
+  reason: 'manual' | 'completed' | 'reset' = 'manual',
+  options?: { removeActivity?: boolean }
+) => {
+  sharedSocket?.emit('session-end', {
+    sessionId,
+    reason,
+    ...(options?.removeActivity ? { removeActivity: true } : {}),
+  })
+}
+
+const emitTimerTick = (sessionId: string, timeRemaining: number) => {
+  sharedSocket?.emit('timer-tick', { sessionId, timeRemaining })
+}
+
+// Chat API
+const sendChatMessage = (payload: { text: string; username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
+  sharedSocket?.emit('chat-send', payload)
+}
+
+const requestChatHistory = (payload?: { roomId?: string | null }) => {
+  sharedSocket?.emit('chat-history', payload)
+}
+
+const onChatMessage = (handler: (message: ChatMessage) => void) => {
+  sharedSocket?.on('chat-new', handler)
+}
+
+const offChatMessage = (handler: (message: ChatMessage) => void) => {
+  sharedSocket?.off('chat-new', handler)
+}
+
+const onChatHistory = (handler: (messages: ChatMessage[]) => void) => {
+  sharedSocket?.on('chat-history', handler)
+}
+
+const offChatHistory = (handler: (messages: ChatMessage[]) => void) => {
+  sharedSocket?.off('chat-history', handler)
+}
+
+const onChatRemove = (handler: (messageId: string) => void) => {
+  sharedSocket?.on('chat-remove', handler)
+}
+
+const offChatRemove = (handler: (messageId: string) => void) => {
+  sharedSocket?.off('chat-remove', handler)
+}
+
+const emitChatTyping = (isTyping: boolean, meta?: { username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
+  sharedSocket?.emit('chat-typing', { isTyping, ...meta })
+}
+
+const onChatTyping = (handler: (payload: { username: string; isTyping: boolean }) => void) => {
+  sharedSocket?.on('chat-typing', handler)
+}
+
+const offChatTyping = (handler: (payload: { username: string; isTyping: boolean }) => void) => {
+  sharedSocket?.off('chat-typing', handler)
+}
+
+// Tomato throw
+const emitTomatoThrow = (payload: { fromUserId: string; toUserId: string; fromUsername: string; x?: number; y?: number }) => {
+  sharedSocket?.emit('tomato-throw', payload)
+}
+
+const onTomatoReceive = (handler: (payload: { id: string; fromUserId: string; toUserId: string; fromUsername: string; timestamp: number; x?: number; y?: number }) => void) => {
+  sharedSocket?.on('tomato-receive', handler)
+}
+
+const offTomatoReceive = (handler: (payload: { id: string; fromUserId: string; toUserId: string; fromUsername: string; timestamp: number; x?: number; y?: number }) => void) => {
+  sharedSocket?.off('tomato-receive', handler)
+}
+
+// Reactions
+const emitReactionSet = (payload: { fromUserId: string; toUserId: string; emoji: string }) => {
+  sharedSocket?.emit('reaction-set', payload)
+}
+
+const emitReactionRemove = (payload: { fromUserId: string; toUserId: string }) => {
+  sharedSocket?.emit('reaction-remove', payload)
+}
+
+const requestReactions = (payload?: { userId?: string | null }) => {
+  sharedSocket?.emit('get-reactions', payload)
+}
+
+const onReactionUpdate = (handler: (payload: { action: 'set' | 'remove'; toUserId: string; fromUserId: string; emoji: string | null; previousEmoji?: string | null; counts: Record<string, number> }) => void) => {
+  sharedSocket?.on('reaction-update', handler)
+}
+
+const offReactionUpdate = (handler: (payload: { action: 'set' | 'remove'; toUserId: string; fromUserId: string; emoji: string | null; previousEmoji?: string | null; counts: Record<string, number> }) => void) => {
+  sharedSocket?.off('reaction-update', handler)
+}
+
+const onReactionSnapshot = (handler: (payload: { countsByTarget: Record<string, Record<string, number>>; myReactionsByTarget?: Record<string, string> }) => void) => {
+  sharedSocket?.on('reaction-snapshot', handler)
+}
+
+const offReactionSnapshot = (handler: (payload: { countsByTarget: Record<string, Record<string, number>>; myReactionsByTarget?: Record<string, string> }) => void) => {
+  sharedSocket?.off('reaction-snapshot', handler)
+}
+
+const socketActions = {
+  emitSessionStart,
+  emitSessionSync,
+  emitSessionPause,
+  emitSessionEnd,
+  emitTimerTick,
+  // chat
+  sendChatMessage,
+  requestChatHistory,
+  onChatMessage,
+  offChatMessage,
+  onChatHistory,
+  offChatHistory,
+  onChatRemove,
+  offChatRemove,
+  emitChatTyping,
+  onChatTyping,
+  offChatTyping,
+  // tomato
+  emitTomatoThrow,
+  onTomatoReceive,
+  offTomatoReceive,
+  // reactions
+  emitReactionSet,
+  emitReactionRemove,
+  requestReactions,
+  onReactionUpdate,
+  offReactionUpdate,
+  onReactionSnapshot,
+  offReactionSnapshot
 }
 
 export function useSocket() {
-  // Ensure singleton is initialized
   useEffect(() => {
-    if (typeof window === 'undefined') return
     initSocketOnce()
   }, [])
 
-  // Re-emit presence on user changes via hook
-  const { user } = useAuthStore()
-  useEffect(() => {
-    if (!sharedSocket || !sharedSocket.connected) return
-    sharedSocket.emit('join-presence', buildPresencePayload(user))
-  }, [user])
-
-  const emitSessionStart = (sessionData: any) => {
-    sharedSocket?.emit('session-start', sessionData)
-  }
-
-  const emitSessionSync = (sessionData: any) => {
-    sharedSocket?.emit('session-sync', sessionData)
-  }
-
-  const emitSessionPause = (sessionId: string) => {
-    sharedSocket?.emit('session-pause', sessionId)
-  }
-
-  const emitSessionEnd = (
-    sessionId: string,
-    reason: 'manual' | 'completed' | 'reset' = 'manual',
-    options?: { removeActivity?: boolean }
-  ) => {
-    sharedSocket?.emit('session-end', {
-      sessionId,
-      reason,
-      ...(options?.removeActivity ? { removeActivity: true } : {}),
-    })
-  }
-
-  const emitTimerTick = (sessionId: string, timeRemaining: number) => {
-    sharedSocket?.emit('timer-tick', { sessionId, timeRemaining })
-  }
-
-  // Chat API
-  const sendChatMessage = (payload: { text: string; username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
-    sharedSocket?.emit('chat-send', payload)
-  }
-
-  const requestChatHistory = (payload?: { roomId?: string | null }) => {
-    sharedSocket?.emit('chat-history', payload)
-  }
-
-  const onChatMessage = (handler: (message: ChatMessage) => void) => {
-    sharedSocket?.on('chat-new', handler)
-  }
-
-  const offChatMessage = (handler: (message: ChatMessage) => void) => {
-    sharedSocket?.off('chat-new', handler)
-  }
-
-  const onChatHistory = (handler: (messages: ChatMessage[]) => void) => {
-    sharedSocket?.on('chat-history', handler)
-  }
-
-  const offChatHistory = (handler: (messages: ChatMessage[]) => void) => {
-    sharedSocket?.off('chat-history', handler)
-  }
-
-  const onChatRemove = (handler: (messageId: string) => void) => {
-    sharedSocket?.on('chat-remove', handler)
-  }
-
-  const offChatRemove = (handler: (messageId: string) => void) => {
-    sharedSocket?.off('chat-remove', handler)
-  }
-
-  const emitChatTyping = (isTyping: boolean, meta?: { username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
-    sharedSocket?.emit('chat-typing', { isTyping, ...meta })
-  }
-
-  const onChatTyping = (handler: (payload: { username: string; isTyping: boolean }) => void) => {
-    sharedSocket?.on('chat-typing', handler)
-  }
-
-  const offChatTyping = (handler: (payload: { username: string; isTyping: boolean }) => void) => {
-    sharedSocket?.off('chat-typing', handler)
-  }
-
-  // Tomato throw
-  const emitTomatoThrow = (payload: { fromUserId: string; toUserId: string; fromUsername: string; x?: number; y?: number }) => {
-    sharedSocket?.emit('tomato-throw', payload)
-  }
-
-  const onTomatoReceive = (handler: (payload: { id: string; fromUserId: string; toUserId: string; fromUsername: string; timestamp: number; x?: number; y?: number }) => void) => {
-    sharedSocket?.on('tomato-receive', handler)
-  }
-
-  const offTomatoReceive = (handler: (payload: { id: string; fromUserId: string; toUserId: string; fromUsername: string; timestamp: number; x?: number; y?: number }) => void) => {
-    sharedSocket?.off('tomato-receive', handler)
-  }
-
-  // Reactions
-  const emitReactionSet = (payload: { fromUserId: string; toUserId: string; emoji: string }) => {
-    sharedSocket?.emit('reaction-set', payload)
-  }
-
-  const emitReactionRemove = (payload: { fromUserId: string; toUserId: string }) => {
-    sharedSocket?.emit('reaction-remove', payload)
-  }
-
-  const requestReactions = (payload?: { userId?: string | null }) => {
-    sharedSocket?.emit('get-reactions', payload)
-  }
-
-  const onReactionUpdate = (handler: (payload: { action: 'set' | 'remove'; toUserId: string; fromUserId: string; emoji: string | null; previousEmoji?: string | null; counts: Record<string, number> }) => void) => {
-    sharedSocket?.on('reaction-update', handler)
-  }
-
-  const offReactionUpdate = (handler: (payload: { action: 'set' | 'remove'; toUserId: string; fromUserId: string; emoji: string | null; previousEmoji?: string | null; counts: Record<string, number> }) => void) => {
-    sharedSocket?.off('reaction-update', handler)
-  }
-
-  const onReactionSnapshot = (handler: (payload: { countsByTarget: Record<string, Record<string, number>>; myReactionsByTarget?: Record<string, string> }) => void) => {
-    sharedSocket?.on('reaction-snapshot', handler)
-  }
-
-  const offReactionSnapshot = (handler: (payload: { countsByTarget: Record<string, Record<string, number>>; myReactionsByTarget?: Record<string, string> }) => void) => {
-    sharedSocket?.off('reaction-snapshot', handler)
-  }
-
-  return {
-    emitSessionStart,
-    emitSessionSync,
-    emitSessionPause,
-    emitSessionEnd,
-    emitTimerTick,
-    // chat
-    sendChatMessage,
-    requestChatHistory,
-    onChatMessage,
-    offChatMessage,
-    onChatHistory,
-    offChatHistory,
-    onChatRemove,
-    offChatRemove,
-    emitChatTyping,
-    onChatTyping,
-    offChatTyping,
-    // tomato
-    emitTomatoThrow,
-    onTomatoReceive,
-    offTomatoReceive,
-    // reactions
-    emitReactionSet,
-    emitReactionRemove,
-    requestReactions,
-    onReactionUpdate,
-    offReactionUpdate,
-    onReactionSnapshot,
-    offReactionSnapshot
-  }
+  return socketActions
 }

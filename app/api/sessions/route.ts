@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { resolveExistingOrAnonymousUserId } from '@/lib/anonymousServer'
-import { SessionType, SessionStatus } from '@/types'
+import { SessionType } from '@/types'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,9 +22,10 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const page = Math.max(parseInt(searchParams.get('page') || '1', 10), 1)
-    const limitParam = parseInt(searchParams.get('limit') || '50', 10)
-    const limit = Math.min(Math.max(limitParam, 1), 100)
+    const pageParam = Number(searchParams.get('page') || '1')
+    const limitParam = Number(searchParams.get('limit') || '50')
+    const page = Number.isSafeInteger(pageParam) ? Math.max(pageParam, 1) : 1
+    const limit = Number.isSafeInteger(limitParam) ? Math.min(Math.max(limitParam, 1), 100) : 50
     const skip = (page - 1) * limit
 
     const payload = verifyToken(token)
@@ -47,16 +48,21 @@ export async function GET(request: NextRequest) {
       return NextResponse.json(activeSession ? [activeSession] : [])
     }
 
-    const total = await prisma.pomodoroSession.count({
-      where: { userId: payload.userId },
-    })
+    if (!Number.isSafeInteger(skip) || skip > 2147483647) {
+      return NextResponse.json({ error: 'Page is out of range' }, { status: 400 })
+    }
 
-    const sessions = await prisma.pomodoroSession.findMany({
-      where: { userId: payload.userId },
-      orderBy: { createdAt: 'desc' },
-      skip,
-      take: limit
-    })
+    const [total, sessions] = await Promise.all([
+      prisma.pomodoroSession.count({
+        where: { userId: payload.userId },
+      }),
+      prisma.pomodoroSession.findMany({
+        where: { userId: payload.userId },
+        orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        skip,
+        take: limit,
+      }),
+    ])
 
     return NextResponse.json(sessions, {
       headers: {

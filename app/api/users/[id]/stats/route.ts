@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
-import { startOfDay, endOfDay, subDays, format, startOfMonth, endOfMonth } from 'date-fns'
-import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionStats'
+import { subDays, format } from 'date-fns'
+import { buildSessionActivity } from '@/lib/sessionActivity'
 
 export const dynamic = 'force-dynamic'
 
@@ -32,60 +32,34 @@ export async function GET(
         type: { in: ['WORK', 'TIME_TRACKING'] },
       },
       select: {
-        id: true,
-        task: true,
         type: true,
-        status: true,
         duration: true,
         startedAt: true,
         endedAt: true,
         completedAt: true,
         pausedAt: true,
         remainingSeconds: true,
-        createdAt: true,
       },
       orderBy: { startedAt: 'asc' },
     })
 
-    const allWorkSessions = allFocusSessions.filter((session) => session.type === 'WORK')
-
-    const totalPomodoros = allWorkSessions.length
-    const totalFocusMinutes = allFocusSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
-
-    const sessionsCountByDay = new Map<string, number>()
-    allWorkSessions.forEach(session => {
-      const day = format(getSessionAttributionDate(session), 'yyyy-MM-dd')
-      sessionsCountByDay.set(day, (sessionsCountByDay.get(day) || 0) + 1)
-    })
-
-    const activeDays = sessionsCountByDay.size
+    const activity = buildSessionActivity(allFocusSessions)
+    const totalPomodoros = activity.totalPomodoros
+    const totalFocusMinutes = activity.totalMinutes
+    const activeDays = Array.from(activity.byDay.values()).filter(day => day.pomodoros > 0).length
     const avgPomodorosPerDay = activeDays > 0
       ? Number((totalPomodoros / activeDays).toFixed(1))
       : 0
 
-    const monthStart = startOfMonth(now)
-    const monthEnd = endOfMonth(now)
-    const focusTimeThisMonth = allFocusSessions.reduce((sum, session) => {
-      const date = getSessionAttributionDate(session)
-      if (date >= monthStart && date <= monthEnd) {
-        return sum + getEffectiveMinutes(session)
-      }
-      return sum
-    }, 0)
+    const focusTimeThisMonth = activity.byMonth.get(format(now, 'yyyy-MM'))?.minutes ?? 0
 
     // 1. Текущая серия дней подряд
     let currentStreak = 0
     if (allFocusSessions.length > 0) {
-      const sessionsByDay = new Map<string, boolean>()
-      allFocusSessions.forEach(session => {
-        const day = format(getSessionAttributionDate(session), 'yyyy-MM-dd')
-        sessionsByDay.set(day, true)
-      })
-
       let checkDate = now
       while (true) {
         const dayKey = format(checkDate, 'yyyy-MM-dd')
-        if (sessionsByDay.has(dayKey)) {
+        if (activity.byDay.has(dayKey)) {
           currentStreak++
           checkDate = subDays(checkDate, 1)
         } else {
@@ -113,21 +87,15 @@ export async function GET(
     let weekIndex = 0
     
     while (currentDate <= now) {
-      const dayStart = startOfDay(currentDate)
-      const dayEnd = endOfDay(currentDate)
-      
-      const daySessions = allFocusSessions.filter(session => {
-        const sessionDate = getSessionAttributionDate(session)
-        return sessionDate >= dayStart && sessionDate <= dayEnd
-      })
+      const totals = activity.byDay.get(format(currentDate, 'yyyy-MM-dd'))
       
       const dayOfWeek = currentDate.getDay()
       
       yearlyHeatmap.push({
         week: weekIndex,
         dayOfWeek,
-        pomodoros: daySessions.filter(s => s.type === 'WORK').length,
-        minutes: daySessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0),
+        pomodoros: totals?.pomodoros ?? 0,
+        minutes: totals?.minutes ?? 0,
         date: format(currentDate, 'yyyy-MM-dd')
       })
       
@@ -146,18 +114,12 @@ export async function GET(
     const weeklyActivity = []
     for (let i = daysCount - 1; i >= 0; i--) {
       const date = subDays(now, i)
-      const dayStart = startOfDay(date)
-      const dayEnd = endOfDay(date)
-
-      const daySessions = allFocusSessions.filter(session => {
-        const sessionDate = getSessionAttributionDate(session)
-        return sessionDate >= dayStart && sessionDate <= dayEnd
-      })
+      const totals = activity.byDay.get(format(date, 'yyyy-MM-dd'))
 
       weeklyActivity.push({
         date: format(date, 'yyyy-MM-dd'),
-        pomodoros: daySessions.filter(s => s.type === 'WORK').length,
-        minutes: daySessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
+        pomodoros: totals?.pomodoros ?? 0,
+        minutes: totals?.minutes ?? 0
       })
     }
 

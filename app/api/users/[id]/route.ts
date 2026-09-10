@@ -59,9 +59,7 @@ export async function GET(
 
     const totalFocusMinutes = focusSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
 
-    const totalSessions = await prisma.pomodoroSession.count({
-      where: { userId },
-    })
+    const totalSessions = user._count.sessions
 
     // Get completed sessions count
     const completedSessions = await prisma.pomodoroSession.count({

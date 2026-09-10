@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
-import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, startOfWeek, endOfWeek, differenceInDays, format, addMinutes, subMonths, subYears, subWeeks } from 'date-fns'
+import { startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, startOfYear, startOfWeek, endOfWeek, format, addMinutes, subMonths, subYears, subWeeks } from 'date-fns'
 import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionStats'
+import { buildSessionActivity } from '@/lib/sessionActivity'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,30 +45,69 @@ export async function GET(request: NextRequest) {
     const timelineStart = startOfDay(subDays(now, 6 + timelineOffset))
     const timelineEnd = endOfDay(subDays(now, timelineOffset))
 
-    // Вся фокус-активность пользователя: WORK + TIME_TRACKING (включая ручные остановки)
-    const allFocusSessions = await prisma.pomodoroSession.findMany({
-      where: {
-        userId: payload.userId,
-        status: { in: ['COMPLETED', 'CANCELLED'] },
-        type: { in: ['WORK', 'TIME_TRACKING'] },
-      },
-      select: {
-        id: true,
-        task: true,
-        type: true,
-        status: true,
-        duration: true,
-        startedAt: true,
-        endedAt: true,
-        completedAt: true,
-        pausedAt: true,
-        remainingSeconds: true,
-        createdAt: true,
-      },
-      orderBy: { startedAt: 'asc' },
-    })
+    const [allFocusSessions, recentSessions, allUserTasks] = await Promise.all([
+      prisma.pomodoroSession.findMany({
+        where: {
+          userId: payload.userId,
+          status: { in: ['COMPLETED', 'CANCELLED'] },
+          type: { in: ['WORK', 'TIME_TRACKING'] },
+        },
+        select: {
+          id: true,
+          task: true,
+          type: true,
+          status: true,
+          duration: true,
+          startedAt: true,
+          endedAt: true,
+          completedAt: true,
+          pausedAt: true,
+          remainingSeconds: true,
+          createdAt: true,
+        },
+        orderBy: { startedAt: 'asc' },
+      }),
+      prisma.pomodoroSession.findMany({
+        where: {
+          userId: payload.userId,
+          startedAt: { gte: timelineStart, lte: timelineEnd },
+          status: { in: ['COMPLETED', 'CANCELLED'] },
+        },
+        select: {
+          id: true,
+          task: true,
+          type: true,
+          status: true,
+          duration: true,
+          startedAt: true,
+          endedAt: true,
+          completedAt: true,
+          pausedAt: true,
+          remainingSeconds: true,
+          createdAt: true,
+        },
+        orderBy: {
+          startedAt: 'asc'
+        }
+      }),
+      prisma.task.findMany({
+        where: { userId: payload.userId },
+        select: {
+          id: true,
+          title: true,
+          completed: true,
+          priority: true,
+          pomodoros: true,
+          completedPomodoros: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
 
-    const allWorkSessions = allFocusSessions.filter((session) => session.type === 'WORK')
+    const activity = buildSessionActivity(allFocusSessions)
+
     const availableHeatmapYears = Array.from(
       new Set([
         now.getFullYear(),
@@ -81,51 +121,19 @@ export async function GET(request: NextRequest) {
       ? requestedHeatmapRange
       : 'rolling'
 
-    // Сессии за последние 7 дней (для таймлайна)
-    const sevenDaysStart = timelineStart
-    const recentSessions = await prisma.pomodoroSession.findMany({
-      where: {
-        userId: payload.userId,
-        startedAt: { gte: sevenDaysStart, lte: timelineEnd },
-        status: { in: ['COMPLETED', 'CANCELLED'] },
-      },
-      select: {
-        id: true,
-        task: true,
-        type: true,
-        status: true,
-        duration: true,
-        startedAt: true,
-        endedAt: true,
-        completedAt: true,
-        pausedAt: true,
-        remainingSeconds: true,
-        createdAt: true,
-      },
-      orderBy: {
-        startedAt: 'asc'
-      }
-    })
-
     // 1. Всего помодоро (work, включая ручные остановки)
-    const totalPomodoros = allWorkSessions.length
+    const totalPomodoros = activity.totalPomodoros
 
     // 2. Общее время фокуса (work + time tracking, учитывая ручные остановки)
-    const totalFocusMinutes = allFocusSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
+    const totalFocusMinutes = activity.totalMinutes
 
     // 3. Текущая серия дней подряд
     let currentStreak = 0
     if (allFocusSessions.length > 0) {
-      const sessionsByDay = new Map<string, boolean>()
-      allFocusSessions.forEach(session => {
-        const day = format(getSessionAttributionDate(session), 'yyyy-MM-dd')
-        sessionsByDay.set(day, true)
-      })
-
       let checkDate = now
       while (true) {
         const dayKey = format(checkDate, 'yyyy-MM-dd')
-        if (sessionsByDay.has(dayKey)) {
+        if (activity.byDay.has(dayKey)) {
           currentStreak++
           checkDate = subDays(checkDate, 1)
         } else {
@@ -140,23 +148,11 @@ export async function GET(request: NextRequest) {
     }
 
     // 4. Среднее время в день (считаем только дни когда были сессии)
-    const sessionsByDay = new Map<string, number>()
-    allFocusSessions.forEach(session => {
-      const day = format(getSessionAttributionDate(session), 'yyyy-MM-dd')
-      sessionsByDay.set(day, (sessionsByDay.get(day) || 0) + getEffectiveMinutes(session))
-    })
-    
-    const activeDaysCount = sessionsByDay.size
+    const activeDaysCount = activity.byDay.size
     const avgMinutesPerDay = activeDaysCount > 0 ? Math.round(totalFocusMinutes / activeDaysCount) : 0
 
     // 5. Время фокуса за текущий месяц
-    const monthStart = startOfMonth(now)
-    const monthEnd = endOfMonth(now)
-    const thisMonthSessions = allFocusSessions.filter(session => {
-      const date = getSessionAttributionDate(session)
-      return date >= monthStart && date <= monthEnd
-    })
-    const focusTimeThisMonth = thisMonthSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
+    const focusTimeThisMonth = activity.byMonth.get(format(now, 'yyyy-MM'))?.minutes ?? 0
 
     // Активность за выбранный период с поддержкой смещения
     const daysCount = parseInt(period)
@@ -174,18 +170,12 @@ export async function GET(request: NextRequest) {
       
       for (let i = 0; i < 12; i++) {
         const monthDate = new Date(baseYear.getFullYear(), i, 1)
-        const monthStartDate = startOfMonth(monthDate)
-        const monthEndDate = endOfMonth(monthDate)
-        
-        const monthSessions = allFocusSessions.filter(session => {
-          const sessionDate = getSessionAttributionDate(session)
-          return sessionDate >= monthStartDate && sessionDate <= monthEndDate
-        })
-        
+        const totals = activity.byMonth.get(format(monthDate, 'yyyy-MM'))
+
         weeklyActivity.push({
           date: format(monthDate, 'yyyy-MM'),
-          pomodoros: monthSessions.filter(s => s.type === 'WORK').length,
-          minutes: monthSessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
+          pomodoros: totals?.pomodoros ?? 0,
+          minutes: totals?.minutes ?? 0
         })
       }
     } else if (daysCount === 30) {
@@ -198,18 +188,12 @@ export async function GET(request: NextRequest) {
       
       let currentDay = rangeStart
       while (currentDay <= rangeEnd) {
-        const dayStart = startOfDay(currentDay)
-        const dayEnd = endOfDay(currentDay)
-        
-        const daySessions = allFocusSessions.filter(session => {
-          const sessionDate = getSessionAttributionDate(session)
-          return sessionDate >= dayStart && sessionDate <= dayEnd
-        })
-        
+        const totals = activity.byDay.get(format(currentDay, 'yyyy-MM-dd'))
+
         weeklyActivity.push({
           date: format(currentDay, 'yyyy-MM-dd'),
-          pomodoros: daySessions.filter(s => s.type === 'WORK').length,
-          minutes: daySessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
+          pomodoros: totals?.pomodoros ?? 0,
+          minutes: totals?.minutes ?? 0
         })
         currentDay = new Date(currentDay)
         currentDay.setDate(currentDay.getDate() + 1)
@@ -225,18 +209,12 @@ export async function GET(request: NextRequest) {
       for (let i = 0; i < 7; i++) {
         const date = new Date(rangeStart)
         date.setDate(rangeStart.getDate() + i)
-        const dayStart = startOfDay(date)
-        const dayEnd = endOfDay(date)
-        
-        const daySessions = allFocusSessions.filter(session => {
-          const sessionDate = getSessionAttributionDate(session)
-          return sessionDate >= dayStart && sessionDate <= dayEnd
-        })
-        
+        const totals = activity.byDay.get(format(date, 'yyyy-MM-dd'))
+
         weeklyActivity.push({
           date: format(date, 'yyyy-MM-dd'),
-          pomodoros: daySessions.filter(s => s.type === 'WORK').length,
-          minutes: daySessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
+          pomodoros: totals?.pomodoros ?? 0,
+          minutes: totals?.minutes ?? 0
         })
       }
     }
@@ -261,20 +239,15 @@ export async function GET(request: NextRequest) {
         break
       }
       
-      const dayEnd = endOfDay(currentDate)
-      
-      const daySessions = allFocusSessions.filter(session => {
-        const sessionDate = getSessionAttributionDate(session)
-        return sessionDate >= dayStart && sessionDate <= dayEnd
-      })
-      
+      const totals = activity.byDay.get(format(currentDate, 'yyyy-MM-dd'))
+
       const dayOfWeek = currentDate.getDay()
       
       yearlyHeatmap.push({
         week: weekIndex,
         dayOfWeek,
-        pomodoros: daySessions.filter(s => s.type === 'WORK').length,
-        minutes: daySessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0),
+        pomodoros: totals?.pomodoros ?? 0,
+        minutes: totals?.minutes ?? 0,
         date: format(currentDate, 'yyyy-MM-dd')
       })
       
@@ -299,19 +272,13 @@ export async function GET(request: NextRequest) {
     const monthlyBreakdown = []
     for (let i = 11; i >= 0; i--) {
       const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1)
-      const monthStartDate = startOfMonth(monthDate)
-      const monthEndDate = endOfMonth(monthDate)
-      
-      const monthSessions = allFocusSessions.filter(session => {
-        const sessionDate = getSessionAttributionDate(session)
-        return sessionDate >= monthStartDate && sessionDate <= monthEndDate
-      })
-      
+      const totals = activity.byMonth.get(format(monthDate, 'yyyy-MM'))
+
       monthlyBreakdown.push({
         month: format(monthDate, 'MMM'),
         monthIndex: monthDate.getMonth(),
-        pomodoros: monthSessions.filter(s => s.type === 'WORK').length,
-        minutes: monthSessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0)
+        pomodoros: totals?.pomodoros ?? 0,
+        minutes: totals?.minutes ?? 0
       })
     }
 
@@ -371,29 +338,13 @@ export async function GET(request: NextRequest) {
 
     // 3. Средняя длительность фокус-режима
     const avgSessionDuration = allFocusSessions.length > 0 
-      ? Math.round(allFocusSessions.reduce((sum, s) => sum + getEffectiveMinutes(s), 0) / allFocusSessions.length) 
+      ? Math.round(totalFocusMinutes / allFocusSessions.length)
       : 0
 
     // 4. Завершенные задачи за эту неделю
     const weekStart = subDays(now, 6)
-    const weekTasks = await prisma.task.findMany({
-      where: {
-        userId: payload.userId,
-        completed: true,
-        updatedAt: {
-          gte: weekStart
-        }
-      }
-    })
-    
-    const allTasks = await prisma.task.findMany({
-      where: {
-        userId: payload.userId,
-        createdAt: {
-          gte: weekStart
-        }
-      }
-    })
+    const completedWeekTasks = allUserTasks.filter(task => task.completed && task.updatedAt >= weekStart).length
+    const createdWeekTasks = allUserTasks.filter(task => task.createdAt >= weekStart).length
 
     const productivityTrends = {
       bestTime: {
@@ -407,21 +358,12 @@ export async function GET(request: NextRequest) {
       },
       avgSessionDuration,
       weeklyTasks: {
-        completed: weekTasks.length,
-        total: allTasks.length
+        completed: completedWeekTasks,
+        total: createdWeekTasks
       }
     }
 
     // Статистика по задачам
-    const allUserTasks = await prisma.task.findMany({
-      where: {
-        userId: payload.userId
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
-
     const completedTasks = allUserTasks.filter(t => t.completed)
     const pendingTasks = allUserTasks.filter(t => !t.completed)
     
@@ -434,7 +376,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Топ-5 задач по затраченным помодоро
-    const topTasksByPomodoros = allUserTasks
+    const topTasksByPomodoros = [...allUserTasks]
       .sort((a, b) => b.completedPomodoros - a.completedPomodoros)
       .slice(0, 5)
       .map(task => ({
