@@ -14,7 +14,7 @@ import Image from 'next/image'
 import { useRoomStore } from '@/store/useRoomStore'
 import { NotificationItem } from '@/types'
 import NotificationsMenu from './NotificationsMenu'
-import { TomatoMascot } from '@/components/TomatoMascot'
+import PixelSprout from '@/components/PixelSprout'
 import { useI18n } from '@/components/I18nProvider'
 import RankAvatarFrame from '@/components/RankAvatarFrame'
 import {
@@ -275,11 +275,11 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 md:px-8 py-4">
+      <header className="pixel-navbar bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 md:px-8 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link href="/" className="flex items-center space-x-2 md:space-x-3">
-            <div className="w-10 h-10 bg-red-100 dark:bg-red-500/20 rounded-xl flex items-center justify-center">
-              <TomatoMascot className="w-7 h-7" />
+            <div className="w-10 h-10 bg-rose-100 dark:bg-rose-500/20 rounded-xl flex items-center justify-center">
+              <PixelSprout className="w-10 h-10" />
             </div>
             <div>
               <h1 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Pomo Cowork</h1>
@@ -292,7 +292,7 @@ export default function Navbar() {
               href="/" 
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname === '/' 
-                  ? 'bg-red-500 text-white' 
+                  ? 'bg-rose-600 text-white'
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
@@ -302,7 +302,7 @@ export default function Navbar() {
               href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname.startsWith('/rooms') 
-                  ? 'bg-red-500 text-white' 
+                  ? 'bg-rose-600 text-white'
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
@@ -318,7 +318,7 @@ export default function Navbar() {
               href="/users" 
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname === '/users' 
-                  ? 'bg-red-500 text-white' 
+                  ? 'bg-rose-600 text-white'
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
@@ -328,7 +328,7 @@ export default function Navbar() {
               href="/stats"
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname === '/stats'
-                  ? 'bg-red-500 text-white'
+                  ? 'bg-rose-600 text-white'
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
@@ -536,7 +536,7 @@ export default function Navbar() {
                 onClick={handleMobileLinkClick}
                 className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
                   pathname === '/' 
-                    ? 'bg-red-500 text-white' 
+                    ? 'bg-rose-600 text-white'
                     : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
                 }`}
               >
@@ -548,7 +548,7 @@ export default function Navbar() {
                 onClick={handleMobileLinkClick}
                 className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
                   pathname.startsWith('/rooms') 
-                    ? 'bg-red-500 text-white' 
+                    ? 'bg-rose-600 text-white'
                     : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
                 }`}
               >
@@ -565,7 +565,7 @@ export default function Navbar() {
                 onClick={handleMobileLinkClick}
                 className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
                   pathname === '/users' 
-                    ? 'bg-red-500 text-white' 
+                    ? 'bg-rose-600 text-white'
                     : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
                 }`}
               >
@@ -577,7 +577,7 @@ export default function Navbar() {
                 onClick={handleMobileLinkClick}
                 className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
                   pathname === '/stats'
-                    ? 'bg-red-500 text-white'
+                    ? 'bg-rose-600 text-white'
                     : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
                 }`}
               >

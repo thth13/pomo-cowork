@@ -46,7 +46,7 @@ export const TimerControls = memo(function TimerControls({
             <button
               onClick={onStart}
               disabled={isStarting}
-              className={`w-full sm:w-auto bg-red-500 hover:bg-red-600 text-white px-6 sm:px-8 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+              className={`w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white px-6 sm:px-8 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
                 isStarting ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -108,11 +108,12 @@ export const TimerControls = memo(function TimerControls({
           return (
             <button
               key={type}
+              aria-pressed={isActive}
               onClick={() => onSessionTypeChange(type)}
               disabled={!!currentSession}
               className={`flex-1 sm:flex-none sm:px-6 px-3 py-2 rounded-lg font-medium text-sm sm:text-base ${
                 isActive
-                  ? 'bg-red-500 text-white'
+                  ? 'bg-rose-500 text-white'
                   : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
               } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
             >

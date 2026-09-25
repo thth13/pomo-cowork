@@ -1,32 +1,27 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
-import { motion } from 'framer-motion'
 import { useAuthStore } from '@/store/useAuthStore'
 import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
-import AuthModal from '@/components/AuthModal'
 import { registerServiceWorker } from '@/lib/serviceWorker'
-import { getRoomGradientClass } from '@/lib/roomGradient'
-import { useRoomStore } from '@/store/useRoomStore'
 import dynamic from 'next/dynamic'
 const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => null })
 import TaskList, { TaskListRef } from '@/components/TaskList'
 import WorkHistory from '@/components/WorkHistory'
 import TodayContribution from '@/components/TodayContribution'
 import { useI18n } from '@/components/I18nProvider'
+import PocketGarden from '@/components/PocketGarden'
+import { gardenCopy } from '@/lib/i18n/garden'
+import { Timer } from 'lucide-react'
 
 export default function HomePage() {
-  const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
-  const { t } = useI18n()
-  const currentRoomId = useRoomStore((s) => s.currentRoomId)
-  const currentRoomBackgroundGradientKey = useRoomStore((s) => s.currentRoomBackgroundGradientKey)
-  const [showAuthModal, setShowAuthModal] = useState(false)
+  const { isLoading, checkAuth } = useAuthStore()
+  const { t, language } = useI18n()
+  const copy = gardenCopy[language]
   const [mounted, setMounted] = useState(false)
   const taskListRef = useRef<TaskListRef>(null)
-
-  const roomGradientClass = getRoomGradientClass(currentRoomId, currentRoomBackgroundGradientKey)
 
   useEffect(() => {
     setMounted(true)
@@ -106,57 +101,31 @@ export default function HomePage() {
   }
 
   return (
-    <div
-      className={`min-h-screen ${
-        roomGradientClass ?? 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800'
-      }`}
-    >
+    <div className="min-h-screen garden-page">
       <Navbar />
-      
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="grid grid-cols-12 gap-4 sm:gap-6 lg:gap-8">
-          {/* Левая колонка - Таймер и Активные сессии */}
-          <div className="col-span-12 lg:col-span-8">
-            {/* Timer Section */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="mb-8 sm:mb-12 lg:mb-16"
-            >
+      <main className="garden-layout">
+        <div className="garden-workspace">
+          <div className="garden-main-column">
+            <section className="focus-station pixel-panel" aria-labelledby="focus-title">
+              <div className="pixel-panel-heading" data-no-translate>
+                <span id="focus-title"><Timer size={16} />{copy.timer}</span>
+                <span className="focus-heading-hint">{copy.timerHint}</span>
+              </div>
               <PomodoroTimer onSessionComplete={handleSessionComplete} />
-            </motion.section>
-
-            {/* Active Sessions Section */}
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <ActiveSessions />
-            </motion.section>
+            </section>
+            <div className="garden-community"><ActiveSessions /></div>
           </div>
-
-          {/* Правая колонка - Вклад, Список задач, Чат и История */}
-          <div className="col-span-12 lg:col-span-4 space-y-4 sm:space-y-6 lg:space-y-8">
-            <motion.section
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-            >
-              <TodayContribution />
-            </motion.section>
+          <aside className="garden-side-column">
+            <PocketGarden />
+            <TodayContribution />
+          </aside>
+          <div className="garden-bottom-grid">
             <TaskList ref={taskListRef} />
             <Chat />
             <WorkHistory />
           </div>
         </div>
       </main>
-      
-      <AuthModal
-        isOpen={showAuthModal}
-        onClose={() => setShowAuthModal(false)}
-      />
     </div>
   )
 }

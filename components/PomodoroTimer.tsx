@@ -1,5 +1,6 @@
 'use client'
 
+import { usePetStore } from '@/store/usePetStore'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Settings } from 'lucide-react'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
@@ -1090,6 +1091,9 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
           }
 
           await sessionService.update(sessionId, updatePayload)
+          if (currentSession.type === SessionType.TIME_TRACKING) {
+            usePetStore.getState().reward(sessionId, Math.floor(elapsedSeconds / 60))
+          }
           void mutateSessions()
         } catch (error) {
           console.error('Failed to update session:', error)
@@ -1128,6 +1132,9 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
     
     try {
       await sessionService.complete(sessionSnapshot.id)
+      if (completedType === SessionType.WORK || completedType === SessionType.TIME_TRACKING) {
+        usePetStore.getState().reward(sessionSnapshot.id, sessionSnapshot.duration)
+      }
       void mutateSessions()
 
       console.log('Checking pomodoro increment conditions:', {
@@ -1291,9 +1298,6 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       : ((currentSession.duration * 60 - timeRemaining) / (currentSession.duration * 60)) * 100
     : 0
 
-  const circumference = 2 * Math.PI * 54
-  const offset = circumference * (1 - progress / 100)
-
   return (
     <div className="flex flex-col items-center" data-timer-panel>
       <TaskPicker
@@ -1339,66 +1343,15 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         </button>
       )}
 
-      {/* Timer Container */}
-      <div className="relative mb-6 sm:mb-8">
-        <svg className="w-64 h-64 sm:w-80 sm:h-80 timer-ring" viewBox="0 0 120 120">
-          <circle 
-            cx="60" 
-            cy="60" 
-            r="54" 
-            fill="none" 
-            className="stroke-gray-200 dark:stroke-slate-700"
-            strokeWidth="8"
-          />
-          <circle 
-            cx="60" 
-            cy="60" 
-            r="54" 
-            fill="none" 
-            stroke={
-              activeSessionType === SessionType.WORK 
-                ? '#ef4444' 
-                : activeSessionType === SessionType.SHORT_BREAK 
-                ? '#22c55e' 
-                : activeSessionType === SessionType.TIME_TRACKING
-                ? '#6366f1'
-                : '#3b82f6'
-            }
-            strokeWidth="8" 
-            strokeDasharray={circumference}
-            strokeDashoffset={offset}
-            strokeLinecap="round"
-            style={{ transition: 'stroke-dashoffset 1s linear' }}
-          />
-        </svg>
-        
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <div className={`text-4xl sm:text-6xl font-bold mb-2 ${
-            activeSessionType === SessionType.WORK 
-              ? 'text-red-500 dark:text-red-400' 
-              : activeSessionType === SessionType.SHORT_BREAK 
-              ? 'text-green-500 dark:text-green-400' 
-              : activeSessionType === SessionType.TIME_TRACKING
-              ? 'text-indigo-500 dark:text-indigo-400'
-              : 'text-blue-500 dark:text-blue-400'
-          }`}>
-            {formatTime(timerDisplaySeconds)}
-          </div>
-          <div className="text-base sm:text-lg font-medium text-gray-600 dark:text-slate-300">
-            {getSessionTypeLabel(activeSessionType)}
-          </div>
+      <div className="pixel-timer-screen">
+        <div className="pixel-timer-status"><span className={isRunning ? 'pixel-led active' : 'pixel-led'} />{getSessionTypeLabel(activeSessionType)}</div>
+        <button type="button" onClick={openSettings} className="pixel-timer-settings" aria-label={t.settingsModal.title} title={t.settingsModal.title}><Settings size={18} /></button>
+        <div className={`pixel-timer-digits ${timerDisplaySeconds >= 6000 ? 'pixel-timer-digits-long' : ''}`} role="timer" aria-label={getSessionTypeLabel(activeSessionType)}>{formatTime(timerDisplaySeconds)}</div>
+        <div className="pixel-timer-track" role="progressbar" aria-label={getSessionTypeLabel(activeSessionType)} aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
+          {Array.from({ length: 24 }, (_, i) => <span key={i} className={progress >= (i + 1) / 24 * 100 ? 'filled' : ''} />)}
         </div>
-        <button
-          type="button"
-          onClick={openSettings}
-          className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 inline-flex items-center justify-center rounded-full border border-gray-200 bg-white p-2 text-gray-600 shadow-sm transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700"
-          aria-label={t.settingsModal.title}
-          title={t.settingsModal.title}
-        >
-          <Settings size={18} />
-        </button>
       </div>
-      
+
       <TimerControls
         currentSession={currentSession}
         sessionType={activeSessionType}

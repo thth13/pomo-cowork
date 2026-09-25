@@ -1,0 +1,26 @@
+export const gardenCopy = {
+  en: {
+    eyebrow: 'A little focus. A little growth.', title: 'Grow at your own pace.',
+    subtitle: 'Make room for meaningful work. Your little companion is rooting for you.',
+    timer: 'Focus station', timerHint: 'One thing at a time.', garden: 'Your pocket garden',
+    name: 'Sprout', level: 'Level', seedling: 'Seedling', sapling: 'Sapling', bloom: 'Forest friend',
+    working: 'Growing together. You’ve got this!', idle: 'A little work, a little sunshine.', hungry: 'Let’s turn some focus into food!',
+    full: 'Fullness', joy: 'Happiness', water: 'Water', feed: 'Feed', pet: 'Pet', waterAction: 'Water',
+    food: 'food', minutes: 'focus min', next: 'to next level',
+    hint: 'Finish a focus session to earn food. Every 25 minutes earns one portion; shorter completed sessions earn one too.',
+    saved: 'Your companion lives in this browser.', temporary: 'Browser storage is unavailable. Progress lasts until you close this page.', fed: 'Yum! Fullness +30.', petted: 'Happy little sprout! Happiness +25.', watered: 'Fresh water! Water +30.',
+    cooldown: 'Pet and water again after 30 minutes.', noFood: 'Finish a focus session to earn food.', ready: 'Ready when you are',
+  },
+  es: {
+    eyebrow: 'Un poco de enfoque. Un poco de crecimiento.', title: 'Crece a tu propio ritmo.',
+    subtitle: 'Haz espacio para lo importante. Tu pequeño compañero está contigo.',
+    timer: 'Estación de enfoque', timerHint: 'Una cosa a la vez.', garden: 'Tu pequeño jardín',
+    name: 'Brote', level: 'Nivel', seedling: 'Semilla', sapling: 'Brote joven', bloom: 'Amigo del bosque',
+    working: 'Creciendo juntos. ¡Tú puedes!', idle: 'Un poco de trabajo y un poco de sol.', hungry: '¡Convierte tu enfoque en comida!',
+    full: 'Saciedad', joy: 'Felicidad', water: 'Agua', feed: 'Alimentar', pet: 'Acariciar', waterAction: 'Regar',
+    food: 'comida', minutes: 'min de enfoque', next: 'para el siguiente nivel',
+    hint: 'Completa una sesión de enfoque para ganar comida. Cada 25 minutos dan una porción; las sesiones completas más cortas también dan una.',
+    saved: 'Tu compañero vive en este navegador.', temporary: 'El almacenamiento no está disponible. El progreso dura hasta cerrar esta página.', fed: '¡Ñam! Saciedad +30.', petted: '¡Brote feliz! Felicidad +25.', watered: '¡Agua fresca! Agua +30.',
+    cooldown: 'Puedes acariciar y regar cada 30 minutos.', noFood: 'Completa una sesión de enfoque para ganar comida.', ready: 'Cuando quieras empezar',
+  },
+} as const
