@@ -100,6 +100,8 @@ The sage title bar is a pointer/touch drag handle with arrow-key movement; dragg
 viewport resize keep windows within screen bounds. Click/focus raises a panel. Escape
 closes the focused panel; the dock toggles it. No backdrop, page scroll lock or focus trap.
 Bodies scroll internally and stay mounted to preserve tasks, drafts and live updates.
+Open/closed state persists in `pomo:windows:open:v1` and restores before the workspace
+appears. Only known panel IDs are restored; unavailable storage falls back to memory.
 Positions and user-selected sizes persist per window in versioned localStorage keys,
 with debounced writes and a flush on page exit. Restored windows fit the current viewport;
 invalid or unavailable storage falls back to the in-memory layout. Invisible edge and corner

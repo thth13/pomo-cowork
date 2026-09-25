@@ -18,6 +18,11 @@ import { MessageCircle, History, ListTodo, Medal } from 'lucide-react'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
 import { getRank } from '@/lib/ranks'
 
+type PanelId = 'chat' | 'history' | 'tasks' | 'progress'
+const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v1'
+const isPanelId = (value: unknown): value is PanelId =>
+  value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress'
+
 export default function HomePage() {
   const { user, isLoading, checkAuth } = useAuthStore()
   const { t, language } = useI18n()
@@ -25,7 +30,6 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false)
   const taskListRef = useRef<TaskListRef>(null)
   const rank = getRank(user?.experience ?? 0)
-  type PanelId = 'chat' | 'history' | 'tasks' | 'progress'
   const [openPanels, setOpenPanels] = useState<PanelId[]>([])
   const [panelOrder, setPanelOrder] = useState<PanelId[]>([])
   const bringToFront = (id: PanelId) => setPanelOrder((current) => [...current.filter((panel) => panel !== id), id])
@@ -38,8 +42,28 @@ export default function HomePage() {
   ] as const
 
   useEffect(() => {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem(OPEN_PANELS_STORAGE_KEY) ?? '[]')
+      if (Array.isArray(saved)) {
+        const restored = Array.from(new Set(saved.filter(isPanelId)))
+        setOpenPanels(restored)
+        setPanelOrder(restored)
+      }
+    } catch {
+      // Invalid or unavailable storage must not prevent using the windows.
+    }
     setMounted(true)
   }, [])
+
+  useEffect(() => {
+    // Wait for restoration so the initial empty state cannot overwrite saved windows.
+    if (!mounted) return
+    try {
+      localStorage.setItem(OPEN_PANELS_STORAGE_KEY, JSON.stringify(openPanels))
+    } catch {
+      // Keep window state in memory when browser storage is unavailable.
+    }
+  }, [mounted, openPanels])
 
   useEffect(() => {
     // Обработка OAuth callback токена
