@@ -116,7 +116,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen garden-page">
-      <Navbar />
+      <Navbar compact />
       <main className="focus-page-layout">
         <section className="focus-station" aria-label={t.nav.timer}>
           <PomodoroTimer onSessionComplete={handleSessionComplete} />

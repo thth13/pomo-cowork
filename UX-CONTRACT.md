@@ -24,6 +24,7 @@
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
 | Locale | I18nProvider | English and Spanish, including new companion copy |
+| Homepage navigation | Navbar compact variant | Shared navigation disclosure; outside click and Escape dismiss; Escape restores trigger focus; guests retain navigation and login |
 | Workspace overlays | WorkspaceWindow | Compact non-modal windows; pointer/touch dragging and keyboard arrows; viewport bounds; click/focus stacking; Escape/close/dock dismissal; mounted content preserves drafts |
 | CRUD / permissions | Existing task, room and auth services/API routes | No workflow or permission changes |
 

@@ -72,8 +72,13 @@ Artwork retains its limited palette; the scene background is desaturated in both
 
 ## Layout and components
 
-The homepage uses a centered 960px shell with a 640px timer and the currently working
-list below it. Both sections share the page background without outer borders, card
+The homepage replaces the full header with a small fixed Menu disclosure at the top
+right. It reuses Navbar navigation, account actions, notifications, online status and
+theme controls; guests can navigate and sign in. Other routes retain their header.
+The homepage uses a centered 960px shell with a 640px timer, centered horizontally
+and vertically in a minimum-height first viewport. Symmetric safe-area padding keeps
+controls clear of the menu and dock; short screens grow naturally and scroll. The
+currently working list follows below the first viewport. Both sections share the page background without outer borders, card
 surfaces or shadows. Pixel digits and a slim segmented progress track carry the identity. The timer has no
 visible section heading or tagline. A compact inline Current task picker sits directly
 below Start/session actions and above the session-type controls.

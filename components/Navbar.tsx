@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useId } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -15,6 +15,7 @@ import { useRoomStore } from '@/store/useRoomStore'
 import { NotificationItem } from '@/types'
 import NotificationsMenu from './NotificationsMenu'
 import PixelSprout from '@/components/PixelSprout'
+import { gardenCopy } from '@/lib/i18n/garden'
 import { useI18n } from '@/components/I18nProvider'
 import RankAvatarFrame from '@/components/RankAvatarFrame'
 import {
@@ -28,7 +29,9 @@ import {
 
 const NOTIFICATIONS_REFRESH_MS = 2 * 60 * 1000
 
-export default function Navbar() {
+export default function Navbar({ compact = false }: { compact?: boolean }) {
+  const compactMenuId = useId()
+  const compactTriggerRef = useRef<HTMLButtonElement>(null)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
@@ -47,7 +50,7 @@ export default function Navbar() {
   const { user, isAuthenticated, logout, token } = useAuthStore()
   const { setCurrentRoom, currentRoomId } = useRoomStore()
   const { totalOnlineCount, isConnected, isChecking } = useConnectionStore()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const pathname = usePathname()
   const connectionStatusClass = isChecking
     ? 'bg-yellow-400'
@@ -275,8 +278,39 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="pixel-navbar bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 md:px-8 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
+      <header
+        ref={compact ? mobileMenuRef : undefined}
+        className={compact ? 'workspace-navigation' : 'pixel-navbar bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 md:px-8 py-4'}
+        onKeyDown={compact ? (event) => {
+          if (event.key === 'Escape') {
+            event.stopPropagation()
+            if (isNotificationsOpen) {
+              setIsNotificationsOpen(false)
+              mobileNotificationsRef.current?.querySelector('button')?.focus()
+            } else {
+              setIsMobileMenuOpen(false)
+              compactTriggerRef.current?.focus()
+            }
+          }
+        } : undefined}
+      >
+        {compact && (
+          <button
+            ref={compactTriggerRef}
+            type="button"
+            className="workspace-navigation-trigger"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls={compactMenuId}
+            onClick={() => {
+              setIsMobileMenuOpen((open) => !open)
+              setIsNotificationsOpen(false)
+            }}
+          >
+            {isMobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
+            <span>{gardenCopy[language].menu}</span>
+          </button>
+        )}
+        {!compact && <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link href="/" className="flex items-center space-x-2 md:space-x-3">
             <div className="w-10 h-10 bg-rose-100 dark:bg-rose-500/20 rounded-xl flex items-center justify-center">
               <PixelSprout className="w-10 h-10" />
@@ -491,15 +525,42 @@ export default function Navbar() {
               </button>
             )}
           </div>
-        </div>
+        </div>}
 
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && isAuthenticated && user && (
+        {/* Shared disclosure navigation, also used by the compact homepage. */}
+        {isMobileMenuOpen && (compact || (isAuthenticated && user)) && (
           <div 
-            ref={mobileMenuRef}
-            className="lg:hidden mt-4 pt-4 border-t border-gray-200 dark:border-slate-700"
+            id={compact ? compactMenuId : undefined}
+            ref={compact ? undefined : mobileMenuRef}
+            className={compact ? "workspace-navigation-panel" : "lg:hidden mt-4 pt-4 border-t border-gray-200 dark:border-slate-700"}
           >
+            {compact && (
+              <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-gray-600 dark:text-slate-300">
+                <span className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${connectionStatusClass}`} />{totalOnlineCount} {t.nav.online}</span>
+                {isAuthenticated && user && (
+                  <NotificationsMenu
+                    variant="mobile"
+                    inline
+                    isOpen={isNotificationsOpen}
+                    unreadCount={unreadCount}
+                    notificationsLoading={notificationsLoading}
+                    notifications={notifications}
+                    inviteAction={inviteAction}
+                    onToggle={async () => {
+                      const next = !isNotificationsOpen
+                      setIsNotificationsOpen(next)
+                      if (next) await fetchNotifications()
+                    }}
+                    onAcceptInvite={acceptInvite}
+                    onDeclineInvite={declineInvite}
+                    onNotificationClick={handleNotificationClick}
+                    containerRef={mobileNotificationsRef}
+                  />
+                )}
+              </div>
+            )}
             {/* User Info */}
+            {isAuthenticated && user && (
             <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-slate-700 rounded-xl">
               <div className="flex items-center space-x-3">
                 <div className="relative w-11 h-11 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold">
@@ -528,6 +589,8 @@ export default function Navbar() {
                 </div>
               </div>
             </div>
+
+            )}
 
             {/* Navigation Links */}
             <nav className="space-y-1 mb-3">
@@ -591,6 +654,7 @@ export default function Navbar() {
 
             {/* User Menu Items */}
             <div className="space-y-1">
+              {isAuthenticated && user && <>
               <Link
                 href={`/user/${user.id}`}
                 onClick={handleMobileLinkClick}
@@ -608,6 +672,8 @@ export default function Navbar() {
                 <span>{t.nav.settings}</span>
               </Link>
               
+              </>}
+
               {/* Theme Toggle */}
               <div className="px-4 py-3 flex items-center justify-between">
                 <span className="text-sm text-gray-700 dark:text-slate-300">{t.common.theme}</span>
@@ -615,14 +681,18 @@ export default function Navbar() {
               </div>
 
               {/* Logout */}
-              <button
+              {isAuthenticated && user ? <button
                 type="button"
                 onClick={handleLogout}
                 className="flex w-full items-center px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
               >
                 <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-3 text-xs w-4" />
                 <span>{t.nav.logout}</span>
-              </button>
+              </button> : <button
+                type="button"
+                className="btn-primary w-full text-sm"
+                onClick={() => { setIsMobileMenuOpen(false); setIsAuthModalOpen(true) }}
+              >{t.nav.login}</button>}
             </div>
           </div>
         )}

@@ -7,6 +7,7 @@ import type { RefObject } from 'react'
 
 interface NotificationsMenuProps {
   variant: 'desktop' | 'mobile'
+  inline?: boolean
   isOpen: boolean
   unreadCount: number
   notificationsLoading: boolean
@@ -21,6 +22,7 @@ interface NotificationsMenuProps {
 
 export default function NotificationsMenu({
   variant,
+  inline = false,
   isOpen,
   unreadCount,
   notificationsLoading,
@@ -43,7 +45,7 @@ export default function NotificationsMenu({
       : 'absolute top-0 right-0 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] leading-[16px] text-center'
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className={inline ? "workspace-navigation-notifications" : "relative"} ref={containerRef}>
       <button
         type="button"
         onClick={onToggle}
@@ -59,7 +61,7 @@ export default function NotificationsMenu({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-gray-200 bg-white/95 shadow-lg ring-1 ring-black/5 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 z-50 overflow-hidden">
+        <div className={inline ? "workspace-navigation-notification-list" : "absolute right-0 mt-3 w-80 rounded-2xl border border-gray-200 bg-white/95 shadow-lg ring-1 ring-black/5 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 z-50 overflow-hidden"}>
           <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
             <p className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</p>
           </div>
