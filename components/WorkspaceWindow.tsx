@@ -5,6 +5,9 @@ import { GripHorizontal, X } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import { gardenCopy } from '@/lib/i18n/garden'
 
+const resizeEdges = ['n', 'e', 's', 'w', 'ne', 'se', 'sw', 'nw'] as const
+type ResizeEdge = (typeof resizeEdges)[number]
+
 interface WorkspaceWindowProps {
   id: string
   title: string
@@ -22,6 +25,8 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
   const positionRef = useRef<{ x: number; y: number } | null>(null)
   const dragRef = useRef<{ pointerId: number; x: number; y: number; left: number; top: number } | null>(null)
   const [position, setPosition] = useState<{ x: number; y: number } | null>(null)
+  const resizeRef = useRef<{ pointerId: number; x: number; y: number; bounds: DOMRect; edge: ResizeEdge } | null>(null)
+  const [size, setSize] = useState<{ width: number; height: number } | null>(null)
   const [dragging, setDragging] = useState(false)
   const { t, language } = useI18n()
 
@@ -34,6 +39,21 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
     }
     positionRef.current = next
     setPosition(next)
+  }
+
+  const resizeFrom = (bounds: DOMRect, edge: ResizeEdge, dx: number, dy: number) => {
+    let { left, top, right, bottom } = bounds
+    // Keep the opposite edge stationary, including near viewport boundaries.
+    const minWidth = Math.min(280, bounds.width)
+    const minHeight = Math.min(240, bounds.height)
+    if (edge.includes('w')) left = Math.max(8, Math.min(right - minWidth, left + dx))
+    if (edge.includes('e')) right = Math.min(window.innerWidth - 8, Math.max(left + minWidth, right + dx))
+    if (edge.includes('n')) top = Math.max(8, Math.min(bottom - minHeight, top + dy))
+    if (edge.includes('s')) bottom = Math.min(window.innerHeight - 8, Math.max(top + minHeight, bottom + dy))
+    const next = { x: left, y: top }
+    positionRef.current = next
+    setPosition(next)
+    setSize({ width: right - left, height: bottom - top })
   }
 
   useEffect(() => {
@@ -54,6 +74,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
       observer.disconnect()
       window.removeEventListener('resize', fit)
       dragRef.current = null
+      resizeRef.current = null
       setDragging(false)
       if (panel.contains(document.activeElement)) trigger?.focus({ preventScroll: true })
     }
@@ -67,7 +88,8 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
       aria-labelledby={`${id}-title`}
       hidden={!open}
       className="workspace-window"
-      style={{ left: position?.x, top: position?.y, zIndex: 40 + layer }}
+      data-resized={size ? "true" : undefined}
+      style={{ left: position?.x, top: position?.y, width: size?.width, height: size?.height, zIndex: 40 + layer }}
       onPointerDownCapture={onActivate}
       onFocusCapture={onActivate}
       onKeyDown={(event) => {
@@ -120,6 +142,40 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
         </button>
       </div>
       <div className="workspace-window-content">{children}</div>
+      {resizeEdges.map((edge) => (
+        <button
+          key={edge}
+          tabIndex={edge === 'se' ? 0 : -1}
+          type="button"
+          className={`workspace-window-resize workspace-window-resize-${edge}`}
+          aria-label={`${title}. ${gardenCopy[language].resizeWindow}`}
+          onPointerDown={(event) => {
+            if (event.button !== 0) return
+            const bounds = windowRef.current!.getBoundingClientRect()
+            resizeRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, bounds, edge }
+            event.currentTarget.setPointerCapture(event.pointerId)
+          }}
+          onPointerMove={(event) => {
+            const resize = resizeRef.current
+            if (!resize || resize.pointerId !== event.pointerId) return
+            resizeFrom(resize.bounds, resize.edge, event.clientX - resize.x, event.clientY - resize.y)
+          }}
+          onPointerUp={(event) => {
+            if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
+            resizeRef.current = null
+          }}
+          onPointerCancel={() => { resizeRef.current = null }}
+          onLostPointerCapture={() => { resizeRef.current = null }}
+          onKeyDown={(event) => {
+            if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return
+            event.preventDefault()
+            const panel = windowRef.current
+            if (!panel) return
+            const step = event.shiftKey ? 40 : 10
+            resizeFrom(panel.getBoundingClientRect(), edge, event.key === 'ArrowRight' ? step : event.key === 'ArrowLeft' ? -step : 0, event.key === 'ArrowDown' ? step : event.key === 'ArrowUp' ? -step : 0)
+          }}
+        />
+      ))}
     </div>
   )
 }

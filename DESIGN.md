@@ -98,7 +98,12 @@ The sage title bar is a pointer/touch drag handle with arrow-key movement; dragg
 viewport resize keep windows within screen bounds. Click/focus raises a panel. Escape
 closes the focused panel; the dock toggles it. No backdrop, page scroll lock or focus trap.
 Bodies scroll internally and stay mounted to preserve tasks, drafts and live updates.
-Positions persist while the homepage stays mounted. Existing runtime tokens own colors;
+Positions and user-selected sizes persist while the homepage stays mounted. Invisible edge and corner
+handles straddle the visible border (including a small outside hit area) and support
+mouse/touch resizing with directional cursors that override the global button cursor; no resize icon or footer
+is shown. The bottom-right handle also supports keyboard arrows (Shift for larger steps).
+Resizing clamps to the available viewport with a 280×240px minimum when space allows.
+Chat fills the resized body; other window content scrolls internally. Existing runtime tokens own colors;
 compact padding and hidden duplicate headings apply only inside workspace windows.
 
 Panels have 2px outlines and hard offset shadows. Existing rounded-lg/xl/2xl/3xl

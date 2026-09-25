@@ -1,6 +1,7 @@
 export const gardenCopy = {
   en: {
     yourRank: 'Rank', menu: 'Menu',
+    resizeWindow: 'Drag to resize, or use arrow keys when focused',
     moveWindow: 'Drag to move, or use arrow keys when focused',
     chat: 'General Chat', history: 'Work History', tasks: 'My Tasks',
     eyebrow: 'A little focus. A little growth.', title: 'Grow at your own pace.',
@@ -16,6 +17,7 @@ export const gardenCopy = {
   },
   es: {
     yourRank: 'Rango', menu: 'Menú',
+    resizeWindow: 'Arrastra para cambiar el tamaño o usa las flechas al enfocar',
     moveWindow: 'Arrastra para mover o usa las flechas al enfocar',
     chat: 'Chat general', history: 'Historial de trabajo', tasks: 'Mis tareas',
     eyebrow: 'Un poco de enfoque. Un poco de crecimiento.', title: 'Crece a tu propio ritmo.',

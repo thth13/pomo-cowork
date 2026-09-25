@@ -406,3 +406,26 @@ textarea { resize: none; }
 .coworker-strip-empty > svg { display: none; }
 .coworker-strip-empty h3 { font-size: 13px; margin-bottom: 4px; }
 .coworker-strip-empty p { font-size: 12px; }
+
+.workspace-window { max-width: calc(100vw - 16px); overflow: visible; }
+.workspace-window[data-resized="true"] { max-height: calc(100dvh - 16px); }
+.workspace-window[data-resized="true"] .workspace-window-content { flex: 1; }
+#workspace-chat[data-resized="true"] .workspace-window-content > div { flex: 1; height: 0; }
+
+.workspace-window-resize { position: absolute; z-index: 2; padding: 0; border: 0; border-radius: 0; background: transparent; touch-action: none; user-select: none; }
+.workspace-window .workspace-window-resize-n, .workspace-window .workspace-window-resize-s { left: 11px; right: 11px; height: 8px; cursor: ns-resize; }
+.workspace-window .workspace-window-resize-n { top: -5px; }
+.workspace-window .workspace-window-resize-s { bottom: -5px; }
+.workspace-window .workspace-window-resize-e, .workspace-window .workspace-window-resize-w { top: 11px; bottom: 11px; width: 8px; cursor: ew-resize; }
+.workspace-window .workspace-window-resize-e { right: -5px; }
+.workspace-window .workspace-window-resize-w { left: -5px; }
+.workspace-window .workspace-window-resize-ne, .workspace-window .workspace-window-resize-se, .workspace-window .workspace-window-resize-sw, .workspace-window .workspace-window-resize-nw { width: 16px; height: 16px; z-index: 3; }
+.workspace-window .workspace-window-resize-ne { top: -5px; right: -5px; cursor: nesw-resize; }
+.workspace-window .workspace-window-resize-se { bottom: -5px; right: -5px; cursor: nwse-resize; }
+.workspace-window .workspace-window-resize-sw { bottom: -5px; left: -5px; cursor: nesw-resize; }
+.workspace-window .workspace-window-resize-nw { top: -5px; left: -5px; cursor: nwse-resize; }
+.workspace-window-resize:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -2px; }
+@media (pointer: coarse) {
+  .workspace-window .workspace-window-resize-n, .workspace-window .workspace-window-resize-s { height: 8px; }
+  .workspace-window .workspace-window-resize-e, .workspace-window .workspace-window-resize-w { width: 8px; }
+}
