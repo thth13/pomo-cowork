@@ -98,7 +98,9 @@ The sage title bar is a pointer/touch drag handle with arrow-key movement; dragg
 viewport resize keep windows within screen bounds. Click/focus raises a panel. Escape
 closes the focused panel; the dock toggles it. No backdrop, page scroll lock or focus trap.
 Bodies scroll internally and stay mounted to preserve tasks, drafts and live updates.
-Positions and user-selected sizes persist while the homepage stays mounted. Invisible edge and corner
+Positions and user-selected sizes persist per window in versioned localStorage keys,
+with debounced writes and a flush on page exit. Restored windows fit the current viewport;
+invalid or unavailable storage falls back to the in-memory layout. Invisible edge and corner
 handles straddle the visible border (including a small outside hit area) and support
 mouse/touch resizing with directional cursors that override the global button cursor; no resize icon or footer
 is shown. The bottom-right handle also supports keyboard arrows (Shift for larger steps).

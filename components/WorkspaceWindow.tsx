@@ -1,12 +1,20 @@
 'use client'
 
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { GripHorizontal, X } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import { gardenCopy } from '@/lib/i18n/garden'
 
 const resizeEdges = ['n', 'e', 's', 'w', 'ne', 'se', 'sw', 'nw'] as const
 type ResizeEdge = (typeof resizeEdges)[number]
+
+interface WindowGeometry {
+  position: { x: number; y: number }
+  size: { width: number; height: number } | null
+}
+
+const isFiniteNumber = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value)
 
 interface WorkspaceWindowProps {
   id: string
@@ -29,6 +37,54 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
   const [size, setSize] = useState<{ width: number; height: number } | null>(null)
   const [dragging, setDragging] = useState(false)
   const { t, language } = useI18n()
+  const storageKey = `pomo:window:${id}:v1`
+  const [geometryLoaded, setGeometryLoaded] = useState(false)
+  const savedGeometryRef = useRef<WindowGeometry | null>(null)
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey)
+      const saved = raw ? JSON.parse(raw) : null
+      if (saved && isFiniteNumber(saved.position?.x) && isFiniteNumber(saved.position?.y)) {
+        const restoredPosition = { x: saved.position.x, y: saved.position.y }
+        positionRef.current = restoredPosition
+        setPosition(restoredPosition)
+        if (isFiniteNumber(saved.size?.width) && isFiniteNumber(saved.size?.height) && saved.size.width > 0 && saved.size.height > 0) {
+          setSize({
+            width: Math.min(Math.max(280, saved.size.width), Math.max(1, window.innerWidth - 16)),
+            height: Math.min(Math.max(240, saved.size.height), Math.max(1, window.innerHeight - 16)),
+          })
+        }
+      }
+    } catch {
+      // Invalid or unavailable storage must not prevent using the windows.
+    }
+    setGeometryLoaded(true)
+  }, [storageKey])
+
+  const persistGeometry = useCallback(() => {
+    if (!savedGeometryRef.current) return
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(savedGeometryRef.current))
+    } catch {
+      // Keep the current geometry in memory when browser storage is unavailable.
+    }
+  }, [storageKey])
+
+  useEffect(() => {
+    if (!geometryLoaded || !position) return
+    savedGeometryRef.current = { position, size }
+    const timeout = window.setTimeout(persistGeometry, 200)
+    return () => window.clearTimeout(timeout)
+  }, [geometryLoaded, position, size, persistGeometry])
+
+  useEffect(() => {
+    window.addEventListener('pagehide', persistGeometry)
+    return () => {
+      window.removeEventListener('pagehide', persistGeometry)
+      persistGeometry()
+    }
+  }, [persistGeometry])
 
   const moveTo = (x: number, y: number) => {
     const panel = windowRef.current
@@ -57,7 +113,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
   }
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !geometryLoaded) return
     const panel = windowRef.current
     if (!panel) return
     const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
@@ -78,7 +134,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
       setDragging(false)
       if (panel.contains(document.activeElement)) trigger?.focus({ preventScroll: true })
     }
-  }, [open, offset])
+  }, [open, offset, geometryLoaded])
 
   return (
     <div
