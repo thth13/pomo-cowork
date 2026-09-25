@@ -72,9 +72,18 @@ Artwork retains its limited palette; the scene background is desaturated in both
 ## Layout and components
 
 1240px centered shell; 28px gaps and 32px desktop gutters. Main workspace has a broad
-focus/community column and a narrower companion/daily-progress column. Tasks, chat
-and history follow in three columns. At 1023px, spacing reduces; at 719px the order
-is timer, garden/daily progress, community, tasks, chat, history. Document owns scroll.
+focus/community column and a narrower companion/daily-progress column. Chat, history
+and tasks open from a compact fixed bottom dock, styled with existing panel tokens.
+At 1023px, spacing reduces; at 719px the content order is timer, garden/daily progress,
+community. Document owns page scroll, with bottom clearance for the dock and safe area.
+WorkspaceWindow owns compact, non-modal floating panels (360px wide, at most 480px tall).
+They open along the right edge with a small stagger; multiple panels may stay open.
+The sage title bar is a pointer/touch drag handle with arrow-key movement; dragging and
+viewport resize keep windows within screen bounds. Click/focus raises a panel. Escape
+closes the focused panel; the dock toggles it. No backdrop, page scroll lock or focus trap.
+Bodies scroll internally and stay mounted to preserve tasks, drafts and live updates.
+Positions persist while the homepage stays mounted. Existing runtime tokens own colors;
+compact padding and hidden duplicate headings apply only inside workspace windows.
 
 Panels have 2px outlines and hard offset shadows. Existing rounded-lg/xl/2xl/3xl
 utilities share 3px corners; avatars retain round framing. Shared buttons, inputs,

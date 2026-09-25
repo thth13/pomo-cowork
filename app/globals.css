@@ -217,9 +217,41 @@ textarea { resize: none; }
 .pixel-timer-track { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 4px; height: 14px; }
 .pixel-timer-track span { background: var(--pixel-ink); opacity: .12; }
 .pixel-timer-track .filled { background: var(--pixel-accent); opacity: 1; }
-.garden-community > div, .garden-side-column > div, .garden-bottom-grid > div { border: 2px solid var(--pixel-line); box-shadow: 3px 3px 0 var(--pixel-shadow); border-radius: 2px; }
-.garden-bottom-grid { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 28px; align-items: start; }
-.garden-bottom-grid > * { min-width: 0; }
+.garden-community > div, .garden-side-column > div { border: 2px solid var(--pixel-line); box-shadow: 3px 3px 0 var(--pixel-shadow); border-radius: 2px; }
+.garden-page { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
+.workspace-dock { position: fixed; z-index: 30; bottom: calc(16px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; width: max-content; max-width: calc(100% - 32px); padding: 6px; background: var(--pixel-paper); border: 2px solid var(--pixel-line); border-radius: 3px; box-shadow: 4px 4px 0 var(--pixel-shadow); }
+.workspace-dock button { display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 48px; padding: 10px 20px; color: var(--pixel-ink); font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 2px; }
+.workspace-dock button:hover, .workspace-window-close:hover { background: var(--pixel-screen); }
+.workspace-dock button[aria-expanded="true"] { background: var(--pixel-screen); box-shadow: inset 0 -2px var(--pixel-growth); }
+.workspace-dock button:active, .workspace-window-close:active { background: var(--pixel-shadow); }
+.workspace-dock button:focus-visible, .workspace-window-heading button:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -3px; }
+.workspace-window { position: fixed; top: 96px; right: 16px; display: flex; flex-direction: column; width: min(360px, calc(100vw - 16px)); max-height: min(480px, calc(100dvh - 120px - env(safe-area-inset-bottom))); overflow: hidden; color: var(--pixel-ink); background: var(--pixel-paper); border: 2px solid var(--pixel-line); border-radius: 3px; box-shadow: 4px 4px 0 var(--pixel-shadow), 0 12px 28px rgb(0 0 0 / 10%); }
+.workspace-window[hidden] { display: none; }
+.workspace-window-heading { display: flex; align-items: center; gap: 4px; flex-shrink: 0; padding: 3px; background: var(--pixel-screen); border-bottom: 1px solid var(--pixel-line); }
+.workspace-window-handle { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; min-height: 36px; padding: 6px 8px; text-align: left; font-size: 12px; font-weight: 700; cursor: grab; touch-action: none; user-select: none; }
+.workspace-window-handle svg { color: var(--pixel-muted); flex-shrink: 0; }
+.workspace-window-handle:hover { background: var(--pixel-paper); }
+.workspace-window-handle[data-dragging="true"] { cursor: grabbing; }
+.workspace-window-close { display: grid; place-items: center; width: 36px; height: 36px; flex-shrink: 0; cursor: pointer; }
+.workspace-window-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.workspace-window-content > div { border: 0; border-radius: 0; box-shadow: none; }
+.workspace-window-content > div > .p-4 { padding: 12px; }
+.workspace-window-content > div > .overflow-y-auto { max-height: none; overflow-y: visible; }
+.workspace-window-content > div > div:first-child h3 { display: none; }
+#workspace-chat .workspace-window-content { display: flex; flex-direction: column; overflow: hidden; }
+#workspace-chat .workspace-window-content > div { height: min(390px, calc(100dvh - 166px - env(safe-area-inset-bottom))); min-height: 0; }
+#workspace-chat .workspace-window-content > div > div:first-child { display: none; }
+#workspace-chat .chat-messages { min-height: 0; }
+#workspace-chat form { flex-shrink: 0; }
+#workspace-chat form .flex-1 { min-width: 0; }
+#workspace-history .workspace-window-content .space-x-6 { flex-wrap: wrap; gap: 8px 12px; }
+#workspace-history .workspace-window-content .space-x-6 > * { margin-left: 0; }
+#workspace-tasks .workspace-window-content > div > div:first-child > div:first-child { float: right; margin: 0 0 0 8px; }
+#workspace-tasks .workspace-window-content > div > div:first-child > div:last-child { overflow: hidden; }
+@media (max-width: 479px) {
+  .workspace-dock { width: calc(100% - 32px); }
+  .workspace-dock button { flex-direction: column; gap: 5px; padding: 8px 4px; font-size: 11px; }
+}
 .garden-name { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; }
 .garden-name h2 { font-family: var(--font-pixel); font-size: 16px; line-height: 1.6; }
 .garden-name div > span { font-size: 11px; color: var(--pixel-muted); }
@@ -264,21 +296,20 @@ textarea { resize: none; }
   .garden-workspace { grid-template-columns: minmax(0, 1.3fr) minmax(300px, 1fr); gap: 20px; }
   .garden-layout { padding: 28px 20px 48px; }
   .garden-main-column, .garden-side-column { gap: 20px; }
-  .garden-bottom-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
   .focus-station [data-timer-panel] { padding: 20px 14px 8px; }
   .pixel-timer-digits { font-size: 43px; letter-spacing: -4px; }
   .focus-heading-hint { display: none; }
 }
 @media (max-width: 719px) {
+  body:has(.workspace-dock) .feedback-widget { bottom: calc(110px + env(safe-area-inset-bottom)); right: 16px; }
   .garden-layout { padding: 26px 16px 40px; }
   .garden-intro h1 { font-size: 17px; letter-spacing: -.7px; }
   .garden-intro > p:last-child { font-size: 12px; }
-  .garden-workspace, .garden-bottom-grid { grid-template-columns: minmax(0, 1fr); }
+  .garden-workspace { grid-template-columns: minmax(0, 1fr); }
   .garden-main-column { display: contents; }
   .focus-station { grid-row: 1; }
   .garden-side-column { grid-row: 2; }
   .garden-community { grid-row: 3; min-width: 0; }
-  .garden-bottom-grid { grid-row: 4; }
   .pixel-timer-digits { font-size: clamp(34px, 10vw, 58px); padding: 28px 0; letter-spacing: -3px; }
   .pixel-timer-track { gap: 3px; }
   .garden-scene { height: 225px; }

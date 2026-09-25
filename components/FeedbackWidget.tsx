@@ -123,7 +123,7 @@ export default function FeedbackWidget() {
   }, [open, handleClose])
 
   return (
-    <div ref={widgetRef} className="fixed bottom-6 right-6 z-50 flex items-end justify-end">
+    <div ref={widgetRef} className="feedback-widget fixed bottom-6 right-6 z-50 flex items-end justify-end">
       <div className="relative">
         {promptMounted && !open && (
           <div

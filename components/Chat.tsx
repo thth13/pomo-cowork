@@ -18,9 +18,10 @@ interface TypingState {
 
 interface ChatProps {
   matchHeightSelector?: string
+  isVisible?: boolean
 }
 
-export default function Chat({ matchHeightSelector }: ChatProps) {
+export default function Chat({ matchHeightSelector, isVisible = true }: ChatProps) {
   const router = useRouter()
   const { user } = useAuthStore()
   const { currentRoomId } = useRoomStore()
@@ -50,6 +51,15 @@ export default function Chat({ matchHeightSelector }: ChatProps) {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [oldestMessageId, setOldestMessageId] = useState<string | null>(null)
   const currentRoomIdRef = useRef<string | null>(currentRoomId ?? null)
+
+  useEffect(() => {
+    if (!isVisible) return
+    const frame = requestAnimationFrame(() => {
+      const list = listRef.current
+      if (list) list.scrollTop = list.scrollHeight
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [isVisible])
 
   useEffect(() => {
     currentRoomIdRef.current = currentRoomId ?? null

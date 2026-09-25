@@ -14,7 +14,8 @@ import TodayContribution from '@/components/TodayContribution'
 import { useI18n } from '@/components/I18nProvider'
 import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { Timer } from 'lucide-react'
+import { Timer, MessageCircle, History, ListTodo } from 'lucide-react'
+import WorkspaceWindow from '@/components/WorkspaceWindow'
 
 export default function HomePage() {
   const { isLoading, checkAuth } = useAuthStore()
@@ -22,6 +23,16 @@ export default function HomePage() {
   const copy = gardenCopy[language]
   const [mounted, setMounted] = useState(false)
   const taskListRef = useRef<TaskListRef>(null)
+  type PanelId = 'chat' | 'history' | 'tasks'
+  const [openPanels, setOpenPanels] = useState<PanelId[]>([])
+  const [panelOrder, setPanelOrder] = useState<PanelId[]>([])
+  const bringToFront = (id: PanelId) => setPanelOrder((current) => [...current.filter((panel) => panel !== id), id])
+  const closePanel = (id: PanelId) => setOpenPanels((current) => current.filter((panel) => panel !== id))
+  const panels = [
+    { id: 'chat', title: copy.chat, icon: MessageCircle },
+    { id: 'history', title: copy.history, icon: History },
+    { id: 'tasks', title: copy.tasks, icon: ListTodo },
+  ] as const
 
   useEffect(() => {
     setMounted(true)
@@ -119,13 +130,34 @@ export default function HomePage() {
             <PocketGarden />
             <TodayContribution />
           </aside>
-          <div className="garden-bottom-grid">
-            <TaskList ref={taskListRef} />
-            <Chat />
-            <WorkHistory />
-          </div>
         </div>
       </main>
+      <div className="workspace-dock" data-no-translate>
+        {panels.map(({ id, title, icon: Icon }) => (
+          <button
+            key={id}
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls={`workspace-${id}`}
+            aria-expanded={openPanels.includes(id)}
+            onClick={() => {
+              if (openPanels.includes(id)) closePanel(id)
+              else {
+                setOpenPanels((current) => [...current, id])
+                bringToFront(id)
+              }
+            }}
+          >
+            <Icon size={19} aria-hidden="true" />
+            <span>{title}</span>
+          </button>
+        ))}
+      </div>
+      {panels.map(({ id, title }, index) => (
+        <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)}>
+          {id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : <WorkHistory />}
+        </WorkspaceWindow>
+      ))}
     </div>
   )
 }
