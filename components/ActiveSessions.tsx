@@ -2,13 +2,14 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, User, ExternalLink } from 'lucide-react'
+import { Clock, User, ExternalLink, MoreHorizontal } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { SessionType, SessionStatus, ActiveSession, TomatoThrow as TomatoThrowType } from '@/types'
 import Image from 'next/image'
+import Link from 'next/link'
 import TomatoThrow from './TomatoThrow'
 import { useSocket } from '@/hooks/useSocket'
 import NotificationToast from './NotificationToast'
@@ -40,6 +41,7 @@ function SessionCard({
   session, 
   index, 
   isCurrentUser = false,
+  compact = false,
   onContextMenu,
   onElementMount,
   reactions,
@@ -49,6 +51,7 @@ function SessionCard({
   session: ActiveSession; 
   index: number; 
   isCurrentUser?: boolean;
+  compact?: boolean;
   onContextMenu: (e: React.MouseEvent, userId: string, element: HTMLElement) => void;
   onElementMount: (userId: string, element: HTMLElement | null) => void;
   reactions?: Record<string, number>;
@@ -242,6 +245,50 @@ function SessionCard({
       e.stopPropagation()
       onContextMenu(e, session.userId, e.currentTarget as HTMLElement)
     }
+  }
+
+  if (compact) {
+    const statusLabel = sessionStatus === SessionStatus.PAUSED
+      ? t.activeSessions.paused
+      : getSessionTypeLabel(session.type)
+
+    return (
+      <div ref={cardRef} className="coworker-tile" onContextMenu={handleContextMenu}>
+        <Link
+          href={`/user/${session.userId}`}
+          className="coworker-tile-profile"
+          title={`${session.username}${isCurrentUser ? ` (${t.activeSessions.you})` : ''} · ${statusLabel} · ${session.task || ''}`}
+        >
+          <span className="coworker-tile-avatar">
+            {session.avatarUrl ? (
+              <Image src={session.avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
+            ) : session.username.charAt(0).toUpperCase()}
+            <span className={`coworker-tile-dot ${statusDotClass}`} aria-hidden="true" />
+          </span>
+          <span className="coworker-tile-name">{session.username}</span>
+          <span className="coworker-tile-time">{formatTime(elapsedSeconds)}</span>
+          <span className="coworker-tile-status">{statusLabel}</span>
+          {isCurrentUser && <span className="sr-only">{t.activeSessions.you}</span>}
+        </Link>
+        {!isCurrentUser && (
+          <button
+            type="button"
+            className="coworker-tile-menu"
+            aria-label={`${t.activeSessions.reactions}: ${session.username}`}
+            onClick={(event) => onContextMenu(event, session.userId, cardRef.current ?? event.currentTarget)}
+          ><MoreHorizontal size={14} aria-hidden="true" /></button>
+        )}
+        {reactions && Object.keys(reactions).length > 0 && (
+          <div className="coworker-tile-reactions">
+            {Object.entries(reactions).map(([emoji, count]) => (
+              <button key={emoji} type="button" aria-pressed={myReaction === emoji} onClick={(event) => onReactionClick(emoji, event)}>
+                {emoji} {count}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
   }
 
   return (
@@ -776,7 +823,7 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
   if (allActiveSessions.length === 0) {
     return (
       <div className={surfaceClassName}>
-        <div className="text-center py-8">
+        <div className={variant === 'page' ? 'coworker-strip-empty' : 'text-center py-8'}>
           <User className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-300 mb-2">
             {t.activeSessions.noActiveSessions}
@@ -837,7 +884,7 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
       )}
       
       <div className={surfaceClassName}>
-      <div className="flex items-center justify-between mb-6 sm:mb-8">
+      <div className={variant === 'page' ? 'coworker-strip-heading' : 'flex items-center justify-between mb-6 sm:mb-8'}>
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t.activeSessions.title}</h2>
         <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">
           <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
@@ -845,13 +892,14 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
         </div>
       </div>
       
-      <div className="space-y-4">
+      <div className={variant === 'page' ? 'coworker-strip' : 'space-y-4'} tabIndex={variant === 'page' ? 0 : undefined} role={variant === 'page' ? 'region' : undefined} aria-label={variant === 'page' ? t.activeSessions.title : undefined}>
         <AnimatePresence mode="popLayout">
           {orderedActiveSessions.map((session, index) => (
             <SessionCard 
               key={session.id} 
               session={session} 
-              index={index} 
+              index={index}
+              compact={variant === 'page'}
               isCurrentUser={session.userId === currentUserId}
               onContextMenu={handleContextMenu}
               onElementMount={handleElementMount}

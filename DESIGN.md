@@ -37,6 +37,9 @@ requested a site-wide pixel redesign and a work-fed tamagotchi inspired by the s
 cream sprout with a leaf satchel. This is the approved new visual identity.
 
 The homepage signature is a large, unboxed pixel timer on a continuous quiet surface.
+The background uses a faint 32px grid with soft sage and tomato washes at the edges;
+a page-colored central wash keeps the timer readable. All layers derive from existing
+theme tokens, remain static, and disappear in forced-colors mode.
 The pocket garden is temporarily commented out at the user’s request. Keep the surrounding
 product calm and readable; avoid arcade neon, glossy gradients, round timer rings,
 and pixel fonts for dense text. Existing supported locales are English and Spanish;
@@ -75,10 +78,13 @@ Artwork retains its limited palette; the scene background is desaturated in both
 The homepage replaces the full header with a small fixed Menu disclosure at the top
 right. It reuses Navbar navigation, account actions, notifications, online status and
 theme controls; guests can navigate and sign in. Other routes retain their header.
-The homepage uses a centered 960px shell with a 640px timer, centered horizontally
-and vertically in a minimum-height first viewport. Symmetric safe-area padding keeps
-controls clear of the menu and dock; short screens grow naturally and scroll. The
-currently working list follows below the first viewport. Both sections share the page background without outer borders, card
+The homepage uses a centered 960px shell with a 640px timer. Timer and coworker strip
+form one vertically centered group with a 16px section gap, rather than giving the
+timer its own full viewport. Symmetric safe-area padding keeps controls clear of the
+menu and dock; short screens grow naturally and scroll. The currently working strip
+sits immediately below the timer controls: a single horizontal row of
+120px square coworker tiles, with avatar, name, live time and status. Overflow scrolls
+horizontally; room pages keep their detailed session cards. Both sections share the page background without outer borders, card
 surfaces or shadows. Pixel digits and a slim segmented progress track carry the identity. The timer has no
 visible section heading or tagline. A compact inline Current task picker sits directly
 below Start/session actions and above the session-type controls.
