@@ -253,7 +253,7 @@ function SessionCard({
       : getSessionTypeLabel(session.type)
 
     return (
-      <div ref={cardRef} className="coworker-tile" onContextMenu={handleContextMenu}>
+      <div ref={cardRef} className={`coworker-tile${isCurrentUser ? ' coworker-tile-self' : ''}`} onContextMenu={handleContextMenu}>
         <Link
           href={`/user/${session.userId}`}
           className="coworker-tile-profile"
@@ -261,14 +261,16 @@ function SessionCard({
         >
           <span className="coworker-tile-avatar">
             {session.avatarUrl ? (
-              <Image src={session.avatarUrl} alt="" width={28} height={28} className="h-full w-full object-cover" />
+              <Image src={session.avatarUrl} alt="" width={64} height={64} className="h-full w-full object-cover" />
             ) : session.username.charAt(0).toUpperCase()}
-            <span className={`coworker-tile-dot ${statusDotClass}`} aria-hidden="true" />
           </span>
           <span className="coworker-tile-name">{session.username}</span>
           <span className="coworker-tile-time">{formatTime(elapsedSeconds)}</span>
-          <span className="coworker-tile-status">{statusLabel}</span>
-          {isCurrentUser && <span className="sr-only">{t.activeSessions.you}</span>}
+          <span className="coworker-tile-status">
+            <span className={`coworker-tile-dot ${statusDotClass}`} aria-hidden="true" />
+            <span>{statusLabel}</span>
+          </span>
+          {isCurrentUser && <span className="coworker-tile-you">{t.activeSessions.you}</span>}
         </Link>
         {!isCurrentUser && (
           <button
@@ -276,7 +278,7 @@ function SessionCard({
             className="coworker-tile-menu"
             aria-label={`${t.activeSessions.reactions}: ${session.username}`}
             onClick={(event) => onContextMenu(event, session.userId, cardRef.current ?? event.currentTarget)}
-          ><MoreHorizontal size={14} aria-hidden="true" /></button>
+          ><MoreHorizontal size={18} aria-hidden="true" /></button>
         )}
         {reactions && Object.keys(reactions).length > 0 && (
           <div className="coworker-tile-reactions">

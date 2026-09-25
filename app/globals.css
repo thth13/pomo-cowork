@@ -383,23 +383,29 @@ textarea { resize: none; }
 .workspace-navigation-panel { position: relative; width: min(320px, calc(100vw - 32px)); max-height: calc(100dvh - 92px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; margin-top: 8px; padding: 8px; background: var(--pixel-paper); color: var(--pixel-ink); border: 1px solid var(--pixel-line); border-radius: 3px; box-shadow: 4px 4px 0 var(--pixel-shadow); }
 .workspace-navigation-notification-list { position: absolute; top: 60px; right: 8px; left: 8px; z-index: 1; max-height: calc(100dvh - 170px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow-y: auto; background: var(--pixel-paper); border: 1px solid var(--pixel-line); box-shadow: 2px 2px 0 var(--pixel-shadow); }
 
-/* Compact coworker strip below the centered timer. */
-.coworker-strip-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
-.coworker-strip-heading h2 { font-size: 13px; font-weight: 600; }
-.coworker-strip-heading > div { font-size: 11px; }
-.coworker-strip { display: flex; gap: 10px; overflow-x: auto; padding: 4px 2px 12px; scroll-snap-type: x proximity; }
-.coworker-tile { position: relative; flex: 0 0 120px; width: 120px; height: 120px; background: var(--pixel-paper); border-radius: 3px; scroll-snap-align: start; }
-.coworker-tile-profile { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; height: 100%; padding: 10px; color: var(--pixel-ink); border-radius: inherit; transition: background-color .15s; }
+/* Square coworker portraits below the centered timer. */
+.coworker-strip-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.coworker-strip-heading h2 { font-size: 18px; font-weight: 700; letter-spacing: -.025em; }
+.coworker-strip-heading > div { padding: 5px 9px; background: var(--pixel-screen); border-radius: 3px; font-size: 12px; }
+.coworker-strip { display: flex; gap: 14px; overflow-x: auto; padding: 4px 5px 16px 2px; scroll-snap-type: x proximity; }
+.coworker-tile { position: relative; flex: 0 0 184px; width: 184px; height: 184px; background: var(--pixel-paper); border: 1px solid var(--pixel-line); border-radius: 6px; box-shadow: 3px 3px 0 var(--pixel-shadow); scroll-snap-align: start; }
+.coworker-tile-self { border-color: var(--pixel-tomato); }
+.coworker-tile-profile { display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; padding: 30px 12px 0; color: var(--pixel-ink); border-radius: inherit; cursor: pointer; transition: background-color .15s; }
 .coworker-tile-profile:hover { background: var(--pixel-screen); }
-.coworker-tile-avatar { position: relative; display: grid; place-items: center; width: 28px; height: 28px; background: var(--pixel-screen); font-size: 12px; font-weight: 600; }
-.coworker-tile-dot { position: absolute; bottom: -2px; right: -2px; width: 7px; height: 7px; border: 1px solid var(--pixel-paper); }
-.coworker-tile-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 600; }
-.coworker-tile-time { font-size: 12px; font-variant-numeric: tabular-nums; }
-.coworker-tile-status { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pixel-muted); font-size: 9px; }
-.coworker-tile-menu { position: absolute; top: 0; right: 0; display: grid; place-items: center; width: 26px; height: 26px; color: var(--pixel-muted); cursor: pointer; }
+.coworker-tile-profile:active { background: var(--pixel-shadow); }
+.coworker-tile-avatar { display: grid; flex-shrink: 0; place-items: center; width: 64px; height: 64px; overflow: hidden; border: 1px solid var(--pixel-line); border-radius: 6px; background: var(--pixel-screen); font-size: 26px; font-weight: 600; }
+.coworker-tile-avatar img { border-radius: inherit; }
+.coworker-tile-dot { flex: 0 0 7px; width: 7px; height: 7px; border-radius: 2px; }
+.coworker-tile-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; line-height: 18px; font-weight: 600; }
+.coworker-tile-time { font-family: var(--font-pixel); font-size: 15px; line-height: 24px; font-variant-numeric: tabular-nums; letter-spacing: -.04em; }
+.coworker-tile-status { display: flex; align-items: center; justify-content: center; gap: 7px; align-self: stretch; min-width: 0; margin: auto -12px 0; padding: 7px 10px; border-top: 1px solid var(--pixel-line); color: var(--pixel-muted); font-size: 11px; line-height: 15px; }
+.coworker-tile-status > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.coworker-tile-you { position: absolute; top: 5px; right: 7px; max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--pixel-tomato-ink); font-size: 10px; font-weight: 600; }
+.coworker-tile-menu { position: absolute; top: 2px; right: 2px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 3px; color: var(--pixel-muted); cursor: pointer; }
 .coworker-tile-menu:hover, .coworker-tile-reactions button:hover { background: var(--pixel-screen); color: var(--pixel-ink); }
-.coworker-tile-reactions { position: absolute; top: 0; left: 0; display: flex; max-width: 40px; overflow-x: auto; font-size: 9px; }
-.coworker-tile-reactions button { flex-shrink: 0; padding: 3px; cursor: pointer; background: var(--pixel-paper); }
+.coworker-tile-menu:active, .coworker-tile-reactions button:active { background: var(--pixel-shadow); }
+.coworker-tile-reactions { position: absolute; top: 3px; left: 4px; display: flex; max-width: 110px; overflow-x: auto; font-size: 11px; }
+.coworker-tile-reactions button { flex-shrink: 0; padding: 2px 4px; cursor: pointer; background: var(--pixel-paper); border-radius: 3px; }
 .coworker-tile-reactions button[aria-pressed="true"] { background: var(--pixel-screen); }
 .coworker-strip:focus-visible, .coworker-tile :is(a, button):focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -2px; }
 .coworker-strip-empty { padding: 16px 0; color: var(--pixel-muted); }

@@ -83,9 +83,11 @@ form one vertically centered group with a 16px section gap, rather than giving t
 timer its own full viewport. Symmetric safe-area padding keeps controls clear of the
 menu and dock; short screens grow naturally and scroll. The currently working strip
 sits immediately below the timer controls: a single horizontal row of
-120px square coworker tiles, with avatar, name, live time and status. Overflow scrolls
-horizontally; room pages keep their detailed session cards. Both sections share the page background without outer borders, card
-surfaces or shadows. Pixel digits and a slim segmented progress track carry the identity. The timer has no
+184px square coworker tiles with outlined paper surfaces and offset pixel shadows.
+Avatars are 64px squares with 6px corners; bold names, pixel time and a divided
+status footer make presence readable. The current user has a tomato outline and You label. Overflow scrolls
+horizontally; room pages keep their detailed session cards. Both sections share the page background without outer section borders; individual
+coworker tiles use card surfaces and shadows. Pixel digits and a slim segmented progress track carry the identity. The timer has no
 visible section heading or tagline. A compact inline Current task picker sits directly
 below Start/session actions and above the session-type controls.
 Chat, history, tasks and Your Progress open from a fixed four-item bottom dock; the
