@@ -36,7 +36,8 @@ chat and statistics workflows from README.md and their existing services. The us
 requested a site-wide pixel redesign and a work-fed tamagotchi inspired by the supplied
 cream sprout with a leaf satchel. This is the approved new visual identity.
 
-The signature is a living pocket garden beside an LCD-like timer. Keep the surrounding
+The homepage signature is a large, unboxed pixel timer on a continuous quiet surface.
+The pocket garden is temporarily commented out at the user’s request. Keep the surrounding
 product calm and readable; avoid arcade neon, glossy gradients, round timer rings,
 and pixel fonts for dense text. Existing supported locales are English and Spanish;
 new copy follows I18nProvider through lib/i18n/garden.ts. No Japan-specific market scope.
@@ -71,11 +72,15 @@ Artwork retains its limited palette; the scene background is desaturated in both
 
 ## Layout and components
 
-1240px centered shell; 28px gaps and 32px desktop gutters. Main workspace has a broad
-focus/community column and a narrower companion/daily-progress column. Chat, history
-and tasks open from a compact fixed bottom dock, styled with existing panel tokens.
-At 1023px, spacing reduces; at 719px the content order is timer, garden/daily progress,
-community. Document owns page scroll, with bottom clearance for the dock and safe area.
+The homepage uses a centered 960px shell with a 640px timer and the currently working
+list below it. Both sections share the page background without outer borders, card
+surfaces or shadows. Pixel digits and a slim segmented progress track carry the identity. The timer has no
+visible section heading or tagline. A compact inline Current task picker sits directly
+below Start/session actions and above the session-type controls.
+Chat, history, tasks and Your Progress open from a fixed four-item bottom dock; the
+progress button always displays the current localized experience rank. At 719px the
+dock stacks icons above labels. Document owns page scroll, with bottom clearance for
+the dock and safe area. PocketGarden stays commented out rather than deleted.
 WorkspaceWindow owns compact, non-modal floating panels (360px wide, at most 480px tall).
 They open along the right edge with a small stagger; multiple panels may stay open.
 The sage title bar is a pointer/touch drag handle with arrow-key movement; dragging and

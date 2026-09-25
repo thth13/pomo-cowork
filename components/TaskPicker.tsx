@@ -1,6 +1,6 @@
 'use client'
 
-import { RefObject, memo } from 'react'
+import { RefObject, memo, useId } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronDown } from 'lucide-react'
 import { SessionType } from '@/types'
@@ -37,6 +37,7 @@ export const TaskPicker = memo(function TaskPicker({
   hasTaskOptions,
 }: TaskPickerProps) {
   const { t } = useI18n()
+  const pickerId = useId()
 
   if (sessionType !== SessionType.WORK && sessionType !== SessionType.TIME_TRACKING) {
     return null
@@ -49,54 +50,30 @@ export const TaskPicker = memo(function TaskPicker({
   }
 
   return (
-    <div className="mb-6 sm:mb-8 w-full max-w-md px-4 sm:px-0">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-        {t.timer.currentTask}
-      </label>
+    <div className="mb-6 w-full max-w-sm px-4 sm:px-0">
       <div className="relative" ref={taskPickerRef}>
         <button
+          id={pickerId}
           type="button"
           onClick={handleToggle}
           disabled={isDisabled}
-          className={`group w-full rounded-xl border px-4 py-3 text-left text-sm transition focus:outline-none focus:ring-0 ${
-            isDisabled
-              ? 'cursor-not-allowed opacity-70 border-gray-300 dark:border-slate-600 text-gray-400 dark:text-slate-500'
-              : `border-gray-200 dark:border-slate-700 ${
-                  isOpen
-                    ? 'shadow-sm shadow-blue-500/10 dark:shadow-blue-900/20 border-blue-400 dark:border-blue-500'
-                    : 'hover:border-blue-300 dark:hover:border-blue-500'
-                }`
-          }`}
+          aria-expanded={isOpen && !isDisabled}
+          aria-controls={`${pickerId}-options`}
+          aria-label={`${t.timer.currentTask}: ${selectedTask ? selectedTask.title : t.timer.selectTask}`}
+          className="flex min-h-10 w-full items-center justify-center gap-2 rounded-sm px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
         >
-          <div className="flex items-center justify-between gap-3">
-            <span className="truncate text-gray-700 dark:text-slate-200">
-              {selectedTask ? selectedTask.title : t.timer.selectTask}
-            </span>
-            <motion.span
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gray-100 text-gray-500 transition group-hover:bg-blue-100 group-hover:text-blue-600 dark:bg-slate-700 dark:text-slate-300 dark:group-hover:bg-blue-900/40 dark:group-hover:text-blue-300"
-              animate={{ rotate: isOpen ? 180 : 0 }}
-              transition={{ duration: 0.18, ease: 'easeOut' }}
-            >
-              <ChevronDown size={16} />
-            </motion.span>
-          </div>
-          <motion.div
-            className={`absolute inset-x-4 bottom-0 h-0.5 rounded-full ${
-              isOpen
-                ? 'bg-blue-500/70 dark:bg-blue-400/70'
-                : selectedTask
-                  ? 'bg-gray-200 dark:bg-slate-700'
-                  : 'bg-transparent'
-            }`}
-            layoutId="taskHighlight"
-            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-          />
+          <span className="shrink-0 text-xs text-gray-500 dark:text-slate-400">{t.timer.currentTask}:</span>
+          <span className="min-w-0 truncate" title={selectedTask?.title}>
+            {selectedTask ? selectedTask.title : t.timer.selectTask}
+          </span>
+          <ChevronDown size={14} aria-hidden="true" className={`shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
         </button>
 
         <AnimatePresence>
           {isOpen && !isDisabled && (
             <motion.div
               key="task-dropdown"
+              id={`${pickerId}-options`}
               initial={{ opacity: 0, y: -8, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -4, scale: 0.98 }}
@@ -189,7 +166,7 @@ export const TaskPicker = memo(function TaskPicker({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -4 }}
               transition={{ duration: 0.18 }}
-              className="mt-3 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-600 dark:border-blue-900/60 dark:bg-blue-900/20 dark:text-blue-300"
+              className="mt-1 px-2 text-center text-xs leading-relaxed text-gray-500 dark:text-slate-400"
             >
               {selectedTask.description}
             </motion.div>

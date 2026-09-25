@@ -12,18 +12,20 @@ import TaskList, { TaskListRef } from '@/components/TaskList'
 import WorkHistory from '@/components/WorkHistory'
 import TodayContribution from '@/components/TodayContribution'
 import { useI18n } from '@/components/I18nProvider'
-import PocketGarden from '@/components/PocketGarden'
+// import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { Timer, MessageCircle, History, ListTodo } from 'lucide-react'
+import { MessageCircle, History, ListTodo, Medal } from 'lucide-react'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
+import { getRank } from '@/lib/ranks'
 
 export default function HomePage() {
-  const { isLoading, checkAuth } = useAuthStore()
+  const { user, isLoading, checkAuth } = useAuthStore()
   const { t, language } = useI18n()
   const copy = gardenCopy[language]
   const [mounted, setMounted] = useState(false)
   const taskListRef = useRef<TaskListRef>(null)
-  type PanelId = 'chat' | 'history' | 'tasks'
+  const rank = getRank(user?.experience ?? 0)
+  type PanelId = 'chat' | 'history' | 'tasks' | 'progress'
   const [openPanels, setOpenPanels] = useState<PanelId[]>([])
   const [panelOrder, setPanelOrder] = useState<PanelId[]>([])
   const bringToFront = (id: PanelId) => setPanelOrder((current) => [...current.filter((panel) => panel !== id), id])
@@ -32,6 +34,7 @@ export default function HomePage() {
     { id: 'chat', title: copy.chat, icon: MessageCircle },
     { id: 'history', title: copy.history, icon: History },
     { id: 'tasks', title: copy.tasks, icon: ListTodo },
+    { id: 'progress', title: t.todayContribution.yourProgress, icon: Medal },
   ] as const
 
   useEffect(() => {
@@ -114,23 +117,12 @@ export default function HomePage() {
   return (
     <div className="min-h-screen garden-page">
       <Navbar />
-      <main className="garden-layout">
-        <div className="garden-workspace">
-          <div className="garden-main-column">
-            <section className="focus-station pixel-panel" aria-labelledby="focus-title">
-              <div className="pixel-panel-heading" data-no-translate>
-                <span id="focus-title"><Timer size={16} />{copy.timer}</span>
-                <span className="focus-heading-hint">{copy.timerHint}</span>
-              </div>
-              <PomodoroTimer onSessionComplete={handleSessionComplete} />
-            </section>
-            <div className="garden-community"><ActiveSessions /></div>
-          </div>
-          <aside className="garden-side-column">
-            <PocketGarden />
-            <TodayContribution />
-          </aside>
-        </div>
+      <main className="focus-page-layout">
+        <section className="focus-station" aria-label={t.nav.timer}>
+          <PomodoroTimer onSessionComplete={handleSessionComplete} />
+        </section>
+        <ActiveSessions variant="page" />
+        {/* <PocketGarden /> */}
       </main>
       <div className="workspace-dock" data-no-translate>
         {panels.map(({ id, title, icon: Icon }) => (
@@ -149,13 +141,16 @@ export default function HomePage() {
             }}
           >
             <Icon size={19} aria-hidden="true" />
-            <span>{title}</span>
+            <span className="workspace-dock-label">
+              <span>{title}</span>
+              {id === 'progress' && <span className="workspace-dock-rank">{copy.yourRank}: {t.todayContribution.ranks[rank.id]}</span>}
+            </span>
           </button>
         ))}
       </div>
       {panels.map(({ id, title }, index) => (
         <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)}>
-          {id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : <WorkHistory />}
+          {id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution /> : <WorkHistory />}
         </WorkspaceWindow>
       ))}
     </div>

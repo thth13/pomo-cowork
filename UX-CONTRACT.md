@@ -18,6 +18,8 @@
 | Forms and settings | SettingsModal, existing .input and .btn | Existing settings workflow; shared visual adaptation |
 | Scrollbar | app/globals.css | Global visible baseline, theme tokens and forced-color fallback |
 | Notifications | useNotifications / NotificationToast | Existing global session feedback |
+| Progress / rank | TodayContribution / lib/ranks.ts / useAuthStore | Dock opens existing progress panel; localized current XP rank stays visible on its button |
+| Presence surface | ActiveSessions | Homepage uses borderless page variant; room screens retain panel variant |
 | Companion feedback | PocketGarden | Local, stable role=status region; no overlay or focus stealing |
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
@@ -52,10 +54,12 @@ explains the progress will not survive closing the page.
 
 ## Verification
 
-Homepage chat, history and tasks open through WorkspaceWindow from a bottom dock. Multiple windows can remain open;
+Homepage chat, history, tasks and progress open through WorkspaceWindow from a bottom dock. Multiple windows can remain open;
 the background stays interactive. Closing from inside restores focus to the opener.
 The retired free-month promotion is no longer mounted in the shared layout.
 No new remote searches or server mutations other than existing session saves.
 Static review covers completion vs cancellation, break exclusion, cooldown guards,
 no-food guard, persistence fallback, locales and responsive rules. Browser verification
 is pending because the user requested to run and test the project themselves.
+
+The homepage companion is temporarily commented out; its implementation and stored state remain intact.

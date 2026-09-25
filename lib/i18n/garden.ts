@@ -1,5 +1,6 @@
 export const gardenCopy = {
   en: {
+    yourRank: 'Rank',
     moveWindow: 'Drag to move, or use arrow keys when focused',
     chat: 'General Chat', history: 'Work History', tasks: 'My Tasks',
     eyebrow: 'A little focus. A little growth.', title: 'Grow at your own pace.',
@@ -14,6 +15,7 @@ export const gardenCopy = {
     cooldown: 'Pet and water again after 30 minutes.', noFood: 'Finish a focus session to earn food.', ready: 'Ready when you are',
   },
   es: {
+    yourRank: 'Rango',
     moveWindow: 'Arrastra para mover o usa las flechas al enfocar',
     chat: 'Chat general', history: 'Historial de trabajo', tasks: 'Mis tareas',
     eyebrow: 'Un poco de enfoque. Un poco de crecimiento.', title: 'Crece a tu propio ritmo.',

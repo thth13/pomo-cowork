@@ -1,11 +1,12 @@
 'use client'
 
-import { memo } from 'react'
+import { memo, type ReactNode } from 'react'
 import { Play, Square, Pause } from 'lucide-react'
 import { PomodoroSession, SessionType } from '@/types'
 import { useI18n } from '@/components/I18nProvider'
 
 interface TimerControlsProps {
+  children?: ReactNode
   currentSession: PomodoroSession | null
   sessionType: SessionType
   onSessionTypeChange: (type: SessionType) => void
@@ -22,6 +23,7 @@ interface TimerControlsProps {
 }
 
 export const TimerControls = memo(function TimerControls({
+  children,
   currentSession,
   sessionType,
   onSessionTypeChange,
@@ -94,6 +96,8 @@ export const TimerControls = memo(function TimerControls({
         </div>
 
       </div>
+
+      {children}
 
       <div className="flex bg-white dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mb-4 sm:mb-6 mx-4 sm:mx-0">
         {[SessionType.WORK, SessionType.SHORT_BREAK, SessionType.LONG_BREAK].map((type) => {

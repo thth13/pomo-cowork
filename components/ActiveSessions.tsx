@@ -358,7 +358,10 @@ function SessionCard({
   )
 }
 
-export default function ActiveSessions() {
+export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel' | 'page' }) {
+  const surfaceClassName = variant === 'page'
+    ? 'focus-page-community'
+    : 'bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8'
   const { t } = useI18n()
   const { activeSessions } = useTimerStore()
   const { user, token } = useAuthStore()
@@ -772,7 +775,7 @@ export default function ActiveSessions() {
 
   if (allActiveSessions.length === 0) {
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
+      <div className={surfaceClassName}>
         <div className="text-center py-8">
           <User className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-300 mb-2">
@@ -833,7 +836,7 @@ export default function ActiveSessions() {
         </div>
       )}
       
-      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8">
+      <div className={surfaceClassName}>
       <div className="flex items-center justify-between mb-6 sm:mb-8">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t.activeSessions.title}</h2>
         <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">

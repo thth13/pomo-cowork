@@ -1300,21 +1300,6 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
 
   return (
     <div className="flex flex-col items-center" data-timer-panel>
-      <TaskPicker
-        sessionType={activeSessionType}
-        isDisabled={isTaskPickerDisabled}
-        isOpen={isTaskMenuOpen}
-        onToggle={() => setIsTaskMenuOpen((state) => !state)}
-        onClose={() => setIsTaskMenuOpen(false)}
-        taskPickerRef={taskPickerRef}
-        selectedTask={selectedTask}
-        onSelectTask={handleTaskSelect}
-        filteredTaskOptions={filteredTaskOptions}
-        taskSearch={taskSearch}
-        onTaskSearchChange={setTaskSearch}
-        hasTaskOptions={taskOptions.length > 0}
-      />
-
       {(currentRoomId || lastRoomId) && (
         <button
           type="button"
@@ -1366,7 +1351,22 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
         isResuming={isResuming}
         isRunning={isRunning}
         isPaused={isPaused}
-      />
+      >
+        <TaskPicker
+          sessionType={activeSessionType}
+          isDisabled={isTaskPickerDisabled}
+          isOpen={isTaskMenuOpen}
+          onToggle={() => setIsTaskMenuOpen((state) => !state)}
+          onClose={() => setIsTaskMenuOpen(false)}
+          taskPickerRef={taskPickerRef}
+          selectedTask={selectedTask}
+          onSelectTask={handleTaskSelect}
+          filteredTaskOptions={filteredTaskOptions}
+          taskSearch={taskSearch}
+          onTaskSearchChange={setTaskSearch}
+          hasTaskOptions={taskOptions.length > 0}
+        />
+      </TimerControls>
 
       <SettingsModal
         isOpen={isSettingsOpen}
