@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useImperativeHandle, forwardRef, useRef } from 'react'
+import { useState, useEffect, useImperativeHandle, forwardRef, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -81,9 +81,51 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const hasRestoredSelectedTask = useRef(false)
   const deleteConfirmTimeoutRef = useRef<number | null>(null)
 
+  const loadTasks = useCallback(async () => {
+    console.log('TaskList: Loading tasks...')
+    try {
+      const headers = buildTaskHeaders(token)
+      if (!headers.Authorization && !headers['X-Anonymous-Id']) {
+        console.log('TaskList: No user identity found, skipping load')
+        setTasks([])
+        setTaskOptions([])
+        return
+      }
+
+      const response = await fetch('/api/tasks', {
+        headers
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('TaskList: Received tasks from API:', data)
+        const normalized: Task[] = data.map((task: any) => ({
+          id: task.id,
+          backendId: task.id,
+          title: task.title,
+          description: task.description ?? '',
+          pomodoros: task.pomodoros ?? 1,
+          completedPomodoros: task.completedPomodoros ?? 0,
+          focusMinutes: task.focusMinutes ?? 0,
+          priority: task.priority ?? 'Medium',
+          completed: task.completed ?? false,
+          isPending: false,
+        }))
+        setTasks(normalized)
+        console.log('TaskList: Tasks updated in state')
+      } else {
+        console.error('TaskList: Failed to load tasks, status:', response.status)
+      }
+    } catch (error) {
+      console.error('Failed to load tasks:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }, [token, setTaskOptions])
+
   useImperativeHandle(ref, () => ({
     refreshTasks: loadTasks
-  }))
+  }), [loadTasks])
 
   useEffect(() => {
     if (hasRestoredSelectedTask.current) {
@@ -137,7 +179,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       setSelectedTask(null)
       setIsLoading(false)
     }
-  }, [user, token, setSelectedTask, setTaskOptions])
+  }, [user, token, setSelectedTask, setTaskOptions, loadTasks])
 
   useEffect(() => {
     setTaskOptions(tasks.map((task) => ({
@@ -186,47 +228,6 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
     }
   }, [])
 
-  const loadTasks = async () => {
-    console.log('TaskList: Loading tasks...')
-    try {
-      const headers = buildTaskHeaders(token)
-      if (!headers.Authorization && !headers['X-Anonymous-Id']) {
-        console.log('TaskList: No user identity found, skipping load')
-        setTasks([])
-        setTaskOptions([])
-        return
-      }
-
-      const response = await fetch('/api/tasks', {
-        headers
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log('TaskList: Received tasks from API:', data)
-        const normalized: Task[] = data.map((task: any) => ({
-          id: task.id,
-          backendId: task.id,
-          title: task.title,
-          description: task.description ?? '',
-          pomodoros: task.pomodoros ?? 1,
-          completedPomodoros: task.completedPomodoros ?? 0,
-          focusMinutes: task.focusMinutes ?? 0,
-          priority: task.priority ?? 'Medium',
-          completed: task.completed ?? false,
-          isPending: false,
-        }))
-        setTasks(normalized)
-        console.log('TaskList: Tasks updated in state')
-      } else {
-        console.error('TaskList: Failed to load tasks, status:', response.status)
-      }
-    } catch (error) {
-      console.error('Failed to load tasks:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const selectTask = (task: Task) => {
     if (isRunning) {
