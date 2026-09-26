@@ -56,6 +56,12 @@ explains the progress will not survive closing the page.
 
 ## Verification
 
+Below 720px, Navbar's compact disclosure moves to the top left and owns access to
+all five workspace tools; HomeWorkspace supplies the same actions as the desktop dock.
+Tool selection dismisses the menu and focuses the window. Closing from inside a
+mobile window restores focus to the menu trigger. WorkspaceWindow uses full-width,
+bounded panels on mobile; saved desktop geometry does not constrain their layout.
+
 Homepage chat, history, tasks and progress open through WorkspaceWindow from an icon-only left dock with separators. Multiple windows can remain open;
 the background stays interactive. Closing from inside restores focus to the opener.
 The shared footer and retired free-month promotion are no longer mounted in the shared layout.

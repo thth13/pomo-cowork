@@ -168,6 +168,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
           aria-label={`${title}. ${gardenCopy[language].moveWindow}`}
           title={gardenCopy[language].moveWindow}
           onPointerDown={(event) => {
+            if (window.matchMedia('(max-width: 719px)').matches) return
             if (event.button !== 0) return
             const bounds = windowRef.current!.getBoundingClientRect()
             dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: bounds.left, top: bounds.top }
@@ -187,6 +188,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
           onPointerCancel={() => { dragRef.current = null; setDragging(false) }}
           onLostPointerCapture={() => { dragRef.current = null; setDragging(false) }}
           onKeyDown={(event) => {
+            if (window.matchMedia('(max-width: 719px)').matches) return
             const current = positionRef.current
             if (!current || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return
             event.preventDefault()

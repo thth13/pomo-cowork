@@ -78,6 +78,13 @@ Artwork retains its limited palette; the scene background is desaturated in both
 The homepage replaces the full header with a small fixed Menu disclosure at the top
 right. It reuses Navbar navigation, account actions, notifications, online status and
 theme controls; guests can navigate and sign in. Other routes retain their header.
+At widths up to 719px, this same menu moves to the top left and includes the five
+workspace tools with icons and localized labels. The desktop dock is hidden, and
+the timer uses the full available width with safe-area padding. Selecting a tool
+closes the menu and focuses its window; closing the window restores menu-trigger focus.
+Mobile windows span the available width below the menu, with bounded internal scrolling
+and 44px title/close controls. Dragging and resizing are desktop-only; mobile CSS
+overrides saved desktop geometry without replacing the stored size.
 The homepage centers a 640px timer. Currently Working is a permanent right-side rail,
 part of the page rather than a floating window. At 1440px and up, symmetric side columns
 keep the timer centered independently of the rail. The rail is up to 400px wide and

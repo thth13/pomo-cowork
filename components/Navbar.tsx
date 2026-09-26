@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useId } from 'react'
+import { useEffect, useMemo, useRef, useState, useId, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -30,7 +30,7 @@ import {
 
 const NOTIFICATIONS_REFRESH_MS = 2 * 60 * 1000
 
-export default function Navbar({ compact = false }: { compact?: boolean }) {
+export default function Navbar({ compact = false, workspaceActions }: { compact?: boolean; workspaceActions?: (closeMenu: () => void) => ReactNode }) {
   const compactMenuId = useId()
   const compactTriggerRef = useRef<HTMLButtonElement>(null)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
@@ -300,6 +300,7 @@ export default function Navbar({ compact = false }: { compact?: boolean }) {
             ref={compactTriggerRef}
             type="button"
             className="workspace-navigation-trigger"
+            data-workspace-menu-trigger={compact ? '' : undefined}
             aria-expanded={isMobileMenuOpen}
             aria-controls={compactMenuId}
             onClick={() => {
@@ -542,6 +543,11 @@ export default function Navbar({ compact = false }: { compact?: boolean }) {
             ref={compact ? undefined : mobileMenuRef}
             className={compact ? "workspace-navigation-panel" : "lg:hidden mt-4 pt-4 border-t border-gray-200 dark:border-slate-700"}
           >
+            {compact && workspaceActions && (
+              <div className="workspace-mobile-actions">
+                {workspaceActions(handleMobileLinkClick)}
+              </div>
+            )}
             {compact && (
               <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-gray-600 dark:text-slate-300">
                 <span className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${connectionStatusClass}`} />{totalOnlineCount} {t.nav.online}</span>

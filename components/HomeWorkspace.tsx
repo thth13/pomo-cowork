@@ -34,7 +34,12 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const [openPanels, setOpenPanels] = useState<PanelId[]>([])
   const [panelOrder, setPanelOrder] = useState<PanelId[]>([])
   const bringToFront = (id: PanelId) => setPanelOrder((current) => [...current.filter((panel) => panel !== id), id])
-  const closePanel = (id: PanelId) => setOpenPanels((current) => current.filter((panel) => panel !== id))
+  const closePanel = (id: PanelId) => {
+    if (window.matchMedia('(max-width: 719px)').matches && document.getElementById(`workspace-${id}`)?.contains(document.activeElement)) {
+      document.querySelector<HTMLButtonElement>('[data-workspace-menu-trigger]')?.focus({ preventScroll: true })
+    }
+    setOpenPanels((current) => current.filter((panel) => panel !== id))
+  }
   const panels = [
     { id: 'chat', title: copy.chat, icon: MessageCircle },
     { id: 'history', title: copy.history, icon: History },
@@ -130,6 +135,38 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
 
   const workspaceLoading = !mounted || isLoading
 
+  const renderPanelButtons = (closeMenu?: () => void) => panels.map(({ id, title, icon: Icon }) => (
+    <button
+      key={id}
+      type="button"
+      aria-label={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
+      title={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
+      aria-haspopup="dialog"
+      aria-controls={`workspace-${id}`}
+      aria-expanded={openPanels.includes(id)}
+      onClick={() => {
+        if (openPanels.includes(id)) closePanel(id)
+        else {
+          setOpenPanels((current) => [...current, id])
+          bringToFront(id)
+        }
+        if (closeMenu) {
+          closeMenu()
+          const wasOpen = openPanels.includes(id)
+          requestAnimationFrame(() => {
+            const target = wasOpen
+              ? document.querySelector<HTMLButtonElement>('[data-workspace-menu-trigger]')
+              : document.querySelector<HTMLButtonElement>(`#workspace-${id} .workspace-window-handle`)
+            target?.focus({ preventScroll: true })
+          })
+        }
+      }}
+    >
+      <Icon size={19} aria-hidden="true" />
+      {closeMenu && <span>{title}</span>}
+    </button>
+  ))
+
   return (
     <div className="workspace-page garden-page">
       {workspaceLoading ? (
@@ -143,7 +180,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
         </div>
       ) : (
         <>
-          <Navbar compact />
+          <Navbar compact workspaceActions={renderPanelButtons} />
           <div className="focus-page-layout">
             <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
               <PomodoroTimer idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />
@@ -154,26 +191,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
             {/* <PocketGarden /> */}
           </div>
           <div className="workspace-dock" data-no-translate>
-            {panels.map(({ id, title, icon: Icon }) => (
-              <button
-                key={id}
-                type="button"
-                aria-label={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
-                title={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
-                aria-haspopup="dialog"
-                aria-controls={`workspace-${id}`}
-                aria-expanded={openPanels.includes(id)}
-                onClick={() => {
-                  if (openPanels.includes(id)) closePanel(id)
-                  else {
-                    setOpenPanels((current) => [...current, id])
-                    bringToFront(id)
-                  }
-                }}
-              >
-                <Icon size={19} aria-hidden="true" />
-              </button>
-            ))}
+            {renderPanelButtons()}
           </div>
         </>
       )}
