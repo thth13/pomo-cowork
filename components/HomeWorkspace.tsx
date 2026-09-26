@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, type ReactNode } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
@@ -14,17 +14,17 @@ import TodayContribution from '@/components/TodayContribution'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { MessageCircle, History, ListTodo, Medal } from 'lucide-react'
+import { MessageCircle, History, ListTodo, Medal, HelpCircle } from 'lucide-react'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
 import { getRank } from '@/lib/ranks'
 import { HOME_TITLE } from '@/lib/homeSeo'
 
-type PanelId = 'chat' | 'history' | 'tasks' | 'progress'
+type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about'
 const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v2'
 const isPanelId = (value: unknown): value is PanelId =>
   value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress'
 
-export default function HomeWorkspace() {
+export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const { user, isLoading, checkAuth } = useAuthStore()
   const { t, language } = useI18n()
   const copy = gardenCopy[language]
@@ -40,6 +40,7 @@ export default function HomeWorkspace() {
     { id: 'history', title: copy.history, icon: History },
     { id: 'tasks', title: copy.tasks, icon: ListTodo },
     { id: 'progress', title: t.todayContribution.yourProgress, icon: Medal },
+    { id: 'about', title: copy.aboutTimer, icon: HelpCircle },
   ] as const
 
   useEffect(() => {
@@ -61,7 +62,8 @@ export default function HomeWorkspace() {
     // Wait for restoration so the initial empty state cannot overwrite saved windows.
     if (!mounted) return
     try {
-      localStorage.setItem(OPEN_PANELS_STORAGE_KEY, JSON.stringify(openPanels))
+      // Help only opens on request, never automatically on the next visit.
+      localStorage.setItem(OPEN_PANELS_STORAGE_KEY, JSON.stringify(openPanels.filter((id) => id !== 'about')))
     } catch {
       // Keep window state in memory when browser storage is unavailable.
     }
@@ -126,57 +128,59 @@ export default function HomeWorkspace() {
     }
   }
 
-  // Show loading while checking auth
-  if (!mounted || isLoading) {
-    return (
-      <div className="workspace-page flex items-center justify-center bg-slate-50 dark:bg-slate-950">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-12 w-12 rounded-full border-2 border-slate-200 dark:border-slate-800 border-t-rose-500 animate-spin" />
-          <span className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
-            {t.common.loading}
-          </span>
-        </div>
-      </div>
-    )
-  }
+  const workspaceLoading = !mounted || isLoading
 
   return (
     <div className="workspace-page garden-page">
-      <Navbar compact />
-      <div className="focus-page-layout">
-        <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
-          <PomodoroTimer idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />
-        </section>
-        <aside id="workspace-working" className="working-sidebar" aria-label={t.activeSessions.title}>
-          <ActiveSessions variant="page" />
-        </aside>
-        {/* <PocketGarden /> */}
-      </div>
-      <div className="workspace-dock" data-no-translate>
-        {panels.map(({ id, title, icon: Icon }) => (
-          <button
-            key={id}
-            type="button"
-            aria-label={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
-            title={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
-            aria-haspopup="dialog"
-            aria-controls={`workspace-${id}`}
-            aria-expanded={openPanels.includes(id)}
-            onClick={() => {
-              if (openPanels.includes(id)) closePanel(id)
-              else {
-                setOpenPanels((current) => [...current, id])
-                bringToFront(id)
-              }
-            }}
-          >
-            <Icon size={19} aria-hidden="true" />
-          </button>
-        ))}
-      </div>
-      {panels.map(({ id, title }, index) => (
+      {workspaceLoading ? (
+        <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+          <div className="flex flex-col items-center gap-3">
+            <div className="h-12 w-12 rounded-full border-2 border-slate-200 dark:border-slate-800 border-t-rose-500 animate-spin" />
+            <span className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
+              {t.common.loading}
+            </span>
+          </div>
+        </div>
+      ) : (
+        <>
+          <Navbar compact />
+          <div className="focus-page-layout">
+            <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
+              <PomodoroTimer idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />
+            </section>
+            <aside id="workspace-working" className="working-sidebar" aria-label={t.activeSessions.title}>
+              <ActiveSessions variant="page" />
+            </aside>
+            {/* <PocketGarden /> */}
+          </div>
+          <div className="workspace-dock" data-no-translate>
+            {panels.map(({ id, title, icon: Icon }) => (
+              <button
+                key={id}
+                type="button"
+                aria-label={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
+                title={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
+                aria-haspopup="dialog"
+                aria-controls={`workspace-${id}`}
+                aria-expanded={openPanels.includes(id)}
+                onClick={() => {
+                  if (openPanels.includes(id)) closePanel(id)
+                  else {
+                    setOpenPanels((current) => [...current, id])
+                    bringToFront(id)
+                  }
+                }}
+              >
+                <Icon size={19} aria-hidden="true" />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      {/* Keep help in the initial HTML; only account-dependent panels wait for auth. */}
+      {panels.map(({ id, title }, index) => workspaceLoading && id !== 'about' ? null : (
         <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)}>
-          {id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution /> : <WorkHistory />}
+          {id === 'about' ? overview : id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution /> : <WorkHistory />}
         </WorkspaceWindow>
       ))}
     </div>

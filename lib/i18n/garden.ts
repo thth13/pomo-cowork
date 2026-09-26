@@ -1,6 +1,7 @@
 export const gardenCopy = {
   en: {
     yourRank: 'Rank', menu: 'Menu',
+    aboutTimer: 'About the timer',
     resizeWindow: 'Drag to resize, or use arrow keys when focused',
     moveWindow: 'Drag to move, or use arrow keys when focused',
     chat: 'General Chat', history: 'Work History', tasks: 'My Tasks',
@@ -17,6 +18,7 @@ export const gardenCopy = {
   },
   es: {
     yourRank: 'Rango', menu: 'Menú',
+    aboutTimer: 'Acerca del temporizador',
     resizeWindow: 'Arrastra para cambiar el tamaño o usa las flechas al enfocar',
     moveWindow: 'Arrastra para mover o usa las flechas al enfocar',
     chat: 'Chat general', history: 'Historial de trabajo', tasks: 'Mis tareas',

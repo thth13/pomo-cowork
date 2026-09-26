@@ -89,15 +89,19 @@ Coworkers form a vertical list with 40px avatars on the left and names, activiti
 time, status and a remaining-time meter on the right. Time tracking shows elapsed time
 without a fictional remaining-time meter. The current user keeps a tomato edge accent and
 You label. Room pages keep their detailed session cards. The list owns vertical scrolling at every width.
-Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The homepage has a visible English H1, “Online Pomodoro Timer for Focused Work”,
-above the timer workspace. Its server-rendered English overview below the workspace
-uses Inter, existing ink/border tokens and five H2 sections; it remains readable before
-authentication initializes and is excluded from automatic DOM translation. A compact inline Current task picker sits directly
+Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The English H1, “Online Pomodoro Timer for Focused Work”, and Pomodoro overview
+live inside the About the timer workspace window, opened by the question-mark dock
+button. The window is closed by default and never restored on page load, even if left
+open on a previous visit. Its heading and full content render in the initial server HTML,
+including while the workspace is loading or checking authentication; there is one copy
+inside the shared window, with no click-dependent content loading.
+Its content uses Inter and existing tokens and is excluded
+from automatic DOM translation. The trigger and window controls follow the active locale. A compact inline Current task picker sits directly
 below Start/session actions and above the session-type controls.
 Chat, history, tasks and Your Progress open from a fixed vertical dock at the left.
-Its four icon-only buttons have fine separators, localized accessible names and native
-tooltips; the progress tooltip includes the current experience rank. The homepage now scrolls at document level to reach the Pomodoro overview. The timer
-workspace retains a bounded viewport with safe-area clearance and compact timer spacing
+Its five icon-only buttons have fine separators, localized accessible names and native
+tooltips; the progress tooltip includes the current experience rank. The homepage has no document scrolling or inline introductory text. The timer
+workspace occupies the viewport with safe-area clearance and compact timer spacing
 on small screens. Lists and floating panels scroll internally; exceptionally small
 viewports allow internal timer scrolling to keep controls reachable. Other routes keep
 their existing document scroll. The shared footer is removed.

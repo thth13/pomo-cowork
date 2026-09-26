@@ -25,6 +25,7 @@
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
 | Locale | I18nProvider | English and Spanish, including new companion copy |
 | Homepage navigation | Navbar compact variant | Shared navigation disclosure; outside click and Escape dismiss; Escape restores trigger focus; guests retain navigation and login |
+| Timer help | PomodoroOverview / WorkspaceWindow | Full heading and overview render in the initial server HTML independently of workspace loading/auth; one persistent copy in the window. Question-mark dock button opens it; close, Escape or dock toggles dismiss; always closed on page load and excluded from saved open panels |
 | Workspace overlays | WorkspaceWindow | Compact non-modal windows; default position beside the left dock, saved positions take precedence; pointer/touch dragging and resizing with keyboard arrows; viewport bounds; click/focus stacking; Escape/close/dock dismissal; mounted content preserves drafts; position and size persist per window in localStorage and fit the viewport on reopen |
 | CRUD / permissions | Existing task, room and auth services/API routes | No workflow or permission changes |
 
