@@ -1,10 +1,8 @@
-.lb-page { min-height: calc(100vh - 64px); }
-.lb-layout { max-width: 1240px; padding: 44px 32px 80px; margin: 0 auto; }
+.lb-page { min-height: 100vh; }
+.lb-layout { max-width: 1240px; padding: calc(84px + env(safe-area-inset-top)) 32px 80px; margin: 0 auto; }
 .lb-intro { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-bottom: 30px; }
 .lb-eyebrow { display: flex; align-items: center; gap: 8px; color: var(--pixel-muted); font-size: 10px; font-weight: 600; letter-spacing: 1.7px; line-height: 1.7; }
 .lb-intro h1 { font-family: var(--font-pixel); font-size: clamp(20px, 3vw, 32px); line-height: 1.6; letter-spacing: -1px; margin: 12px 0 14px; overflow-wrap: anywhere; }
-.lb-subtitle { font-size: 20px; font-weight: 600; line-height: 1.5; }
-.lb-description { color: var(--pixel-muted); font-size: 14px; line-height: 1.7; margin-top: 5px; }
 .lb-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 15px; background: var(--pixel-paper); border: 1px solid var(--pixel-line); border-radius: 2px; font-size: 12px; font-weight: 600; text-align: center; line-height: 1.5; }
 .lb-intro > .lb-button { flex-shrink: 0; }
 .lb-button:hover { background: var(--pixel-screen); }
@@ -151,7 +149,7 @@
   .lb-table th:last-child, .lb-table td:last-child { padding-right: 12px; }
 }
 @media (max-width: 800px) {
-  .lb-layout { padding: 28px 20px 56px; }
+  .lb-layout { padding: calc(80px + env(safe-area-inset-top)) 20px 56px; }
   .lb-intro { align-items: flex-start; }
   .lb-intro > .lb-button { max-width: 145px; }
   .lb-content { grid-template-columns: minmax(0, 1fr); }
@@ -167,11 +165,9 @@
   .lb-search { width: 220px; }
 }
 @media (max-width: 580px) {
-  .lb-layout { padding: 24px 14px 48px; }
+  .lb-layout { padding: calc(80px + env(safe-area-inset-top)) 14px 48px; }
   .lb-intro { flex-direction: column; gap: 18px; }
   .lb-intro > .lb-button { max-width: none; }
-  .lb-subtitle { font-size: 17px; }
-  .lb-description { font-size: 13px; }
   .lb-toolbar { gap: 8px; }
   .lb-periods { width: 100%; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .lb-periods button { padding: 10px 4px; font-size: 12px; }

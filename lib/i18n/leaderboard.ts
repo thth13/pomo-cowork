@@ -1,7 +1,6 @@
 export const leaderboardCopy = {
   en: {
-    eyebrow: 'THE FOCUS BOARD', subtitle: 'Small sessions. Shared progress.',
-    description: 'A little focus adds up. See what we’re growing together.',
+    eyebrow: 'THE FOCUS BOARD',
     backToTimer: 'Back to timer', leaders: 'Leading the way', community: 'Together this period',
     rank: 'Place', participant: 'Coworker', timeUnit: 'h:mm',
     previousPeriod: 'Previous period', nextPeriod: 'Next period', currentPeriod: 'Current period',
@@ -17,8 +16,7 @@ export const leaderboardCopy = {
     sessions: 'work sessions', viewProfile: 'View profile',
   },
   es: {
-    eyebrow: 'EL TABLERO DE ENFOQUE', subtitle: 'Pequeñas sesiones. Progreso compartido.',
-    description: 'Cada momento de enfoque suma. Mira cómo crecemos juntos.',
+    eyebrow: 'EL TABLERO DE ENFOQUE',
     backToTimer: 'Volver al temporizador', leaders: 'A la cabeza', community: 'Juntos en este período',
     rank: 'Puesto', participant: 'Compañero', timeUnit: 'h:mm',
     previousPeriod: 'Período anterior', nextPeriod: 'Período siguiente', currentPeriod: 'Período actual',

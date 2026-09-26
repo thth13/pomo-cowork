@@ -77,7 +77,7 @@ Artwork retains its limited palette; the scene background is desaturated in both
 
 The homepage replaces the full header with a small fixed Menu disclosure at the top
 right. It reuses Navbar navigation, account actions, notifications, online status and
-theme controls; guests can navigate and sign in. Other routes retain their header.
+theme controls; guests can navigate and sign in. The leaderboard reuses this compact menu; other routes retain their header.
 At widths up to 719px, this same menu moves to the top left and includes the five
 workspace tools with icons and localized labels. The desktop dock is hidden, and
 the timer uses the full available width with safe-area padding. Selecting a tool
@@ -179,7 +179,9 @@ index-only component classes. The article reading layout stays unchanged.
 
 ## Community leaderboard
 
-`/users` follows the Pocket Garden identity with a pixel display heading, a quiet
+`/users` reuses Navbar’s compact menu with safe-area clearance above its content.
+The heading has no promotional subtitle or description. It follows the Pocket Garden
+identity with a pixel display heading, a quiet
 three-metric strip, and a sage first-place card followed by the next two coworkers.
 All podium links appear in rank order, including on mobile. The native ranking table
 uses Inter, tabular time values, fine row dividers and a tomato edge for the current

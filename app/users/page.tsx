@@ -36,7 +36,7 @@ interface BoardView {
   search: string
   page: number
 }
-const PAGE_SIZE = 20
+const PAGE_SIZE = 100
 const initialView: BoardView = { period: 'month', offset: 0, start: '', end: '', search: '', page: 1 }
 const formatTime = (minutes: number) => `${Math.floor(minutes / 60)}:${String(Math.floor(minutes % 60)).padStart(2, '0')}`
 
@@ -151,15 +151,13 @@ export default function UsersPage() {
 
   return (
     <>
-      <Navbar />
+      <Navbar compact />
       <div className="garden-page lb-page" data-i18n-ignore>
         <main className="lb-layout">
           <header className="lb-intro">
             <div>
               <p className="lb-eyebrow"><Sprout size={16} aria-hidden="true" />{copy.eyebrow}</p>
               <h1>{t.leaderboard.title}</h1>
-              <p className="lb-subtitle">{copy.subtitle}</p>
-              <p className="lb-description">{copy.description}</p>
             </div>
             <Link href="/" className="lb-button"><ArrowLeft size={16} aria-hidden="true" />{copy.backToTimer}</Link>
           </header>
