@@ -75,7 +75,7 @@ const chatMessagesByRoom = new Map<string, ChatMessage[]>()
 const reactionsByTarget = new Map<string, Map<string, string>>()
 
 const MAX_CHAT_HISTORY = 100
-const ACTIVE_SESSIONS_DB_REFRESH_MS = 60 * 1000
+const ACTIVE_SESSIONS_DB_REFRESH_MS = 5 * 60 * 1000
 let lastActiveSessionsDbLoadAt = 0
 let activeSessionsDbLoad: Promise<number> | null = null
 
@@ -268,18 +268,19 @@ const removeAnonymousConnectionBySocket = (socketId: string) => {
 }
 
 // Function to load active sessions from DB
-const loadActiveSessionsFromDB = async (force = false) => {
-  const cacheIsFresh = Date.now() - lastActiveSessionsDbLoadAt < ACTIVE_SESSIONS_DB_REFRESH_MS
-  if (!force && cacheIsFresh) {
-    return sessions.size
-  }
+const loadActiveSessionsFromDB = async () => {
   if (activeSessionsDbLoad) {
     return activeSessionsDbLoad
   }
-
+  const cacheIsFresh = Date.now() - lastActiveSessionsDbLoadAt < ACTIVE_SESSIONS_DB_REFRESH_MS
+  if (cacheIsFresh) {
+    return sessions.size
+  }
+  // Throttle failed attempts too, so reconnects cannot hammer the API during outages.
+  lastActiveSessionsDbLoadAt = Date.now()
   activeSessionsDbLoad = (async () => {
     try {
-      const response = await axios.get(`${API_URL}/api/sessions/active`)
+      const response = await axios.get(`${API_URL}/api/sessions/active`, { timeout: 10_000 })
       const dbSessions = response.data as Array<{
         id: string
         userId: string
@@ -340,7 +341,6 @@ const loadActiveSessionsFromDB = async (force = false) => {
         }
       }
 
-      lastActiveSessionsDbLoadAt = Date.now()
       console.log(`Loaded ${dbSessions.length} active sessions from database`)
       return dbSessions.length
     } catch (error) {
@@ -394,7 +394,8 @@ const serializeSessions = () =>
 
 // Periodic DB synchronization. Connection bursts share the same cached load.
 setInterval(async () => {
-  await loadActiveSessionsFromDB(true)
+  if (io.sockets.sockets.size === 0) return
+  await loadActiveSessionsFromDB()
   io.emit('session-update', serializeSessions())
 }, ACTIVE_SESSIONS_DB_REFRESH_MS)
 

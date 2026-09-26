@@ -122,7 +122,10 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
       moveTo(current?.x ?? window.innerWidth - panel.offsetWidth - 16 - offset, current?.y ?? 96 + offset)
     }
     fit()
-    handleRef.current?.focus({ preventScroll: true })
+    // Restoring saved windows must not steal focus on page load.
+    if (trigger?.getAttribute('aria-controls') === id) {
+      handleRef.current?.focus({ preventScroll: true })
+    }
     const observer = new ResizeObserver(fit)
     observer.observe(panel)
     window.addEventListener('resize', fit)
@@ -134,7 +137,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
       setDragging(false)
       if (panel.contains(document.activeElement)) trigger?.focus({ preventScroll: true })
     }
-  }, [open, offset, geometryLoaded])
+  }, [open, offset, geometryLoaded, id])
 
   return (
     <div

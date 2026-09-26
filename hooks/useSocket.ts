@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useCallback, useEffect } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -208,9 +208,9 @@ export function useSocket() {
     sharedSocket?.emit('reaction-remove', payload)
   }
 
-  const requestReactions = (payload?: { userId?: string | null }) => {
+  const requestReactions = useCallback((payload?: { userId?: string | null }) => {
     sharedSocket?.emit('get-reactions', payload)
-  }
+  }, [])
 
   const onReactionUpdate = (handler: (payload: { action: 'set' | 'remove'; toUserId: string; fromUserId: string; emoji: string | null; previousEmoji?: string | null; counts: Record<string, number> }) => void) => {
     sharedSocket?.on('reaction-update', handler)

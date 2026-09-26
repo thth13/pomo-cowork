@@ -83,6 +83,7 @@ part of the page rather than a floating window. At 1280px and up, symmetric side
 keep the timer centered independently of the rail. The rail is up to 400px wide and
 640px tall, with a subtle left divider, plain heading and online count. Narrow screens
 place it below the timer in document flow. The empty state is centered in the rail.
+Only real sessions appear in the rail and online count; mock participants are removed.
 Coworkers form a vertical list with 40px avatars on the left and names, activities,
 time, status and a remaining-time meter on the right. Time tracking shows elapsed time
 without a fictional remaining-time meter. The current user keeps a tomato edge accent and
@@ -99,6 +100,8 @@ They open along the right edge with a small stagger; multiple panels may stay op
 The sage title bar is a pointer/touch drag handle with arrow-key movement; dragging and
 viewport resize keep windows within screen bounds. Click/focus raises a panel. Escape
 closes the focused panel; the dock toggles it. No backdrop, page scroll lock or focus trap.
+Restoring windows on page load does not move focus. Opening from the dock focuses the
+title handle; keyboard focus uses a neutral background and underlined title without an outline.
 Bodies scroll internally and stay mounted to preserve tasks, drafts and live updates.
 Open/closed state persists in `pomo:windows:open:v2` and restores before the workspace
 appears. Existing v1 preferences migrate; only floating panels are restored. Only known panel IDs are restored; unavailable storage falls back to memory.
