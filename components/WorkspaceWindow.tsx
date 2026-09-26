@@ -119,7 +119,8 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
     const trigger = document.activeElement instanceof HTMLElement ? document.activeElement : null
     const fit = () => {
       const current = positionRef.current
-      moveTo(current?.x ?? window.innerWidth - panel.offsetWidth - 16 - offset, current?.y ?? 96 + offset)
+      const dock = document.querySelector('.workspace-dock')?.getBoundingClientRect()
+      moveTo(current?.x ?? (dock?.right ?? 76) + 12 + offset, current?.y ?? (dock?.top ?? 96) + offset)
     }
     fit()
     // Restoring saved windows must not steal focus on page load.
@@ -148,7 +149,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
       hidden={!open}
       className="workspace-window"
       data-resized={size ? "true" : undefined}
-      style={{ left: position?.x, top: position?.y, width: size?.width, height: size?.height, zIndex: 40 + layer }}
+      style={{ left: position?.x, top: position?.y, width: size?.width, height: size?.height, zIndex: 40 + layer, visibility: position ? undefined : 'hidden' }}
       onPointerDownCapture={onActivate}
       onFocusCapture={onActivate}
       onKeyDown={(event) => {

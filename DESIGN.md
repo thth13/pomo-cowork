@@ -79,24 +79,31 @@ The homepage replaces the full header with a small fixed Menu disclosure at the 
 right. It reuses Navbar navigation, account actions, notifications, online status and
 theme controls; guests can navigate and sign in. Other routes retain their header.
 The homepage centers a 640px timer. Currently Working is a permanent right-side rail,
-part of the page rather than a floating window. At 1280px and up, symmetric side columns
+part of the page rather than a floating window. At 1440px and up, symmetric side columns
 keep the timer centered independently of the rail. The rail is up to 400px wide and
-640px tall, with a subtle left divider, plain heading and online count. Narrow screens
-place it below the timer in document flow. The empty state is centered in the rail.
+640px tall, with a subtle left divider, plain heading and online count. From 960px the rail sits beside the timer; narrower screens
+place it below the timer in a bounded grid row. On desktop the rail aligns to the right
+edge of the page content without auto margins; equal inline padding centers the empty state.
 Only real sessions appear in the rail and online count; mock participants are removed.
 Coworkers form a vertical list with 40px avatars on the left and names, activities,
 time, status and a remaining-time meter on the right. Time tracking shows elapsed time
 without a fictional remaining-time meter. The current user keeps a tomato edge accent and
-You label. Room pages keep their detailed session cards. The desktop list owns vertical scrolling; mobile uses document scrolling.
+You label. Room pages keep their detailed session cards. The list owns vertical scrolling at every width.
 Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The timer has no
 visible section heading or tagline. A compact inline Current task picker sits directly
 below Start/session actions and above the session-type controls.
-Chat, history, tasks and Your Progress open from a fixed four-item bottom dock; the
-progress button always displays the current localized experience rank. At 719px the
-dock stacks icons above labels. Document owns page scroll, with bottom clearance for
-the dock and safe area. PocketGarden stays commented out rather than deleted.
+Chat, history, tasks and Your Progress open from a fixed vertical dock at the left.
+Its four icon-only buttons have fine separators, localized accessible names and native
+tooltips; the progress tooltip includes the current experience rank. The homepage fills
+100dvh without document scrolling, with safe-area clearance and compact timer spacing
+on small screens. Lists and floating panels scroll internally; exceptionally small
+viewports allow internal timer scrolling to keep controls reachable. Other routes keep
+their existing document scroll. The shared footer is removed.
+PocketGarden stays commented out rather than deleted.
 WorkspaceWindow owns compact, non-modal floating panels (360px wide, at most 480px tall).
-They open along the right edge with a small stagger; multiple panels may stay open.
+By default they open just to the right of the left dock, aligned with its top and
+a small stagger; viewport bounds still apply. Saved positions take precedence.
+Multiple panels may stay open.
 The sage title bar is a pointer/touch drag handle with arrow-key movement; dragging and
 viewport resize keep windows within screen bounds. Click/focus raises a panel. Escape
 closes the focused panel; the dock toggles it. No backdrop, page scroll lock or focus trap.

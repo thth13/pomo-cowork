@@ -18,14 +18,14 @@
 | Forms and settings | SettingsModal, existing .input and .btn | Existing settings workflow; shared visual adaptation |
 | Scrollbar | app/globals.css | Global visible baseline, theme tokens and forced-color fallback |
 | Notifications | useNotifications / NotificationToast | Existing global session feedback |
-| Progress / rank | TodayContribution / lib/ranks.ts / useAuthStore | Dock opens existing progress panel; localized current XP rank stays visible on its button |
+| Progress / rank | TodayContribution / lib/ranks.ts / useAuthStore | Dock opens existing progress panel; localized current XP rank is available in its accessible name and tooltip |
 | Presence surface | ActiveSessions | Homepage uses a permanent right-side rail with flat coworker rows; stacks below the centered timer on narrow screens; room screens retain panel variant |
 | Companion feedback | PocketGarden | Local, stable role=status region; no overlay or focus stealing |
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
 | Locale | I18nProvider | English and Spanish, including new companion copy |
 | Homepage navigation | Navbar compact variant | Shared navigation disclosure; outside click and Escape dismiss; Escape restores trigger focus; guests retain navigation and login |
-| Workspace overlays | WorkspaceWindow | Compact non-modal windows; pointer/touch dragging and resizing with keyboard arrows; viewport bounds; click/focus stacking; Escape/close/dock dismissal; mounted content preserves drafts; position and size persist per window in localStorage and fit the viewport on reopen |
+| Workspace overlays | WorkspaceWindow | Compact non-modal windows; default position beside the left dock, saved positions take precedence; pointer/touch dragging and resizing with keyboard arrows; viewport bounds; click/focus stacking; Escape/close/dock dismissal; mounted content preserves drafts; position and size persist per window in localStorage and fit the viewport on reopen |
 | CRUD / permissions | Existing task, room and auth services/API routes | No workflow or permission changes |
 
 ## Companion rules
@@ -55,9 +55,11 @@ explains the progress will not survive closing the page.
 
 ## Verification
 
-Homepage chat, history, tasks and progress open through WorkspaceWindow from a bottom dock. Multiple windows can remain open;
+Homepage chat, history, tasks and progress open through WorkspaceWindow from an icon-only left dock with separators. Multiple windows can remain open;
 the background stays interactive. Closing from inside restores focus to the opener.
-The retired free-month promotion is no longer mounted in the shared layout.
+The shared footer and retired free-month promotion are no longer mounted in the shared layout.
+The homepage occupies one viewport without document scroll; lists and windows own
+internal overflow, with internal timer overflow as a fallback for very small screens.
 No new remote searches or server mutations other than existing session saves.
 Static review covers completion vs cancellation, break exclusion, cooldown guards,
 no-food guard, persistence fallback, locales and responsive rules. Browser verification

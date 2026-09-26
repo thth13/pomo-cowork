@@ -10,7 +10,6 @@ import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
 import InitialLoader from '@/components/InitialLoader'
-import SiteFooter from '@/components/SiteFooter'
 import FeedbackWidget from '@/components/FeedbackWidget'
 import GtmClient from '@/components/GtmClient'
 import { I18nProvider } from '@/components/I18nProvider'
@@ -102,7 +101,6 @@ export default function RootLayout({
               <InitialLoader />
               <RankUpModal />
               {children}
-              <SiteFooter />
               <div className="hidden sm:block">
                 <FeedbackWidget />
               </div>

@@ -128,7 +128,7 @@ export default function HomePage() {
   // Show loading while checking auth
   if (!mounted || isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+      <div className="workspace-page flex items-center justify-center bg-slate-50 dark:bg-slate-950">
         <div className="flex flex-col items-center gap-3">
           <div className="h-12 w-12 rounded-full border-2 border-slate-200 dark:border-slate-800 border-t-rose-500 animate-spin" />
           <span className="text-xs font-medium uppercase tracking-[0.2em] text-slate-500 dark:text-slate-300">
@@ -140,7 +140,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen garden-page">
+    <div className="workspace-page garden-page">
       <Navbar compact />
       <main className="focus-page-layout">
         <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
@@ -156,6 +156,8 @@ export default function HomePage() {
           <button
             key={id}
             type="button"
+            aria-label={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
+            title={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
             aria-haspopup="dialog"
             aria-controls={`workspace-${id}`}
             aria-expanded={openPanels.includes(id)}
@@ -168,10 +170,6 @@ export default function HomePage() {
             }}
           >
             <Icon size={19} aria-hidden="true" />
-            <span className="workspace-dock-label">
-              <span>{title}</span>
-              {id === 'progress' && <span className="workspace-dock-rank">{copy.yourRank}: {t.todayContribution.ranks[rank.id]}</span>}
-            </span>
           </button>
         ))}
       </div>
