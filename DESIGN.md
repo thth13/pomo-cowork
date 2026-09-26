@@ -77,7 +77,7 @@ Artwork retains its limited palette; the scene background is desaturated in both
 
 The homepage replaces the full header with a small fixed Menu disclosure at the top
 right. It reuses Navbar navigation, account actions, notifications, online status and
-theme controls; guests can navigate and sign in. The leaderboard reuses this compact menu; other routes retain their header.
+theme controls; guests can navigate and sign in. The leaderboard and statistics reuse this compact menu; other routes retain their header.
 At widths up to 719px, this same menu moves to the top left and includes the five
 workspace tools with icons and localized labels. The desktop dock is hidden, and
 the timer uses the full available width with safe-area padding. Selecting a tool
@@ -191,3 +191,16 @@ The date-range picker expands within the period panel; it uses the existing DayP
 with token-derived colors and square selection geometry. `app/users/leaderboard.css`
 owns route-specific composition; all colors and typography derive from existing global
 tokens. `lib/i18n/leaderboard.ts` owns new English/Spanish copy through I18nProvider.
+
+## Personal statistics
+
+`/stats` shares the homepage's garden background, compact Navbar and pixel display
+face. It remains a document-scrolling route. A single divided metric strip places
+total focus time on a sage surface; paper analytics panels use fine borders and
+hard offset shadows. Charts use existing pixel tokens, square columns and restrained
+tomato/sage accents; the annual heatmap grows from paper to sage in five levels.
+`app/stats/stats.css` owns route composition, responsive stacking and chart surfaces.
+Highcharts uses runtime CSS colors so charts follow both themes. Existing statistics
+API, period navigation, task sessions, LatestActivity and Pro access remain owners
+of their workflows. The locked preview is bounded and inert for keyboard users.
+The year selector retains its native operating-system popup.

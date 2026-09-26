@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
-import { useThemeStore } from '@/store/useThemeStore'
+import Link from 'next/link'
+import './stats.css'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
@@ -116,17 +117,10 @@ interface HeatmapTooltip {
   y: number
 }
 
-const heatmapCellClasses = [
-  'bg-[#E7ECF3] border border-[#D7DFEA]',
-  'bg-[#CFE0FF] border border-[#B8D0FF]',
-  'bg-[#9EC0FF] border border-[#86B1FF]',
-  'bg-[#5D95FF] border border-[#4B85F1]',
-  'bg-[#2563EB] border border-[#1D4ED8] shadow-[0_8px_18px_rgba(37,99,235,0.24)]'
-]
+const heatmapCellClasses = Array.from({ length: 5 }, (_, level) => `stats-heat-cell stats-heat-${level}`)
 
 export default function StatsPage() {
   const { isAuthenticated, token, isLoading: authLoading, user } = useAuthStore()
-  const { theme } = useThemeStore()
   const { language, t } = useI18n()
   const locale = language === 'es' ? 'es-ES' : 'en-US'
   const heatmapDayLabels = language === 'es'
@@ -159,7 +153,6 @@ export default function StatsPage() {
   const timelineOffsetRef = useRef(timelineOffset)
   const activityDropdownRef = useRef<HTMLDivElement>(null)
   
-  const isDark = theme === 'dark'
   const isPro = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
   const shouldPromptRegister = !isAuthenticated || user?.isAnonymous
 
@@ -284,7 +277,7 @@ export default function StatsPage() {
   }
 
   const weeklyChartOptions: Highcharts.Options = {
-    chart: { type: 'column', backgroundColor: 'transparent' },
+    chart: { type: 'column', backgroundColor: 'transparent', style: { fontFamily: 'Inter, system-ui, sans-serif' }, animation: false },
     title: { text: '' },
     credits: { enabled: false },
     xAxis: {
@@ -305,34 +298,40 @@ export default function StatsPage() {
           }
         }
       }) || [],
-      lineColor: isDark ? '#475569' : '#e5e7eb',
-      tickColor: isDark ? '#475569' : '#e5e7eb',
+      lineColor: 'var(--pixel-line)',
+      tickColor: 'var(--pixel-line)',
       labels: {
         rotation: 0,
         step: activityPeriod === '30' ? 2 : 1,
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+        style: { color: 'var(--pixel-muted)' }
       }
     },
     yAxis: {
       title: { 
         text: t.stats.hours,
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+        style: { color: 'var(--pixel-muted)' }
       },
-      gridLineColor: isDark ? '#334155' : '#f3f4f6',
+      gridLineColor: 'var(--pixel-screen)',
       labels: {
         formatter: function() { return formatDuration((this.value as number) * 60) },
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+        style: { color: 'var(--pixel-muted)' }
       }
     },
     legend: { enabled: false },
     tooltip: {
+      backgroundColor: 'var(--pixel-paper)',
+      borderColor: 'var(--pixel-line)',
+      borderRadius: 2,
+      shadow: false,
+      style: { color: 'var(--pixel-ink)' },
       formatter: function() {
         return '<b>' + formatDuration((this.y as number) * 60) + ` ${t.stats.hoursLowercase}</b>`
       }
     },
     plotOptions: {
+      series: { animation: false },
       column: {
-        borderRadius: 4,
+        borderRadius: 0,
         pointPadding: 0.1,
         groupPadding: 0.1
       }
@@ -341,12 +340,12 @@ export default function StatsPage() {
       type: 'column',
       name: t.stats.hours,
       data: stats?.weeklyActivity?.map(s => parseFloat((s.minutes / 60).toFixed(4))) || [],
-      color: '#3b82f6'
+      color: 'var(--pixel-accent)'
     }]
   }
 
   const monthlyChartOptions: Highcharts.Options = {
-    chart: { type: 'line', backgroundColor: 'transparent' },
+    chart: { type: 'line', backgroundColor: 'transparent', style: { fontFamily: 'Inter, system-ui, sans-serif' }, animation: false },
     title: { text: '' },
     credits: { enabled: false },
     xAxis: {
@@ -354,30 +353,36 @@ export default function StatsPage() {
         const date = new Date(2026, m.monthIndex, 1)
         return date.toLocaleDateString(locale, { month: 'short' })
       }) || Array.from({ length: 12 }, (_, month) => new Date(2026, month, 1).toLocaleDateString(locale, { month: 'short' })),
-      lineColor: isDark ? '#475569' : '#e5e7eb',
-      tickColor: isDark ? '#475569' : '#e5e7eb',
+      lineColor: 'var(--pixel-line)',
+      tickColor: 'var(--pixel-line)',
       labels: {
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+        style: { color: 'var(--pixel-muted)' }
       }
     },
     yAxis: {
       title: { 
         text: t.stats.hours,
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+        style: { color: 'var(--pixel-muted)' }
       },
-      gridLineColor: isDark ? '#334155' : '#f3f4f6',
+      gridLineColor: 'var(--pixel-screen)',
       labels: {
         formatter: function() { return formatDuration((this.value as number) * 60) },
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+        style: { color: 'var(--pixel-muted)' }
       }
     },
     legend: { enabled: false },
     tooltip: {
+      backgroundColor: 'var(--pixel-paper)',
+      borderColor: 'var(--pixel-line)',
+      borderRadius: 2,
+      shadow: false,
+      style: { color: 'var(--pixel-ink)' },
       formatter: function() {
         return '<b>' + formatDuration((this.y as number) * 60) + ` ${t.stats.hoursLowercase}</b>`
       }
     },
     plotOptions: {
+      series: { animation: false },
       line: {
         marker: {
           enabled: true,
@@ -390,11 +395,11 @@ export default function StatsPage() {
       type: 'line',
       name: t.stats.hoursPerMonth,
       data: stats?.monthlyBreakdown?.map(m => parseFloat((m.minutes / 60).toFixed(4))) || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-      color: '#3b82f6'
+      color: 'var(--pixel-accent)'
     }]
   }
 
-  const taskTimePalette = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316']
+  const taskTimePalette = ['var(--pixel-accent)', 'var(--pixel-growth)', 'var(--pixel-muted)', 'var(--pixel-line)', 'var(--pixel-tomato-ink)', 'var(--pixel-shadow)']
   const taskTimeDistribution = (stats?.taskTimeDistribution || []).filter(item => item.minutes > 0)
   const totalTaskTimeMinutes = taskTimeDistribution.reduce((sum, item) => sum + item.minutes, 0)
   const sortedTaskTimeDistribution = [...taskTimeDistribution].sort((a, b) => b.minutes - a.minutes)
@@ -422,20 +427,26 @@ export default function StatsPage() {
         minutes: otherMinutes,
         hoursLabel: formatHours(otherMinutes),
         percentage: totalTaskTimeMinutes > 0 ? (otherMinutes / totalTaskTimeMinutes) * 100 : 0,
-        color: '#94a3b8'
+        color: 'var(--pixel-muted)'
       }
     ]
   })()
 
   const taskTimeChartOptions: Highcharts.Options = {
-    chart: { type: 'pie', backgroundColor: 'transparent' },
+    chart: { type: 'pie', backgroundColor: 'transparent', style: { fontFamily: 'Inter, system-ui, sans-serif' }, animation: false },
     title: { text: '' },
     credits: { enabled: false },
     tooltip: {
+      backgroundColor: 'var(--pixel-paper)',
+      borderColor: 'var(--pixel-line)',
+      borderRadius: 2,
+      shadow: false,
+      style: { color: 'var(--pixel-ink)' },
       pointFormat: '<b>{point.options.hoursLabel}</b> ({point.percentage:.1f}%)'
     },
     legend: { enabled: false },
     plotOptions: {
+      series: { animation: false },
       pie: {
         innerSize: '55%',
         borderWidth: 0,
@@ -616,13 +627,13 @@ export default function StatsPage() {
   const getSessionColor = (type: string) => {
     switch (type) {
       case 'WORK':
-        return 'bg-red-500'
+        return 'bg-[var(--pixel-accent)]'
       case 'TIME_TRACKING':
-        return 'bg-indigo-500'
+        return 'bg-[var(--pixel-growth)]'
       case 'SHORT_BREAK':
         return 'bg-emerald-500'
       case 'LONG_BREAK':
-        return 'bg-blue-500'
+        return 'bg-[var(--pixel-tomato)]'
       default:
         return 'bg-slate-500'
     }
@@ -659,6 +670,7 @@ export default function StatsPage() {
     setActivityOffset(0)
     activityOffsetRef.current = 0
     setActivityDropdownOpen(false)
+    activityDropdownRef.current?.querySelector('button')?.focus()
     fetchStats({ mode: hasFetchedOnce ? 'activity' : 'full', period, activityOffset: 0 })
   }
 
@@ -765,7 +777,7 @@ export default function StatsPage() {
   }
 
   const SkeletonCard = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 animate-pulse">
+    <div className="stats-panel animate-pulse">
       <div className="flex items-center justify-between mb-4">
         <div className="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-xl"></div>
         <div className="h-4 w-12 bg-gray-200 dark:bg-slate-700 rounded"></div>
@@ -776,7 +788,7 @@ export default function StatsPage() {
   )
 
   const SkeletonChart = () => (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 animate-pulse">
+    <div className="stats-panel animate-pulse">
       <div className="h-6 w-40 bg-gray-200 dark:bg-slate-700 rounded mb-6"></div>
       <div className="h-64 bg-gray-200 dark:bg-slate-700 rounded"></div>
     </div>
@@ -784,7 +796,7 @@ export default function StatsPage() {
 
   const ProPaywall = ({ children }: { children?: ReactNode }) => (
     <div className="relative mb-8">
-      <div className="pointer-events-none select-none opacity-25 blur-[10px] saturate-50">
+      <div aria-hidden="true" ref={(node) => { node?.setAttribute('inert', '') }} className="stats-locked-preview pointer-events-none select-none opacity-25 blur-[10px] saturate-50">
         {children ?? (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -803,8 +815,8 @@ export default function StatsPage() {
       </div>
 
       <div className="absolute inset-0 flex items-start justify-center px-4 pt-4 sm:pt-6">
-        <div className="w-full max-w-xl bg-white/90 dark:bg-slate-900/70 border border-gray-200 dark:border-slate-700 rounded-2xl p-6 sm:p-8 backdrop-blur-md shadow-xl">
-          <div className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 px-3 py-1 text-xs font-semibold mb-4 shadow-lg">
+        <div className="stats-panel stats-pro-card w-full max-w-xl">
+          <div className="stats-pro-badge">
             PRO
           </div>
           <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -845,22 +857,22 @@ export default function StatsPage() {
       aria-busy={heatmapLoading}
     >
       {heatmapLoading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[24px] bg-white/70 backdrop-blur-sm">
-          <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-[24px] bg-[var(--pixel-paper)]/80 backdrop-blur-sm">
+          <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
       {heatmapTooltip && (
         <div
-          className="pointer-events-none fixed z-[70] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.14)]"
-          style={{ left: heatmapTooltip.x + 12, top: heatmapTooltip.y - 36 }}
+          className="pointer-events-none fixed z-[70] stats-tooltip px-3 py-1.5 text-xs font-medium"
+          style={{ left: `clamp(8px, ${heatmapTooltip.x + 12}px, calc(100vw - 240px))`, top: Math.max(8, heatmapTooltip.y - 36), maxWidth: '232px' }}
         >
           {heatmapTooltip.label}
         </div>
       )}
 
-      <div className="relative rounded-2xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4 sm:p-6 shadow-sm">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="stats-panel stats-heatmap relative">
+        <div className="mb-4 flex flex-wrap gap-4 items-center justify-between">
           <div className="text-sm font-semibold text-gray-900 dark:text-white">
             {totalHeatmapHours}:{totalHeatmapRemainderList} {t.stats.totalHours} {resolvedHeatmapRange === 'rolling' ? t.stats.inTheLast365Days : `${t.stats.inPeriod} ${resolvedHeatmapRange}`}
           </div>
@@ -933,12 +945,14 @@ export default function StatsPage() {
                             key={`${column.week}-${dayIndex}`}
                             title={label}
                             aria-label={label}
+                            onClick={(event) => showHeatmapTooltip(label, event)}
+                            onKeyDown={(event) => { if (event.key === 'Escape') hideHeatmapTooltip() }}
                             onMouseEnter={(event) => showHeatmapTooltip(label, event)}
                             onMouseMove={(event) => showHeatmapTooltip(label, event)}
                             onMouseLeave={hideHeatmapTooltip}
                             onFocus={(event) => showHeatmapTooltipFromFocus(label, event)}
                             onBlur={hideHeatmapTooltip}
-                            className={`h-[16px] w-[16px] md:h-[17px] md:w-[17px] rounded-[4px] transition-transform duration-150 hover:scale-110 focus:scale-110 focus:outline-none ${heatmapCellClasses[intensity]}`}
+                            className={`h-[16px] w-[16px] md:h-[17px] md:w-[17px]  ${heatmapCellClasses[intensity]}`}
                           />
                         )
                       })}
@@ -952,33 +966,33 @@ export default function StatsPage() {
 
         <div className="mt-4 flex justify-end text-xs text-gray-500 dark:text-slate-400">
           <div className="flex items-center gap-2">
-            <span>Less</span>
+            <span>{language === 'es' ? 'Menos' : 'Less'}</span>
             <div className="flex items-center gap-[3px]">
               {heatmapCellClasses.map((cellClass, index) => (
                 <div key={index} className={`h-[15px] w-[15px] rounded-[3px] md:h-[16px] md:w-[16px] ${cellClass}`} />
               ))}
             </div>
-            <span>More</span>
+            <span>{language === 'es' ? 'Más' : 'More'}</span>
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 border-t border-slate-100 pt-4 sm:grid-cols-3">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-center">
-            <div className="text-2xl font-bold text-slate-900">{formatDuration(heatmapBestDay?.minutes || 0)}</div>
-            <div className="text-sm font-medium text-slate-700">{t.stats.bestDay}</div>
-            <div className="text-xs text-slate-500">{t.stats.hours}</div>
+        <div className="mt-4 grid gap-3 border-t border-[var(--pixel-line)] pt-4 sm:grid-cols-3">
+          <div className="stats-heat-summary px-4 py-3 text-center">
+            <div className="stats-small-value">{formatDuration(heatmapBestDay?.minutes || 0)}</div>
+            <div className="text-sm font-medium text-[var(--pixel-ink)]">{t.stats.bestDay}</div>
+            <div className="text-xs text-[var(--pixel-muted)]">{t.stats.hours}</div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-center">
-            <div className="text-2xl font-bold text-slate-900">{activeHeatmapDays.length}</div>
-            <div className="text-sm font-medium text-slate-700">Active Days</div>
-            <div className="text-xs text-slate-500">{heatmapRangeCaption}</div>
+          <div className="stats-heat-summary px-4 py-3 text-center">
+            <div className="stats-small-value">{activeHeatmapDays.length}</div>
+            <div className="text-sm font-medium text-[var(--pixel-ink)]">{language === 'es' ? 'Días activos' : 'Active Days'}</div>
+            <div className="text-xs text-[var(--pixel-muted)]">{heatmapRangeCaption}</div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3 text-center">
-            <div className="text-2xl font-bold text-slate-900">{heatmapCurrentStreak}</div>
-            <div className="text-sm font-medium text-slate-700">Current Streak</div>
-            <div className="text-xs text-slate-500">days in a row</div>
+          <div className="stats-heat-summary px-4 py-3 text-center">
+            <div className="stats-small-value">{heatmapCurrentStreak}</div>
+            <div className="text-sm font-medium text-[var(--pixel-ink)]">{language === 'es' ? 'Racha actual' : 'Current Streak'}</div>
+            <div className="text-xs text-[var(--pixel-muted)]">{language === 'es' ? 'días consecutivos' : 'days in a row'}</div>
           </div>
         </div>
       </div>
@@ -988,19 +1002,23 @@ export default function StatsPage() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
-      <Navbar />
+    <div className="garden-page stats-page">
+      <Navbar compact />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">My Statistics</h1>
-          <p className="text-gray-600 dark:text-slate-300">Track your productivity and progress</p>
-        </div>
+      <main className="stats-layout">
+        <header className="stats-intro">
+          <h1>{language === 'es' ? 'Mis estadísticas' : 'My statistics'}</h1>
+          <Link href="/" className="stats-timer-link">
+            <FontAwesomeIcon icon={faStopwatch} aria-hidden="true" />
+            {language === 'es' ? 'Volver al temporizador' : 'Back to timer'}
+            <span aria-hidden="true">↗</span>
+          </Link>
+        </header>
 
         {loading ? (
           <>
             {/* Skeleton Overview Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+            <div className="stats-overview stats-overview-loading">
               <SkeletonCard />
               <SkeletonCard />
               <SkeletonCard />
@@ -1032,61 +1050,21 @@ export default function StatsPage() {
           </>
         ) : (
           <>
-            {/* Overview Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 sm:gap-6 mb-8">
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center">
-                    <FontAwesomeIcon icon={faClock} className="text-red-600 text-lg" />
-                  </div>
+            <section className="stats-overview" aria-label={language === 'es' ? 'Resumen' : 'Overview'}>
+              {[
+                { icon: faStopwatch, value: `${totalHours}h ${totalMinutesRemainder}m`, label: language === 'es' ? 'Tiempo de enfoque total' : 'Total focus time' },
+                { icon: faClock, value: totalPomodoros.toLocaleString(locale), label: language === 'es' ? 'Pomodoros completados' : 'Total pomodoros' },
+                { icon: faFire, value: `${currentStreak}`, label: language === 'es' ? 'Días consecutivos' : 'Day streak' },
+                { icon: faCalendarDays, value: `${avgTimePerDay}m`, label: language === 'es' ? 'Media por día activo' : 'Per active day' },
+                { icon: faCalendarCheck, value: `${focusTimeThisMonth}h ${focusTimeThisMonthMinutes}m`, label: t.stats.thisMonth },
+              ].map((metric) => (
+                <div className="stats-metric" key={metric.label}>
+                  <FontAwesomeIcon icon={metric.icon} aria-hidden="true" />
+                  <div className="stats-metric-value">{metric.value}</div>
+                  <div className="stats-metric-label">{metric.label}</div>
                 </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalPomodoros.toLocaleString()}</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Total Pomodoros</div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <FontAwesomeIcon icon={faStopwatch} className="text-blue-600 text-lg" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{totalHours}h {totalMinutesRemainder}m</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Total Focus Time</div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-orange-100 rounded-xl flex items-center justify-center">
-                    <FontAwesomeIcon icon={faCalendarCheck} className="text-orange-600 text-lg" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{currentStreak}</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Current Streak</div>
-                <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">days in a row</div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
-                    <FontAwesomeIcon icon={faCalendarDays} className="text-purple-600 text-lg" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{avgTimePerDay}m</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Average Daily Time</div>
-                <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">On active days</div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 hover:shadow-lg transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
-                    <FontAwesomeIcon icon={faFire} className="text-green-600 text-lg" />
-                  </div>
-                </div>
-                <div className="text-2xl font-bold text-gray-900 dark:text-white mb-1">{focusTimeThisMonth}h {focusTimeThisMonthMinutes}m</div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">Focus Time</div>
-                <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">This month</div>
-              </div>
-            </div>
+              ))}
+            </section>
 
             {!isPro ? (
               <ProPaywall>
@@ -1116,16 +1094,16 @@ export default function StatsPage() {
                         onChange={() => fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })}
                       />
 
-                      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 relative" aria-busy={timelineLoading}>
+                      <div className="stats-panel relative" aria-busy={timelineLoading}>
                         {timelineLoading && (
                           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                            <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            <div className="h-4 w-4 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
                           </div>
                         )}
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
                           <div className="flex flex-col gap-1">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">Last 7 Days</h3>
-                            <p className="text-xs text-gray-500 dark:text-slate-400">Recent focus timelines</p>
+                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Últimos 7 días' : 'Last 7 Days'}</h3>
+                            <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Sesiones de enfoque recientes' : 'Recent focus timelines'}</p>
                           </div>
                           <div className="flex flex-wrap items-center gap-3">
                             <button
@@ -1165,7 +1143,7 @@ export default function StatsPage() {
                               const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
                               return (
                                 <div key={day.date} className="flex items-center">
-                                  <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-[260px]">
+                                  <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-0">
                                     <div className="pointer-events-none absolute inset-0">
                                       {Array.from({ length: 25 }).map((_, idx) => {
                                         // Пропускаем первую (0) и последнюю (24) линии
@@ -1231,12 +1209,12 @@ export default function StatsPage() {
                     {/* Weekly Chart */}
                     <div className="mb-8">
                       <div
-                        className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6"
+                        className="relative stats-panel"
                         aria-busy={activityLoading}
                       >
                         {activityLoading && (
                           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                            <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
                           </div>
                         )}
                         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
@@ -1250,7 +1228,7 @@ export default function StatsPage() {
                               onClick={() => handleActivityPeriodChange('7')}
                               className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                                 activityPeriod === '7'
-                                  ? 'text-white bg-blue-500'
+                                  ? 'text-white bg-[var(--pixel-tomato)]'
                                   : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                               }`}
                             >
@@ -1260,7 +1238,7 @@ export default function StatsPage() {
                               onClick={() => handleActivityPeriodChange('30')}
                               className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                                 activityPeriod === '30'
-                                  ? 'text-white bg-blue-500'
+                                  ? 'text-white bg-[var(--pixel-tomato)]'
                                   : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                               }`}
                             >
@@ -1270,7 +1248,7 @@ export default function StatsPage() {
                               onClick={() => handleActivityPeriodChange('365')}
                               className={`text-xs px-3 py-1 rounded-lg transition-colors ${
                                 activityPeriod === '365'
-                                  ? 'text-white bg-blue-500'
+                                  ? 'text-white bg-[var(--pixel-tomato)]'
                                   : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
                               }`}
                             >
@@ -1286,14 +1264,14 @@ export default function StatsPage() {
 
                     {/* Productivity Trends & Monthly Breakdown */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
-                      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Productivity Trends</h3>
+                      <div className="stats-panel">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Tendencias de productividad' : 'Productivity Trends'}</h3>
 
                         <div className="space-y-4">
                           <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                                <FontAwesomeIcon icon={faArrowUp} className="text-green-600 dark:text-green-400 text-sm" />
+                              <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                                <FontAwesomeIcon icon={faArrowUp} className="text-[var(--pixel-growth)] text-sm" />
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestTime}</div>
@@ -1310,8 +1288,8 @@ export default function StatsPage() {
 
                           <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                                <FontAwesomeIcon icon={faCalendar} className="text-blue-600 dark:text-blue-400 text-sm" />
+                              <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                                <FontAwesomeIcon icon={faCalendar} className="text-[var(--pixel-growth)] text-sm" />
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestDay}</div>
@@ -1326,8 +1304,8 @@ export default function StatsPage() {
 
                           <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                                <FontAwesomeIcon icon={faBullseye} className="text-purple-600 dark:text-purple-400 text-sm" />
+                              <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                                <FontAwesomeIcon icon={faBullseye} className="text-[var(--pixel-growth)] text-sm" />
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-gray-900 dark:text-white">Focus Mode</div>
@@ -1342,8 +1320,8 @@ export default function StatsPage() {
 
                           <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                             <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                                <FontAwesomeIcon icon={faTasks} className="text-orange-600 dark:text-orange-400 text-sm" />
+                              <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                                <FontAwesomeIcon icon={faTasks} className="text-[var(--pixel-growth)] text-sm" />
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.completedTasks}</div>
@@ -1358,17 +1336,17 @@ export default function StatsPage() {
                         </div>
                       </div>
 
-                      <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Monthly Breakdown</h3>
+                      <div className="stats-panel">
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Resumen mensual' : 'Monthly Breakdown'}</h3>
                         <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
                       </div>
                     </div>
 
                     {/* Task Statistics */}
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                    <div className="stats-panel">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Task Time Distribution</h3>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">By total focus minutes</p>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Tiempo por tarea' : 'Task Time Distribution'}</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Por minutos de enfoque totales' : 'By total focus minutes'}</p>
                       </div>
 
                       {taskTimeDisplayData.length === 0 ? (
@@ -1428,16 +1406,16 @@ export default function StatsPage() {
                     onChange={() => fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })}
                   />
 
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 relative" aria-busy={timelineLoading}>
+                  <div className="stats-panel relative" aria-busy={timelineLoading}>
                     {timelineLoading && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                        <div className="h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="h-4 w-4 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
                       <div className="flex flex-col gap-1">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">Last 7 Days</h3>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">Recent focus timelines</p>
+                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Últimos 7 días' : 'Last 7 Days'}</h3>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Sesiones de enfoque recientes' : 'Recent focus timelines'}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-3">
                         <button
@@ -1484,7 +1462,7 @@ export default function StatsPage() {
                               <div className="shrink-0 text-right text-xs font-semibold text-gray-900 dark:text-white">
                                 {dayLabel}
                               </div>
-                              <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-[260px]">
+                              <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-0">
                                 <div className="pointer-events-none absolute inset-0">
                                   {Array.from({ length: 25 }).map((_, idx) => {
                                     // Пропускаем первую (0) и последнюю (24) линии
@@ -1531,7 +1509,7 @@ export default function StatsPage() {
 
                     <div className="mt-2 flex items-start gap-2">
                       <div className="w-12 shrink-0" />
-                      <div className="relative flex-1 h-5 text-[11px] text-gray-500 dark:text-slate-400 min-w-[260px]">
+                      <div className="relative flex-1 h-5 text-[11px] text-gray-500 dark:text-slate-400 min-w-0">
                         {timeLabels.map((label, idx) => {
                           const left = (label / 24) * 100
                           const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
@@ -1553,42 +1531,50 @@ export default function StatsPage() {
                 {/* Weekly Chart */}
                 <div className="mb-8">
                   <div
-                    className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6"
+                    className="relative stats-panel"
                     aria-busy={activityLoading}
                   >
                     {activityLoading && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                        <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                        <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
                       </div>
                     )}
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-                      <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="flex w-full sm:w-auto items-center gap-2 sm:gap-3">
                         <button
                           type="button"
                           onClick={() => handleActivityOffsetChange('prev')}
-                          className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
                           aria-label={t.stats.previousPeriod}
                         >
                           &lt;
                         </button>
 
-                        <div className="relative" ref={activityDropdownRef}>
+                        <div className="relative min-w-0 flex-1 sm:flex-none" ref={activityDropdownRef}
+                          onKeyDown={(event) => {
+                            if (event.key === 'Escape') {
+                              setActivityDropdownOpen(false)
+                              activityDropdownRef.current?.querySelector('button')?.focus()
+                            }
+                          }}>
                           <button
                             type="button"
                             onClick={() => setActivityDropdownOpen(prev => !prev)}
-                            className="inline-flex h-9 min-w-[190px] items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 px-4 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-center"
+                            aria-expanded={activityDropdownOpen}
+                            aria-controls="stats-activity-period"
+                            className="inline-flex min-h-10 w-full sm:min-w-[190px] items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 px-4 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-center"
                           >
                             {getActivityRangeLabel() || getActivityPeriodLabel()}
                           </button>
 
                           {activityDropdownOpen && (
-                            <div className="absolute top-full left-0 mt-1 z-20 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[160px]">
+                            <div id="stats-activity-period" className="absolute top-full left-0 w-full mt-1 z-20 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[160px]">
                               <button
                                 type="button"
                                 onClick={() => handleActivityPeriodChange('7')}
                                 className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                                   activityPeriod === '7' && activityOffset === 0
-                                    ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 font-medium'
+                                    ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
                                     : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                                 }`}
                               >
@@ -1599,7 +1585,7 @@ export default function StatsPage() {
                                 onClick={() => handleActivityPeriodChange('30')}
                                 className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                                   activityPeriod === '30' && activityOffset === 0
-                                    ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 font-medium'
+                                    ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
                                     : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                                 }`}
                               >
@@ -1610,7 +1596,7 @@ export default function StatsPage() {
                                 onClick={() => handleActivityPeriodChange('365')}
                                 className={`w-full text-left px-4 py-2 text-sm transition-colors ${
                                   activityPeriod === '365' && activityOffset === 0
-                                    ? 'bg-pink-50 dark:bg-pink-900/20 text-pink-600 dark:text-pink-400 font-medium'
+                                    ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
                                     : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
                                 }`}
                               >
@@ -1624,7 +1610,7 @@ export default function StatsPage() {
                           type="button"
                           onClick={() => handleActivityOffsetChange('next')}
                           disabled={activityOffset === 0}
-                          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
+                          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
                             activityOffset === 0
                               ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
                               : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
@@ -1652,14 +1638,14 @@ export default function StatsPage() {
 
                 {/* Productivity Trends & Monthly Breakdown */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Productivity Trends</h3>
+                  <div className="stats-panel">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Tendencias de productividad' : 'Productivity Trends'}</h3>
 
                     <div className="space-y-4">
                       <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
-                            <FontAwesomeIcon icon={faArrowUp} className="text-green-600 dark:text-green-400 text-sm" />
+                          <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                            <FontAwesomeIcon icon={faArrowUp} className="text-[var(--pixel-growth)] text-sm" />
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestTime}</div>
@@ -1676,8 +1662,8 @@ export default function StatsPage() {
 
                       <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                            <FontAwesomeIcon icon={faCalendar} className="text-blue-600 dark:text-blue-400 text-sm" />
+                          <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                            <FontAwesomeIcon icon={faCalendar} className="text-[var(--pixel-growth)] text-sm" />
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestDay}</div>
@@ -1692,8 +1678,8 @@ export default function StatsPage() {
 
                       <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
-                            <FontAwesomeIcon icon={faBullseye} className="text-purple-600 dark:text-purple-400 text-sm" />
+                          <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                            <FontAwesomeIcon icon={faBullseye} className="text-[var(--pixel-growth)] text-sm" />
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900 dark:text-white">Focus Mode</div>
@@ -1708,8 +1694,8 @@ export default function StatsPage() {
 
                       <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
                         <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900/30 rounded-lg flex items-center justify-center">
-                            <FontAwesomeIcon icon={faTasks} className="text-orange-600 dark:text-orange-400 text-sm" />
+                          <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                            <FontAwesomeIcon icon={faTasks} className="text-[var(--pixel-growth)] text-sm" />
                           </div>
                           <div>
                             <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.completedTasks}</div>
@@ -1724,17 +1710,17 @@ export default function StatsPage() {
                     </div>
                   </div>
 
-                  <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Monthly Breakdown</h3>
+                  <div className="stats-panel">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Resumen mensual' : 'Monthly Breakdown'}</h3>
                     <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
                   </div>
                 </div>
 
                 {/* Task Statistics */}
-                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                <div className="stats-panel">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Task Time Distribution</h3>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">By total focus minutes</p>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Tiempo por tarea' : 'Task Time Distribution'}</h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Por minutos de enfoque totales' : 'By total focus minutes'}</p>
                   </div>
 
                   {taskTimeDisplayData.length === 0 ? (
@@ -1767,15 +1753,15 @@ export default function StatsPage() {
                 </div>
 
                 {/* Task Sessions Explorer */}
-                <div className="mt-8 bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6">
+                <div className="mt-8 stats-panel">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Task Sessions</h3>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">Select a task to view its sessions</p>
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Sesiones por tarea' : 'Task Sessions'}</h3>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Selecciona una tarea para ver sus sesiones' : 'Select a task to view its sessions'}</p>
                   </div>
 
                   {taskSessionsListLoading ? (
                     <div className="flex items-center justify-center py-12">
-                      <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                      <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
                     </div>
                   ) : taskSessionsList.length === 0 ? (
                     <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
@@ -1797,7 +1783,7 @@ export default function StatsPage() {
                               onClick={() => handleSelectTaskForSessions(task.title)}
                               className={`flex flex-col items-start rounded-xl px-3 py-2.5 text-left transition-colors ${
                                 isSelected
-                                  ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-300'
+                                  ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)]'
                                   : 'hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200'
                               }`}
                             >
@@ -1818,7 +1804,7 @@ export default function StatsPage() {
                           </div>
                         ) : taskSessionsLoading ? (
                           <div className="flex items-center justify-center py-12">
-                            <div className="h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                            <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
                           </div>
                         ) : taskSessions.length === 0 ? (
                           <div className="flex items-center justify-center py-12 text-sm text-gray-400 dark:text-slate-500">
@@ -1889,16 +1875,16 @@ export default function StatsPage() {
             </div>
 
             <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FontAwesomeIcon icon={faFire} className="text-orange-600 dark:text-orange-400 text-2xl" />
+              <div className="w-16 h-16 bg-[var(--pixel-screen)] rounded-full flex items-center justify-center mx-auto mb-3">
+                <FontAwesomeIcon icon={faFire} className="text-[var(--pixel-growth)] text-2xl" />
               </div>
               <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">Week Streak</div>
               <div className="text-xs text-gray-500 dark:text-slate-400">Unlocked</div>
             </div>
 
             <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center hover:shadow-lg transition-all">
-              <div className="w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
-                <FontAwesomeIcon icon={faCrown} className="text-purple-600 dark:text-purple-400 text-2xl" />
+              <div className="w-16 h-16 bg-[var(--pixel-screen)] rounded-full flex items-center justify-center mx-auto mb-3">
+                <FontAwesomeIcon icon={faCrown} className="text-[var(--pixel-growth)] text-2xl" />
               </div>
               <div className="text-sm font-medium text-gray-900 dark:text-white mb-1">1000 Pomodoros</div>
               <div className="text-xs text-gray-500 dark:text-slate-400">Unlocked</div>

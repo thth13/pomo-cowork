@@ -93,3 +93,13 @@ hide stale totals and personal ranking. Profile navigation uses native links to
 `/user/[id]`; search has an explicitly labeled clear action returning input focus.
 English/Spanish messages and numeric/date formatting follow I18nProvider; shared
 Navbar, buttons, focus and scrollbar tokens retain their canonical owners.
+
+## Statistics presentation
+
+`app/stats/page.tsx` retains `/api/stats` and `/api/tasks/sessions` as its data
+owners, with existing Pro gating and AuthModal/PaywallModal flows. Navbar compact
+variant owns navigation, LatestActivity owns session history. The native year select
+keeps platform-owned popup behavior. The existing activity-period disclosure uses
+buttons with expanded state, Escape dismissal and trigger focus restoration.
+The annual heatmap preserves keyboard focus and date/value labels. Route styles
+use global theme and scrollbar tokens; page scrolling remains natural.
