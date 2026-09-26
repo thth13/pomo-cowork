@@ -17,6 +17,7 @@ import EmojiPicker from 'emoji-picker-react'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { useI18n } from './I18nProvider'
 import RankAvatarFrame from './RankAvatarFrame'
+import MockWorkingSessions, { MOCK_WORKER_COUNT } from './MockWorkingSessions'
 
 interface TomatoAnimation {
   id: string
@@ -264,11 +265,27 @@ function SessionCard({
               <Image src={session.avatarUrl} alt="" width={64} height={64} className="h-full w-full object-cover" />
             ) : session.username.charAt(0).toUpperCase()}
           </span>
-          <span className="coworker-tile-name">{session.username}</span>
-          <span className="coworker-tile-time">{formatTime(elapsedSeconds)}</span>
-          <span className="coworker-tile-status">
-            <span className={`coworker-tile-dot ${statusDotClass}`} aria-hidden="true" />
-            <span>{statusLabel}</span>
+          <span className="coworker-tile-details">
+            <span className="coworker-tile-name">{session.username}</span>
+            <span className="coworker-tile-task">{session.task || getSessionTypeLabel(session.type)}</span>
+            <span className="coworker-tile-time">{formatTime(elapsedSeconds)}</span>
+            <span className="coworker-tile-status">
+              <span className={`coworker-tile-dot ${statusDotClass}`} aria-hidden="true" />
+              <span>{statusLabel}</span>
+            </span>
+            {!isTimeTracking && (
+              <span
+                className="coworker-tile-progress"
+                role="progressbar"
+                aria-label={`${session.username}: ${t.activeSessions.remaining}`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={Math.round(progressPercent)}
+                aria-valuetext={`${formatTime(currentTimeRemaining)} ${t.activeSessions.remaining}`}
+              >
+                <span style={{ width: `${progressPercent}%` }} />
+              </span>
+            )}
           </span>
           {isCurrentUser && <span className="coworker-tile-you">{t.activeSessions.you}</span>}
         </Link>
@@ -822,9 +839,11 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
       ]
     : allActiveSessions
 
-  if (allActiveSessions.length === 0) {
+  const mockWorkerCount = variant === 'page' ? MOCK_WORKER_COUNT : 0
+
+  if (allActiveSessions.length === 0 && mockWorkerCount === 0) {
     return (
-      <div className={surfaceClassName}>
+      <div className={`${surfaceClassName}${variant === 'page' ? ' focus-page-community-empty' : ''}`}>
         <div className={variant === 'page' ? 'coworker-strip-empty' : 'text-center py-8'}>
           <User className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-300 mb-2">
@@ -890,7 +909,7 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{t.activeSessions.title}</h2>
         <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-slate-300">
           <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
-          <span>{allActiveSessions.length} {t.activeSessions.online}</span>
+          <span>{allActiveSessions.length + mockWorkerCount} {t.activeSessions.online}</span>
         </div>
       </div>
       
@@ -911,6 +930,7 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
             />
           ))}
         </AnimatePresence>
+        {variant === 'page' && <MockWorkingSessions />}
       </div>
     </div>
     </>

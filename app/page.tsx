@@ -19,7 +19,7 @@ import WorkspaceWindow from '@/components/WorkspaceWindow'
 import { getRank } from '@/lib/ranks'
 
 type PanelId = 'chat' | 'history' | 'tasks' | 'progress'
-const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v1'
+const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v2'
 const isPanelId = (value: unknown): value is PanelId =>
   value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress'
 
@@ -43,7 +43,8 @@ export default function HomePage() {
 
   useEffect(() => {
     try {
-      const saved: unknown = JSON.parse(localStorage.getItem(OPEN_PANELS_STORAGE_KEY) ?? '[]')
+      const stored = localStorage.getItem(OPEN_PANELS_STORAGE_KEY)
+      const saved: unknown = JSON.parse(stored ?? localStorage.getItem('pomo:windows:open:v1') ?? '[]')
       if (Array.isArray(saved)) {
         const restored = Array.from(new Set(saved.filter(isPanelId)))
         setOpenPanels(restored)
@@ -142,10 +143,12 @@ export default function HomePage() {
     <div className="min-h-screen garden-page">
       <Navbar compact />
       <main className="focus-page-layout">
-        <section className="focus-station" aria-label={t.nav.timer}>
+        <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
           <PomodoroTimer onSessionComplete={handleSessionComplete} />
         </section>
-        <ActiveSessions variant="page" />
+        <aside id="workspace-working" className="working-sidebar" aria-label={t.activeSessions.title}>
+          <ActiveSessions variant="page" />
+        </aside>
         {/* <PocketGarden /> */}
       </main>
       <div className="workspace-dock" data-no-translate>

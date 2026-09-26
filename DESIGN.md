@@ -78,16 +78,16 @@ Artwork retains its limited palette; the scene background is desaturated in both
 The homepage replaces the full header with a small fixed Menu disclosure at the top
 right. It reuses Navbar navigation, account actions, notifications, online status and
 theme controls; guests can navigate and sign in. Other routes retain their header.
-The homepage uses a centered 960px shell with a 640px timer. Timer and coworker strip
-form one vertically centered group with a 16px section gap, rather than giving the
-timer its own full viewport. Symmetric safe-area padding keeps controls clear of the
-menu and dock; short screens grow naturally and scroll. The currently working strip
-sits immediately below the timer controls: a single horizontal row of
-184px square coworker tiles with outlined paper surfaces and offset pixel shadows.
-Avatars are 64px squares with 6px corners; bold names, pixel time and a divided
-status footer make presence readable. The current user has a tomato outline and You label. Overflow scrolls
-horizontally; room pages keep their detailed session cards. Both sections share the page background without outer section borders; individual
-coworker tiles use card surfaces and shadows. Pixel digits and a slim segmented progress track carry the identity. The timer has no
+The homepage centers a 640px timer. Currently Working is a permanent right-side rail,
+part of the page rather than a floating window. At 1280px and up, symmetric side columns
+keep the timer centered independently of the rail. The rail is up to 400px wide and
+640px tall, with a subtle left divider, plain heading and online count. Narrow screens
+place it below the timer in document flow. The empty state is centered in the rail.
+Coworkers form a vertical list with 40px avatars on the left and names, activities,
+time, status and a remaining-time meter on the right. Time tracking shows elapsed time
+without a fictional remaining-time meter. The current user keeps a tomato edge accent and
+You label. Room pages keep their detailed session cards. The desktop list owns vertical scrolling; mobile uses document scrolling.
+Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The timer has no
 visible section heading or tagline. A compact inline Current task picker sits directly
 below Start/session actions and above the session-type controls.
 Chat, history, tasks and Your Progress open from a fixed four-item bottom dock; the
@@ -100,8 +100,8 @@ The sage title bar is a pointer/touch drag handle with arrow-key movement; dragg
 viewport resize keep windows within screen bounds. Click/focus raises a panel. Escape
 closes the focused panel; the dock toggles it. No backdrop, page scroll lock or focus trap.
 Bodies scroll internally and stay mounted to preserve tasks, drafts and live updates.
-Open/closed state persists in `pomo:windows:open:v1` and restores before the workspace
-appears. Only known panel IDs are restored; unavailable storage falls back to memory.
+Open/closed state persists in `pomo:windows:open:v2` and restores before the workspace
+appears. Existing v1 preferences migrate; only floating panels are restored. Only known panel IDs are restored; unavailable storage falls back to memory.
 Positions and user-selected sizes persist per window in versioned localStorage keys,
 with debounced writes and a flush on page exit. Restored windows fit the current viewport;
 invalid or unavailable storage falls back to the in-memory layout. Invisible edge and corner

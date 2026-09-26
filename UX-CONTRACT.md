@@ -19,7 +19,7 @@
 | Scrollbar | app/globals.css | Global visible baseline, theme tokens and forced-color fallback |
 | Notifications | useNotifications / NotificationToast | Existing global session feedback |
 | Progress / rank | TodayContribution / lib/ranks.ts / useAuthStore | Dock opens existing progress panel; localized current XP rank stays visible on its button |
-| Presence surface | ActiveSessions | Homepage uses borderless page variant; room screens retain panel variant |
+| Presence surface | ActiveSessions | Homepage uses a permanent right-side rail with flat coworker rows; stacks below the centered timer on narrow screens; room screens retain panel variant |
 | Companion feedback | PocketGarden | Local, stable role=status region; no overlay or focus stealing |
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
