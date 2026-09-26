@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 
 export default function InitialLoader() {
+  const pathname = usePathname()
   const { isLoading } = useAuthStore()
   const [isHydrated, setIsHydrated] = useState(false)
 
@@ -11,7 +13,7 @@ export default function InitialLoader() {
     setIsHydrated(true)
   }, [])
 
-  if (!isHydrated || !isLoading) {
+  if (pathname === '/' || pathname === '/blog' || pathname.startsWith('/blog/') || !isHydrated || !isLoading) {
     return null
   }
 

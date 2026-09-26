@@ -29,6 +29,7 @@ import { useThrottle } from '@/hooks/useThrottle'
 import { useI18n } from '@/components/I18nProvider'
 
 interface PomodoroTimerProps {
+  idleTitle?: string
   onSessionComplete?: () => void
 }
 
@@ -205,7 +206,7 @@ const useTaskMenu = (isDisabled: boolean) => {
   }
 }
 
-function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
+function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: PomodoroTimerProps) {
   const { t } = useI18n()
   const {
     isRunning,
@@ -478,13 +479,13 @@ function PomodoroTimerInner({ onSessionComplete }: PomodoroTimerProps) {
       const sessionLabel = getSessionTypeLabel(activeSessionType as SessionType)
       document.title = `${timeStr} - ${sessionLabel} | Pomo Cowork`
     } else {
-      document.title = 'Pomo Cowork'
+      document.title = idleTitle
     }
 
     return () => {
-      document.title = 'Pomo Cowork'
+      document.title = idleTitle
     }
-  }, [getSessionTypeLabel, isRunning, currentSession, timeRemaining, timerDisplaySeconds, activeSessionType, isTimeTrackingSession])
+  }, [idleTitle, getSessionTypeLabel, isRunning, currentSession, timeRemaining, timerDisplaySeconds, activeSessionType, isTimeTrackingSession])
 
   const getSessionDuration = useCallback((type: SessionType): number => {
     switch (type) {

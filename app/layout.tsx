@@ -22,7 +22,7 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   metadataBase: new URL('https://pomo-co.work'),
   title: 'Pomo Cowork',
-  description: 'Pomodo Timer is a collaborative pomodoro coworking app that keeps your focus and team in sync.',
+  description: 'Pomodoro Timer is a collaborative pomodoro coworking app that keeps your focus and team in sync.',
   icons: {
     icon: [
       { url: '/icons/favicon-16.png', sizes: '16x16', type: 'image/png' },
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
   manifest: '/site.webmanifest',
   openGraph: {
-    title: 'Pomodo Timer',
+    title: 'Pomodoro Timer',
     description: 'Collaborative pomodoro coworking timer with live activity from your squad.',
     type: 'website',
     locale: 'en_US',
@@ -44,13 +44,13 @@ export const metadata: Metadata = {
         width: 1200,
         height: 630,
         type: 'image/png',
-        alt: 'Pomodo Timer UI',
+        alt: 'Pomodoro Timer UI',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Pomodo Timer',
+    title: 'Pomodoro Timer',
     description: 'Collaborative pomodoro coworking timer with live activity from your squad.',
     images: ['/assets/meta/og-main.png'],
   },

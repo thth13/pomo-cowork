@@ -89,13 +89,15 @@ Coworkers form a vertical list with 40px avatars on the left and names, activiti
 time, status and a remaining-time meter on the right. Time tracking shows elapsed time
 without a fictional remaining-time meter. The current user keeps a tomato edge accent and
 You label. Room pages keep their detailed session cards. The list owns vertical scrolling at every width.
-Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The timer has no
-visible section heading or tagline. A compact inline Current task picker sits directly
+Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The homepage has a visible English H1, “Online Pomodoro Timer for Focused Work”,
+above the timer workspace. Its server-rendered English overview below the workspace
+uses Inter, existing ink/border tokens and five H2 sections; it remains readable before
+authentication initializes and is excluded from automatic DOM translation. A compact inline Current task picker sits directly
 below Start/session actions and above the session-type controls.
 Chat, history, tasks and Your Progress open from a fixed vertical dock at the left.
 Its four icon-only buttons have fine separators, localized accessible names and native
-tooltips; the progress tooltip includes the current experience rank. The homepage fills
-100dvh without document scrolling, with safe-area clearance and compact timer spacing
+tooltips; the progress tooltip includes the current experience rank. The homepage now scrolls at document level to reach the Pomodoro overview. The timer
+workspace retains a bounded viewport with safe-area clearance and compact timer spacing
 on small screens. Lists and floating panels scroll internally; exceptionally small
 viewports allow internal timer scrolling to keep controls reachable. Other routes keep
 their existing document scroll. The shared footer is removed.
@@ -139,3 +141,27 @@ User explicitly forbids running the project, test builds and tsc. Only static so
 inspection, diff checks and the design skill's static audit are authorized here.
 Runtime behavior, responsive screenshots and full accessibility remain for manual
 verification. Existing unrelated workflow audit findings are not assertions of compliance.
+
+## Editorial blog
+
+`/blog` and `/blog/[slug]` are public content routes with document scrolling.
+A small server-rendered header provides permanent links to the blog and timer;
+the homepage disclosure and full Navbar link to the blog. Reading never waits for
+authentication. The notebook direction uses existing pixel tokens and a restrained
+pixel eyebrow/brand, with Inter headings and a 752px maximum text column.
+`app/blog/blog.css` owns editorial spacing and typography; no global tokens change.
+Article language is explicit in Markdown (en/es/ru/uk), including dates and article
+actions; the index and editorial shell use the site's default English. The DOM
+translation bridge must not rewrite editorial content. Markdown is rendered and
+sanitized on the server; only explicitly published files become public routes.
+
+The blog index uses a wider 1120px notebook composition: a large Inter headline,
+a sage lead article (the latest published post), and a paper-colored practice card
+whose static pixel 25:00 illustration connects reading to the actual timer. It is
+an illustration, not a running session or interactive timer. Remaining articles
+appear once in a three-column grid, two columns below 900px and one below 640px.
+The lead section and intro stack at 640px. Article titles and descriptions remain
+uncropped; metadata wraps for long translations. Existing --pixel-* runtime tokens
+own all colors and both themes; --font-pixel is reserved for the eyebrow and timer
+illustration. Index rules live in app/blog/blog.css, scoped through blog-index or
+index-only component classes. The article reading layout stays unchanged.

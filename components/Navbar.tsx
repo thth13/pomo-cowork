@@ -22,6 +22,7 @@ import {
   faArrowRightFromBracket,
   faArrowUpRightFromSquare,
   faChartLine,
+  faBookOpen,
   faClock,
   faCog,
   faUsers
@@ -368,6 +369,13 @@ export default function Navbar({ compact = false }: { compact?: boolean }) {
             >
               <FontAwesomeIcon icon={faChartLine} className="mr-2 text-xs" />{t.nav.stats}
             </Link>
+            <Link
+              href="/blog"
+              aria-current={pathname.startsWith('/blog') ? 'page' : undefined}
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${pathname.startsWith('/blog') ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}
+            >
+              <FontAwesomeIcon icon={faBookOpen} className="mr-2" />Blog
+            </Link>
           </nav>
           
           {/* Desktop Right Side */}
@@ -646,6 +654,14 @@ export default function Navbar({ compact = false }: { compact?: boolean }) {
               >
                 <FontAwesomeIcon icon={faChartLine} className="mr-3 w-4 text-xs" />
                 {t.nav.stats}
+              </Link>
+              <Link
+                href="/blog"
+                onClick={handleMobileLinkClick}
+                aria-current={pathname.startsWith('/blog') ? 'page' : undefined}
+                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${pathname.startsWith('/blog') ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}
+              >
+                <FontAwesomeIcon icon={faBookOpen} className="mr-3 w-4" />Blog
               </Link>
             </nav>
 

@@ -361,6 +361,23 @@ textarea { resize: none; }
 /* The home workspace shares one quiet surface; auxiliary tools live in the dock. */
 html:has(.workspace-page), body:has(.workspace-page) { height: 100%; overflow: hidden; }
 .workspace-page { height: 100dvh; overflow: hidden; }
+html:has(.pomodoro-home), body:has(.pomodoro-home) { height: auto; overflow: auto; }
+.pomodoro-home { min-height: 100dvh; color: var(--pixel-ink); }
+.pomodoro-home-heading { max-width: 960px; margin: 0 auto; padding: 80px 24px 0 92px; }
+.pomodoro-home-heading h1 { max-width: 640px; margin: 0 auto; font-size: clamp(20px, 2.4vw, 28px); font-weight: 600; line-height: 1.4; text-wrap: balance; }
+.pomodoro-home .workspace-page { height: max(560px, calc(100dvh - 120px)); background: transparent; }
+.pomodoro-home .focus-page-layout { padding-top: 24px; }
+.pomodoro-overview { max-width: 752px; margin: 0 auto; padding: 48px 24px 80px 92px; line-height: 1.8; }
+.pomodoro-overview-intro { padding-top: 28px; border-top: 1px solid var(--pixel-line); }
+.pomodoro-overview h2 { margin: 28px 0 10px; font-size: 20px; font-weight: 600; line-height: 1.4; text-wrap: balance; }
+.pomodoro-overview p { font-size: 16px; }
+@media (min-width: 960px) {
+  .pomodoro-home-heading { max-width: none; padding-right: 372px; }
+  .pomodoro-overview { padding-inline: 24px; }
+}
+@media (min-width: 1440px) {
+  .pomodoro-home-heading { padding-inline: 24px; }
+}
 .focus-page-layout { display: grid; grid-template-rows: minmax(0, 1fr) minmax(100px, .5fr); gap: 16px; height: 100%; min-height: 0; max-width: 960px; margin: 0 auto; padding: max(76px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) calc(92px + env(safe-area-inset-left)); }
 .focus-page-layout .focus-station { width: 100%; max-width: 640px; min-width: 0; min-height: 0; max-height: 100%; margin: auto; overflow-y: auto; overscroll-behavior: contain; }
 .focus-page-layout .focus-station [data-timer-panel] { width: 100%; padding-block: 0; }
