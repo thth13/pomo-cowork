@@ -32,11 +32,11 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main className="pomodoro-home garden-page">
-      <header className="pomodoro-home-heading" lang="en" data-no-translate>
+      {/* <header className="pomodoro-home-heading" lang="en" data-no-translate>
         <h1>Online Pomodoro Timer for Focused Work</h1>
-      </header>
+      </header> */}
       <HomeWorkspace />
-      <PomodoroOverview />
+      {/* <PomodoroOverview /> */}
     </main>
   )
 }
