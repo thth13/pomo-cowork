@@ -73,3 +73,23 @@ no-food guard, persistence fallback, locales and responsive rules. Browser verif
 is pending because the user requested to run and test the project themselves.
 
 The homepage companion is temporarily commented out; its implementation and stored state remain intact.
+
+## Leaderboard workflow
+
+`app/api/stats/leaderboard/route.ts` remains authoritative for ranking and totals.
+`/users` includes only entries with positive focus minutes, ordered by the server's
+rank; work and time-tracking sessions retain their existing counting rules.
+The existing API returns the complete dataset, so search and 20-row pagination are
+local. Period, offset, applied dates, query and page persist in URL parameters using
+replaceState; popstate restores the view. Period/search changes reset to page one;
+out-of-range pages display the last available page. No server paging is implied.
+
+The existing DayPicker owns calendar navigation and range selection. Its expanded
+inline region is non-modal: the page remains available and Tab follows document order.
+Draft dates never request data until Apply; Cancel/Escape discard them on reopening
+and return focus to the trigger. Request cancellation guards stale responses, a
+20-second timeout offers recovery, and Retry retains filters. Loading/error states
+hide stale totals and personal ranking. Profile navigation uses native links to
+`/user/[id]`; search has an explicitly labeled clear action returning input focus.
+English/Spanish messages and numeric/date formatting follow I18nProvider; shared
+Navbar, buttons, focus and scrollbar tokens retain their canonical owners.

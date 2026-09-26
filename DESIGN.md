@@ -176,3 +176,16 @@ uncropped; metadata wraps for long translations. Existing --pixel-* runtime toke
 own all colors and both themes; --font-pixel is reserved for the eyebrow and timer
 illustration. Index rules live in app/blog/blog.css, scoped through blog-index or
 index-only component classes. The article reading layout stays unchanged.
+
+## Community leaderboard
+
+`/users` follows the Pocket Garden identity with a pixel display heading, a quiet
+three-metric strip, and a sage first-place card followed by the next two coworkers.
+All podium links appear in rank order, including on mobile. The native ranking table
+uses Inter, tabular time values, fine row dividers and a tomato edge for the current
+user. A paper personal-progress panel sits beside the table and moves below it on
+small screens. This is a document-scrolling route, not a floating-window workspace.
+The date-range picker expands within the period panel; it uses the existing DayPicker
+with token-derived colors and square selection geometry. `app/users/leaderboard.css`
+owns route-specific composition; all colors and typography derive from existing global
+tokens. `lib/i18n/leaderboard.ts` owns new English/Spanish copy through I18nProvider.

@@ -1,620 +1,278 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link'
 import Image from 'next/image'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import {
-  faChevronLeft,
-  faChevronRight,
-  faClock,
-  faFire,
-  faMagnifyingGlass,
-  faRotateRight,
-  faTrophy,
-  faUsers,
-  faCalendarDay,
-  faCalendarWeek,
-  faCalendarDays,
-  faCalendar
-} from '@fortawesome/free-solid-svg-icons'
+import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
+import { DayPicker, type DateRange } from 'react-day-picker'
+import { es } from 'react-day-picker/locale'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
-import { DayPicker, DateRange } from 'react-day-picker'
-import 'react-day-picker/dist/style.css'
-import { es } from 'date-fns/locale'
 import { useI18n } from '@/components/I18nProvider'
+import { leaderboardCopy } from '@/lib/i18n/leaderboard'
+import 'react-day-picker/dist/style.css'
+import './leaderboard.css'
 
 type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year' | 'custom'
-
 interface LeaderboardUser {
   id: string
   username: string
   avatarUrl?: string
-  totalHours: number
   totalPomodoros: number
   totalMinutes: number
   rank: number
 }
-
-interface PeriodTotals {
-  totalMinutes: number
-  totalHours: number
-  totalPomodoros: number
-}
-
 interface LeaderboardResponse {
-  period: LeaderboardPeriod
   periodLabel: string
-  periodStart: string
-  periodEnd: string
-  offset: number
-  isCurrentPeriod: boolean
   leaderboard: LeaderboardUser[]
   currentUser: LeaderboardUser | null
-  periodTotals: PeriodTotals
+  periodTotals: { totalMinutes: number; totalPomodoros: number }
 }
-
-const RANK_META = {
-  1: {
-    platform: 'bg-amber-400',
-    platformText: 'text-amber-950',
-    glow: '[box-shadow:0_0_0_4px_rgba(251,191,36,0.25)]',
-    badge: 'bg-amber-400 text-amber-950',
-    bar: 'bg-amber-400',
-    ringColor: 'ring-amber-300',
-  },
-  2: {
-    platform: 'bg-slate-300 dark:bg-slate-500',
-    platformText: 'text-slate-800 dark:text-slate-100',
-    glow: '[box-shadow:0_0_0_4px_rgba(148,163,184,0.25)]',
-    badge: 'bg-slate-300 text-slate-800 dark:bg-slate-500 dark:text-slate-100',
-    bar: 'bg-slate-400',
-    ringColor: 'ring-slate-300',
-  },
-  3: {
-    platform: 'bg-orange-400',
-    platformText: 'text-orange-950',
-    glow: '[box-shadow:0_0_0_4px_rgba(249,115,22,0.22)]',
-    badge: 'bg-orange-400 text-orange-950',
-    bar: 'bg-orange-400',
-    ringColor: 'ring-orange-300',
-  },
-} as const
-
-const formatTime = (totalMinutes: number) => {
-  if (!Number.isFinite(totalMinutes)) return '0:00'
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = Math.floor(totalMinutes % 60)
-  return `${hours}:${minutes.toString().padStart(2, '0')}`
+interface BoardView {
+  period: LeaderboardPeriod
+  offset: number
+  start: string
+  end: string
+  search: string
+  page: number
 }
+const PAGE_SIZE = 20
+const initialView: BoardView = { period: 'month', offset: 0, start: '', end: '', search: '', page: 1 }
+const formatTime = (minutes: number) => `${Math.floor(minutes / 60)}:${String(Math.floor(minutes % 60)).padStart(2, '0')}`
 
-function Avatar({
-  user,
-  size,
-  textSize,
-}: {
-  user: Pick<LeaderboardUser, 'username' | 'avatarUrl'>
-  size: string
-  textSize: string
-}) {
-  if (user.avatarUrl) {
-    return (
-      <Image
-        src={user.avatarUrl}
-        alt={user.username}
-        width={96}
-        height={96}
-        className={`${size} rounded-full object-cover`}
-      />
-    )
+function readView(): BoardView {
+  const params = new URLSearchParams(window.location.search)
+  const requested = params.get('period')
+  let period: LeaderboardPeriod = requested === 'day' || requested === 'week' || requested === 'year' || requested === 'custom' ? requested : 'month'
+  const start = params.get('startDate') || ''
+  const end = params.get('endDate') || ''
+  const validRange = Number.isFinite(Date.parse(start)) && Number.isFinite(Date.parse(end)) && Date.parse(start) <= Date.parse(end)
+  if (period === 'custom' && !validRange) period = 'month'
+  return {
+    period, offset: Math.max(0, Math.min(1000, Number.parseInt(params.get('offset') || '0', 10) || 0)),
+    start: validRange ? start : '', end: validRange ? end : '',
+    search: params.get('q') || '', page: Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1),
   }
-
-  return (
-    <div
-      className={`${size} flex items-center justify-center rounded-full bg-gradient-to-br from-sky-500 to-emerald-400 font-black text-white ${textSize}`}
-    >
-      {user.username.charAt(0).toUpperCase()}
-    </div>
-  )
 }
 
-function RowSkeleton() {
+function Avatar({ user, large = false }: { user: LeaderboardUser; large?: boolean }) {
+  const [failed, setFailed] = useState(false)
+  useEffect(() => setFailed(false), [user.avatarUrl])
   return (
-    <div className="animate-pulse px-6 py-4">
-      <div className="flex items-center gap-4">
-        <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-slate-800" />
-        <div className="h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800" />
-        <div className="flex-1 space-y-2">
-          <div className="h-3.5 w-32 rounded bg-slate-100 dark:bg-slate-800" />
-          <div className="h-2.5 w-full max-w-xs rounded bg-slate-100 dark:bg-slate-800" />
-        </div>
-      </div>
-    </div>
+    <span className={`lb-avatar${large ? ' lb-avatar-large' : ''}`} aria-hidden="true">
+      {user.avatarUrl && !failed
+        ? <Image src={user.avatarUrl} alt="" width={80} height={80} onError={() => setFailed(true)} />
+        : user.username.charAt(0).toUpperCase()}
+    </span>
   )
 }
 
 export default function UsersPage() {
-  const router = useRouter()
   const { user: currentUser, token } = useAuthStore()
   const { language, t } = useI18n()
-  const periods = [
-    { value: 'day' as const, label: t.leaderboard.today, icon: faCalendarDay },
-    { value: 'week' as const, label: t.leaderboard.week, icon: faCalendarWeek },
-    { value: 'month' as const, label: t.leaderboard.month, icon: faCalendarDays },
-    { value: 'year' as const, label: t.leaderboard.year, icon: faCalendar },
-  ]
-
-  const [period, setPeriod] = useState<LeaderboardPeriod>('month')
-  const [periodOffset, setPeriodOffset] = useState(0)
-  const [dateRange, setDateRange] = useState<DateRange | undefined>()
-  const [showCustomRange, setShowCustomRange] = useState(false)
-  const [leaderboard, setLeaderboard] = useState<LeaderboardUser[]>([])
-  const [currentUserRank, setCurrentUserRank] = useState<LeaderboardUser | null>(null)
-  const [periodTotals, setPeriodTotals] = useState<PeriodTotals | null>(null)
-  const [periodLabel, setPeriodLabel] = useState('Mar 1-31, 2026')
-  const [search, setSearch] = useState('')
+  const copy = leaderboardCopy[language]
+  const locale = language === 'es' ? 'es-ES' : 'en-US'
+  const number = (value: number) => value.toLocaleString(locale)
+  const [view, setView] = useState<BoardView>(initialView)
+  const [ready, setReady] = useState(false)
+  const [data, setData] = useState<LeaderboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState(false)
+  const [retry, setRetry] = useState(0)
+  const [showCalendar, setShowCalendar] = useState(false)
+  const [draftRange, setDraftRange] = useState<DateRange>()
+  const calendarTrigger = useRef<HTMLButtonElement>(null)
+  const searchInput = useRef<HTMLInputElement>(null)
+  const rankingHeading = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
-    const ctrl = new AbortController()
-    setLoading(true)
-    setError(null)
+    const restore = () => { setView(readView()); setReady(true); setShowCalendar(false) }
+    restore()
+    window.addEventListener('popstate', restore)
+    return () => window.removeEventListener('popstate', restore)
+  }, [])
 
-    const headers: HeadersInit = token ? { Authorization: `Bearer ${token}` } : {}
-
-    let url = `/api/stats/leaderboard?period=${period}&offset=${periodOffset}&locale=${language}`
-    if (period === 'custom' && dateRange?.from && dateRange?.to) {
-      url += `&startDate=${dateRange.from.toISOString()}&endDate=${dateRange.to.toISOString()}`
+  const updateView = (patch: Partial<BoardView>) => {
+    const next = { ...view, ...patch }
+    const url = new URL(window.location.href)
+    url.searchParams.set('period', next.period)
+    for (const [key, value] of Object.entries({ offset: next.offset ? String(next.offset) : '', startDate: next.period === 'custom' ? next.start : '', endDate: next.period === 'custom' ? next.end : '', q: next.search, page: next.page > 1 ? String(next.page) : '' })) {
+      if (value) url.searchParams.set(key, value)
+      else url.searchParams.delete(key)
     }
+    window.history.replaceState(null, '', url)
+    setView(next)
+  }
 
-    fetch(url, { headers, signal: ctrl.signal })
-      .then((res) => {
-        if (!res.ok) throw new Error('Failed')
-        return res.json() as Promise<LeaderboardResponse>
+  useEffect(() => {
+    if (!ready) return
+    const controller = new AbortController()
+    let active = true
+    let timedOut = false
+    const timeout = window.setTimeout(() => { timedOut = true; controller.abort() }, 20000)
+    setLoading(true)
+    setError(false)
+    setData(null)
+    const params = new URLSearchParams({ period: view.period, offset: String(view.offset), locale: language })
+    if (view.period === 'custom') {
+      params.set('startDate', view.start)
+      params.set('endDate', view.end)
+    }
+    fetch(`/api/stats/leaderboard?${params}`, { headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('Leaderboard request failed')
+        const result: LeaderboardResponse = await response.json()
+        if (active && !controller.signal.aborted) setData(result)
       })
-      .then((data) => {
-        const active = (data.leaderboard ?? []).filter((u) => u.totalMinutes > 0)
-        setLeaderboard(active)
-        setCurrentUserRank(data.currentUser?.totalMinutes ? data.currentUser : null)
-        setPeriodTotals(data.periodTotals)
-        setPeriodLabel(data.periodLabel)
-      })
-      .catch((err: unknown) => {
-        if (ctrl.signal.aborted) return
-        console.error(err)
-        setError(t.leaderboard.failedToLoad)
-        setLeaderboard([])
-        setCurrentUserRank(null)
-      })
+      .catch(() => { if (active && (!controller.signal.aborted || timedOut)) setError(true) })
       .finally(() => {
-        if (!ctrl.signal.aborted) setLoading(false)
+        window.clearTimeout(timeout)
+        if (active && (!controller.signal.aborted || timedOut)) setLoading(false)
       })
+    return () => { active = false; window.clearTimeout(timeout); controller.abort() }
+  }, [ready, view.period, view.offset, view.start, view.end, language, token, retry])
 
-    return () => ctrl.abort()
-  }, [period, periodOffset, dateRange?.from, dateRange?.to, token, language, t.leaderboard.failedToLoad])
-
+  const leaderboard = (data?.leaderboard ?? []).filter(person => person.totalMinutes > 0)
+  const filtered = leaderboard.filter(person => person.username.toLocaleLowerCase(locale).includes(view.search.trim().toLocaleLowerCase(locale)))
+  const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const page = Math.min(view.page, pageCount)
+  const pageRows = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+  const myRank = data?.currentUser?.totalMinutes ? data.currentUser : null
   const maxMinutes = leaderboard[0]?.totalMinutes || 1
-  const filtered = leaderboard.filter((u) =>
-    u.username.toLowerCase().includes(search.toLowerCase()),
-  )
-  const currentUserProgress = currentUserRank ? Math.round((currentUserRank.totalMinutes / maxMinutes) * 100) : 0
+  const progress = myRank ? Math.min(100, Math.round(myRank.totalMinutes / maxMinutes * 100)) : 0
+  const periods = [{ value: 'day', label: t.leaderboard.today }, { value: 'week', label: t.leaderboard.week }, { value: 'month', label: t.leaderboard.month }, { value: 'year', label: t.leaderboard.year }] as const
+  const closeCalendar = () => { setShowCalendar(false); calendarTrigger.current?.focus() }
+  const clearSearch = () => { updateView({ search: '', page: 1 }); searchInput.current?.focus() }
+  const changePage = (next: number) => { updateView({ page: next }); rankingHeading.current?.focus() }
+  const profileHref = (id: string) => `/user/${encodeURIComponent(id)}`
+  const draftLabel = draftRange?.from
+    ? `${draftRange.from.toLocaleDateString(locale)} — ${draftRange.to ? draftRange.to.toLocaleDateString(locale) : copy.rangeEnd}`
+    : copy.rangeEmpty
 
   return (
     <>
       <Navbar />
-      <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617] pb-24 font-sans tracking-tight">
-        {/* Subtle decorative background gradient */}
-        <div className="absolute inset-x-0 top-0 h-[600px] bg-gradient-to-b from-sky-500/5 via-violet-500/5 to-transparent pointer-events-none dark:from-sky-500/10 dark:via-violet-500/10" />
+      <div className="garden-page lb-page" data-i18n-ignore>
+        <main className="lb-layout">
+          <header className="lb-intro">
+            <div>
+              <p className="lb-eyebrow"><Sprout size={16} aria-hidden="true" />{copy.eyebrow}</p>
+              <h1>{t.leaderboard.title}</h1>
+              <p className="lb-subtitle">{copy.subtitle}</p>
+              <p className="lb-description">{copy.description}</p>
+            </div>
+            <Link href="/" className="lb-button"><ArrowLeft size={16} aria-hidden="true" />{copy.backToTimer}</Link>
+          </header>
 
-        <main className="relative mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-
-          {/* ─── HEADER ─────────────────────────────────────────── */}
-          <div className="mb-8 flex flex-col items-center text-center">
-            <h1 className="mb-6 text-4xl font-black text-slate-900 dark:text-white sm:text-5xl">
-              {t.leaderboard.title}
-            </h1>
-
-            {/* Combined Controls */}
-            <div className="relative z-50 flex flex-wrap items-center justify-center gap-2 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-slate-900/5 dark:bg-slate-900/80 dark:ring-white/10 backdrop-blur-xl transition-all">
-              {/* Period selection */}
-              <div className="flex items-center">
-                {periods.map((p) => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    onClick={() => {
-                      setPeriod(p.value)
-                      setPeriodOffset(0)
-                    }}
-                    className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition-all duration-200 ${
-                      p.value === period
-                        ? 'bg-slate-900 text-white shadow-md dark:bg-white dark:text-slate-900'
-                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50 dark:text-slate-400 dark:hover:text-white dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <FontAwesomeIcon icon={p.icon} className={p.value === period ? 'opacity-100' : 'opacity-60'} />
-                    <span className="hidden sm:inline">{p.label}</span>
-                  </button>
-                ))}
+          <section className="pixel-panel lb-controls" aria-label={t.leaderboard.customRange}>
+            <div className="lb-toolbar">
+              <div className="lb-periods" role="group" aria-label={copy.currentPeriod}>
+                {periods.map(period => <button key={period.value} type="button" aria-pressed={view.period === period.value} onClick={() => { updateView({ period: period.value, offset: 0, page: 1 }); setShowCalendar(false) }}>{period.label}</button>)}
               </div>
-
-              <div className="hidden h-6 w-px bg-slate-200 dark:bg-slate-700 sm:block mx-1"></div>
-
-              {/* Range selection */}
-              <div className="relative flex items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => setPeriodOffset((value) => value + 1)}
-                  disabled={period === 'custom'}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-transparent text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-20 disabled:hover:bg-transparent dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white"
-                  aria-label={`Previous ${period}`}
-                >
-                  <FontAwesomeIcon icon={faChevronLeft} />
+              <div className="lb-date-nav">
+                <button className="lb-icon-button" type="button" aria-label={copy.previousPeriod} title={copy.previousPeriod} disabled={view.period === 'custom' || view.offset >= 1000} onClick={() => updateView({ offset: view.offset + 1, page: 1 })}><ChevronLeft size={18} /></button>
+                <button className="lb-date-trigger" ref={calendarTrigger} type="button" aria-expanded={showCalendar} aria-controls="leaderboard-calendar" onClick={() => {
+                  if (!showCalendar) setDraftRange(view.start && view.end ? { from: new Date(view.start), to: new Date(view.end) } : undefined)
+                  setShowCalendar(value => !value)
+                }}>
+                  <CalendarDays size={16} aria-hidden="true" />
+                  <span>{loading ? t.leaderboard.customRange : data?.periodLabel || t.leaderboard.customRange}</span>
                 </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setShowCustomRange(!showCustomRange)}
-                  className="min-w-[130px] px-2 text-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition py-1"
-                >
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">{periodLabel}</p>
-                </button>
-
-                {showCustomRange && (
-                  <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-[99] w-max rounded-3xl bg-white p-4 shadow-2xl ring-1 ring-slate-900/10 dark:bg-slate-900 dark:ring-white/10 flex flex-col gap-3">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">{t.leaderboard.customRange}</h3>
-                    <div className="flex flex-col gap-2">
-                      <style>{`
-                        .rdp-root { 
-                          --rdp-accent-color: #0f172a;
-                          --rdp-accent-background-color: #f1f5f9;
-                          --rdp-day-height: 38px;
-                          --rdp-day-width: 38px;
-                          margin: 0;
-                        }
-                        .dark .rdp-root {
-                          --rdp-accent-color: #ffffff;
-                          --rdp-accent-background-color: #1e293b;
-                        }
-                      `}</style>
-                      <DayPicker
-                        mode="range"
-                        selected={dateRange}
-                        onSelect={setDateRange}
-                        locale={language === 'es' ? es : undefined}
-                        className="text-slate-900 dark:text-white"
-                      />
-                      <div className="flex gap-2 mt-2">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (dateRange?.from && dateRange?.to) {
-                              setPeriod('custom')
-                              setShowCustomRange(false)
-                            }
-                          }}
-                          className="flex-1 rounded-xl bg-slate-900 py-2.5 text-sm font-bold text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 transition"
-                        >
-                          {t.leaderboard.apply}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowCustomRange(false)}
-                          className="flex-1 rounded-xl bg-slate-100 py-2.5 text-sm font-bold text-slate-900 hover:bg-slate-200 dark:bg-slate-800 dark:text-white transition"
-                        >
-                          {t.leaderboard.cancel}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <button
-                  type="button"
-                  onClick={() => setPeriodOffset((value) => Math.max(0, value - 1))}
-                  disabled={periodOffset === 0 || period === 'custom'}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-transparent text-slate-500 transition hover:bg-slate-100 hover:text-slate-900 disabled:opacity-20 disabled:hover:bg-transparent dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white dark:disabled:hover:bg-transparent"
-                  aria-label={`Next ${period}`}
-                >
-                  <FontAwesomeIcon icon={faChevronRight} />
-                </button>
+                <button className="lb-icon-button" type="button" aria-label={copy.nextPeriod} title={copy.nextPeriod} disabled={view.offset === 0 || view.period === 'custom'} onClick={() => updateView({ offset: Math.max(0, view.offset - 1), page: 1 })}><ChevronRight size={18} /></button>
               </div>
             </div>
+            {showCalendar && <div id="leaderboard-calendar" className="lb-calendar" onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); closeCalendar() } }}>
+              <div className="lb-calendar-copy">
+                <span className="lb-eyebrow"><CalendarDays size={16} aria-hidden="true" />{t.leaderboard.customRange}</span>
+                <h2>{t.leaderboard.customRange}</h2>
+                <p>{copy.rangeHint}</p>
+                <p className="lb-range-selection" aria-live="polite">{draftLabel}</p>
+                <div className="lb-calendar-actions">
+                  <button type="button" className="btn btn-primary" disabled={!draftRange?.from || !draftRange?.to} onClick={() => {
+                    if (!draftRange?.from || !draftRange?.to) return
+                    updateView({ period: 'custom', offset: 0, start: draftRange.from.toISOString(), end: draftRange.to.toISOString(), page: 1 })
+                    closeCalendar()
+                  }}>{t.leaderboard.apply}</button>
+                  <button type="button" className="lb-button" onClick={closeCalendar}>{t.leaderboard.cancel}</button>
+                </div>
+              </div>
+              <DayPicker mode="range" selected={draftRange} onSelect={setDraftRange} defaultMonth={draftRange?.from} locale={language === 'es' ? es : undefined} />
+            </div>}
+          </section>
+
+          <section className="lb-totals" aria-label={copy.community}>
+            {[{ icon: Users, label: t.leaderboard.activeUsers, value: number(leaderboard.length), note: copy.community }, { icon: Clock3, label: t.leaderboard.focusTime, value: formatTime(data?.periodTotals.totalMinutes ?? 0), note: copy.timeUnit }, { icon: Flame, label: t.leaderboard.pomodoros, value: number(data?.periodTotals.totalPomodoros ?? 0), note: copy.sessions }].map(stat => <div className="lb-total" key={stat.label}>
+              <stat.icon size={18} aria-hidden="true" />
+              <div><p>{stat.label}</p><strong>{loading || error ? '—' : stat.value}</strong><span>{stat.note}</span></div>
+            </div>)}
+          </section>
+
+          {(loading || (!error && leaderboard.length > 0)) && <section className="lb-leaders" aria-labelledby="lb-leaders-title" aria-busy={loading}>
+            <div className="lb-section-label"><h2 id="lb-leaders-title"><Trophy size={16} aria-hidden="true" />{copy.leaders}</h2><span>{data?.periodLabel}</span></div>
+            {loading ? <div className="lb-leaders-loading" aria-hidden="true">—</div> : <ol className="lb-podium">
+              {leaderboard.slice(0, 3).map(person => <li key={person.id} className={`lb-leader lb-leader-${person.rank}`}>
+                <Link href={profileHref(person.id)} className="lb-leader-link">
+                  <span className="lb-leader-rank">{String(person.rank).padStart(2, '0')}</span>
+                  <Avatar user={person} large />
+                  <div className="lb-leader-info"><span className="lb-leader-label">{person.rank === 1 ? <Trophy size={14} aria-hidden="true" /> : null}{copy.rank} {person.rank}{person.id === currentUser?.id && <span className="lb-you">{t.leaderboard.you}</span>}</span><h3>{person.username}</h3><p><strong>{formatTime(person.totalMinutes)}</strong><span>{copy.timeUnit}</span></p></div>
+                  <ArrowUpRight className="lb-leader-arrow" size={18} aria-hidden="true" />
+                </Link>
+              </li>)}
+            </ol>}
+          </section>}
+
+          <div className="lb-content">
+            <section className="pixel-panel lb-ranking" aria-labelledby="lb-ranking-title" aria-busy={loading}>
+              <div className="lb-ranking-header">
+                <div><h2 id="lb-ranking-title" ref={rankingHeading} tabIndex={-1}>{t.leaderboard.fullRanking}</h2><p>{copy.howNote}</p></div>
+                <div className="lb-search">
+                  <Search size={16} aria-hidden="true" />
+                  <input ref={searchInput} type="search" value={view.search} aria-label={t.leaderboard.searchUsers} placeholder={t.leaderboard.searchUsers} onChange={event => updateView({ search: event.target.value, page: 1 })} />
+                  {view.search && <button type="button" className="lb-icon-button" aria-label={copy.clearSearch} title={copy.clearSearch} onClick={clearSearch}><X size={16} /></button>}
+                </div>
+              </div>
+              {loading ? <div className="lb-state" role="status"><span className="lb-spinner" aria-hidden="true" /><p>{copy.loading}</p></div>
+                : error ? <div className="lb-state" role="alert"><Trophy size={32} aria-hidden="true" /><h3>{t.leaderboard.errorTitle}</h3><p>{t.leaderboard.errorDescription}</p><button type="button" className="lb-button" onClick={() => setRetry(value => value + 1)}>{t.leaderboard.tryAgain}</button></div>
+                : leaderboard.length === 0 ? <div className="lb-state"><Sprout size={36} aria-hidden="true" /><h3>{t.leaderboard.emptyTitle}</h3><p>{t.leaderboard.emptyDescriptionPrefix} {data?.periodLabel}.</p><Link href="/" className="btn btn-primary">{copy.startFocus}</Link></div>
+                : filtered.length === 0 ? <div className="lb-state" role="status"><Search size={32} aria-hidden="true" /><h3>{t.leaderboard.noMatchesTitle}</h3><p>{t.leaderboard.noMatchesDescription} “{view.search}”</p><button type="button" className="lb-button" onClick={clearSearch}>{copy.clearSearch}</button></div>
+                : <>
+                  <div className="lb-table-wrap">
+                    <table className="lb-table">
+                      <caption className="sr-only">{t.leaderboard.fullRanking} — {data?.periodLabel}</caption>
+                      <thead><tr><th scope="col">{copy.rank}</th><th scope="col">{copy.participant}</th><th scope="col">{t.leaderboard.focus} <span>({copy.timeUnit})</span></th><th scope="col">{t.leaderboard.pomos}</th></tr></thead>
+                      <tbody>{pageRows.map(person => <tr key={person.id} className={person.id === currentUser?.id ? 'lb-row-self' : undefined}>
+                        <td><span className={`lb-position${person.rank <= 3 ? ' lb-position-top' : ''}`}>{String(person.rank).padStart(2, '0')}</span></td>
+                        <th scope="row"><Link href={profileHref(person.id)} className="lb-person"><Avatar user={person} /><span className="lb-person-name">{person.username}{person.id === currentUser?.id && <span className="lb-you">{t.leaderboard.you}</span>}</span></Link></th>
+                        <td><strong className="lb-time">{formatTime(person.totalMinutes)}</strong><span className="lb-time-track" aria-hidden="true"><span style={{ width: `${Math.max(1, person.totalMinutes / maxMinutes * 100)}%` }} /></span></td>
+                        <td className="lb-pomos">{number(person.totalPomodoros)}</td>
+                      </tr>)}</tbody>
+                    </table>
+                  </div>
+                  <nav className="lb-pagination" aria-label={t.leaderboard.fullRanking}>
+                    <span role="status">{number((page - 1) * PAGE_SIZE + 1)}–{number(Math.min(page * PAGE_SIZE, filtered.length))} {copy.of} {number(filtered.length)}</span>
+                    <div><button type="button" className="lb-icon-button" disabled={page <= 1} aria-label={copy.previousPage} title={copy.previousPage} onClick={() => changePage(page - 1)}><ChevronLeft size={18} /></button><span>{copy.page} {number(page)} {copy.of} {number(pageCount)}</span><button type="button" className="lb-icon-button" disabled={page >= pageCount} aria-label={copy.nextPage} title={copy.nextPage} onClick={() => changePage(page + 1)}><ChevronRight size={18} /></button></div>
+                  </nav>
+                </>}
+            </section>
+
+            <aside className="lb-sidebar">
+              <section className="pixel-panel lb-personal" aria-labelledby="lb-personal-title">
+                <div className="lb-panel-title"><Sprout size={17} aria-hidden="true" /><h2 id="lb-personal-title">{copy.yourPlace}</h2></div>
+                <div className="lb-personal-body">
+                  {loading ? <div className="lb-personal-placeholder" aria-hidden="true">—</div> : error ? <p>{t.leaderboard.failedToLoad}</p> : myRank ? <>
+                    <Link href={profileHref(myRank.id)} className="lb-profile"><Avatar user={myRank} /><span>{myRank.username}<small>{copy.viewProfile} <ArrowUpRight size={12} aria-hidden="true" /></small></span></Link>
+                    <div className="lb-my-place"><strong>#{number(myRank.rank)}</strong><span>{t.leaderboard.top} {Math.max(1, Math.round(myRank.rank / Math.max(1, leaderboard.length) * 100))}%</span></div>
+                    <dl className="lb-personal-stats"><div><dt>{t.leaderboard.focus} <span>({copy.timeUnit})</span></dt><dd>{formatTime(myRank.totalMinutes)}</dd></div><div><dt>{t.leaderboard.pomos}</dt><dd>{number(myRank.totalPomodoros)}</dd></div></dl>
+                    <div className="lb-progress-label"><span>{t.leaderboard.progressToFirst}</span><strong>{progress}%</strong></div>
+                    <progress className="lb-progress" value={progress} max={100} aria-label={t.leaderboard.progressToFirst} />
+                  </> : <div className="lb-personal-empty"><Sprout size={36} aria-hidden="true" /><p>{currentUser && !currentUser.isAnonymous ? `${t.leaderboard.timeToAppearPrefix} ${data?.periodLabel ?? ''} ${t.leaderboard.timeToAppearSuffix}` : t.leaderboard.loginToSeePosition}</p></div>}
+                  <Link href="/" className="btn btn-primary lb-focus-link">{copy.startFocus}<ArrowUpRight size={16} aria-hidden="true" /></Link>
+                  <p className="lb-encouragement">{copy.encouragement}</p>
+                </div>
+              </section>
+              <section className="lb-explainer"><h2>{copy.howTitle}</h2><p>{copy.howDescription}</p><p>{copy.howNote}</p></section>
+            </aside>
           </div>
-
-          {/* ─── STATS STRIP ────────────────────────────────────── */}
-          <div className="mb-10 grid grid-cols-1 sm:grid-cols-3 gap-4 lg:gap-6">
-            {(
-              [
-                {
-                  label: t.leaderboard.activeUsers,
-                  value: loading ? '—' : String(leaderboard.length),
-                  sub: `${t.leaderboard.inPeriod} ${periodLabel.toLowerCase()}`,
-                  icon: faUsers,
-                  accent: 'text-sky-500',
-                  bg: 'bg-sky-50 dark:bg-sky-500/10',
-                  border: 'ring-sky-100 dark:ring-sky-500/20',
-                  valueClass: 'text-3xl',
-                },
-                {
-                  label: t.leaderboard.focusTime,
-                  value: loading ? '—' : `${formatTime(periodTotals?.totalMinutes ?? 0)}`,
-                  sub: t.leaderboard.acrossAllUsers,
-                  icon: faClock,
-                  accent: 'text-violet-500',
-                  bg: 'bg-violet-50 dark:bg-violet-500/10',
-                  border: 'ring-violet-100 dark:ring-violet-500/20',
-                  valueClass: 'text-3xl',
-                },
-                {
-                  label: t.leaderboard.pomodoros,
-                  value: loading ? '—' : String(periodTotals?.totalPomodoros ?? 0),
-                  sub: t.leaderboard.completedSessions,
-                  icon: faFire,
-                  accent: 'text-rose-500',
-                  bg: 'bg-rose-50 dark:bg-rose-500/10',
-                  border: 'ring-rose-100 dark:ring-rose-500/20',
-                  valueClass: 'text-3xl',
-                },
-              ] as const
-            ).map((stat) => (
-              <div
-                key={stat.label}
-                className="group relative overflow-hidden rounded-[24px] bg-white/80 p-6 flex items-center gap-5 ring-1 ring-slate-900/5 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all hover:-translate-y-1 hover:shadow-[0_12px_40px_rgb(0,0,0,0.08)] dark:bg-slate-900/60 dark:ring-white/10 dark:shadow-none"
-              >
-                <div
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${stat.bg} ${stat.accent}`}
-                >
-                  <FontAwesomeIcon icon={stat.icon} className="text-xl" />
-                </div>
-                <div>
-                  <p className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1">{stat.label}</p>
-                  <p className={`${stat.valueClass} font-black text-slate-900 dark:text-white`}>
-                    {stat.value}
-                  </p>
-                  <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">{stat.sub}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* ─── LOADING ────────────────────────────────────────── */}
-          {loading ? (
-            <div className="mt-8 grid gap-6 lg:grid-cols-[1fr_340px]">
-                <div className="overflow-hidden rounded-[32px] bg-white/60 ring-1 ring-slate-900/5 dark:bg-slate-900/40 dark:ring-white/10">
-                  {[...Array(5)].map((_, i) => (
-                    <RowSkeleton key={i} />
-                  ))}
-                </div>
-                <div className="h-[300px] animate-pulse rounded-[32px] bg-white/60 ring-1 ring-slate-900/5 dark:bg-slate-900/40 dark:ring-white/10" />
-            </div>
-          ) : error ? (
-            /* ─── ERROR ─────────────────────────────────────────── */
-            <div className="flex flex-col items-center justify-center gap-5 rounded-[32px] bg-white/80 py-20 text-center ring-1 ring-rose-200 shadow-sm backdrop-blur-xl dark:bg-slate-900/60 dark:ring-rose-500/30">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-rose-50 text-rose-500 dark:bg-rose-500/10">
-                <FontAwesomeIcon icon={faRotateRight} className="text-3xl" />
-              </div>
-              <div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">{t.leaderboard.errorTitle}</h3>
-                <p className="mt-2 text-slate-500 dark:text-slate-400 text-lg">{t.leaderboard.errorDescription}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => window.location.reload()}
-                className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-6 py-3 text-sm font-bold text-white transition-all hover:scale-105 active:scale-95 dark:bg-white dark:text-slate-900"
-              >
-                <FontAwesomeIcon icon={faRotateRight} />
-                {t.leaderboard.tryAgain}
-              </button>
-            </div>
-          ) : leaderboard.length === 0 ? (
-            /* ─── EMPTY ─────────────────────────────────────────── */
-            <div className="flex flex-col items-center justify-center gap-5 rounded-[32px] bg-white/80 py-28 text-center ring-1 ring-slate-900/5 shadow-sm backdrop-blur-xl dark:bg-slate-900/60 dark:ring-white/10">
-              <div className="flex h-24 w-24 items-center justify-center rounded-[2rem] bg-amber-50 text-4xl text-amber-500 shadow-inner dark:bg-amber-500/10">
-                <FontAwesomeIcon icon={faTrophy} />
-              </div>
-              <div>
-                <h3 className="text-3xl font-black text-slate-900 dark:text-white">{t.leaderboard.emptyTitle}</h3>
-                <p className="mt-3 max-w-md mx-auto text-slate-500 dark:text-slate-400 text-lg leading-relaxed">
-                  {t.leaderboard.emptyDescriptionPrefix} {periodLabel}.
-                </p>
-              </div>
-            </div>
-          ) : (
-            /* ─── MAIN CONTENT ──────────────────────────────────── */
-            <div className="space-y-8 lg:space-y-12">
-
-              {/* ── LOWER SECTION ───────────────────────────────────── */}
-              <div className="grid gap-8 lg:grid-cols-[1fr_360px] lg:items-start">
-                
-                {/* Full List Panel */}
-                <div className="overflow-hidden rounded-[32px] bg-white border border-slate-200/60 shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
-                  {/* Header + search */}
-                  <div className="flex flex-col gap-4 border-b border-slate-100 p-6 sm:p-8 dark:border-slate-800/80 sm:flex-row sm:items-center sm:justify-between bg-slate-50/30 dark:bg-slate-800/20">
-                    <div>
-                      <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                        {t.leaderboard.fullRanking}
-                        <span className="inline-flex items-center justify-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold text-slate-600 dark:bg-slate-800 dark:text-slate-400">
-                          {filtered.length}
-                        </span>
-                      </h2>
-                    </div>
-                    <div className="relative w-full sm:max-w-xs group">
-                      <FontAwesomeIcon
-                        icon={faMagnifyingGlass}
-                        className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-sky-500 transition-colors"
-                      />
-                      <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        placeholder={t.leaderboard.searchUsers}
-                        className="w-full rounded-2xl border-2 border-slate-100 bg-white py-3 pl-11 pr-4 text-sm font-semibold outline-none transition placeholder:text-slate-400 focus:border-sky-500 focus:ring-4 focus:ring-sky-500/10 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:placeholder:text-slate-500 dark:focus:border-sky-500"
-                      />
-                    </div>
-                  </div>
-
-                  {filtered.length === 0 ? (
-                    <div className="p-16 text-center">
-                      <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-100 text-2xl text-slate-400 dark:bg-slate-800">
-                        <FontAwesomeIcon icon={faMagnifyingGlass} />
-                      </div>
-                      <h4 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">{t.leaderboard.noMatchesTitle}</h4>
-                      <p className="mt-2 text-sm text-slate-500">
-                        {t.leaderboard.noMatchesDescription} &ldquo;<strong className="text-slate-700 dark:text-slate-300">{search}</strong>&rdquo;
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="divide-y divide-slate-100 dark:divide-slate-800/60 p-2 sm:p-4">
-                      {filtered.map((user) => {
-                        const isMe = currentUser?.id === user.id
-                        const isTop = user.rank <= 3
-                        const meta = isTop ? RANK_META[user.rank as 1 | 2 | 3] : null
-                        const pct = Math.max(2, Math.round((user.totalMinutes / maxMinutes) * 100))
-
-                        return (
-                          <div
-                            key={user.id}
-                            onClick={() => router.push(`/user/${user.id}`)}
-                            role="button"
-                            className={`group flex cursor-pointer items-center gap-4 sm:gap-5 rounded-2xl p-4 transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 ${isMe ? 'bg-sky-50/50 ring-1 ring-sky-200/60 shadow-sm dark:bg-sky-500/10 dark:ring-sky-500/20' : ''}`}
-                          >
-                            <div
-                              className={`flex h-[42px] w-[42px] sm:h-[48px] sm:w-[48px] shrink-0 items-center justify-center rounded-2xl text-lg font-black shadow-sm transition-transform group-hover:scale-105 ${
-                                meta
-                                  ? `${meta.platform} ${meta.platformText}`
-                                  : isMe ? 'bg-sky-500 text-white dark:bg-sky-500' : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                              }`}
-                            >
-                              {user.rank}
-                            </div>
-
-                            <div className="shrink-0 relative">
-                              <Avatar user={user} size="h-[42px] w-[42px] sm:h-[48px] sm:w-[48px]" textSize="text-lg" />
-                              {isMe && (
-                                <div className="absolute -bottom-1 -right-1 rounded-full bg-sky-500 p-1 text-[8px] text-white border-2 border-white dark:border-slate-900 shadow-sm">
-                                  <FontAwesomeIcon icon={faUsers} />
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="min-w-0 flex-1">
-                              <div className="mb-2 flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-2 truncate">
-                                  <p className="truncate text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                                    {user.username}
-                                  </p>
-                                  {isMe && (
-                                    <span className="shrink-0 rounded-lg bg-sky-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wider text-sky-700 dark:bg-sky-500/20 dark:text-sky-300">
-                                      {t.leaderboard.you}
-                                    </span>
-                                  )}
-                                </div>
-                                <span className="shrink-0 text-sm font-black text-slate-700 dark:text-slate-300 whitespace-nowrap">
-                                  {formatTime(user.totalMinutes)}<span className="text-xs text-slate-400 font-bold ml-0.5 mr-1.5">h</span>
-                                  <span className="text-slate-200 dark:text-slate-700 font-normal mr-1.5">|</span>
-                                  {user.totalPomodoros} <span className="text-xs">🍅</span>
-                                </span>
-                              </div>
-                              <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-100/80 dark:bg-slate-800">
-                                <div
-                                  className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 ease-out ${meta ? meta.bar : isMe ? 'bg-sky-500' : 'bg-slate-800 dark:bg-slate-500'}`}
-                                  style={{ width: `${pct}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
-                </div>
-
-                <aside className="space-y-6 lg:sticky lg:top-8">
-                  <div className="overflow-hidden rounded-[32px] bg-white border border-slate-200/60 shadow-[0_12px_40px_rgb(0,0,0,0.04)] dark:border-slate-800/80 dark:bg-slate-900/60 dark:shadow-none">
-                    <div className="bg-slate-50/50 border-b border-slate-100 px-7 py-5 dark:bg-slate-800/20 dark:border-slate-800/80">
-                      <h3 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-                        {t.leaderboard.yourStatus}
-                      </h3>
-                    </div>
-                    {currentUserRank && currentUser ? (
-                      <div
-                        role="button"
-                        onClick={() => router.push('/profile')}
-                        className="group p-7 cursor-pointer hover:bg-slate-50/30 transition-colors dark:hover:bg-slate-800/30"
-                      >
-                        <div className="mb-6 flex items-center gap-5">
-                          <div className="relative">
-                            <Avatar
-                              user={{ username: currentUser.username, avatarUrl: currentUser.avatarUrl }}
-                              size="h-16 w-16"
-                              textSize="text-2xl"
-                            />
-                            <div className="absolute -bottom-2 -right-2 bg-slate-900 text-white dark:bg-white dark:text-slate-900 rounded-xl px-2 py-0.5 text-xs font-black shadow-sm border-2 border-white dark:border-slate-900">
-                              #{currentUserRank.rank}
-                            </div>
-                          </div>
-                          <div>
-                            <p className="text-xl font-black text-slate-900 dark:text-white group-hover:text-sky-600 transition-colors">
-                              {currentUser.username}
-                            </p>
-                            <p className="text-sm font-semibold text-sky-500 mt-1">
-                              {t.leaderboard.top} {Math.max(1, Math.round((currentUserRank.rank / leaderboard.length) * 100))}%
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-3 mb-6">
-                          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700/50">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.leaderboard.focus}</p>
-                            <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
-                              {formatTime(currentUserRank.totalMinutes)}<span className="text-sm text-slate-400 ml-0.5 font-bold">h</span>
-                            </p>
-                          </div>
-                          <div className="rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700/50">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{t.leaderboard.pomos}</p>
-                            <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">
-                              {currentUserRank.totalPomodoros}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="rounded-2xl bg-slate-50/50 p-4 dark:bg-slate-800/20">
-                          <div className="mb-2 flex items-center justify-between text-xs font-bold">
-                            <span className="text-slate-500">{t.leaderboard.progressToFirst}</span>
-                            <span className="text-slate-900 dark:text-white">
-                              {currentUserProgress}%
-                            </span>
-                          </div>
-                          <div className="h-2.5 overflow-hidden rounded-full bg-slate-200/60 dark:bg-slate-700">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-sky-400 to-sky-500 shadow-[inset_0_1px_3px_rgba(0,0,0,0.1)] transition-all duration-1000"
-                              style={{
-                                width: `${currentUserProgress}%`,
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-8 text-center">
-                        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-slate-50 text-slate-400 ring-1 ring-slate-100 dark:bg-slate-800/50 dark:ring-slate-700">
-                          <FontAwesomeIcon icon={faUsers} className="text-xl" />
-                        </div>
-                        <p className="text-sm font-bold leading-relaxed text-slate-600 dark:text-slate-300">
-                          {currentUser
-                            ? `${t.leaderboard.timeToAppearPrefix} ${periodLabel} ${t.leaderboard.timeToAppearSuffix}`.trim()
-                            : t.leaderboard.loginToSeePosition}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </aside>
-              </div>
-            </div>
-          )}
         </main>
       </div>
     </>
