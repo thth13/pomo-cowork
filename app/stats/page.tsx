@@ -131,7 +131,7 @@ export default function StatsPage() {
   const [timelineLoading, setTimelineLoading] = useState(false)
   const [activityLoading, setActivityLoading] = useState(false)
   const [heatmapLoading, setHeatmapLoading] = useState(false)
-  const [hasFetchedOnce, setHasFetchedOnce] = useState(false)
+  const hasFetchedOnceRef = useRef(false)
   const chartReady = true
   const [activityPeriod, setActivityPeriod] = useState<'7' | '30' | '365'>('7')
   const [activityOffset, setActivityOffset] = useState(0)
@@ -192,7 +192,7 @@ export default function StatsPage() {
   }, [timelineOffset])
 
   useEffect(() => {
-    setHasFetchedOnce(false)
+    hasFetchedOnceRef.current = false
   }, [token])
 
   type FetchMode = 'full' | 'timeline' | 'activity' | 'heatmap' | 'silent'
@@ -231,7 +231,7 @@ export default function StatsPage() {
           setHeatmapRange(data.heatmapPeriod.selected)
           heatmapRangeRef.current = data.heatmapPeriod.selected
         }
-        setHasFetchedOnce(true)
+        hasFetchedOnceRef.current = true
       }
     } catch (error) {
       console.error('Failed to fetch stats:', error)
@@ -254,7 +254,7 @@ export default function StatsPage() {
     }
 
     if (isAuthenticated && token) {
-      fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })
+      fetchStats({ mode: hasFetchedOnceRef.current ? 'silent' : 'full' })
     } else if (!isAuthenticated) {
       setLoading(false)
     }
@@ -661,7 +661,7 @@ export default function StatsPage() {
     const safeOffset = Math.max(0, nextOffset)
     setTimelineOffset(safeOffset)
     timelineOffsetRef.current = safeOffset
-    fetchStats({ mode: hasFetchedOnce ? 'timeline' : 'full', offset: safeOffset })
+    fetchStats({ mode: hasFetchedOnceRef.current ? 'timeline' : 'full', offset: safeOffset })
   }
 
   const handleActivityPeriodChange = (period: '7' | '30' | '365') => {
@@ -671,14 +671,14 @@ export default function StatsPage() {
     activityOffsetRef.current = 0
     setActivityDropdownOpen(false)
     activityDropdownRef.current?.querySelector('button')?.focus()
-    fetchStats({ mode: hasFetchedOnce ? 'activity' : 'full', period, activityOffset: 0 })
+    fetchStats({ mode: hasFetchedOnceRef.current ? 'activity' : 'full', period, activityOffset: 0 })
   }
 
   const handleActivityOffsetChange = (direction: 'prev' | 'next') => {
     const newOffset = direction === 'prev' ? activityOffset + 1 : Math.max(0, activityOffset - 1)
     setActivityOffset(newOffset)
     activityOffsetRef.current = newOffset
-    fetchStats({ mode: hasFetchedOnce ? 'activity' : 'full', activityOffset: newOffset })
+    fetchStats({ mode: hasFetchedOnceRef.current ? 'activity' : 'full', activityOffset: newOffset })
   }
 
   const getActivityRangeLabel = () => {
@@ -724,7 +724,7 @@ export default function StatsPage() {
   const handleHeatmapRangeChange = (nextRange: string) => {
     setHeatmapRange(nextRange)
     heatmapRangeRef.current = nextRange
-    fetchStats({ mode: hasFetchedOnce ? 'heatmap' : 'full', heatmapRange: nextRange })
+    fetchStats({ mode: hasFetchedOnceRef.current ? 'heatmap' : 'full', heatmapRange: nextRange })
   }
 
   const fetchTaskSessionsList = useCallback(async () => {
@@ -1091,7 +1091,7 @@ export default function StatsPage() {
                       <LatestActivity
                         token={token}
                         isAuthenticated={isAuthenticated}
-                        onChange={() => fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })}
+                        onChange={() => fetchStats({ mode: hasFetchedOnceRef.current ? 'silent' : 'full' })}
                       />
 
                       <div className="stats-panel relative" aria-busy={timelineLoading}>
@@ -1403,7 +1403,7 @@ export default function StatsPage() {
                   <LatestActivity
                     token={token}
                     isAuthenticated={isAuthenticated}
-                    onChange={() => fetchStats({ mode: hasFetchedOnce ? 'silent' : 'full' })}
+                    onChange={() => fetchStats({ mode: hasFetchedOnceRef.current ? 'silent' : 'full' })}
                   />
 
                   <div className="stats-panel relative" aria-busy={timelineLoading}>

@@ -614,7 +614,7 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
     }
 
     // Проверка: пользователь должен быть в активной сессии работы
-    const userSession = sessionsToShow.find(s => s.userId === user.id)
+    const userSession = allActiveSessions.find(s => s.userId === user.id)
     const isInWorkSession = userSession && userSession.type === SessionType.WORK && userSession.status !== SessionStatus.PAUSED
     
     if (!isInWorkSession) {

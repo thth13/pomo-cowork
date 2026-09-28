@@ -13,12 +13,13 @@ export default function PocketGarden() {
   const { language } = useI18n()
   const copy = gardenCopy[language]
   const pet = usePetStore()
+  const refreshPet = pet.refresh
   const working = useTimerStore((s) => s.isRunning && (s.currentSession?.type === SessionType.WORK || s.currentSession?.type === SessionType.TIME_TRACKING))
   const [ready, setReady] = useState(false)
   const [feedback, setFeedback] = useState<'fed' | 'petted' | 'watered' | null>(null)
   const [now, setNow] = useState(0)
   useEffect(() => {
-    const refresh = () => { pet.refresh(); setNow(Date.now()); setReady(true) }
+    const refresh = () => { refreshPet(); setNow(Date.now()); setReady(true) }
     refresh()
     const interval = window.setInterval(refresh, 30_000)
     const sync = (event: StorageEvent) => {
@@ -30,7 +31,7 @@ export default function PocketGarden() {
     window.addEventListener('storage', sync)
     window.addEventListener('focus', refresh)
     return () => { clearInterval(interval); window.removeEventListener('focus', refresh); window.removeEventListener('storage', sync) }
-  }, [pet.refresh])
+  }, [refreshPet])
   useEffect(() => {
     if (!feedback) return
     const timeout = window.setTimeout(() => setFeedback(null), 4000)

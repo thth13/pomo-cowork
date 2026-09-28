@@ -352,7 +352,7 @@ export default function UserProfilePage() {
     if (!userStats) return []
     
     return userStats.weeklyActivity.map(item => parseFloat((item.minutes / 60).toFixed(4)))
-  }, [userStats?.weeklyActivity])
+  }, [userStats])
 
   const totalPomodoros = userStats?.totalPomodoros || 0
   const totalFocusMinutes = userStats?.totalFocusMinutes || 0

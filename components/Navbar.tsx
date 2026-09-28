@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState, useId, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useId, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -144,6 +144,18 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authHeaders])
 
+  const markRead = useCallback(async (id: string) => {
+    if (!authHeaders) return
+    await fetch(`/api/notifications/${id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify({ read: true }),
+    }).catch(() => null)
+  }, [authHeaders])
+
   // todo: remove
   useEffect(() => {
     if (!authHeaders || notifications.length === 0) return
@@ -164,7 +176,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
       setNotifications((prev) => prev.filter((n) => !idsToRemove.has(n.id)))
       setUnreadCount((prev) => Math.max(0, prev - toMark.length))
     })()
-  }, [notifications, authHeaders])
+  }, [notifications, authHeaders, markRead])
   // todo
 
   useEffect(() => {
@@ -173,18 +185,6 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     markVisibleAsRead(notifications)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isNotificationsOpen, notifications, authHeaders])
-
-  const markRead = async (id: string) => {
-    if (!authHeaders) return
-    await fetch(`/api/notifications/${id}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-      },
-      body: JSON.stringify({ read: true }),
-    }).catch(() => null)
-  }
 
   const markVisibleAsRead = (items: NotificationItem[]) => {
     if (!authHeaders) return
