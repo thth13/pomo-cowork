@@ -108,8 +108,10 @@ Its content uses Inter and existing tokens and is excluded
 from automatic DOM translation. The trigger and window controls follow the active locale. A compact inline Current task picker sits directly
 below Start/session actions and above the session-type controls.
 Chat, history, tasks and Your Progress open from a fixed vertical dock at the left.
-Its five icon-only buttons have fine separators, localized accessible names and native
-tooltips; the progress tooltip includes the current experience rank. Above 719px the homepage has no document scrolling; mobile uses document scrolling through the timer and full session list. There is no inline introductory text. The timer
+Its five icon-only buttons have fine separators, localized accessible names and styled
+tooltips to the right on hover or keyboard focus, dismissed on Escape, blur, pointer exit
+or activation. Tooltips use existing pixel tokens and stay above workspace windows;
+the progress tooltip includes the current experience rank. Above 719px the homepage has no document scrolling; mobile uses document scrolling through the timer and full session list. There is no inline introductory text. The timer
 workspace occupies the viewport with safe-area clearance and compact timer spacing
 on small screens. Lists and floating panels scroll internally; exceptionally small
 viewports allow internal timer scrolling to keep controls reachable. Other routes keep
