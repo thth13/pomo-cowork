@@ -89,13 +89,15 @@ The homepage centers a 640px timer. Currently Working is a permanent right-side 
 part of the page rather than a floating window. At 1440px and up, symmetric side columns
 keep the timer centered independently of the rail. The rail is up to 400px wide and
 640px tall, with a subtle left divider, plain heading and online count. From 960px the rail sits beside the timer; narrower screens
-place it below the timer in a bounded grid row. On desktop the rail aligns to the right
+place it below the timer in a bounded grid row, except on mobile (up to 719px), where
+the page scrolls naturally and the full session list has no height limit or internal scrollbar.
+On desktop the rail aligns to the right
 edge of the page content without auto margins; equal inline padding centers the empty state.
 Only real sessions appear in the rail and online count; mock participants are removed.
 Coworkers form a vertical list with 40px avatars on the left and names, activities,
 time, status and a remaining-time meter on the right. Time tracking shows elapsed time
 without a fictional remaining-time meter. The current user keeps a tomato edge accent and
-You label. Room pages keep their detailed session cards. The list owns vertical scrolling at every width.
+You label. Room pages keep their detailed session cards. Above 719px the list owns vertical scrolling.
 Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The English H1, “Online Pomodoro Timer for Focused Work”, and Pomodoro overview
 live inside the About the timer workspace window, opened by the question-mark dock
 button. The window is closed by default and never restored on page load, even if left
@@ -107,7 +109,7 @@ from automatic DOM translation. The trigger and window controls follow the activ
 below Start/session actions and above the session-type controls.
 Chat, history, tasks and Your Progress open from a fixed vertical dock at the left.
 Its five icon-only buttons have fine separators, localized accessible names and native
-tooltips; the progress tooltip includes the current experience rank. The homepage has no document scrolling or inline introductory text. The timer
+tooltips; the progress tooltip includes the current experience rank. Above 719px the homepage has no document scrolling; mobile uses document scrolling through the timer and full session list. There is no inline introductory text. The timer
 workspace occupies the viewport with safe-area clearance and compact timer spacing
 on small screens. Lists and floating panels scroll internally; exceptionally small
 viewports allow internal timer scrolling to keep controls reachable. Other routes keep

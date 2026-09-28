@@ -163,6 +163,7 @@ const useTaskMenu = (isDisabled: boolean) => {
   const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
   const [taskSearch, setTaskSearch] = useState('')
   const taskPickerRef = useRef<HTMLDivElement | null>(null)
+  const taskDropdownRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!isTaskMenuOpen) {
@@ -171,7 +172,11 @@ const useTaskMenu = (isDisabled: boolean) => {
     }
 
     const handleOutsideClick = (event: MouseEvent) => {
-      if (taskPickerRef.current && !taskPickerRef.current.contains(event.target as Node)) {
+      if (
+        taskPickerRef.current &&
+        !taskPickerRef.current.contains(event.target as Node) &&
+        !taskDropdownRef.current?.contains(event.target as Node)
+      ) {
         setIsTaskMenuOpen(false)
       }
     }
@@ -179,6 +184,7 @@ const useTaskMenu = (isDisabled: boolean) => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsTaskMenuOpen(false)
+        taskPickerRef.current?.querySelector('button')?.focus()
       }
     }
 
@@ -203,6 +209,7 @@ const useTaskMenu = (isDisabled: boolean) => {
     taskSearch,
     setTaskSearch,
     taskPickerRef,
+    taskDropdownRef,
   }
 }
 
@@ -338,6 +345,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
     taskSearch,
     setTaskSearch,
     taskPickerRef,
+    taskDropdownRef,
   } = useTaskMenu(isTaskPickerDisabled)
 
   const { scheduleAutoStart, clearAutoStart } = useAutoStart(isAutoStartEnabled)
@@ -1360,6 +1368,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
           onToggle={() => setIsTaskMenuOpen((state) => !state)}
           onClose={() => setIsTaskMenuOpen(false)}
           taskPickerRef={taskPickerRef}
+          taskDropdownRef={taskDropdownRef}
           selectedTask={selectedTask}
           onSelectTask={handleTaskSelect}
           filteredTaskOptions={filteredTaskOptions}
