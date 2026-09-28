@@ -204,3 +204,13 @@ Highcharts uses runtime CSS colors so charts follow both themes. Existing statis
 API, period navigation, task sessions, LatestActivity and Pro access remain owners
 of their workflows. The locked preview is bounded and inert for keyboard users.
 The year selector retains its native operating-system popup.
+
+## Online sessions
+
+The shared ActiveSessions view reads only Socket.IO snapshots through useTimerStore.
+An empty snapshot clears the list; HTTP and database fallbacks must not repopulate it.
+Each snapshot includes the public username, avatar, experience and timer state.
+Disconnect clears the local list and removes the disconnected timer on the server;
+reconnect publishes the client's current timer, including pauses, before requesting
+fresh snapshots. Registration dates are not broadcast publicly. Session history and
+restoration of the user's own timer remain separate database-backed workflows.

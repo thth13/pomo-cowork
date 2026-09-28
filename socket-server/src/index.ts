@@ -13,6 +13,7 @@ interface PomodoroSession {
   userId: string
   username: string
   avatarUrl?: string
+  experience?: number
   roomId?: string | null
   task: string
   type: string
@@ -24,7 +25,6 @@ interface PomodoroSession {
   lastUpdate?: number
   startTime: number
   chatMessageId?: string
-  disconnectedAt?: number // timestamp when user disconnected while paused
 }
 
 interface ChatMessage {
@@ -75,10 +75,6 @@ const chatMessagesByRoom = new Map<string, ChatMessage[]>()
 const reactionsByTarget = new Map<string, Map<string, string>>()
 
 const MAX_CHAT_HISTORY = 100
-const ACTIVE_SESSIONS_DB_REFRESH_MS = 5 * 60 * 1000
-let lastActiveSessionsDbLoadAt = 0
-let activeSessionsDbLoad: Promise<number> | null = null
-
 const normalizeRoomId = (roomId?: string | null) => {
   if (typeof roomId !== 'string') return null
   const trimmed = roomId.trim()
@@ -267,99 +263,13 @@ const removeAnonymousConnectionBySocket = (socketId: string) => {
   }
 }
 
-// Function to load active sessions from DB
-const loadActiveSessionsFromDB = async () => {
-  if (activeSessionsDbLoad) {
-    return activeSessionsDbLoad
-  }
-  const cacheIsFresh = Date.now() - lastActiveSessionsDbLoadAt < ACTIVE_SESSIONS_DB_REFRESH_MS
-  if (cacheIsFresh) {
-    return sessions.size
-  }
-  // Throttle failed attempts too, so reconnects cannot hammer the API during outages.
-  lastActiveSessionsDbLoadAt = Date.now()
-  activeSessionsDbLoad = (async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/sessions/active`, { timeout: 10_000 })
-      const dbSessions = response.data as Array<{
-        id: string
-        userId: string
-        username: string
-        avatarUrl?: string
-        roomId?: string | null
-        task: string
-        type: string
-        duration: number
-        timeRemaining: number
-        startedAt: string
-      }>
-
-      for (const dbSession of dbSessions) {
-        const existingSession = sessions.get(dbSession.id)
-
-        if (!existingSession) {
-          const now = Date.now()
-          const calculatedStartTime = now - (dbSession.duration * 60 * 1000 - dbSession.timeRemaining * 1000)
-
-          sessions.set(dbSession.id, {
-            id: dbSession.id,
-            userId: dbSession.userId,
-            username: dbSession.username,
-            avatarUrl: dbSession.avatarUrl ?? userAvatars.get(dbSession.userId),
-            roomId: dbSession.roomId ?? null,
-            task: dbSession.task,
-            type: dbSession.type,
-            duration: dbSession.duration,
-            timeRemaining: dbSession.timeRemaining,
-            startedAt: dbSession.startedAt,
-            startTime: calculatedStartTime,
-            lastUpdate: now
-          })
-        } else {
-          existingSession.timeRemaining = dbSession.timeRemaining
-          existingSession.lastUpdate = Date.now()
-          existingSession.roomId = dbSession.roomId ?? existingSession.roomId ?? null
-
-          if (dbSession.avatarUrl) {
-            existingSession.avatarUrl = dbSession.avatarUrl
-          }
-        }
-
-        if (dbSession.avatarUrl) {
-          userAvatars.set(dbSession.userId, dbSession.avatarUrl)
-        }
-      }
-
-      const dbSessionIds = new Set(dbSessions.map(s => s.id))
-      for (const [sessionId, session] of sessions.entries()) {
-        if (
-          !dbSessionIds.has(sessionId)
-          && session.lastUpdate
-          && Date.now() - session.lastUpdate > 5 * 60 * 1000
-        ) {
-          sessions.delete(sessionId)
-        }
-      }
-
-      console.log(`Loaded ${dbSessions.length} active sessions from database`)
-      return dbSessions.length
-    } catch (error) {
-      console.error('Failed to load active sessions from database:', error)
-      return sessions.size
-    } finally {
-      activeSessionsDbLoad = null
-    }
-  })()
-
-  return activeSessionsDbLoad
-}
-
 const serializeSessions = () =>
   Array.from(sessions.values()).map((session) => ({
     id: session.id,
     userId: session.userId,
     username: session.username,
     avatarUrl: session.avatarUrl,
+    experience: session.experience ?? 0,
     roomId: session.roomId ?? null,
     task: session.task,
     type: session.type,
@@ -369,42 +279,12 @@ const serializeSessions = () =>
     status: session.status
   }))
 
-// // Periodic time update for sessions (every 5 seconds)
-// setInterval(() => {
-//   let updated = false
-//   sessions.forEach((session) => {
-//     // Calculate actual remaining time based on startTime
-//     const elapsed = (Date.now() - session.startTime) / 1000
-//     const totalDuration = session.duration * 60
-//     const calculatedTimeRemaining = Math.max(0, totalDuration - elapsed)
-    
-//     // Update only if changed
-//     if (Math.abs(session.timeRemaining - calculatedTimeRemaining) > 1) {
-//       session.timeRemaining = calculatedTimeRemaining
-//       session.lastUpdate = Date.now()
-//       updated = true
-//     }
-//   })
-  
-//   if (updated) {
-//     io.emit('session-update', serializeSessions())
-//   }
-// }, 5000)
-
-
-// Periodic DB synchronization. Connection bursts share the same cached load.
-setInterval(async () => {
-  if (io.sockets.sockets.size === 0) return
-  await loadActiveSessionsFromDB()
-  io.emit('session-update', serializeSessions())
-}, ACTIVE_SESSIONS_DB_REFRESH_MS)
-
 // Periodic cleanup of outdated sessions (every minute)
 setInterval(() => {
   let cleaned = 0
   sessions.forEach((session, sessionId) => {
     const elapsed = (Date.now() - session.startTime) / 1000
-    if (elapsed > session.duration * 60 + 300) {
+    if (session.status !== 'PAUSED' && elapsed > session.duration * 60 + 300) {
       sessions.delete(sessionId)
       cleaned += 1
     }
@@ -414,30 +294,6 @@ setInterval(() => {
     io.emit('session-update', serializeSessions())
   }
 }, 60000)
-
-// Periodic cleanup of paused sessions without active socket (every 2 minutes)
-setInterval(() => {
-  let cleaned = 0
-  const PAUSED_TIMEOUT = 30 * 60 * 1000 // 30 minutes in milliseconds
-  
-  sessions.forEach((session, sessionId) => {
-    // Only clean paused sessions without active socket connection
-    if (session.status === 'PAUSED' && !session.socketId && session.disconnectedAt) {
-      const timeSinceDisconnect = Date.now() - session.disconnectedAt
-      
-      if (timeSinceDisconnect > PAUSED_TIMEOUT) {
-        console.log(`Cleaning paused session ${sessionId} - disconnected ${Math.floor(timeSinceDisconnect / 60000)} minutes ago`)
-        sessions.delete(sessionId)
-        cleaned += 1
-      }
-    }
-  })
-
-  if (cleaned > 0) {
-    console.log(`Cleaned ${cleaned} paused sessions that timed out`)
-    io.emit('session-update', serializeSessions())
-  }
-}, 120000) // Check every 2 minutes
 
 // Periodic cleanup of "ghost" connections
 setInterval(() => {
@@ -495,11 +351,10 @@ const emitPresenceSnapshot = () => {
   })
 }
 
-io.on('connection', async (socket) => {
+io.on('connection', (socket) => {
   emitPresenceSnapshot()
   
-  // On connection, load actual sessions from DB and send to client
-  await loadActiveSessionsFromDB()
+  // Online sessions are owned exclusively by connected clients.
   socket.emit('session-update', serializeSessions())
 
   socket.on('join-presence', (payload?: { userId: string | null; anonymousId?: string | null; username?: string | null; avatarUrl?: string | null }) => {
@@ -507,6 +362,21 @@ io.on('connection', async (socket) => {
     const anonymousId = payload?.anonymousId ?? null
     const username = payload?.username ?? null
     const avatarUrl = payload?.avatarUrl ?? null
+
+    const previousUserId = socketUserMap.get(socket.id)
+    const previousAnonymousId = anonymousSockets.get(socket.id)
+    if (previousUserId && previousUserId !== userId) {
+      socket.leave(`user-${previousUserId}`)
+      socketUserMap.delete(socket.id)
+      decrementUserConnection(previousUserId)
+    }
+    if ((previousUserId && previousUserId !== userId) ||
+        (previousAnonymousId && previousAnonymousId !== anonymousId)) {
+      sessions.forEach((session, sessionId) => {
+        if (session.socketId === socket.id) sessions.delete(sessionId)
+      })
+      io.emit('session-update', serializeSessions())
+    }
 
     if (userId) {
       socket.join(`user-${userId}`)
@@ -516,8 +386,10 @@ io.on('connection', async (socket) => {
       }
       if (avatarUrl) {
         userAvatars.set(userId, avatarUrl)
+      } else {
+        userAvatars.delete(userId)
       }
-      incrementUserConnection(userId)
+      if (previousUserId !== userId) incrementUserConnection(userId)
     }
 
     if (anonymousId) {
@@ -704,6 +576,10 @@ io.on('connection', async (socket) => {
     const tempId = systemMessage.id
     pushChatMessageForRoom(systemMessage)
 
+    // Publish immediately; chat persistence must not delay or resurrect a session.
+    sessions.set(sessionData.id, sessionRecord)
+    io.emit('session-update', serializeSessions())
+
     // Save to database
     const savedMessage = await saveSystemMessageToDB(systemMessage)
     if (savedMessage?.id) {
@@ -724,8 +600,6 @@ io.on('connection', async (socket) => {
       }
     }
 
-    sessions.set(sessionData.id, sessionRecord)
-    
     io.emit('chat-new', systemMessage)
 
     io.emit('session-update', serializeSessions())
@@ -765,9 +639,9 @@ io.on('connection', async (socket) => {
       socketId: socket.id,
       startTime: syncStartTime,
       chatMessageId: existingSession?.chatMessageId,
-      username: existingSession?.username || sessionData.username,
-      avatarUrl: existingSession?.avatarUrl || sessionData.avatarUrl,
-      disconnectedAt: undefined, // Clear disconnectedAt when user reconnects
+      username: sessionData.username || userNames.get(userId ?? '') || 'Guest',
+      avatarUrl: sessionData.avatarUrl,
+      lastUpdate: Date.now(),
     })
 
     io.emit('session-update', serializeSessions())
@@ -788,9 +662,14 @@ io.on('connection', async (socket) => {
     const reason = payload?.reason ?? 'manual'
     const session = sessions.get(sessionId)
     
-    if (!session) {
+    if (!session || session.socketId !== socket.id) {
       return // Session doesn't exist, nothing to do
     }
+
+    // Remove presence before awaiting best-effort chat persistence.
+    sessions.delete(sessionId)
+    io.emit('session-update', serializeSessions())
+    if (session.userId) clearReactionsTargetingUser(session.userId, io)
 
     const shouldRemoveActivity = reason === 'manual' && (
       payload?.removeActivity ||
@@ -868,15 +747,6 @@ io.on('connection', async (socket) => {
       await deleteSystemMessageFromDB(session.chatMessageId, session.id)
     }
 
-    // Only delete the specific session that belongs to this socket
-    if (session.socketId === socket.id) {
-      sessions.delete(sessionId)
-      io.emit('session-update', serializeSessions())
-
-      if (session.userId) {
-        clearReactionsTargetingUser(session.userId, io)
-      }
-    }
   })
 
   socket.on('timer-tick', (payload?: { sessionId: string; timeRemaining: number }) => {
@@ -889,6 +759,7 @@ io.on('connection', async (socket) => {
     // Update time and bind to current socket (if user returned)
     session.timeRemaining = Number(payload.timeRemaining) || 0
     session.lastUpdate = Date.now()
+    session.startTime = Date.now() - (session.duration * 60 - session.timeRemaining) * 1000
     session.socketId = socket.id
 
     if (payload.timeRemaining % 30 === 0) {
@@ -896,9 +767,7 @@ io.on('connection', async (socket) => {
     }
   })
 
-  socket.on('get-active-sessions', async () => {
-    // Load fresh data from DB before sending
-    await loadActiveSessionsFromDB()
+  socket.on('get-active-sessions', () => {
     socket.emit('session-update', serializeSessions())
   })
 
@@ -980,22 +849,22 @@ io.on('connection', async (socket) => {
       decrementUserConnection(userId)
     }
 
-    // НЕ удаляем сессии при отключении - они остаются в памяти и в БД
-    // Только убираем привязку к socketId
+    // A disconnected timer is no longer an online session. The client restores
+    // its current snapshot on reconnect, including paused sessions.
+    const disconnectedSessionIds: string[] = []
     sessions.forEach((session, sessionId) => {
       if (session.socketId === socket.id) {
-        // Обновляем lastUpdate чтобы знать, что сокет отключился
-        session.lastUpdate = Date.now()
-        // Убираем привязку к сокету
-        delete session.socketId
-        
-        // Для паузнутых сессий отмечаем время отключения
-        if (session.status === 'PAUSED') {
-          session.disconnectedAt = Date.now()
-          console.log(`Paused session ${sessionId} disconnected at ${new Date().toISOString()}, will be cleaned in 30 minutes`)
-        }
+        sessions.delete(sessionId)
+        disconnectedSessionIds.push(sessionId)
       }
     })
+    if (disconnectedSessionIds.length > 0) {
+      io.emit('session-update', serializeSessions())
+      // Another connected tab may still be running the same timer.
+      for (const sessionId of disconnectedSessionIds) {
+        socket.broadcast.emit('session-sync-request', sessionId)
+      }
+    }
 
     removeAnonymousConnectionBySocket(socket.id)
 

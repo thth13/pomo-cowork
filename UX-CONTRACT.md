@@ -103,3 +103,15 @@ keeps platform-owned popup behavior. The existing activity-period disclosure use
 buttons with expanded state, Escape dismissal and trigger focus restoration.
 The annual heatmap preserves keyboard focus and date/value labels. Route styles
 use global theme and scrollbar tokens; page scrolling remains natural.
+
+## Online session data
+
+Per the user's socket-only online-list requirement, `hooks/useSocket.ts` and
+`socket-server/src/index.ts` own the list consumed by `ActiveSessions` on home and
+room screens. The list uses in-memory socket snapshots only, including public
+profile metadata and running/paused timer state. Empty snapshots and disconnects
+clear stale rows. Reconnect republishes the current timer; another open tab can
+republish the same timer when its owning socket disconnects. Session history and
+own-timer restoration retain their existing API owners. The retired active-list API
+also supplied admin-only registration dates; these are no longer shown in online
+cards and are never added to the public socket payload.
