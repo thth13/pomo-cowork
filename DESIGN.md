@@ -216,3 +216,36 @@ Disconnect clears the local list and removes the disconnected timer on the serve
 reconnect publishes the client's current timer, including pauses, before requesting
 fresh snapshots. Registration dates are not broadcast publicly. Session history and
 restoration of the user's own timer remain separate database-backed workflows.
+
+## Search landing pages
+
+The fourteen routes in `lib/seoRoutes.ts` use the document-scrolling `app/(tools)` shell.
+The English copy in `lib/seoPages.ts` is rendered on the server and excluded from
+DOM translation. Inter owns the readable headings and prose; the pixel face remains
+reserved for the brand, small workspace labels, and the real timer digits.
+`app/(tools)/tools.css` owns layout and spacing, using existing `--pixel-*` colors
+and `--font-pixel`; no additional theme palette or font dependency is introduced.
+
+The signature is an immediately usable shared study desk: the existing PomodoroTimer
+beside a live ActiveSessions rail. Social-intent pages give that rail a sage surface
+and direct access to rooms. At 800px it stacks below the timer; page scrolling stays
+natural. A reserved timer region holds loading feedback while authentication resolves;
+editorial content never waits for authentication. Disconnected presence is labeled
+unavailable, never represented by invented participants or a zero count.
+
+Presets apply once on entry to an idle timer: 15/5/15 for homework initiation,
+30/5/15 for the half-hour timer, 45/10/20 for the 45-minute timer,
+50/10/20 for focus, online study rooms and the 50-minute timer, 25/5/15 elsewhere. Active and paused
+sessions keep their timing. The existing settings modal remains the duration owner;
+subsequent visitor changes are not overwritten by page presets. Reset on these pages
+uses the shared stop/cancel operation; time tracking retains the Stop label.
+FAQ disclosures are native details/summary and their full answers render server-side.
+Metadata, canonical URLs, WebApplication/FAQ JSON-LD and sitemap entries are shared
+in implementation, while search intent, examples, benefits, FAQs and related links
+are written separately for each route. No ranking or rich-result promise is made.
+
+About the timer includes a server-rendered Focus Tools navigation list for all fourteen
+tools, using shared labels from `lib/seoRoutes.ts`. Links have 44px minimum height,
+theme-derived hover/pressed states and visible keyboard focus. Related tools reuse
+those labels, with intent-specific destinations. `app/sitemap.ts` generates the public
+`/sitemap.xml` from the same tool registry, public site pages and published blog posts.

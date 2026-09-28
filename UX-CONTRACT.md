@@ -115,3 +115,22 @@ republish the same timer when its owning socket disconnects. Session history and
 own-timer restoration retain their existing API owners. The retired active-list API
 also supplied admin-only registration dates; these are no longer shown in online
 cards and are never added to the public socket payload.
+
+## Search landing workflows
+
+`components/seo/SeoLandingPage.tsx` owns the server-rendered English landing content.
+`SeoWorkspace` reuses PomodoroTimer, TimerControls, SettingsModal and ActiveSessions;
+there is no separate countdown, session service, room membership or presence source.
+The page presets initialize only an idle timer once per route mount, never overwriting
+an active/paused session or later settings edits. Landing Reset is a label variant
+of the existing stop/cancel operation, with the same persistence and feedback.
+Timer and presence controls retain the user's English/Spanish locale, marked by a
+local lang attribute; the surrounding editorial content remains English.
+
+In-page CTAs navigate to the real timer. Room CTAs navigate to the existing directory;
+they neither create rooms nor synchronize other participants' timers. Existing account
+and Pro workflows remain authoritative. InitialLoader does not cover public landing
+copy. Timer readiness waits for authentication, while disconnected live activity has
+an explicit unavailable/reconnecting state and the existing socket manages recovery.
+Only static inspection and lint/audit are performed; browser, build, and typecheck
+verification remain excluded by the user's instructions.

@@ -6,6 +6,7 @@ import { PomodoroSession, SessionType } from '@/types'
 import { useI18n } from '@/components/I18nProvider'
 
 interface TimerControlsProps {
+  stopLabel?: string
   children?: ReactNode
   currentSession: PomodoroSession | null
   sessionType: SessionType
@@ -23,6 +24,7 @@ interface TimerControlsProps {
 }
 
 export const TimerControls = memo(function TimerControls({
+  stopLabel,
   children,
   currentSession,
   sessionType,
@@ -65,7 +67,7 @@ export const TimerControls = memo(function TimerControls({
                 }`}
               >
                 <Square size={20} />
-                <span>{isStopping ? t.timer.stopping : t.timer.stop}</span>
+                <span>{isStopping ? t.timer.stopping : stopLabel ?? t.timer.stop}</span>
               </button>
               {!isPaused && (
                 <button

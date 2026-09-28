@@ -31,6 +31,8 @@ import { useI18n } from '@/components/I18nProvider'
 interface PomodoroTimerProps {
   idleTitle?: string
   onSessionComplete?: () => void
+  initialSettings?: TimerSettingsForm
+  resetLabel?: string
 }
 
 interface TimerSettingsForm {
@@ -213,7 +215,7 @@ const useTaskMenu = (isDisabled: boolean) => {
   }
 }
 
-function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: PomodoroTimerProps) {
+function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel }: PomodoroTimerProps) {
   const { t } = useI18n()
   const {
     isRunning,
@@ -254,8 +256,12 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
   const [timerState, dispatchTimer] = useReducer(
     timerReducer,
     { workDuration, shortBreak, longBreak, longBreakAfter },
-    createInitialTimerState
+    (durations) => {
+      const state = createInitialTimerState(durations)
+      return initialSettings && !currentSession ? { ...state, isTimeTrackerMode: false } : state
+    }
   )
+  const appliedInitialSettings = useRef(false)
   const {
     sessionType,
     notificationEnabled,
@@ -427,6 +433,15 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
   }, [isAutoStartEnabled, isTimeTrackerMode, notificationEnabled, soundEnabled, soundVolume])
 
   useEffect(() => {
+    if (initialSettings) {
+      // Landing presets apply once. Never replace an active/paused session or
+      // reapply a preset after the visitor changes settings or finishes a cycle.
+      if (!appliedInitialSettings.current) {
+        appliedInitialSettings.current = true
+        if (!useTimerStore.getState().currentSession) initializeWithSettings(initialSettings)
+      }
+      return
+    }
     if (!user?.settings || currentSession) {
       return
     }
@@ -438,7 +453,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
       longBreakAfter: user.settings.longBreakAfter,
     })
 
-  }, [user?.settings, currentSession, initializeWithSettings])
+  }, [user?.settings, currentSession, initializeWithSettings, initialSettings])
 
   useEffect(() => {
     if (user?.settings) {
@@ -1347,6 +1362,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
       </div>
 
       <TimerControls
+        stopLabel={isTimeTrackingSession ? undefined : resetLabel}
         currentSession={currentSession}
         sessionType={activeSessionType}
         onSessionTypeChange={handleSessionTypeChange}

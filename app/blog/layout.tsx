@@ -15,7 +15,7 @@ export default function BlogLayout({ children }: { children: React.ReactNode }) 
         </nav>
       </header>
       {children}
-      <footer className="blog-footer"><Link href="/blog">Pomo Cowork Blog</Link><Link href="/">Make time for one thing.</Link></footer>
+      <footer className="blog-footer"><Link href="/blog">Pomo Cowork Blog</Link><Link href="/pomodoro-timer">Pomodoro timer</Link><Link href="/study-timer">Study timer</Link><Link href="/">Make time for one thing.</Link></footer>
     </div>
   )
 }

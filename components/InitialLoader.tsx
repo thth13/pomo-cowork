@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
+import { isSeoPath } from '@/lib/seoRoutes'
 
 export default function InitialLoader() {
   const pathname = usePathname()
@@ -13,7 +14,7 @@ export default function InitialLoader() {
     setIsHydrated(true)
   }, [])
 
-  if (pathname === '/' || pathname === '/blog' || pathname.startsWith('/blog/') || !isHydrated || !isLoading) {
+  if (pathname === '/' || pathname === '/blog' || pathname.startsWith('/blog/') || isSeoPath(pathname) || !isHydrated || !isLoading) {
     return null
   }
 
