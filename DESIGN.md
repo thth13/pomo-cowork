@@ -89,13 +89,15 @@ The homepage centers a 640px timer. Currently Working is a permanent right-side 
 part of the page rather than a floating window. At 1440px and up, symmetric side columns
 keep the timer centered independently of the rail. The rail is up to 400px wide and
 640px tall, with a subtle left divider, plain heading and online count. From 960px the rail sits beside the timer; narrower screens
-place it below the timer in a bounded grid row. On desktop the rail aligns to the right
+place it below the timer in a bounded grid row, except on mobile (up to 719px), where
+the page scrolls naturally and the full session list has no height limit or internal scrollbar.
+On desktop the rail aligns to the right
 edge of the page content without auto margins; equal inline padding centers the empty state.
 Only real sessions appear in the rail and online count; mock participants are removed.
 Coworkers form a vertical list with 40px avatars on the left and names, activities,
 time, status and a remaining-time meter on the right. Time tracking shows elapsed time
 without a fictional remaining-time meter. The current user keeps a tomato edge accent and
-You label. Room pages keep their detailed session cards. The list owns vertical scrolling at every width.
+You label. Room pages keep their detailed session cards. Above 719px the list owns vertical scrolling.
 Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The English H1, “Online Pomodoro Timer for Focused Work”, and Pomodoro overview
 live inside the About the timer workspace window, opened by the question-mark dock
 button. The window is closed by default and never restored on page load, even if left
@@ -107,7 +109,7 @@ from automatic DOM translation. The trigger and window controls follow the activ
 below Start/session actions and above the session-type controls.
 Chat, history, tasks and Your Progress open from a fixed vertical dock at the left.
 Its five icon-only buttons have fine separators, localized accessible names and native
-tooltips; the progress tooltip includes the current experience rank. The homepage has no document scrolling or inline introductory text. The timer
+tooltips; the progress tooltip includes the current experience rank. Above 719px the homepage has no document scrolling; mobile uses document scrolling through the timer and full session list. There is no inline introductory text. The timer
 workspace occupies the viewport with safe-area clearance and compact timer spacing
 on small screens. Lists and floating panels scroll internally; exceptionally small
 viewports allow internal timer scrolling to keep controls reachable. Other routes keep
@@ -204,3 +206,46 @@ Highcharts uses runtime CSS colors so charts follow both themes. Existing statis
 API, period navigation, task sessions, LatestActivity and Pro access remain owners
 of their workflows. The locked preview is bounded and inert for keyboard users.
 The year selector retains its native operating-system popup.
+
+## Online sessions
+
+The shared ActiveSessions view reads only Socket.IO snapshots through useTimerStore.
+An empty snapshot clears the list; HTTP and database fallbacks must not repopulate it.
+Each snapshot includes the public username, avatar, experience and timer state.
+Disconnect clears the local list and removes the disconnected timer on the server;
+reconnect publishes the client's current timer, including pauses, before requesting
+fresh snapshots. Registration dates are not broadcast publicly. Session history and
+restoration of the user's own timer remain separate database-backed workflows.
+
+## Search landing pages
+
+The fourteen routes in `lib/seoRoutes.ts` use the document-scrolling `app/(tools)` shell.
+The English copy in `lib/seoPages.ts` is rendered on the server and excluded from
+DOM translation. Inter owns the readable headings and prose; the pixel face remains
+reserved for the brand, small workspace labels, and the real timer digits.
+`app/(tools)/tools.css` owns layout and spacing, using existing `--pixel-*` colors
+and `--font-pixel`; no additional theme palette or font dependency is introduced.
+
+The signature is an immediately usable shared study desk: the existing PomodoroTimer
+beside a live ActiveSessions rail. Social-intent pages give that rail a sage surface
+and direct access to rooms. At 800px it stacks below the timer; page scrolling stays
+natural. A reserved timer region holds loading feedback while authentication resolves;
+editorial content never waits for authentication. Disconnected presence is labeled
+unavailable, never represented by invented participants or a zero count.
+
+Presets apply once on entry to an idle timer: 15/5/15 for homework initiation,
+30/5/15 for the half-hour timer, 45/10/20 for the 45-minute timer,
+50/10/20 for focus, online study rooms and the 50-minute timer, 25/5/15 elsewhere. Active and paused
+sessions keep their timing. The existing settings modal remains the duration owner;
+subsequent visitor changes are not overwritten by page presets. Reset on these pages
+uses the shared stop/cancel operation; time tracking retains the Stop label.
+FAQ disclosures are native details/summary and their full answers render server-side.
+Metadata, canonical URLs, WebApplication/FAQ JSON-LD and sitemap entries are shared
+in implementation, while search intent, examples, benefits, FAQs and related links
+are written separately for each route. No ranking or rich-result promise is made.
+
+About the timer includes a server-rendered Focus Tools navigation list for all fourteen
+tools, using shared labels from `lib/seoRoutes.ts`. Links have 44px minimum height,
+theme-derived hover/pressed states and visible keyboard focus. Related tools reuse
+those labels, with intent-specific destinations. `app/sitemap.ts` generates the public
+`/sitemap.xml` from the same tool registry, public site pages and published blog posts.

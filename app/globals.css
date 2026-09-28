@@ -367,6 +367,11 @@ html:has(.workspace-page), body:has(.workspace-page) { height: 100%; overflow: h
 .pomodoro-overview h1 { margin-bottom: 16px; font-size: 20px; font-weight: 600; line-height: 1.4; text-wrap: balance; }
 .pomodoro-overview h2 { margin: 24px 0 8px; font-size: 16px; font-weight: 600; line-height: 1.4; text-wrap: balance; }
 .pomodoro-overview p { font-size: 14px; }
+.focus-tools ul { display: grid; gap: 4px; }
+.focus-tools a { display: flex; align-items: center; min-height: 44px; padding: 8px 10px; font-size: 14px; text-decoration: underline; text-underline-offset: 4px; cursor: pointer; }
+.focus-tools a:hover { background: var(--pixel-screen); }
+.focus-tools a:active { background: var(--pixel-shadow); }
+.focus-tools a:focus-visible { outline: 2px solid var(--pixel-ink); outline-offset: 2px; }
 .focus-page-layout { display: grid; grid-template-rows: minmax(0, 1fr) minmax(100px, .5fr); gap: 16px; height: 100%; min-height: 0; max-width: 960px; margin: 0 auto; padding: max(76px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) calc(92px + env(safe-area-inset-left)); }
 .focus-page-layout .focus-station { width: 100%; max-width: 640px; min-width: 0; min-height: 0; max-height: 100%; margin: auto; overflow-y: auto; overscroll-behavior: contain; }
 .focus-page-layout .focus-station [data-timer-panel] { width: 100%; padding-block: 0; }
@@ -475,6 +480,14 @@ html:has(.workspace-page), body:has(.workspace-page) { height: 100%; overflow: h
 .workspace-window .workspace-window-resize-nw { top: -5px; left: -5px; cursor: nwse-resize; }
 .workspace-window-resize:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -2px; }
 @media (max-width: 719px) {
+  /* Mobile uses document scrolling; the full coworker list follows the timer. */
+  html:has(.workspace-page), body:has(.workspace-page) { height: auto; overflow: visible; }
+  .workspace-page { height: auto; min-height: 100dvh; overflow: visible; }
+  .workspace-page > .h-full { min-height: 100dvh; }
+  .focus-page-layout { height: auto; grid-template-rows: auto auto; }
+  .focus-page-layout .focus-station { max-height: none; overflow: visible; overscroll-behavior: auto; }
+  .working-sidebar, .working-sidebar .focus-page-community { height: auto; max-height: none; overflow: visible; }
+  .working-sidebar .coworker-strip { flex: none; overflow: visible; scrollbar-gutter: auto; overscroll-behavior: auto; }
   .focus-page-layout .pixel-timer-digits { font-size: clamp(36px, 10vw, 58px); letter-spacing: -2px; }
   .focus-page-layout .focus-station [data-timer-panel] { padding-inline: 0; }
   /* Mobile panels fill the available width, overriding saved desktop geometry. */

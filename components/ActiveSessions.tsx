@@ -429,7 +429,7 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
     : 'bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8'
   const { t } = useI18n()
   const { activeSessions } = useTimerStore()
-  const { user, token } = useAuthStore()
+  const { user } = useAuthStore()
   const anonymousId = useMemo(() => {
     if (user || typeof window === 'undefined') {
       return null
@@ -450,10 +450,6 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
     onReactionSnapshot,
     offReactionSnapshot
   } = useSocket()
-  const [localSessions, setLocalSessions] = useState<ActiveSession[]>([])
-  const [registeredAtByUser, setRegisteredAtByUser] = useState<Record<string, string>>({})
-  const [experienceByUser, setExperienceByUser] = useState<Record<string, number>>({})
-  const hasSocketActivity = useRef(false)
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
     show: false,
     x: 0,
@@ -469,20 +465,6 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
   const [showToast, setShowToast] = useState(false)
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const sessionCardsRef = useRef<Map<string, HTMLElement>>(new Map())
-
-  useEffect(() => {
-    if (activeSessions.length > 0) {
-      hasSocketActivity.current = true
-      setLocalSessions([])
-    }
-  }, [activeSessions.length])
-
-  useEffect(() => {
-    setRegisteredAtByUser({})
-    setLocalSessions((sessions) =>
-      sessions.map((session) => ({ ...session, registeredAt: null }))
-    )
-  }, [token])
 
   // Close context menu on click outside
   useEffect(() => {
@@ -612,70 +594,6 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
     requestReactions({ userId: currentUserId ?? null })
   }, [requestReactions, currentUserId])
 
-  // Keep a slow API fallback for socket outages and refresh rank metadata.
-  useEffect(() => {
-    let isMounted = true
-    let isFetching = false
-    let lastFetchAt = 0
-    const refreshIntervalMs = 5 * 60 * 1000
-    const controller = new AbortController()
-
-    const fetchActiveSessions = async () => {
-      if (isFetching || Date.now() - lastFetchAt < refreshIntervalMs) return
-      isFetching = true
-      lastFetchAt = Date.now()
-      try {
-        const response = await fetch('/api/sessions/active', {
-          cache: 'no-store',
-          signal: controller.signal,
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        })
-        if (response.ok && isMounted) {
-          const sessions = await response.json() as ActiveSession[]
-          if (!isMounted) return
-          setRegisteredAtByUser(
-            Object.fromEntries(
-              sessions.flatMap((session) =>
-                session.registeredAt ? [[session.userId, session.registeredAt]] : []
-              )
-            )
-          )
-          setExperienceByUser(
-            Object.fromEntries(
-              sessions.map((session) => [session.userId, session.experience ?? 0])
-            )
-          )
-          if (!hasSocketActivity.current) {
-            setLocalSessions(sessions)
-          }
-        }
-      } catch (error) {
-        if (!controller.signal.aborted) {
-          console.error('Failed to fetch active sessions:', error)
-        }
-      } finally {
-        isFetching = false
-      }
-    }
-
-    const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') {
-        void fetchActiveSessions()
-      }
-    }
-
-    refreshWhenVisible()
-    const interval = window.setInterval(refreshWhenVisible, refreshIntervalMs)
-    document.addEventListener('visibilitychange', refreshWhenVisible)
-
-    return () => {
-      isMounted = false
-      controller.abort()
-      window.clearInterval(interval)
-      document.removeEventListener('visibilitychange', refreshWhenVisible)
-    }
-  }, [token])
-
   const handleContextMenu = (e: React.MouseEvent, targetUserId: string, element: HTMLElement) => {
     e.preventDefault()
     
@@ -696,7 +614,7 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
     }
 
     // Проверка: пользователь должен быть в активной сессии работы
-    const userSession = sessionsToShow.find(s => s.userId === user.id)
+    const userSession = allActiveSessions.find(s => s.userId === user.id)
     const isInWorkSession = userSession && userSession.type === SessionType.WORK && userSession.status !== SessionStatus.PAUSED
     
     if (!isInWorkSession) {
@@ -801,19 +719,7 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
     }
   }, [])
 
-  // Use sessions from WebSocket if available, otherwise from API
-  const sessionsToShow = (activeSessions.length > 0 ? activeSessions : localSessions).map((session) => ({
-    ...session,
-    registeredAt: session.registeredAt
-      ?? registeredAtByUser[session.userId]
-      ?? null,
-    experience: session.experience
-      ?? experienceByUser[session.userId]
-      ?? (session.userId === user?.id ? user.experience : 0)
-      ?? 0,
-  }))
-
-  const sessionsInRoom = sessionsToShow.filter((session) => (session.roomId ?? null) === currentRoomId)
+  const sessionsInRoom = activeSessions.filter((session) => (session.roomId ?? null) === currentRoomId)
 
   // Filter out expired sessions
   const allActiveSessions = sessionsInRoom.filter(session => {

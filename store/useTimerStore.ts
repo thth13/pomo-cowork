@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { useAuthStore } from './useAuthStore'
+import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { PomodoroSession, SessionType, SessionStatus, ActiveSession } from '@/types'
 
 export const TIME_TRACKER_DURATION_MINUTES = 24 * 60
@@ -83,7 +85,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   startSession: (task: string, duration: number, type: SessionType, sessionId?: string, roomId?: string | null) => {
     const session: PomodoroSession = {
       id: sessionId || Date.now().toString(),
-      userId: 'current-user', // Will be replaced with actual user ID
+      userId: useAuthStore.getState().user?.id ?? getOrCreateAnonymousId(),
       roomId: roomId ?? null,
       task,
       duration,

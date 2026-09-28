@@ -31,6 +31,8 @@ import { useI18n } from '@/components/I18nProvider'
 interface PomodoroTimerProps {
   idleTitle?: string
   onSessionComplete?: () => void
+  initialSettings?: TimerSettingsForm
+  resetLabel?: string
 }
 
 interface TimerSettingsForm {
@@ -163,6 +165,7 @@ const useTaskMenu = (isDisabled: boolean) => {
   const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
   const [taskSearch, setTaskSearch] = useState('')
   const taskPickerRef = useRef<HTMLDivElement | null>(null)
+  const taskDropdownRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (!isTaskMenuOpen) {
@@ -171,7 +174,11 @@ const useTaskMenu = (isDisabled: boolean) => {
     }
 
     const handleOutsideClick = (event: MouseEvent) => {
-      if (taskPickerRef.current && !taskPickerRef.current.contains(event.target as Node)) {
+      if (
+        taskPickerRef.current &&
+        !taskPickerRef.current.contains(event.target as Node) &&
+        !taskDropdownRef.current?.contains(event.target as Node)
+      ) {
         setIsTaskMenuOpen(false)
       }
     }
@@ -179,6 +186,7 @@ const useTaskMenu = (isDisabled: boolean) => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setIsTaskMenuOpen(false)
+        taskPickerRef.current?.querySelector('button')?.focus()
       }
     }
 
@@ -203,10 +211,11 @@ const useTaskMenu = (isDisabled: boolean) => {
     taskSearch,
     setTaskSearch,
     taskPickerRef,
+    taskDropdownRef,
   }
 }
 
-function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: PomodoroTimerProps) {
+function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel }: PomodoroTimerProps) {
   const { t } = useI18n()
   const {
     isRunning,
@@ -247,8 +256,12 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
   const [timerState, dispatchTimer] = useReducer(
     timerReducer,
     { workDuration, shortBreak, longBreak, longBreakAfter },
-    createInitialTimerState
+    (durations) => {
+      const state = createInitialTimerState(durations)
+      return initialSettings && !currentSession ? { ...state, isTimeTrackerMode: false } : state
+    }
   )
+  const appliedInitialSettings = useRef(false)
   const {
     sessionType,
     notificationEnabled,
@@ -338,6 +351,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
     taskSearch,
     setTaskSearch,
     taskPickerRef,
+    taskDropdownRef,
   } = useTaskMenu(isTaskPickerDisabled)
 
   const { scheduleAutoStart, clearAutoStart } = useAutoStart(isAutoStartEnabled)
@@ -419,6 +433,15 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
   }, [isAutoStartEnabled, isTimeTrackerMode, notificationEnabled, soundEnabled, soundVolume])
 
   useEffect(() => {
+    if (initialSettings) {
+      // Landing presets apply once. Never replace an active/paused session or
+      // reapply a preset after the visitor changes settings or finishes a cycle.
+      if (!appliedInitialSettings.current) {
+        appliedInitialSettings.current = true
+        if (!useTimerStore.getState().currentSession) initializeWithSettings(initialSettings)
+      }
+      return
+    }
     if (!user?.settings || currentSession) {
       return
     }
@@ -430,7 +453,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
       longBreakAfter: user.settings.longBreakAfter,
     })
 
-  }, [user?.settings, currentSession, initializeWithSettings])
+  }, [user?.settings, currentSession, initializeWithSettings, initialSettings])
 
   useEffect(() => {
     if (user?.settings) {
@@ -1339,6 +1362,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
       </div>
 
       <TimerControls
+        stopLabel={isTimeTrackingSession ? undefined : resetLabel}
         currentSession={currentSession}
         sessionType={activeSessionType}
         onSessionTypeChange={handleSessionTypeChange}
@@ -1360,6 +1384,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork' }: Po
           onToggle={() => setIsTaskMenuOpen((state) => !state)}
           onClose={() => setIsTaskMenuOpen(false)}
           taskPickerRef={taskPickerRef}
+          taskDropdownRef={taskDropdownRef}
           selectedTask={selectedTask}
           onSelectTask={handleTaskSelect}
           filteredTaskOptions={filteredTaskOptions}

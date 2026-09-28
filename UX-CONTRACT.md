@@ -103,3 +103,47 @@ keeps platform-owned popup behavior. The existing activity-period disclosure use
 buttons with expanded state, Escape dismissal and trigger focus restoration.
 The annual heatmap preserves keyboard focus and date/value labels. Route styles
 use global theme and scrollbar tokens; page scrolling remains natural.
+
+## Online session data
+
+Per the user's socket-only online-list requirement, `hooks/useSocket.ts` and
+`socket-server/src/index.ts` own the list consumed by `ActiveSessions` on home and
+room screens. The list uses in-memory socket snapshots only, including public
+profile metadata and running/paused timer state. Empty snapshots and disconnects
+clear stale rows. Reconnect republishes the current timer; another open tab can
+republish the same timer when its owning socket disconnects. Session history and
+own-timer restoration retain their existing API owners. The retired active-list API
+also supplied admin-only registration dates; these are no longer shown in online
+cards and are never added to the public socket payload.
+
+Timer ownership is fixed when the local session starts. Changing identity clears
+that local timer and its service-worker countdown; it does not cancel its database
+record or publish it under the next account. Same-account profile changes still
+refresh the public snapshot. Pending activity is sent only under its original owner.
+
+Start/end activity uses an acknowledged, retried queue in the current tab. Replayed
+starts cannot repopulate online presence, and the server deduplicates lifecycle
+operations by session ID. Chat-message linkage lives separately from the online
+list, so reconnect and an immediate stop during start-message persistence retain
+correct activity cleanup. Recovery is in-memory: the client queue lasts until page
+reload, and server activity/deduplication expires seven days after a session is no
+longer online (or on server restart). Chat database persistence remains best-effort.
+
+## Search landing workflows
+
+`components/seo/SeoLandingPage.tsx` owns the server-rendered English landing content.
+`SeoWorkspace` reuses PomodoroTimer, TimerControls, SettingsModal and ActiveSessions;
+there is no separate countdown, session service, room membership or presence source.
+The page presets initialize only an idle timer once per route mount, never overwriting
+an active/paused session or later settings edits. Landing Reset is a label variant
+of the existing stop/cancel operation, with the same persistence and feedback.
+Timer and presence controls retain the user's English/Spanish locale, marked by a
+local lang attribute; the surrounding editorial content remains English.
+
+In-page CTAs navigate to the real timer. Room CTAs navigate to the existing directory;
+they neither create rooms nor synchronize other participants' timers. Existing account
+and Pro workflows remain authoritative. InitialLoader does not cover public landing
+copy. Timer readiness waits for authentication, while disconnected live activity has
+an explicit unavailable/reconnecting state and the existing socket manages recovery.
+Only static inspection and lint/audit are performed; browser, build, and typecheck
+verification remain excluded by the user's instructions.

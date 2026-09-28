@@ -25,10 +25,14 @@ npm install
 1. Создайте файл `.env` в корне проекта:
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?schema=public"
 JWT_SECRET="your-super-secret-jwt-key-change-in-production"
 WS_PORT=3001
 ```
+
+Замените `USER`, `PASSWORD`, `HOST` и `DATABASE` данными подключения к вашей PostgreSQL.
+Prisma читает `DATABASE_URL` через `prisma/schema.prisma`; переменная обязательна
+для запросов к базе данных. На сервере задайте её в переменных окружения приложения.
 
 2. Инициализируйте базу данных:
 
@@ -57,7 +61,7 @@ npm run dev
 
 - **Frontend**: Next.js 14, React, TypeScript, Tailwind CSS
 - **Backend**: Next.js API Routes, Express.js для WebSocket
-- **Database**: SQLite с Prisma ORM
+- **Database**: PostgreSQL с Prisma ORM
 - **Real-time**: Socket.io
 - **State Management**: Zustand
 - **Charts**: Chart.js + react-chartjs-2
@@ -101,7 +105,7 @@ pomodo/
 - `POST /api/sessions` - Создать сессию
 - `GET /api/sessions` - Получить сессии пользователя
 - `PUT /api/sessions/[id]` - Обновить сессию
-- `GET /api/sessions/active` - Активные сессии всех пользователей
+- Онлайн-сессии передаются только через Socket.IO (`session-update`); список хранится в памяти сокет-сервера и восстанавливается клиентами при переподключении.
 
 ### Настройки и статистика
 - `GET /api/settings` - Получить настройки

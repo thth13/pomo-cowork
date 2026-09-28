@@ -312,7 +312,7 @@ export default function RoomPage() {
     } finally {
       setLoading(false)
     }
-  }, [getToken, headers, roomId, router, setCurrentRoom, shouldJoinOnOpen, user?.id])
+  }, [getToken, headers, roomId, router, shouldJoinOnOpen, user?.id])
 
   useEffect(() => {
     loadAll()

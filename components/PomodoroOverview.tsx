@@ -1,3 +1,6 @@
+import Link from 'next/link'
+import { seoSlugs, seoToolLabels } from '@/lib/seoRoutes'
+
 export default function PomodoroOverview() {
   return (
     <section className="pomodoro-overview" aria-label="About the Pomodoro timer" lang="en" data-no-translate>
@@ -56,6 +59,14 @@ export default function PomodoroOverview() {
         work today. Small sessions add up faster than they feel like they will.
         Start with one. Take the break. Repeat tomorrow.
       </p>
+      <nav className="focus-tools" aria-labelledby="focus-tools-heading" data-i18n-ignore>
+        <h2 id="focus-tools-heading">Focus Tools</h2>
+        <ul>
+          {seoSlugs.map((slug) => (
+            <li key={slug}><Link href={`/${slug}`}>{seoToolLabels[slug]}</Link></li>
+          ))}
+        </ul>
+      </nav>
     </section>
   )
 }

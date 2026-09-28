@@ -12,6 +12,7 @@ import type {
 } from '@/types'
 import { X } from 'lucide-react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -605,7 +606,7 @@ export default function AdminReferralManager() {
                                   >
                                     <div className="flex min-w-0 items-center gap-3">
                                       {entry.user.avatarUrl ? (
-                                        <img
+                                        <Image
                                           src={entry.user.avatarUrl}
                                           alt={entry.user.username}
                                           className="h-8 w-8 rounded-full object-cover"
@@ -680,7 +681,7 @@ export default function AdminReferralManager() {
                                   >
                                     <div className="flex min-w-0 items-center gap-3">
                                       {entry.user.avatarUrl ? (
-                                        <img
+                                        <Image
                                           src={entry.user.avatarUrl}
                                           alt={entry.user.username}
                                           className="h-8 w-8 rounded-full object-cover"
@@ -800,7 +801,7 @@ export default function AdminReferralManager() {
               >
                 <div className="flex min-w-0 items-center gap-3">
                   {entry.avatarUrl ? (
-                    <img
+                    <Image
                       src={entry.avatarUrl}
                       alt={entry.username}
                       className="h-10 w-10 rounded-full object-cover"
