@@ -25,6 +25,8 @@ import { TimerPictureInPicture } from '@/components/TimerPictureInPicture'
 import { useDocumentPictureInPicture } from '@/hooks/useDocumentPictureInPicture'
 import { SettingsModal } from '@/components/SettingsModal'
 import AuthModal from '@/components/AuthModal'
+import GuestSignupModal from '@/components/GuestSignupModal'
+import { recordGuestFocusCompletion } from '@/lib/guestSignupPrompt'
 import { PaywallModal } from '@/components/PaywallModal'
 import { TimerErrorBoundary } from '@/components/TimerErrorBoundary'
 import { useTaskMenu } from '@/hooks/useTaskMenu'
@@ -233,6 +235,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
   const [isResuming, setIsResuming] = useState(false)
   const [isPaywallOpen, setIsPaywallOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [isGuestSignupOpen, setIsGuestSignupOpen] = useState(false)
 
   const openPaywallOrRegister = () => {
     if (!isAuthenticated || user?.isAnonymous) {
@@ -1141,6 +1144,16 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     
     completeSession()
 
+    const auth = useAuthStore.getState()
+    if (
+      completedType === SessionType.WORK &&
+      !auth.isLoading &&
+      (!auth.isAuthenticated || auth.user?.isAnonymous) &&
+      recordGuestFocusCompletion(sessionSnapshot.id)
+    ) {
+      setIsGuestSignupOpen(true)
+    }
+
     const nextType = getNextSessionType(completedType)
     setSessionType(nextType)
 
@@ -1389,6 +1402,14 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       />
 
       {isPaywallOpen && <PaywallModal onClose={() => setIsPaywallOpen(false)} />}
+      <GuestSignupModal
+        open={isGuestSignupOpen && (!isAuthenticated || Boolean(user?.isAnonymous)) && !isAuthModalOpen}
+        onClose={() => setIsGuestSignupOpen(false)}
+        onSignUp={() => {
+          setIsGuestSignupOpen(false)
+          setIsAuthModalOpen(true)
+        }}
+      />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
 
     </div>

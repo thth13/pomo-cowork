@@ -1,5 +1,11 @@
 export const gardenCopy = {
   en: {
+    guestSignup: {
+      title: 'Join the community and track your focus statistics.',
+      description: 'Create a free account to follow your progress, celebrate each session, and build a habit you can be proud of.',
+      action: 'Sign up for free',
+      later: 'Keep focusing as a guest',
+    },
     yourRank: 'Rank', menu: 'Menu',
     aboutTimer: 'About the timer',
     resizeWindow: 'Drag to resize, or use arrow keys when focused',
@@ -17,6 +23,12 @@ export const gardenCopy = {
     cooldown: 'Pet and water again after 30 minutes.', noFood: 'Finish a focus session to earn food.', ready: 'Ready when you are',
   },
   es: {
+    guestSignup: {
+      title: 'Únete a la comunidad y sigue tus estadísticas de concentración.',
+      description: 'Crea una cuenta gratis para seguir tu progreso, celebrar cada sesión y construir un hábito del que sentirte orgulloso.',
+      action: 'Regístrate gratis',
+      later: 'Seguir como invitado',
+    },
     yourRank: 'Rango', menu: 'Menú',
     aboutTimer: 'Acerca del temporizador',
     resizeWindow: 'Arrastra para cambiar el tamaño o usa las flechas al enfocar',

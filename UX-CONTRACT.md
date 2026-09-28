@@ -31,6 +31,16 @@
 | Workspace overlays | WorkspaceWindow | Compact non-modal windows; default position beside the left dock, saved positions take precedence; pointer/touch dragging and resizing with keyboard arrows; viewport bounds; click/focus stacking; Escape/close/dock dismissal; mounted content preserves drafts; position and size persist per window in localStorage and fit the viewport on reopen |
 | CRUD / permissions | Existing task, room and auth services/API routes | No workflow or permission changes |
 
+## Guest registration invitation
+
+PomodoroTimer counts completed WORK sessions for guests, excluding breaks and cancelled
+timers. GuestSignupModal appears once after the second completion per browser, with
+deduplicated session IDs in `pomo:guest-signup-prompt:v1` and an in-memory fallback.
+Its native modal dialog owns focus containment, background isolation and Escape dismissal;
+existing pixel tokens own presentation. The registration action closes the invitation
+before opening AuthModal in register mode. Guests may dismiss and continue focusing;
+auto-start behavior is unchanged. English and Spanish copy follows I18nProvider.
+
 ## Native mini timer
 
 The mini timer opens only from a user click in a supporting secure browser context.
