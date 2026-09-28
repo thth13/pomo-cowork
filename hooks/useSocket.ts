@@ -12,6 +12,45 @@ import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUse
 let sharedSocket: Socket | null = null
 let initialized = false
 
+type SessionEnd = {
+  sessionId: string
+  reason: 'manual' | 'completed' | 'reset'
+  removeActivity?: boolean
+  session?: ActiveSession
+}
+type SessionEvent = {
+  name: 'session-start' | 'session-end'
+  ownerId: string
+  payload: (ActiveSession & { activityOnly: true }) | SessionEnd
+}
+// Keep lifecycle events until acknowledged; snapshots themselves are replaceable.
+const pendingSessionEvents: SessionEvent[] = []
+const sessionSnapshots = new Map<string, ActiveSession>()
+const inFlightSessionEvents = new Set<SessionEvent>()
+
+const currentOwnerId = () => useAuthStore.getState().user?.id ?? getOrCreateAnonymousId()
+
+const flushSessionEvents = () => {
+  if (!sharedSocket?.connected) return
+  const ownerId = currentOwnerId()
+  for (const event of pendingSessionEvents) {
+    if (event.ownerId !== ownerId || inFlightSessionEvents.has(event)) continue
+    inFlightSessionEvents.add(event)
+    sharedSocket.timeout(10000).emit(event.name, event.payload, (error: Error | null, accepted?: boolean) => {
+      inFlightSessionEvents.delete(event)
+      if (!error && accepted) {
+        const index = pendingSessionEvents.indexOf(event)
+        if (index !== -1) pendingSessionEvents.splice(index, 1)
+        if (event.name === 'session-end') {
+          sessionSnapshots.delete((event.payload as SessionEnd).sessionId)
+        }
+      } else {
+        window.setTimeout(flushSessionEvents, 2000)
+      }
+    })
+  }
+}
+
 const getSocketUrl = () => process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000'
 
 const buildPresencePayload = (user: User | null): { userId: string | null; anonymousId?: string | null; username?: string; avatarUrl?: string | null } => {
@@ -27,7 +66,7 @@ const withSessionProfile = (session: ActiveSession): ActiveSession => {
   const user = useAuthStore.getState().user
   return {
     ...session,
-    userId: user?.id ?? getOrCreateAnonymousId(),
+    userId: session.userId,
     username: user?.username ?? getAnonymousUsername(),
     avatarUrl: user?.avatarUrl,
     experience: user?.experience ?? 0,
@@ -37,7 +76,8 @@ const withSessionProfile = (session: ActiveSession): ActiveSession => {
 const syncCurrentSession = () => {
   if (!sharedSocket?.connected) return
   const { currentSession, timeRemaining, isRunning } = useTimerStore.getState()
-  if (!currentSession || timeRemaining <= 0) return
+  if (!currentSession || timeRemaining <= 0 || currentSession.id.startsWith('temp_')) return
+  if (currentSession.userId !== currentOwnerId()) return
   if (currentSession.status !== SessionStatus.ACTIVE && currentSession.status !== SessionStatus.PAUSED) return
 
   const remaining = isRunning
@@ -45,12 +85,14 @@ const syncCurrentSession = () => {
     : timeRemaining
   if (remaining <= 0) return
 
-  sharedSocket.emit('session-sync', withSessionProfile({
+  const snapshot = withSessionProfile({
     ...currentSession,
     username: '',
     timeRemaining: remaining,
     status: isRunning ? SessionStatus.ACTIVE : SessionStatus.PAUSED,
-  }))
+  })
+  sessionSnapshots.set(snapshot.id, snapshot)
+  sharedSocket.emit('session-sync', snapshot)
 }
 
 const initSocketOnce = () => {
@@ -82,6 +124,7 @@ const initSocketOnce = () => {
   // Socket.IO fires connect on both initial connection and every reconnect.
   socket.on('connect', () => {
     socket.emit('join-presence', buildPresencePayload(useAuthStore.getState().user))
+    flushSessionEvents()
     syncCurrentSession()
     socket.emit('get-active-sessions')
     socket.emit('get-online-users')
@@ -90,8 +133,18 @@ const initSocketOnce = () => {
 
   // Subscribe once, regardless of how many components use this hook.
   useAuthStore.subscribe((state, previous) => {
-    if (state.user === previous.user || !socket.connected) return
+    if (state.user === previous.user) return
+    const timer = useTimerStore.getState()
+    if (timer.currentSession && timer.currentSession.userId !== currentOwnerId()) {
+      sessionSnapshots.delete(timer.currentSession.id)
+      timer.cancelSession()
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.controller?.postMessage({ type: 'STOP_TIMER' })
+      }
+    }
+    if (!socket.connected) return
     socket.emit('join-presence', buildPresencePayload(state.user))
+    flushSessionEvents()
     syncCurrentSession()
   })
 
@@ -139,11 +192,22 @@ export function useSocket() {
   }, [])
 
   const emitSessionStart = (sessionData: ActiveSession) => {
-    if (sharedSocket?.connected) sharedSocket.emit('session-start', withSessionProfile(sessionData))
+    if (sessionData.userId !== currentOwnerId()) return
+    const snapshot = withSessionProfile(sessionData)
+    sessionSnapshots.set(snapshot.id, snapshot)
+    pendingSessionEvents.push({
+      name: 'session-start', ownerId: snapshot.userId,
+      payload: { ...snapshot, activityOnly: true },
+    })
+    flushSessionEvents()
+    syncCurrentSession()
   }
 
   const emitSessionSync = (sessionData: ActiveSession) => {
-    if (sharedSocket?.connected) sharedSocket.emit('session-sync', withSessionProfile(sessionData))
+    if (sessionData.userId !== currentOwnerId()) return
+    const snapshot = withSessionProfile(sessionData)
+    sessionSnapshots.set(snapshot.id, snapshot)
+    if (sharedSocket?.connected) sharedSocket.emit('session-sync', snapshot)
   }
 
   const emitSessionPause = (sessionId: string) => {
@@ -155,11 +219,13 @@ export function useSocket() {
     reason: 'manual' | 'completed' | 'reset' = 'manual',
     options?: { removeActivity?: boolean }
   ) => {
-    if (sharedSocket?.connected) sharedSocket.emit('session-end', {
-      sessionId,
-      reason,
-      ...(options?.removeActivity ? { removeActivity: true } : {}),
+    const session = sessionSnapshots.get(sessionId)
+    if (!session || session.userId !== currentOwnerId()) return
+    pendingSessionEvents.push({
+      name: 'session-end', ownerId: session.userId,
+      payload: { sessionId, reason, session, ...options },
     })
+    flushSessionEvents()
   }
 
   const emitTimerTick = (sessionId: string, timeRemaining: number) => {

@@ -64,6 +64,11 @@ const io = new IOServer(server, {
 })
 
 const sessions = new Map<string, PomodoroSession>()
+// Activity survives disconnects without keeping the timer in the online list.
+const sessionActivity = new Map<string, { session: PomodoroSession; touchedAt: number }>()
+const startOperations = new Map<string, Promise<void>>()
+const endOperations = new Map<string, Promise<void>>()
+const ACTIVITY_RETENTION_MS = 7 * 24 * 60 * 60 * 1000
 const onlineUsers = new Map<string, number>()
 const socketUserMap = new Map<string, string>()
 const userConnectionCounts = new Map<string, number>()
@@ -160,7 +165,7 @@ const saveSystemMessageToDB = async (message: ChatMessage) => {
       roomId: message.roomId ?? null,
       type: 'system',
       action: message.action
-    })
+    }, { timeout: 10000 })
     return response.data as { id: string } | null
   } catch (error) {
     console.error('Failed to save system message to database:', error)
@@ -176,7 +181,7 @@ const deleteSystemMessageFromDB = async (messageId: string, sessionId?: string) 
     if (sessionId) {
       url.searchParams.set('sessionId', sessionId)
     }
-    await axios.delete(url.toString())
+    await axios.delete(url.toString(), { timeout: 10000 })
   } catch (error) {
     console.error(`Failed to delete system message ${messageId} from database:`, error)
   }
@@ -281,6 +286,13 @@ const serializeSessions = () =>
 
 // Periodic cleanup of outdated sessions (every minute)
 setInterval(() => {
+  for (const [id, activity] of sessionActivity) {
+    if (!sessions.has(id) && Date.now() - activity.touchedAt > ACTIVITY_RETENTION_MS) {
+      sessionActivity.delete(id)
+      startOperations.delete(id)
+      endOperations.delete(id)
+    }
+  }
   let cleaned = 0
   sessions.forEach((session, sessionId) => {
     const elapsed = (Date.now() - session.startTime) / 1000
@@ -485,29 +497,63 @@ io.on('connection', (socket) => {
     })
   })
 
-  socket.on('session-start', async (sessionData: PomodoroSession) => {
+  const registerSessionEvent = <T,>(
+    event: string,
+    operations: Map<string, Promise<void>>,
+    identify: (payload: T) => { id: string; userId?: string },
+    handle: (payload: T) => Promise<void>,
+  ) => {
+    socket.on(event, (payload: T, acknowledge?: (accepted: boolean) => void) => {
+      const { id, userId } = identify(payload)
+      const ownerId = socketUserMap.get(socket.id) ?? anonymousSockets.get(socket.id)
+      const existingOwner = sessionActivity.get(id)?.session.userId ?? sessions.get(id)?.userId
+      if (!id || !ownerId || userId !== ownerId || (existingOwner && existingOwner !== ownerId)) {
+        if (typeof acknowledge === 'function') acknowledge(false)
+        return
+      }
+      let operation = operations.get(id)
+      if (!operation) {
+        // Install before executing so simultaneous retries share the same work.
+        operation = Promise.resolve().then(() => handle(payload))
+        operations.set(id, operation)
+      }
+      operation.then(() => {
+        if (typeof acknowledge === 'function') acknowledge(true)
+      }).catch((error) => {
+        operations.delete(id)
+        console.error(`Failed ${event} for ${id}:`, error)
+        if (typeof acknowledge === 'function') acknowledge(false)
+      })
+    })
+  }
+
+  registerSessionEvent('session-start', startOperations,
+    (data: PomodoroSession & { activityOnly?: boolean }) => ({ id: data.id, userId: data.userId }),
+    async (sessionData) => {
     // Remove any existing sessions for this user/socket to prevent duplicates
     const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
     const anonymousId = anonymousSockets.get(socket.id)
 
-    if (userId) {
-      clearReactionsTargetingUser(userId, io)
+    if (!sessionData.activityOnly) {
+      if (userId) {
+        clearReactionsTargetingUser(userId, io)
+      }
+
+      // Clean up any existing sessions for this user
+      sessions.forEach((existingSession, existingSessionId) => {
+        const isSameUser = (
+          (userId && existingSession.userId === userId) ||
+          (anonymousId && existingSession.socketId === socket.id)
+        )
+
+        if (isSameUser && existingSessionId !== sessionData.id) {
+          console.log(`Removing duplicate session ${existingSessionId} for user ${userId || anonymousId}`)
+          sessions.delete(existingSessionId)
+        }
+      })
     }
 
-    // Clean up any existing sessions for this user
-    sessions.forEach((existingSession, existingSessionId) => {
-      const isSameUser = (
-        (userId && existingSession.userId === userId) ||
-        (anonymousId && existingSession.socketId === socket.id)
-      )
-
-      if (isSameUser && existingSessionId !== sessionData.id) {
-        console.log(`Removing duplicate session ${existingSessionId} for user ${userId || anonymousId}`)
-        sessions.delete(existingSessionId)
-      }
-    })
-
-    const startTime = Date.now()
+    const startTime = new Date(sessionData.startedAt).getTime() || Date.now()
     const sessionRecord: PomodoroSession = {
       ...sessionData,
       status: sessionData.status ?? 'ACTIVE',
@@ -577,8 +623,12 @@ io.on('connection', (socket) => {
     pushChatMessageForRoom(systemMessage)
 
     // Publish immediately; chat persistence must not delay or resurrect a session.
-    sessions.set(sessionData.id, sessionRecord)
-    io.emit('session-update', serializeSessions())
+    sessionActivity.set(sessionData.id, { session: sessionRecord, touchedAt: Date.now() })
+    // Retried/offline starts create activity only; the current snapshot owns presence.
+    if (!sessionData.activityOnly && !endOperations.has(sessionData.id)) {
+      sessions.set(sessionData.id, sessionRecord)
+      io.emit('session-update', serializeSessions())
+    }
 
     // Save to database
     const savedMessage = await saveSystemMessageToDB(systemMessage)
@@ -586,6 +636,8 @@ io.on('connection', (socket) => {
       systemMessage.id = savedMessage.id
     }
     sessionRecord.chatMessageId = systemMessage.id
+    const onlineSession = sessions.get(sessionData.id)
+    if (onlineSession) onlineSession.chatMessageId = systemMessage.id
 
     // Replace message in per-room history with persisted ID if needed
     if (systemMessage.id !== tempId) {
@@ -606,6 +658,9 @@ io.on('connection', (socket) => {
   })
 
   socket.on('session-sync', (sessionData: PomodoroSession) => {
+    const ownerId = socketUserMap.get(socket.id) ?? anonymousSockets.get(socket.id)
+    const existingOwner = sessionActivity.get(sessionData.id)?.session.userId ?? sessions.get(sessionData.id)?.userId
+    if (sessionData.userId !== ownerId || (existingOwner && existingOwner !== ownerId) || endOperations.has(sessionData.id)) return
     // Remove any existing sessions for this user/socket to prevent duplicates
     const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
     const anonymousId = anonymousSockets.get(socket.id)
@@ -638,7 +693,7 @@ io.on('connection', (socket) => {
       timeRemaining: effectiveTimeRemaining,
       socketId: socket.id,
       startTime: syncStartTime,
-      chatMessageId: existingSession?.chatMessageId,
+      chatMessageId: sessionActivity.get(sessionData.id)?.session.chatMessageId ?? existingSession?.chatMessageId,
       username: sessionData.username || userNames.get(userId ?? '') || 'Guest',
       avatarUrl: sessionData.avatarUrl,
       lastUpdate: Date.now(),
@@ -657,19 +712,33 @@ io.on('connection', (socket) => {
     io.emit('session-update', serializeSessions())
   })
 
-  socket.on('session-end', async (payload: { sessionId: string; reason?: 'manual' | 'completed' | 'reset'; removeActivity?: boolean }) => {
+  registerSessionEvent('session-end', endOperations,
+    (payload: { sessionId: string; reason?: 'manual' | 'completed' | 'reset'; removeActivity?: boolean; session?: Omit<PomodoroSession, 'startTime'> }) => ({
+      id: payload.sessionId,
+      userId: payload.session?.userId ?? sessionActivity.get(payload.sessionId)?.session.userId ?? sessions.get(payload.sessionId)?.userId,
+    }),
+    async (payload) => {
     const sessionId = payload?.sessionId
     const reason = payload?.reason ?? 'manual'
-    const session = sessions.get(sessionId)
-    
-    if (!session || session.socketId !== socket.id) {
-      return // Session doesn't exist, nothing to do
-    }
-
-    // Remove presence before awaiting best-effort chat persistence.
+    const onlineSession = sessions.get(sessionId)
+    // Presence ends immediately, even while the start message is being saved.
     sessions.delete(sessionId)
     io.emit('session-update', serializeSessions())
-    if (session.userId) clearReactionsTargetingUser(session.userId, io)
+    // Start persistence may still be in flight when Stop or reconnect arrives.
+    await startOperations.get(sessionId)
+    const activity = sessionActivity.get(sessionId)
+    const snapshot = onlineSession ?? payload.session ?? activity?.session
+    const session: PomodoroSession | undefined = snapshot ? {
+      ...snapshot,
+      chatMessageId: activity?.session.chatMessageId ?? onlineSession?.chatMessageId,
+      startTime: onlineSession?.startTime ?? new Date(snapshot.startedAt).getTime(),
+    } : undefined
+    if (!session) return
+    sessionActivity.set(sessionId, { session, touchedAt: Date.now() })
+
+    if (session.userId && !Array.from(sessions.values()).some((active) => active.userId === session.userId)) {
+      clearReactionsTargetingUser(session.userId, io)
+    }
 
     const shouldRemoveActivity = reason === 'manual' && (
       payload?.removeActivity ||
@@ -854,6 +923,8 @@ io.on('connection', (socket) => {
     const disconnectedSessionIds: string[] = []
     sessions.forEach((session, sessionId) => {
       if (session.socketId === socket.id) {
+        const activity = sessionActivity.get(sessionId)
+        if (activity) activity.touchedAt = Date.now()
         sessions.delete(sessionId)
         disconnectedSessionIds.push(sessionId)
       }

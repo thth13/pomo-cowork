@@ -116,6 +116,19 @@ own-timer restoration retain their existing API owners. The retired active-list 
 also supplied admin-only registration dates; these are no longer shown in online
 cards and are never added to the public socket payload.
 
+Timer ownership is fixed when the local session starts. Changing identity clears
+that local timer and its service-worker countdown; it does not cancel its database
+record or publish it under the next account. Same-account profile changes still
+refresh the public snapshot. Pending activity is sent only under its original owner.
+
+Start/end activity uses an acknowledged, retried queue in the current tab. Replayed
+starts cannot repopulate online presence, and the server deduplicates lifecycle
+operations by session ID. Chat-message linkage lives separately from the online
+list, so reconnect and an immediate stop during start-message persistence retain
+correct activity cleanup. Recovery is in-memory: the client queue lasts until page
+reload, and server activity/deduplication expires seven days after a session is no
+longer online (or on server restart). Chat database persistence remains best-effort.
+
 ## Search landing workflows
 
 `components/seo/SeoLandingPage.tsx` owns the server-rendered English landing content.
