@@ -223,6 +223,19 @@ textarea { resize: none; }
 .pixel-timer-digits { font-family: var(--font-pixel); font-size: clamp(35px, 5.6vw, 70px); font-variant-numeric: tabular-nums; text-align: center; line-height: 1.4; letter-spacing: -5px; padding: 28px 0; white-space: nowrap; }
 .pixel-timer-settings { position: absolute; right: 10px; top: 10px; padding: 10px; border: 1px solid transparent; }
 .pixel-timer-settings:hover { border-color: var(--pixel-line); background: var(--pixel-paper); }
+.pixel-timer-popout { position: absolute; left: 10px; top: 10px; display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid transparent; }
+.pixel-timer-popout:hover, .pixel-timer-popout[aria-pressed="true"] { border-color: var(--pixel-line); background: var(--pixel-paper); }
+.pixel-timer-popout:active { background: var(--pixel-screen); }
+.pixel-timer-popout:disabled { opacity: .5; }
+.pixel-timer-screen:has(.pixel-timer-popout) .pixel-timer-status { padding-inline: 48px; }
+.pixel-mini-timer-message { position: absolute; z-index: 3; top: 58px; left: 10px; width: min(300px, calc(100% - 20px)); padding: 12px; border: 1px solid var(--pixel-line); background: var(--pixel-paper); color: var(--pixel-ink); box-shadow: 3px 3px 0 var(--pixel-shadow); font-size: 13px; line-height: 1.5; }
+.pixel-mini-timer-message { padding-right: 48px; }
+.pixel-mini-timer-dismiss { position: absolute; right: 2px; top: 2px; width: 40px; height: 40px; display: grid; place-items: center; }
+.pixel-mini-timer-dismiss:hover { background: var(--pixel-screen); }
+.pixel-mini-timer-dismiss:active { background: var(--pixel-shadow); }
+.timer-actions button { min-height: 44px; min-width: 128px; }
+.timer-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.timer-actions button:active:not(:disabled) { filter: brightness(.92); }
 .pixel-timer-track { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 4px; height: 14px; }
 .pixel-timer-track span { background: var(--pixel-ink); opacity: .12; }
 .pixel-timer-track .filled { background: var(--pixel-accent); opacity: 1; }
@@ -510,4 +523,31 @@ html:has(.workspace-page), body:has(.workspace-page) { height: 100%; overflow: h
 @media (pointer: coarse) {
   .workspace-window .workspace-window-resize-n, .workspace-window .workspace-window-resize-s { height: 8px; }
   .workspace-window .workspace-window-resize-e, .workspace-window .workspace-window-resize-w { width: 8px; }
+}
+
+/* The native mini-window owns its scrolling, independently of workspace layout. */
+html[data-mini-timer] { height: 100%; scrollbar-gutter: auto; }
+html[data-mini-timer] body { min-height: 100%; margin: 0; background: var(--pixel-page); }
+.mini-timer { display: flex; flex-direction: column; justify-content: center; gap: 8px; min-height: 100dvh; padding: 10px; color: var(--pixel-ink); }
+.mini-timer-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 4px 8px; font-size: 11px; }
+.mini-timer-label { font-weight: 600; }
+.mini-timer-status { display: flex; align-items: center; gap: 5px; color: var(--pixel-muted); }
+.mini-timer-display { display: flex; flex-direction: column; align-items: center; gap: 2px; min-height: 0; }
+.mini-timer-digits { font-family: var(--font-pixel); font-size: clamp(22px, 10vw, 36px); font-variant-numeric: tabular-nums; line-height: 1.25; letter-spacing: -.06em; white-space: nowrap; }
+.mini-timer-digits-long { font-size: clamp(17px, 8vw, 28px); }
+.mini-timer-task-picker { width: 100%; min-width: 0; }
+.mini-timer-task-trigger { min-height: 26px; padding: 2px 4px; gap: 4px; font-size: 11px; line-height: 1.4; }
+[data-mini-timer-picker] > div { padding-block: 4px; }
+[data-mini-timer-picker] button { min-height: 30px; padding: 5px 8px; }
+[data-mini-timer-picker] button span { font-size: 12px; }
+.mini-timer-track { width: 100%; height: 4px; margin-top: 2px; gap: 2px; flex: none; }
+.timer-actions.timer-actions-compact { width: 100%; margin: 0; padding: 0; }
+.mini-timer-display:has(.mini-timer-track) + .timer-actions { margin-top: 4px; }
+.timer-actions-compact > div, .timer-actions-compact > div > div { width: 100%; }
+.timer-actions-compact > div > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.timer-actions-compact button { flex: 1 1 100px; width: auto; min-width: 0; min-height: 32px; padding: 5px 8px; font-size: 12px; }
+.timer-actions-compact > div > button { width: 100%; }
+.timer-actions-compact button svg { width: 14px; height: 14px; flex: none; }
+@media (prefers-reduced-motion: reduce) {
+  .timer-actions button { transition: none; }
 }

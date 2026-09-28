@@ -14,6 +14,7 @@
 | Capability | Owner | Behavior |
 | --- | --- | --- |
 | Timer / session transitions | PomodoroTimer, TimerControls, useTimerStore, sessionService | Preserve existing start/pause/resume/stop/complete operations |
+| Native mini timer | useDocumentPictureInPicture, TimerPictureInPicture, TimerActions | User-opened Document Picture-in-Picture window; portal shares timer state, locale, action handlers and pending flags; closing never stops the session |
 | Task selection | TaskPicker | Existing authored picker; reused |
 | Forms and settings | SettingsModal, existing .input and .btn | Existing settings workflow; shared visual adaptation |
 | Scrollbar | app/globals.css | Global visible baseline, theme tokens and forced-color fallback |
@@ -29,6 +30,23 @@
 | Timer help | PomodoroOverview / WorkspaceWindow | Full heading and overview render in the initial server HTML independently of workspace loading/auth; one persistent copy in the window. Question-mark dock button opens it; close, Escape or dock toggles dismiss; always closed on page load and excluded from saved open panels |
 | Workspace overlays | WorkspaceWindow | Compact non-modal windows; default position beside the left dock, saved positions take precedence; pointer/touch dragging and resizing with keyboard arrows; viewport bounds; click/focus stacking; Escape/close/dock dismissal; mounted content preserves drafts; position and size persist per window in localStorage and fit the viewport on reopen |
 | CRUD / permissions | Existing task, room and auth services/API routes | No workflow or permission changes |
+
+## Native mini timer
+
+The mini timer opens only from a user click in a supporting secure browser context.
+Unsupported browsers and rejected opening requests receive localized inline feedback;
+there is no popup fallback promising always-on-top behavior. Browser chrome owns window
+movement, resizing, closing and returning to the main tab. Closing or pressing Escape
+inside the mini window leaves the timer running; unmounting the owning timer closes it.
+It is never reopened automatically. Shared TimerActions preserves Stop/Reset labels
+and the existing session lifecycle, with pending operations disabling actions in both
+views. The existing useTimerSync interval pair runs on the mini window while open and
+returns to the main window on close; no second countdown or session is created.
+The mini window reuses TaskPicker and useTaskMenu with its own disclosure state and
+the shared selected task. As on the main timer, choose or clear a task before starting
+a work/time-tracking session; existing sessions keep their task binding. Portals,
+outside clicks and viewport measurements use the trigger's owning document/window.
+Escape dismisses an open task menu first; a subsequent Escape closes the mini window.
 
 ## Companion rules
 

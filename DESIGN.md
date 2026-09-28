@@ -150,6 +150,26 @@ respects prefers-reduced-motion. Focus rings remain visible; meters expose names
 numeric values. No progress announcements every second. Fonts have local fallbacks;
 external font loading is consistent with the project's existing Google Fonts setup.
 
+## Native mini timer
+
+The native mini timer opens from the top-left pop-out button on the shared timer.
+Its 300×180px requested initial window keeps the pixel digits, segmented progress and Inter
+controls on the existing page surface. `app/globals.css` owns `.mini-timer-*` rules;
+all colors and fonts reuse runtime tokens. The window follows live theme and locale
+changes, wraps controls when resized narrowly and owns natural document scrolling.
+Time tracking displays elapsed time without a fictional remaining-time meter.
+The mini window shows the session mode and status in a compact top row, with 10px
+outer padding and an 8px section rhythm. Digits cap at 36px and actions are 32px tall.
+A minimal shared TaskPicker sits directly below the digits as one 26px row with only the
+selected title (or select-task prompt) and chevron. Descriptions and the repeated
+Current task prefix are omitted in this variant. Its compact popup overlays content
+within the mini window's viewport and never expands the window or timer layout.
+The progress track stays in the digit/task group, 4px below the task row; the
+action row has 12px clearance below that group. The timer group does not stretch;
+the complete stack is centered vertically so hidden flex space cannot distort gaps.
+Opening the mini window does not autofocus an action; keyboard focus indicators
+remain available when navigating its controls.
+
 ## Verification scope
 
 User explicitly forbids running the project, test builds and tsc. Only static source

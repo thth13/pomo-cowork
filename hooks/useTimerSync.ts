@@ -8,6 +8,7 @@ interface UseTimerSyncOptions {
   isRunning: boolean
   onSessionComplete: () => void
   emitTimerTick: (sessionId: string, timeRemaining: number) => void
+  timerWindow?: Window | null
 }
 
 /**
@@ -18,6 +19,7 @@ export function useTimerSync({
   isRunning,
   onSessionComplete,
   emitTimerTick,
+  timerWindow,
 }: UseTimerSyncOptions) {
   useEffect(() => {
     const unsubscribe = listenToServiceWorker((message) => {
@@ -57,7 +59,7 @@ export function useTimerSync({
   }, [currentSession?.id, emitTimerTick, onSessionComplete, currentSession])
 
   useEffect(() => {
-    if (!currentSession) {
+    if (!currentSession?.id) {
       return
     }
 
@@ -65,11 +67,14 @@ export function useTimerSync({
   }, [currentSession?.id])
 
   useEffect(() => {
-    let localInterval: NodeJS.Timeout | undefined
-    let syncInterval: NodeJS.Timeout | undefined
+    // Use the visible mini-window's clock when the main tab is in the background.
+    // There is still only one interval pair and one shared timer state.
+    const timerHost = timerWindow ?? window
+    let localInterval: number | undefined
+    let syncInterval: number | undefined
 
     if (isRunning && currentSession) {
-      localInterval = setInterval(() => {
+      localInterval = timerHost.setInterval(() => {
         const { currentSession: storeSession, isRunning: storeIsRunning } = useTimerStore.getState()
 
         if (storeSession && storeIsRunning) {
@@ -87,7 +92,7 @@ export function useTimerSync({
         }
       }, 1000)
 
-      syncInterval = setInterval(() => {
+      syncInterval = timerHost.setInterval(() => {
         const { currentSession: storeSession, isRunning: storeIsRunning } = useTimerStore.getState()
 
         if (storeSession && storeIsRunning) {
@@ -109,8 +114,8 @@ export function useTimerSync({
     }
 
     return () => {
-      if (localInterval) clearInterval(localInterval)
-      if (syncInterval) clearInterval(syncInterval)
+      if (localInterval !== undefined) timerHost.clearInterval(localInterval)
+      if (syncInterval !== undefined) timerHost.clearInterval(syncInterval)
     }
-  }, [isRunning, currentSession?.id, onSessionComplete, currentSession])
+  }, [isRunning, currentSession?.id, onSessionComplete, currentSession, timerWindow])
 }

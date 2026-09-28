@@ -5,12 +5,9 @@ import { Play, Square, Pause } from 'lucide-react'
 import { PomodoroSession, SessionType } from '@/types'
 import { useI18n } from '@/components/I18nProvider'
 
-interface TimerControlsProps {
+export interface TimerActionsProps {
   stopLabel?: string
-  children?: ReactNode
   currentSession: PomodoroSession | null
-  sessionType: SessionType
-  onSessionTypeChange: (type: SessionType) => void
   onStart: () => void | Promise<void>
   onPause: () => void | Promise<void>
   onResume: () => void | Promise<void>
@@ -23,12 +20,9 @@ interface TimerControlsProps {
   isPaused: boolean
 }
 
-export const TimerControls = memo(function TimerControls({
+export const TimerActions = memo(function TimerActions({
   stopLabel,
-  children,
   currentSession,
-  sessionType,
-  onSessionTypeChange,
   onStart,
   onPause,
   onResume,
@@ -39,65 +33,75 @@ export const TimerControls = memo(function TimerControls({
   isResuming,
   isRunning,
   isPaused,
+  compact = false,
+}: TimerActionsProps & { compact?: boolean }) {
+  const { t } = useI18n()
+  const isBusy = isStarting || isStopping || isPausing || isResuming
+
+  return (
+    <div className={`timer-actions flex flex-col items-center gap-3 sm:gap-4 mb-6 sm:mb-8 px-4 sm:px-0 w-full sm:w-auto${compact ? ' timer-actions-compact' : ''}`} aria-busy={isBusy}>
+      <div className="w-full sm:w-auto">
+        {!currentSession ? (
+          <button
+            type="button"
+            onClick={onStart}
+            disabled={isBusy}
+            className={`w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white px-6 sm:px-8 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+              isStarting ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+          >
+            <Play size={20} />
+            <span>{isStarting ? t.timer.starting : t.timer.start}</span>
+          </button>
+        ) : (
+          <div className="flex w-full sm:w-auto gap-3">
+            <button
+              type="button"
+              onClick={onStop}
+              disabled={isBusy}
+              className={`flex-1 sm:flex-none w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+                isStopping ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              <Square size={20} />
+              <span>{isStopping ? t.timer.stopping : stopLabel ?? t.timer.stop}</span>
+            </button>
+            <button
+              type="button"
+              onClick={isPaused ? onResume : onPause}
+              disabled={isBusy || (!isPaused && (!isRunning || currentSession.id.startsWith('temp_')))}
+              className={`flex-1 sm:flex-none w-full sm:w-auto text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+                isPaused ? 'bg-green-500 hover:bg-green-600' : 'bg-amber-500 hover:bg-amber-600'
+              }`}
+            >
+              {isPaused ? <Play size={20} /> : <Pause size={20} />}
+              <span>{isPausing ? t.timer.pausing : isResuming ? t.timer.resuming : isPaused ? t.timer.resume : t.timer.pause}</span>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+})
+
+interface TimerControlsProps extends TimerActionsProps {
+  children?: ReactNode
+  sessionType: SessionType
+  onSessionTypeChange: (type: SessionType) => void
+}
+
+export const TimerControls = memo(function TimerControls({
+  children,
+  sessionType,
+  onSessionTypeChange,
+  ...actions
 }: TimerControlsProps) {
   const { t } = useI18n()
+  const { currentSession } = actions
 
   return (
     <>
-      <div className="flex flex-col items-center gap-3 sm:gap-4 mb-6 sm:mb-8 px-4 sm:px-0 w-full sm:w-auto">
-        <div className="w-full sm:w-auto">
-          {!currentSession ? (
-            <button
-              onClick={onStart}
-              disabled={isStarting}
-              className={`w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white px-6 sm:px-8 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
-                isStarting ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-            >
-              <Play size={20} />
-              <span>{isStarting ? t.timer.starting : t.timer.start}</span>
-            </button>
-          ) : (
-            <div className="flex w-full sm:w-auto gap-3">
-              <button
-                onClick={onStop}
-                disabled={isStopping}
-                className={`flex-1 sm:flex-none w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
-                  isStopping ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                <Square size={20} />
-                <span>{isStopping ? t.timer.stopping : stopLabel ?? t.timer.stop}</span>
-              </button>
-              {!isPaused && (
-                <button
-                  onClick={onPause}
-                  disabled={!isRunning || isPausing}
-                  className={`flex-1 sm:flex-none w-full sm:w-auto bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
-                    (!isRunning || isPausing) ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <Pause size={20} />
-                  <span>{isPausing ? t.timer.pausing : t.timer.pause}</span>
-                </button>
-              )}
-              {isPaused && (
-                <button
-                  onClick={onResume}
-                  disabled={isResuming}
-                  className={`flex-1 sm:flex-none w-full sm:w-auto bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
-                    isResuming ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                >
-                  <Play size={20} />
-                  <span>{isResuming ? t.timer.resuming : t.timer.resume}</span>
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-
-      </div>
+      <TimerActions {...actions} />
 
       {children}
 

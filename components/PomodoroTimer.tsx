@@ -21,10 +21,13 @@ import { useNotifications } from '@/hooks/useNotifications'
 import { TaskOption } from '@/types/task'
 import { TaskPicker } from '@/components/TaskPicker'
 import { TimerControls } from '@/components/TimerControls'
+import { TimerPictureInPicture } from '@/components/TimerPictureInPicture'
+import { useDocumentPictureInPicture } from '@/hooks/useDocumentPictureInPicture'
 import { SettingsModal } from '@/components/SettingsModal'
 import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
 import { TimerErrorBoundary } from '@/components/TimerErrorBoundary'
+import { useTaskMenu } from '@/hooks/useTaskMenu'
 import { useThrottle } from '@/hooks/useThrottle'
 import { useI18n } from '@/components/I18nProvider'
 
@@ -161,62 +164,10 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
   }
 }
 
-const useTaskMenu = (isDisabled: boolean) => {
-  const [isTaskMenuOpen, setIsTaskMenuOpen] = useState(false)
-  const [taskSearch, setTaskSearch] = useState('')
-  const taskPickerRef = useRef<HTMLDivElement | null>(null)
-  const taskDropdownRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    if (!isTaskMenuOpen) {
-      setTaskSearch('')
-      return
-    }
-
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        taskPickerRef.current &&
-        !taskPickerRef.current.contains(event.target as Node) &&
-        !taskDropdownRef.current?.contains(event.target as Node)
-      ) {
-        setIsTaskMenuOpen(false)
-      }
-    }
-
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsTaskMenuOpen(false)
-        taskPickerRef.current?.querySelector('button')?.focus()
-      }
-    }
-
-    document.addEventListener('mousedown', handleOutsideClick)
-    document.addEventListener('keydown', handleEscape)
-
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick)
-      document.removeEventListener('keydown', handleEscape)
-    }
-  }, [isTaskMenuOpen])
-
-  useEffect(() => {
-    if (isDisabled && isTaskMenuOpen) {
-      setIsTaskMenuOpen(false)
-    }
-  }, [isDisabled, isTaskMenuOpen])
-
-  return {
-    isTaskMenuOpen,
-    setIsTaskMenuOpen,
-    taskSearch,
-    setTaskSearch,
-    taskPickerRef,
-    taskDropdownRef,
-  }
-}
 
 function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel }: PomodoroTimerProps) {
   const { t } = useI18n()
+  const pictureInPicture = useDocumentPictureInPicture()
   const {
     isRunning,
     timeRemaining,
@@ -1267,6 +1218,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
   ])
 
   useTimerSync({
+    timerWindow: pictureInPicture.pipWindow,
     currentSession,
     isRunning,
     onSessionComplete: handleSessionComplete,
@@ -1315,6 +1267,20 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
   }
 
   const isPaused = currentSession?.status === SessionStatus.PAUSED
+  const timerActions = {
+    stopLabel: isTimeTrackingSession ? undefined : resetLabel,
+    currentSession,
+    onStart: handleStart,
+    onPause: handlePause,
+    onResume: handleResume,
+    onStop: handleStop,
+    isStarting,
+    isStopping,
+    isPausing,
+    isResuming,
+    isRunning,
+    isPaused,
+  }
 
   const progress = currentSession 
     ? isTimeTrackingSession
@@ -1353,6 +1319,18 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       )}
 
       <div className="pixel-timer-screen">
+        <TimerPictureInPicture
+          controller={pictureInPicture}
+          actions={timerActions}
+          formattedTime={formatTime(timerDisplaySeconds)}
+          sessionLabel={getSessionTypeLabel(activeSessionType)}
+          sessionType={activeSessionType}
+          selectedTask={selectedTask}
+          taskOptions={filteredTaskOptions}
+          onSelectTask={handleTaskSelect}
+          progress={progress}
+          isTimeTracking={isTimeTrackingSession}
+        />
         <div className="pixel-timer-status"><span className={isRunning ? 'pixel-led active' : 'pixel-led'} />{getSessionTypeLabel(activeSessionType)}</div>
         <button type="button" onClick={openSettings} className="pixel-timer-settings" aria-label={t.settingsModal.title} title={t.settingsModal.title}><Settings size={18} /></button>
         <div className={`pixel-timer-digits ${timerDisplaySeconds >= 6000 ? 'pixel-timer-digits-long' : ''}`} role="timer" aria-label={getSessionTypeLabel(activeSessionType)}>{formatTime(timerDisplaySeconds)}</div>
@@ -1362,20 +1340,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       </div>
 
       <TimerControls
-        stopLabel={isTimeTrackingSession ? undefined : resetLabel}
-        currentSession={currentSession}
+        {...timerActions}
         sessionType={activeSessionType}
         onSessionTypeChange={handleSessionTypeChange}
-        onStart={handleStart}
-        onPause={handlePause}
-        onResume={handleResume}
-        onStop={handleStop}
-        isStarting={isStarting}
-        isStopping={isStopping}
-        isPausing={isPausing}
-        isResuming={isResuming}
-        isRunning={isRunning}
-        isPaused={isPaused}
       >
         <TaskPicker
           sessionType={activeSessionType}

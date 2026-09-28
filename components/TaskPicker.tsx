@@ -9,6 +9,7 @@ import { TaskOption } from '@/types/task'
 import { useI18n } from '@/components/I18nProvider'
 
 interface TaskPickerProps {
+  variant?: 'default' | 'mini-timer'
   sessionType: SessionType
   isDisabled: boolean
   isOpen: boolean
@@ -25,6 +26,7 @@ interface TaskPickerProps {
 }
 
 export const TaskPicker = memo(function TaskPicker({
+  variant = 'default',
   sessionType,
   isDisabled,
   isOpen,
@@ -54,21 +56,23 @@ export const TaskPicker = memo(function TaskPicker({
 
   useLayoutEffect(() => {
     if (!isVisible) return
+    const ownerWindow = triggerRef.current?.ownerDocument.defaultView
+    if (!ownerWindow) return
 
     const updatePosition = () => {
       const trigger = triggerRef.current
       if (!trigger) return
       const rect = trigger.getBoundingClientRect()
-      const gap = 12
+      const gap = variant === 'mini-timer' ? 4 : 12
       const margin = 8
-      const below = window.innerHeight - rect.bottom - gap - margin
+      const below = ownerWindow.innerHeight - rect.bottom - gap - margin
       const above = rect.top - gap - margin
       const openAbove = below < 256 && above > below
-      const width = Math.min(rect.width, window.innerWidth - margin * 2)
+      const width = Math.min(rect.width, ownerWindow.innerWidth - margin * 2)
       setPosition({
-        left: Math.max(margin, Math.min(rect.left, window.innerWidth - width - margin)),
+        left: Math.max(margin, Math.min(rect.left, ownerWindow.innerWidth - width - margin)),
         ...(openAbove
-          ? { bottom: window.innerHeight - rect.top + gap }
+          ? { bottom: ownerWindow.innerHeight - rect.top + gap }
           : { top: rect.bottom + gap }),
         width,
         maxHeight: Math.max(0, Math.min(320, openAbove ? above : below)),
@@ -76,16 +80,16 @@ export const TaskPicker = memo(function TaskPicker({
     }
 
     updatePosition()
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
+    ownerWindow.addEventListener('resize', updatePosition)
+    ownerWindow.addEventListener('scroll', updatePosition, true)
     const observer = new ResizeObserver(updatePosition)
     if (triggerRef.current) observer.observe(triggerRef.current)
     return () => {
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
+      ownerWindow.removeEventListener('resize', updatePosition)
+      ownerWindow.removeEventListener('scroll', updatePosition, true)
       observer.disconnect()
     }
-  }, [isVisible])
+  }, [isVisible, variant])
 
   if (sessionType !== SessionType.WORK && sessionType !== SessionType.TIME_TRACKING) {
     return null
@@ -98,7 +102,7 @@ export const TaskPicker = memo(function TaskPicker({
   }
 
   return (
-    <div className="mb-6 w-full max-w-sm px-4 sm:px-0">
+    <div className={variant === 'mini-timer' ? 'mini-timer-task-picker' : 'mb-6 w-full max-w-sm px-4 sm:px-0'}>
       <div className="relative" ref={taskPickerRef}>
         <button
           ref={triggerRef}
@@ -115,9 +119,9 @@ export const TaskPicker = memo(function TaskPicker({
           aria-expanded={isOpen && !isDisabled}
           aria-controls={`${pickerId}-options`}
           aria-label={`${t.timer.currentTask}: ${selectedTask ? selectedTask.title : t.timer.selectTask}`}
-          className="flex min-h-10 w-full items-center justify-center gap-2 rounded-sm px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:underline focus-visible:underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+          className={`${variant === 'mini-timer' ? 'mini-timer-task-trigger ' : ''}flex min-h-10 w-full items-center justify-center gap-2 rounded-sm px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:underline focus-visible:underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white`}
         >
-          <span className="shrink-0 text-xs text-gray-500 dark:text-slate-400">{t.timer.currentTask}:</span>
+          {variant !== 'mini-timer' && <span className="shrink-0 text-xs text-gray-500 dark:text-slate-400">{t.timer.currentTask}:</span>}
           <span className="min-w-0 truncate" title={selectedTask?.title}>
             {selectedTask ? selectedTask.title : t.timer.selectTask}
           </span>
@@ -132,6 +136,7 @@ export const TaskPicker = memo(function TaskPicker({
                 ref={taskDropdownRef}
                 style={position}
                 id={`${pickerId}-options`}
+                data-mini-timer-picker={variant === 'mini-timer' || undefined}
                 initial={{ opacity: 0, y: -8, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -4, scale: 0.98 }}
@@ -165,9 +170,9 @@ export const TaskPicker = memo(function TaskPicker({
                   >
                     <div className="flex flex-col">
                       <span className="font-medium">{t.timer.noTaskSelected}</span>
-                      <span className="text-xs text-gray-400 dark:text-slate-500">
+                      {variant !== 'mini-timer' && <span className="text-xs text-gray-400 dark:text-slate-500">
                         {t.timer.noTaskSubtitle}
-                      </span>
+                      </span>}
                     </div>
                   </button>
 
@@ -190,10 +195,10 @@ export const TaskPicker = memo(function TaskPicker({
                           }`}
                         >
                           <div className="flex min-w-0 flex-1 flex-col">
-                            <span className="truncate text-sm font-medium">
+                            <span className="truncate text-sm font-medium" title={taskOption.title}>
                               {taskOption.title}
                             </span>
-                            {taskOption.description && (
+                            {variant !== 'mini-timer' && taskOption.description && (
                               <span className="line-clamp-2 text-xs text-gray-400 dark:text-slate-400">
                                 {taskOption.description}
                               </span>
@@ -217,11 +222,11 @@ export const TaskPicker = memo(function TaskPicker({
             </motion.div>
           )}
         </AnimatePresence>,
-        document.body
+        triggerRef.current?.ownerDocument.body ?? document.body
         )}
 
         <AnimatePresence>
-          {selectedTask?.description && (
+          {variant !== 'mini-timer' && selectedTask?.description && (
             <motion.div
               key="task-description"
               initial={{ opacity: 0, y: -4 }}
