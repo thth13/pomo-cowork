@@ -233,3 +233,58 @@ button.profile-heatmap-cell:hover, button.profile-heatmap-cell:active { outline:
 .profile-rank-link:hover { background: var(--pixel-screen); color: var(--pixel-ink); }
 .profile-rank-link:active { background: var(--pixel-shadow); }
 .profile-rank-link:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 3px; }
+
+/* Timer preferences share the workspace's paper, sage and inset controls. */
+.community-dialog.timer-settings-dialog { width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: hidden; }
+.timer-settings-dialog[open] { display: flex; flex-direction: column; }
+.timer-settings-dialog .community-dialog-heading { flex: none; align-items: center; gap: 12px; padding: 16px 20px; background: var(--pixel-screen); }
+.timer-settings-dialog .community-dialog-heading > div { min-width: 0; }
+.timer-settings-dialog .community-dialog-heading h2 { font-family: var(--font-pixel); font-size: 12px; font-weight: 400; line-height: 1.8; }
+.timer-settings-dialog .community-dialog-heading p { margin-top: 6px; font-size: 12px; line-height: 1.5; }
+.timer-settings-dialog .community-dialog-body { display: flex; min-height: 0; padding: 0; }
+.timer-settings-form { display: flex; flex-direction: column; min-height: 0; width: 100%; }
+.timer-settings-content { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 20px; }
+.timer-settings-option { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.timer-settings-option-copy { flex: 1; min-width: 0; }
+.timer-settings-option-heading { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.timer-settings-option h3 { color: var(--pixel-ink); font-size: 13px; font-weight: 600; line-height: 1.5; }
+.timer-settings-option p { margin-top: 5px; color: var(--pixel-muted); font-size: 11px; line-height: 1.6; }
+.timer-settings-mode-control { display: flex; flex: none; flex-direction: column; align-items: center; gap: 2px; }
+.timer-settings-pro { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: none; min-height: 24px; padding: 3px 7px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-tomato-soft); color: var(--pixel-tomato-ink); font-size: 12px; font-weight: 600; cursor: pointer; }
+.timer-settings-pro:hover:not(:disabled) { border-color: var(--pixel-tomato); }
+.timer-settings-pro:active:not(:disabled) { background: var(--pixel-shadow); }
+.timer-settings-switch { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; flex: none; min-width: 68px; min-height: 48px; padding: 4px; border: 0; border-radius: 2px; background: transparent; color: var(--pixel-muted); font-size: 10px; line-height: 1.4; cursor: pointer; }
+.timer-settings-switch-track { display: flex; align-items: center; width: 42px; height: 24px; padding: 2px; border: 1px solid var(--pixel-line); background: var(--pixel-screen); }
+.timer-settings-switch-track > span { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--pixel-line); background: var(--pixel-paper); color: var(--pixel-ink); box-shadow: 1px 1px 0 var(--pixel-shadow); }
+.timer-settings-switch[aria-checked="true"] .timer-settings-switch-track { justify-content: flex-end; background: var(--pixel-growth); }
+.timer-settings-switch[aria-checked="true"] { color: var(--pixel-ink); }
+.timer-settings-switch:hover:not(:disabled) { background: var(--pixel-screen); }
+.timer-settings-switch:active:not(:disabled) .timer-settings-switch-track > span { background: var(--pixel-shadow); box-shadow: none; }
+.timer-settings-hint { margin-top: 8px; padding-left: 8px; border-left: 2px solid var(--pixel-line); color: var(--pixel-muted); font-size: 11px; line-height: 1.5; }
+.timer-settings-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-block: 20px; }
+.timer-settings-field { display: flex; flex-direction: column; justify-content: space-between; gap: 12px; min-width: 0; padding: 12px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-page); }
+.timer-settings-field[data-field="workDuration"] { border-top: 2px solid var(--pixel-tomato); padding-top: 11px; }
+.timer-settings-field-label { display: flex; align-items: flex-start; gap: 7px; color: var(--pixel-muted); font-size: 11px; font-weight: 500; line-height: 1.5; }
+.timer-settings-field-label > svg { flex: none; margin-top: 1px; }
+.timer-settings-field input { width: 100%; min-width: 0; min-height: 44px; padding: 8px 9px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-paper); color: var(--pixel-ink); font-family: var(--font-pixel); font-size: 16px; line-height: 1.5; box-shadow: inset 2px 2px 0 var(--pixel-shadow); }
+.timer-settings-auto { padding-top: 16px; border-top: 1px solid var(--pixel-line); }
+.timer-settings-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex: none; padding: 14px 20px; border-top: 1px solid var(--pixel-line); background: var(--pixel-page); }
+.timer-settings-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 9px 13px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-paper); color: var(--pixel-ink); font-size: 12px; font-weight: 500; line-height: 1.5; cursor: pointer; }
+.timer-settings-button > svg { flex: none; }
+.timer-settings-button:hover:not(:disabled) { background: var(--pixel-screen); }
+.timer-settings-button:active:not(:disabled) { background: var(--pixel-shadow); }
+.timer-settings-button.timer-settings-save { border-color: var(--pixel-tomato); background: var(--pixel-tomato); color: var(--pixel-paper); box-shadow: 2px 2px 0 var(--pixel-shadow); }
+.timer-settings-button.timer-settings-save:hover:not(:disabled) { background: var(--pixel-tomato-hover); border-color: var(--pixel-tomato-hover); }
+.timer-settings-button.timer-settings-save:active:not(:disabled) { box-shadow: none; }
+.timer-settings-dialog :is(button, input):focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 2px; }
+.timer-settings-dialog :is(button, input):disabled { opacity: .5; cursor: not-allowed; }
+@media (max-width: 400px) {
+  .timer-settings-dialog .community-dialog-heading, .timer-settings-content, .timer-settings-footer { padding-inline: 14px; }
+  .timer-settings-grid { gap: 8px; }
+  .timer-settings-field { padding-inline: 9px; }
+  .timer-settings-footer > button { flex: 1; }
+}
+@media (forced-colors: active) {
+  .timer-settings-switch[aria-checked="true"] .timer-settings-switch-track { background: Highlight; }
+  .timer-settings-button.timer-settings-save { border-color: ButtonText; color: ButtonText; }
+}

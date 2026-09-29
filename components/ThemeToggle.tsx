@@ -3,15 +3,31 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Sun, Moon, Cloud, Star } from 'lucide-react'
+import { useI18n } from '@/components/I18nProvider'
 import { useThemeStore } from '@/store/useThemeStore'
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ variant = 'default' }: { variant?: 'default' | 'menu' }) {
+  const { t } = useI18n()
   const { theme, toggleTheme } = useThemeStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  if (variant === 'menu') {
+    return (
+      <button type="button" role="switch" aria-checked={mounted && theme === 'dark'}
+        aria-label={t.common.theme} disabled={!mounted} onClick={toggleTheme}
+        className="workspace-theme-switch">
+        <Sun size={14} aria-hidden="true" />
+        <Moon size={14} aria-hidden="true" />
+        <span className="workspace-theme-switch-thumb" aria-hidden="true">
+          {mounted && theme === 'dark' ? <Moon size={14} /> : <Sun size={14} />}
+        </span>
+      </button>
+    )
+  }
 
   if (!mounted) {
     return (

@@ -1,9 +1,9 @@
 'use client'
 
-import Link from 'next/link'
-import { Crown } from 'lucide-react'
-import { memo, useRef, type MouseEvent } from 'react'
+import { Crown, Timer, Coffee, Armchair, Repeat2, Check, Loader2 } from 'lucide-react'
+import { memo, useId, useRef, useState } from 'react'
 import { useI18n } from '@/components/I18nProvider'
+import CommunityDialog from '@/components/CommunityDialog'
 
 interface TimerSettingsForm {
   workDuration: number
@@ -41,255 +41,101 @@ export const SettingsModal = memo(function SettingsModal({
   onOpenPaywall,
   isProMember,
 }: SettingsModalProps) {
-  const shouldCloseRef = useRef(false)
   const { t } = useI18n()
+  const [isSaving, setIsSaving] = useState(false)
+  const savePendingRef = useRef(false)
+  const trackerLabelId = useId()
+  const trackerDescriptionId = useId()
+  const autoStartLabelId = useId()
+  const autoStartDescriptionId = useId()
   const isTimeTrackerLocked = !isProMember
-  const isTimeTrackerToggleDisabled = isTimerRunning
+  const fields = [
+    { key: 'workDuration', label: t.timer.focusLength, icon: Timer },
+    { key: 'shortBreak', label: t.timer.shortBreakInput, icon: Coffee },
+    { key: 'longBreak', label: t.timer.longBreakInput, icon: Armchair },
+    { key: 'longBreakAfter', label: t.timer.sessionsBeforeLongBreak, icon: Repeat2 },
+  ] as const
 
-  if (!isOpen) {
-    return null
-  }
-
-  const handleWrapperMouseDown = (event: MouseEvent<HTMLDivElement>) => {
-    shouldCloseRef.current = event.target === event.currentTarget
-  }
-
-  const handleWrapperClick = (event: MouseEvent<HTMLDivElement>) => {
-    if (!shouldCloseRef.current || event.target !== event.currentTarget) {
-      shouldCloseRef.current = false
-      return
+  const handleSave = async () => {
+    if (savePendingRef.current) return
+    savePendingRef.current = true
+    setIsSaving(true)
+    try {
+      await onSave()
+    } finally {
+      savePendingRef.current = false
+      setIsSaving(false)
     }
-
-    shouldCloseRef.current = false
-    onClose()
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-      onMouseDown={handleWrapperMouseDown}
-      onClick={handleWrapperClick}
-    >
-      <div
-        className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-gray-200 dark:border-slate-700 p-6 space-y-6"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">{t.settingsModal.title}</h3>
-            </div>
-            <p className="text-sm text-gray-500 dark:text-slate-400">
-              {t.settingsModal.description}
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-          >
-            {t.common.close}
-          </button>
-        </div>
-
-        <div className="space-y-4">
-          <div className="relative flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
-            <div>
-              <p className="text-sm font-semibold text-gray-800 dark:text-slate-100 flex items-center gap-2">
-                {t.settingsModal.timeTrackerMode}
-                <span className="inline-flex items-center rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
-                  Beta
-                </span>
-              </p>
-              <p className="text-xs text-gray-500 dark:text-slate-400 mr-5">
-                {t.settingsModal.timeTrackerDescription}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                if (isTimeTrackerToggleDisabled) {
-                  return
-                }
-                if (isTimeTrackerLocked && onOpenPaywall) {
-                  onOpenPaywall()
-                  return
-                }
-                onToggleTimeTrackerMode()
-              }}
-              disabled={isTimeTrackerToggleDisabled}
-              aria-disabled={isTimeTrackerLocked || isTimeTrackerToggleDisabled}
-              className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-                isTimeTrackerToggleDisabled
-                  ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500'
-                  : isTimeTrackerLocked
-                  ? 'border-gray-200 bg-gray-100 text-gray-400 cursor-pointer dark:border-slate-700 dark:bg-slate-900 dark:text-slate-500'
-                  : isTimeTrackerMode
-                    ? 'border-emerald-400 bg-emerald-600 text-white shadow-[0_8px_20px_-10px_rgba(16,185,129,0.7)] focus-visible:ring-emerald-500'
-                    : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-100 focus-visible:ring-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-700'
-              }`}
-              aria-pressed={isTimeTrackerMode}
-              title={
-                isTimeTrackerToggleDisabled
-                  ? t.settingsModal.stopTimerToSwitch
-                  : isTimeTrackerMode
-                    ? t.settingsModal.timeTrackerEnabled
-                    : t.settingsModal.timeTrackerDisabled
-              }
-            >
-              <span
-                className={`relative flex items-center justify-center w-7 h-7 rounded-full border text-[10px] font-bold ${
-                  isTimeTrackerToggleDisabled
-                    ? 'border-gray-200 bg-white text-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500'
-                    : isTimeTrackerLocked
-                    ? 'border-gray-200 bg-white text-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500'
-                    : isTimeTrackerMode
-                      ? 'border-emerald-300 bg-white text-emerald-600'
-                      : 'border-gray-200 bg-white text-gray-500 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-400'
-                }`}
-              >
-                {isTimeTrackerMode ? 'ON' : 'OFF'}
-              </span>
-              <span
-                className={`text-sm font-semibold ${
-                  isTimeTrackerToggleDisabled || isTimeTrackerLocked
-                    ? 'text-gray-400 dark:text-slate-500'
-                    : 'text-gray-700 dark:text-slate-200'
-                }`}
-              >
-                {isTimeTrackerMode ? t.common.enabled : t.common.disabled}
-              </span>
-            </button>
-
-            {isTimeTrackerLocked && (
-              <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
-                <Crown className="w-3 h-3" />
-                <span>PRO</span>
+    <CommunityDialog open={isOpen} title={t.settingsModal.title}
+      description={t.settingsModal.description} onClose={onClose}
+      busy={isSaving} variant="timer-settings" dismissOnBackdrop>
+      <form noValidate onSubmit={event => { event.preventDefault(); void handleSave() }} className="timer-settings-form">
+        <div className="timer-settings-content">
+          <section className="timer-settings-option" aria-labelledby={trackerLabelId}>
+            <div className="timer-settings-option-copy">
+              <div className="timer-settings-option-heading">
+                <h3 id={trackerLabelId}>{t.settingsModal.timeTrackerMode}</h3>
               </div>
-            )}
-          </div>
+              <p id={trackerDescriptionId}>{t.settingsModal.timeTrackerDescription}</p>
+            </div>
+            <div className="timer-settings-mode-control">
+              {isTimeTrackerLocked && (
+                <button type="button" className="timer-settings-pro" disabled={isTimerRunning || isSaving || !onOpenPaywall}
+                  aria-label={`${t.settingsModal.timeTrackerMode} · Pro`}
+                  onClick={() => { onClose(); onOpenPaywall?.() }}>
+                  <Crown size={12} aria-hidden="true" />Pro
+                </button>
+              )}
+              <button type="button" role="switch" aria-checked={isTimeTrackerMode}
+                aria-label={isTimeTrackerLocked ? `${t.settingsModal.timeTrackerMode} · Pro` : t.settingsModal.timeTrackerMode}
+                aria-describedby={trackerDescriptionId}
+                className="timer-settings-switch" disabled={isTimeTrackerLocked || isTimerRunning || isSaving}
+                onClick={onToggleTimeTrackerMode}>
+                <span className="timer-settings-switch-track" aria-hidden="true"><span>{isTimeTrackerMode && <Check size={12} />}</span></span>
+                <span>{isTimeTrackerMode ? t.common.enabled : t.common.disabled}</span>
+              </button>
+            </div>
+          </section>
+          {isTimerRunning && <p className="timer-settings-hint">{t.settingsModal.stopTimerToSwitch}</p>}
 
           {!isTimeTrackerMode && (
             <>
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                    {t.timer.focusLength}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    value={settings.workDuration === 0 ? '' : settings.workDuration}
-                    onChange={(event) => {
-                      const value = event.target.value
-                      onChange('workDuration', value === '' ? 0 : Number(value))
-                    }}
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                    {t.timer.shortBreakInput}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    value={settings.shortBreak === 0 ? '' : settings.shortBreak}
-                    onChange={(event) => {
-                      const value = event.target.value
-                      onChange('shortBreak', value === '' ? 0 : Number(value))
-                    }}
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                    {t.timer.longBreakInput}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    value={settings.longBreak === 0 ? '' : settings.longBreak}
-                    onChange={(event) => {
-                      const value = event.target.value
-                      onChange('longBreak', value === '' ? 0 : Number(value))
-                    }}
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="text-sm font-medium text-gray-700 dark:text-slate-200">
-                    {t.timer.sessionsBeforeLongBreak}
-                  </span>
-                  <input
-                    type="number"
-                    min={1}
-                    className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-gray-900 shadow-sm focus:border-red-500 focus:outline-none focus:ring-2 focus:ring-red-500/40 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
-                    value={settings.longBreakAfter === 0 ? '' : settings.longBreakAfter}
-                    onChange={(event) => {
-                      const value = event.target.value
-                      onChange('longBreakAfter', value === '' ? 0 : Number(value))
-                    }}
-                  />
-                </label>
+              <div className="timer-settings-grid">
+                {fields.map(({ key, label, icon: Icon }) => (
+                  <label key={key} className="timer-settings-field" data-field={key}>
+                    <span className="timer-settings-field-label"><Icon size={15} aria-hidden="true" />{label}</span>
+                    <input type="number" min={1} step={1} inputMode="numeric" disabled={isSaving}
+                      value={settings[key] === 0 ? '' : settings[key]}
+                      onChange={event => onChange(key, event.target.value === '' ? 0 : Number(event.target.value))} />
+                  </label>
+                ))}
               </div>
-
-              <div className="flex items-center justify-between rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 dark:border-slate-700 dark:bg-slate-800">
-                <div>
-                  <p className="text-sm font-semibold text-gray-800 dark:text-slate-100">{t.settingsModal.autoStart}</p>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 mr-5">
-                    {t.settingsModal.autoStartDescription}
-                  </p>
+              <section className="timer-settings-option timer-settings-auto" aria-labelledby={autoStartLabelId}>
+                <div className="timer-settings-option-copy">
+                  <h3 id={autoStartLabelId}>{t.settingsModal.autoStart}</h3>
+                  <p id={autoStartDescriptionId}>{t.settingsModal.autoStartDescription}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={onToggleAutoStart}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
-                    isAutoStartEnabled
-                      ? 'border-emerald-400 bg-emerald-600 text-white shadow-[0_8px_20px_-10px_rgba(16,185,129,0.7)] focus-visible:ring-emerald-500'
-                      : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-100 focus-visible:ring-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-700'
-                  }`}
-                  aria-pressed={isAutoStartEnabled}
-                  title={isAutoStartEnabled ? t.settingsModal.autoStartEnabled : t.settingsModal.autoStartDisabled}
-                >
-                  <span
-                    className={`relative flex items-center justify-center w-7 h-7 rounded-full border text-[10px] font-bold ${
-                      isAutoStartEnabled
-                        ? 'border-emerald-300 bg-white text-emerald-600'
-                        : 'border-gray-200 bg-white text-gray-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-400'
-                    }`}
-                  >
-                    {isAutoStartEnabled ? 'ON' : 'OFF'}
-                  </span>
-                  <span className="text-sm font-semibold text-gray-700 dark:text-slate-200">
-                    {isAutoStartEnabled ? t.common.enabled : t.common.disabled}
-                  </span>
+                <button type="button" role="switch" aria-checked={isAutoStartEnabled}
+                  aria-labelledby={autoStartLabelId} aria-describedby={autoStartDescriptionId}
+                  className="timer-settings-switch" onClick={onToggleAutoStart} disabled={isSaving}>
+                  <span className="timer-settings-switch-track" aria-hidden="true"><span>{isAutoStartEnabled && <Check size={12} />}</span></span>
+                  <span>{isAutoStartEnabled ? t.common.enabled : t.common.disabled}</span>
                 </button>
-              </div>
+              </section>
             </>
           )}
         </div>
-
-        <div className="flex items-center justify-end space-x-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-          >
-            {t.common.cancel}
-          </button>
-          <button
-            type="button"
-            onClick={onSave}
-            className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-600"
-          >
+        <footer className="timer-settings-footer">
+          <button type="button" onClick={onClose} disabled={isSaving} className="timer-settings-button">{t.common.cancel}</button>
+          <button type="submit" disabled={isSaving} aria-busy={isSaving} className="timer-settings-button timer-settings-save">
+            {isSaving ? <Loader2 size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Check size={15} aria-hidden="true" />}
             {t.common.saveChanges}
           </button>
-        </div>
-      </div>
-    </div>
+        </footer>
+      </form>
+    </CommunityDialog>
   )
 })

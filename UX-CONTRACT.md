@@ -307,3 +307,27 @@ keyboard focus or a hidden tab. Close and focused Escape dismiss manually; no fo
 is stolen and the workspace remains interactive. A stable polite live region announces
 the achievement. English/Spanish copy and rank names follow I18nProvider. Earned rank
 remains available in the existing progress/profile views after the toast disappears.
+
+## Compact account navigation
+
+Navbar owns the shared two-part account/menu control. The avatar is a native profile
+link (or AuthModal button for guests), independent of the Menu disclosure. Its account
+preview opens on hover/focus, stays reachable under the pointer and closes on pointer
+exit, blur, Escape or activation. Opening navigation dismisses the preview. The same
+account details appear in the menu on narrow/no-hover devices for touch access.
+Navigation exposes the current route with aria-current; ThemeToggle owns the menu
+switch variant and retains the existing theme store and persistence. RankAvatarFrame and lib/ranks.ts
+remain the frame and progress owners; no new account requests or data are introduced.
+
+## Timer settings presentation
+
+SettingsModal reuses CommunityDialog with the timer-settings variant. Native modal
+behavior owns focus containment, inert background, Escape and focus restoration;
+its optional backdrop dismissal requires a press and release on the backdrop.
+Duration fields retain the existing draft/Save and normalization behavior in
+PomodoroTimer. Mode and auto-start changes retain their existing immediate behavior.
+Running timers disable mode changes with a visible explanation. Without Pro, the
+mode switch is disabled and the Pro action sits above it. The Pro action
+closes settings before opening the existing paywall/signup flow so the native dialog
+cannot cover that flow. Saving disables repeat submissions and dismissal until the
+existing save callback finishes. No persistence, session or entitlement rules change.

@@ -75,8 +75,17 @@ Artwork retains its limited palette; the scene background is desaturated in both
 
 ## Layout and components
 
-The homepage replaces the full header with a small fixed Menu disclosure at the top
-right. It reuses Navbar navigation, account actions, notifications, online status and
+The homepage replaces the full header with a small fixed two-part account/menu control
+at the top right. Its left avatar links to the profile and reveals account details on
+hover or keyboard focus; the right Menu button opens navigation. Both share a paper
+surface, fine border and a vertical divider. Guests see a sign-in avatar button.
+The account card contains name, email, Pro status, localized rank and XP progress;
+the same details remain in the menu for touch access. Both overlays are anchored
+without changing the control geometry. The disclosure follows workspace-window styling:
+a sage header, pixel Menu caption, compact Inter navigation, consistent outline icons,
+fine section dividers and a soft tomato inset marker for the current page. ThemeToggle's
+menu variant uses a square sun/moon switch on the same tokens. Desktop account details
+live in the avatar preview; narrow and no-hover layouts also show them in the menu. It reuses Navbar navigation, account actions, notifications, online status and
 theme controls; guests can navigate and sign in. The leaderboard and statistics reuse this compact menu; other routes retain their header.
 At widths up to 719px, this same menu moves to the top left and includes the five
 workspace tools with icons and localized labels. The desktop dock is hidden, and
@@ -370,3 +379,12 @@ with a rank-colored edge and shield-shaped trophy, pixel rank name and Inter det
 `app/globals.css` owns `.notification-corner` / `.rank-toast-*`, reusing pixel theme
 tokens and `lib/ranks.ts` accent colors. It overlays without shifting or blocking the
 workspace, fits phone safe areas, and respects reduced motion and forced colors.
+
+## Timer settings
+
+SettingsModal uses CommunityDialog's timer-settings variant: a 480px paper panel
+with a sage heading, pixel title, two-column inset duration fields and square
+state switches. Inter owns labels and help; pixel digits emphasize editable values.
+The focus-duration card has a tomato top edge. Locked time tracking keeps its disabled switch visible with a compact Pro action
+above it; the mode heading has no Beta badge. The footer stays visible while the settings body scrolls;
+all colors and shadows derive from the existing pixel tokens in app/community.css.

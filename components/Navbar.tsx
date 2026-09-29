@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import ThemeToggle from './ThemeToggle'
-import { Crown, User, Menu, X, ListChecks } from 'lucide-react'
+import { Crown, User, Menu, X, ListChecks, Timer, Users, Trophy, LineChart, BarChart3, BookOpen, Settings, LogOut, ChevronRight } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
@@ -20,6 +20,7 @@ import { gardenCopy } from '@/lib/i18n/garden'
 import { statisticsCopy } from '@/lib/i18n/statistics'
 import { useI18n } from '@/components/I18nProvider'
 import RankAvatarFrame from '@/components/RankAvatarFrame'
+import { getRankProgress } from '@/lib/ranks'
 import {
   faArrowRightFromBracket,
   faArrowUpRightFromSquare,
@@ -34,6 +35,8 @@ const NOTIFICATIONS_REFRESH_MS = 2 * 60 * 1000
 
 export default function Navbar({ compact = false, workspaceActions }: { compact?: boolean; workspaceActions?: (closeMenu: () => void) => ReactNode }) {
   const compactMenuId = useId()
+  const accountPreviewId = useId()
+  const [isAccountPreviewOpen, setIsAccountPreviewOpen] = useState(false)
   const compactTriggerRef = useRef<HTMLButtonElement>(null)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -90,6 +93,15 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
       document.removeEventListener('mousedown', handleClickOutside)
     }
   }, [isMenuOpen, isMobileMenuOpen, isNotificationsOpen])
+
+  useEffect(() => {
+    if (!isAccountPreviewOpen) return
+    const dismissPreview = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setIsAccountPreviewOpen(false)
+    }
+    window.addEventListener('keydown', dismissPreview)
+    return () => window.removeEventListener('keydown', dismissPreview)
+  }, [isAccountPreviewOpen])
 
   const authHeaders = useMemo(() => {
     const t = token ?? (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
@@ -279,6 +291,31 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     setIsMobileMenuOpen(false)
   }
 
+  const rankProgress = getRankProgress(user?.experience)
+  const accountDetails = user ? (
+    <div className="workspace-account-details">
+      <div className="workspace-account-name">
+        <strong>{user.username}</strong>
+        {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
+          <span className="workspace-account-pro"><Crown size={12} aria-hidden="true" />Pro</span>
+        )}
+      </div>
+      <p className="workspace-account-email">{user.email}</p>
+      <div className="workspace-account-rank">
+        <strong>{t.todayContribution.ranks[rankProgress.rank.id]}</strong>
+        <span>{new Intl.NumberFormat(language).format(user.experience ?? 0)} XP</span>
+      </div>
+      <div className="workspace-account-progress" aria-hidden="true">
+        <span style={{ width: `${rankProgress.percent}%`, background: rankProgress.rank.color }} />
+      </div>
+      <p className="workspace-account-next">
+        {rankProgress.nextRank
+          ? `${statisticsCopy[language].nextRank}: ${t.todayContribution.ranks[rankProgress.nextRank.id]} · ${new Intl.NumberFormat(language).format(rankProgress.current)} / ${new Intl.NumberFormat(language).format(rankProgress.required)} XP`
+          : statisticsCopy[language].highestRank}
+      </p>
+    </div>
+  ) : null
+
   return (
     <>
       <header
@@ -287,7 +324,9 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
         onKeyDown={compact ? (event) => {
           if (event.key === 'Escape') {
             event.stopPropagation()
-            if (isNotificationsOpen) {
+            if (isAccountPreviewOpen) {
+              setIsAccountPreviewOpen(false)
+            } else if (isNotificationsOpen) {
               setIsNotificationsOpen(false)
               mobileNotificationsRef.current?.querySelector('button')?.focus()
             } else {
@@ -298,21 +337,61 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
         } : undefined}
       >
         {compact && (
-          <button
-            ref={compactTriggerRef}
-            type="button"
-            className="workspace-navigation-trigger"
-            data-workspace-menu-trigger={compact ? '' : undefined}
-            aria-expanded={isMobileMenuOpen}
-            aria-controls={compactMenuId}
-            onClick={() => {
-              setIsMobileMenuOpen((open) => !open)
-              setIsNotificationsOpen(false)
-            }}
-          >
-            {isMobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
-            <span>{gardenCopy[language].menu}</span>
-          </button>
+          <div className="workspace-navigation-control">
+            <div
+              className="workspace-account"
+              onMouseEnter={() => { if (!isMobileMenuOpen) setIsAccountPreviewOpen(true) }}
+              onMouseLeave={() => setIsAccountPreviewOpen(false)}
+              onFocus={() => { if (!isMobileMenuOpen) setIsAccountPreviewOpen(true) }}
+              onBlur={(event) => {
+                if (!event.currentTarget.contains(event.relatedTarget)) setIsAccountPreviewOpen(false)
+              }}
+            >
+              {isAuthenticated && user ? (
+                <Link
+                  href={`/user/${user.id}`}
+                  className="workspace-account-trigger"
+                  aria-label={`${t.nav.profile}: ${user.username}`}
+                  aria-describedby={isAccountPreviewOpen ? accountPreviewId : undefined}
+                  onClick={() => { setIsAccountPreviewOpen(false); setIsMobileMenuOpen(false) }}
+                >
+                  <RankAvatarFrame experience={user.experience} thickness={2} className="h-8 w-8">
+                    {user.avatarUrl ? (
+                      <Image src={user.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="workspace-account-fallback"><User size={17} aria-hidden="true" /></span>
+                    )}
+                  </RankAvatarFrame>
+                </Link>
+              ) : (
+                <button type="button" className="workspace-account-trigger" aria-label={t.nav.login} title={t.nav.login}
+                  onClick={() => { setIsMobileMenuOpen(false); setIsAuthModalOpen(true) }}>
+                  <span className="workspace-account-guest"><User size={19} aria-hidden="true" /></span>
+                </button>
+              )}
+              {isAuthenticated && user && isAccountPreviewOpen && !isMobileMenuOpen && (
+                <div className="workspace-account-preview">
+                  <div id={accountPreviewId} role="tooltip" className="workspace-account-card">{accountDetails}</div>
+                </div>
+              )}
+            </div>
+            <button
+              ref={compactTriggerRef}
+              type="button"
+              className="workspace-navigation-trigger"
+              data-workspace-menu-trigger={compact ? '' : undefined}
+              aria-expanded={isMobileMenuOpen}
+              aria-controls={compactMenuId}
+              onClick={() => {
+                setIsMobileMenuOpen((open) => !open)
+                setIsAccountPreviewOpen(false)
+                setIsNotificationsOpen(false)
+              }}
+            >
+              {isMobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
+              <span>{gardenCopy[language].menu}</span>
+            </button>
+          </div>
         )}
         {!compact && <div className="flex items-center justify-between max-w-7xl mx-auto">
           <Link href="/" className="flex items-center space-x-2 md:space-x-3">
@@ -559,8 +638,11 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               </div>
             )}
             {compact && (
-              <div className="flex items-center justify-between gap-3 px-4 py-3 text-xs text-gray-600 dark:text-slate-300">
-                <span className="flex items-center gap-2"><span className={`h-2 w-2 rounded-full ${connectionStatusClass}`} />{totalOnlineCount} {t.nav.online}</span>
+              <div className="workspace-menu-heading">
+                <div>
+                  <p className="workspace-menu-title">{gardenCopy[language].menu}</p>
+                  <span className="workspace-menu-presence"><span className={`h-1.5 w-1.5 ${connectionStatusClass}`} />{totalOnlineCount} {t.nav.online}</span>
+                </div>
                 {isAuthenticated && user && (
                   <NotificationsMenu
                     variant="mobile"
@@ -583,8 +665,9 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 )}
               </div>
             )}
-            {/* User Info */}
-            {isAuthenticated && user && (
+            {/* Account details remain available to touch users in the disclosure. */}
+            {compact && isAuthenticated && user && <div className="workspace-menu-touch-account">{accountDetails}</div>}
+            {!compact && isAuthenticated && user && (
             <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-slate-700 rounded-xl">
               <div className="flex items-center space-x-3">
                 <div className="relative w-11 h-11 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold">
@@ -616,119 +699,67 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
 
             )}
 
-            {/* Navigation Links */}
-            <nav className="space-y-1 mb-3">
-              <Link 
-                href="/" 
-                onClick={handleMobileLinkClick}
-                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
-                  pathname === '/' 
-                    ? 'bg-rose-600 text-white'
-                    : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
-                }`}
-              >
-                <FontAwesomeIcon icon={faClock} className="mr-3 w-4" />
-                {t.nav.timer}
-              </Link>
-              <Link 
-                href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
-                onClick={handleMobileLinkClick}
-                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
-                  pathname.startsWith('/rooms') 
-                    ? 'bg-rose-600 text-white'
-                    : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
-                }`}
-              >
-                <FontAwesomeIcon icon={faUsers} className="mr-3 w-4" />
-                <span className="relative inline-flex items-center">
-                  <span>{t.nav.rooms}</span>
-                  <span className="pointer-events-none absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 rounded-full border border-amber-200 bg-amber-50 px-1 py-[1px] text-[8px] font-semibold uppercase leading-none tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
-                    {t.common.beta}
-                  </span>
-                </span>
-              </Link>
-              <Link 
-                href="/leaderboard"
-                onClick={handleMobileLinkClick}
-                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
-                  pathname === '/leaderboard'
-                    ? 'bg-rose-600 text-white'
-                    : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
-                }`}
-              >
-                <FontAwesomeIcon icon={faUsers} className="mr-3 w-4" />
-                {t.nav.leaderboard}
-              </Link>
-              <Link
-                href="/stats"
-                onClick={handleMobileLinkClick}
-                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
-                  pathname === '/stats'
-                    ? 'bg-rose-600 text-white'
-                    : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
-                }`}
-              >
-                <FontAwesomeIcon icon={faChartLine} className="mr-3 w-4 text-xs" />
-                {t.nav.stats}
-              </Link>
-              <Link href="/statistics" onClick={handleMobileLinkClick} aria-current={pathname === '/statistics' ? 'page' : undefined} className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${pathname === '/statistics' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
-                <FontAwesomeIcon icon={faChartLine} className="mr-3 w-4 text-xs" aria-hidden="true" />{statisticsCopy[language].navigation}
-              </Link>
-              <Link href="/habits" onClick={handleMobileLinkClick} aria-current={pathname === '/habits' ? 'page' : undefined} className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${pathname === '/habits' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
-                <ListChecks size={16} className="mr-3" aria-hidden="true" />{habitsCopy[language].title}
-              </Link>
-              <Link
-                href="/blog"
-                onClick={handleMobileLinkClick}
-                aria-current={pathname.startsWith('/blog') ? 'page' : undefined}
-                className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${pathname.startsWith('/blog') ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}
-              >
-                <FontAwesomeIcon icon={faBookOpen} className="mr-3 w-4" />Blog
-              </Link>
+            <nav className="workspace-menu-links" aria-label={gardenCopy[language].menu}>
+              {[
+                { href: '/', label: t.nav.timer, icon: Timer, active: pathname === '/' },
+                { href: currentRoomId ? `/rooms/${currentRoomId}` : '/rooms', label: t.nav.rooms, icon: Users, active: pathname.startsWith('/rooms'), beta: true },
+                { href: '/leaderboard', label: t.nav.leaderboard, icon: Trophy, active: pathname === '/leaderboard' },
+                { href: '/stats', label: t.nav.stats, icon: LineChart, active: pathname === '/stats' },
+                { href: '/statistics', label: statisticsCopy[language].navigation, icon: BarChart3, active: pathname === '/statistics' },
+                { href: '/habits', label: habitsCopy[language].title, icon: ListChecks, active: pathname === '/habits' },
+                { href: '/blog', label: 'Blog', icon: BookOpen, active: pathname.startsWith('/blog') },
+              ].map(({ href, label, icon: Icon, active, beta }) => (
+                <Link key={href} href={href} onClick={handleMobileLinkClick}
+                  aria-current={active ? 'page' : undefined} className="workspace-menu-item">
+                  <Icon size={16} aria-hidden="true" />
+                  <span className="workspace-menu-label">{label}</span>
+                  {beta && <span className="workspace-menu-badge">{t.common.beta}</span>}
+                  {active && <ChevronRight size={14} className="workspace-menu-current" aria-hidden="true" />}
+                </Link>
+              ))}
             </nav>
 
-            {/* Divider */}
-            <div className="border-t border-gray-200 dark:border-slate-700 my-3"></div>
-
             {/* User Menu Items */}
-            <div className="space-y-1">
+            <div className="workspace-menu-settings">
               {isAuthenticated && user && <>
               <Link
                 href={`/user/${user.id}`}
                 onClick={handleMobileLinkClick}
-                className="flex items-center justify-between px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                className="workspace-menu-item"
+                aria-current={pathname === `/user/${user.id}` ? 'page' : undefined}
               >
-                <span>{t.nav.profile}</span>
-                <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xs" />
+                <User size={16} aria-hidden="true" />
+                <span className="workspace-menu-label">{t.nav.profile}</span>
               </Link>
               <Link
                 href="/settings"
                 onClick={handleMobileLinkClick}
-                className="flex items-center px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                className="workspace-menu-item"
+                aria-current={pathname === '/settings' ? 'page' : undefined}
               >
-                <FontAwesomeIcon icon={faCog} className="mr-3 text-xs w-4" />
-                <span>{t.nav.settings}</span>
+                <Settings size={16} aria-hidden="true" />
+                <span className="workspace-menu-label">{t.nav.settings}</span>
               </Link>
               
               </>}
 
               {/* Theme Toggle */}
-              <div className="px-4 py-3 flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-slate-300">{t.common.theme}</span>
-                <ThemeToggle />
+              <div className="workspace-menu-theme">
+                <span>{t.common.theme}</span>
+                <ThemeToggle variant="menu" />
               </div>
 
               {/* Logout */}
               {isAuthenticated && user ? <button
                 type="button"
                 onClick={handleLogout}
-                className="flex w-full items-center px-4 py-3 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                className="workspace-menu-item workspace-menu-logout"
               >
-                <FontAwesomeIcon icon={faArrowRightFromBracket} className="mr-3 text-xs w-4" />
+                <LogOut size={16} aria-hidden="true" />
                 <span>{t.nav.logout}</span>
               </button> : <button
                 type="button"
-                className="btn-primary w-full text-sm"
+                className="workspace-menu-item workspace-menu-login"
                 onClick={() => { setIsMobileMenuOpen(false); setIsAuthModalOpen(true) }}
               >{t.nav.login}</button>}
             </div>
