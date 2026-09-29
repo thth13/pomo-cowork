@@ -331,3 +331,18 @@ mode switch is disabled and the Pro action sits above it. The Pro action
 closes settings before opening the existing paywall/signup flow so the native dialog
 cannot cover that flow. Saving disables repeat submissions and dismissal until the
 existing save callback finishes. No persistence, session or entitlement rules change.
+
+## Ambient audio
+
+`useAmbientSounds` is owned once by HomeWorkspace, independent of timer state and
+panel visibility. Each activated track owns one lazy HTMLAudioElement with looping,
+independent volume and a 250ms fade-in; stopping pauses immediately. Generation
+checks ignore superseded play promises. Each sound key toggles independently; closing the
+panel preserves playback; workspace unmount releases elements and pending fades.
+Browser-local preferences restore validated selections and levels without autoplay.
+Play saved mix is the explicit resume gesture. Source/playback failures are inline
+per-track errors with Retry and never stop other tracks. No files preload until
+requested. Master volume multiplies individual levels without changing them.
+WorkspaceWindow owns Escape, focus restoration, mobile placement and resizing;
+one native master-volume range and aria-pressed sound buttons own keyboard interaction. Runtime browser
+and playback verification is left to the user per repository instructions.

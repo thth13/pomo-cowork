@@ -442,3 +442,13 @@ and `--pixel-growth`, with blue-gray #647d91. Dark/scenery variants use #e39a87,
 #a7bc91 and #a0b5c6 for legibility. `app/appearance.css` selects those same dark roles
 for photographic backgrounds. Forced colors uses Highlight and preserves mode labels
 and tab selection semantics so meaning never depends on color alone.
+
+## Focus Sounds
+
+The home dock and its mobile tool menu open Focus Sounds in the shared non-modal
+WorkspaceWindow. Eight compact icon keys form a four-column grid with small captions. Selected keys
+appear pressed through a slight inset and recessed shadow. The footer contains only
+one short, thin master-volume slider; individual sliders and Stop all are omitted. The dock
+shows a small count of playing tracks. `app/ambient-sounds.css` reuses pixel roles,
+Inter, existing window geometry and theme colors without introducing new tokens.
+English/Spanish copy lives in `lib/i18n/ambientSounds.ts`.

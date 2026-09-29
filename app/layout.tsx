@@ -1,6 +1,7 @@
 import './globals.css'
 import './appearance.css'
 import './community.css'
+import './ambient-sounds.css'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import Link from 'next/link'

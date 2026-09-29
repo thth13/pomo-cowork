@@ -14,23 +14,27 @@ import TodayContribution from '@/components/TodayContribution'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks, ChevronLeft, ChevronRight } from 'lucide-react'
+import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks, ChevronLeft, ChevronRight, Headphones } from 'lucide-react'
 import Habits from '@/components/Habits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
 import { getRank } from '@/lib/ranks'
 import { HOME_TITLE } from '@/lib/homeSeo'
+import FocusSounds from '@/components/FocusSounds'
+import { useAmbientSounds } from '@/hooks/useAmbientSounds'
+import { ambientSoundsCopy } from '@/lib/i18n/ambientSounds'
 
-type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits'
+type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits' | 'sounds'
 const WORKING_COLLAPSED_STORAGE_KEY = 'pomo:working:collapsed:v1'
 const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v2'
 const isPanelId = (value: unknown): value is PanelId =>
-  value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits'
+  value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits' || value === 'sounds'
 
 export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const { user, isLoading, checkAuth } = useAuthStore()
   const { t, language } = useI18n()
   const copy = gardenCopy[language]
+  const ambientMixer = useAmbientSounds()
   const [mounted, setMounted] = useState(false)
   const [workingCollapsed, setWorkingCollapsed] = useState(false)
   const taskListRef = useRef<TaskListRef>(null)
@@ -51,6 +55,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     { id: 'tasks', title: copy.tasks, icon: ListTodo },
     { id: 'habits', title: habitsCopy[language].title, icon: ListChecks },
     { id: 'progress', title: t.todayContribution.yourProgress, icon: Medal },
+    { id: 'sounds', title: ambientSoundsCopy[language].title, icon: Headphones },
     { id: 'about', title: copy.aboutTimer, icon: HelpCircle },
   ] as const
 
@@ -169,7 +174,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     <button
       key={id}
       type="button"
-      aria-label={id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
+      aria-label={id === 'sounds' && ambientMixer.activeCount > 0 ? `${title}: ${ambientMixer.activeCount} ${ambientSoundsCopy[language].active}` : id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
       aria-describedby={!closeMenu && tooltipPanel === id ? `workspace-${id}-tooltip` : undefined}
       aria-haspopup="dialog"
       aria-controls={`workspace-${id}`}
@@ -202,6 +207,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       }}
     >
       <Icon size={19} aria-hidden="true" />
+      {id === 'sounds' && ambientMixer.activeCount > 0 && <span className="focus-sounds-badge" aria-hidden="true">{ambientMixer.activeCount}</span>}
       {closeMenu && <span>{title}</span>}
       {!closeMenu && tooltipPanel === id && (
         <span id={`workspace-${id}-tooltip`} role="tooltip" className="workspace-dock-tooltip">
@@ -256,7 +262,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       {/* Keep help in the initial HTML; only account-dependent panels wait for auth. */}
       {panels.map(({ id, title }, index) => workspaceLoading && id !== 'about' ? null : (
         <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)}>
-          {id === 'about' ? overview : id === 'habits' ? <Habits compact /> : id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution /> : <WorkHistory />}
+          {id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact /> : id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution /> : <WorkHistory />}
         </WorkspaceWindow>
       ))}
     </div>

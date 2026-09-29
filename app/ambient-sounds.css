@@ -1,0 +1,42 @@
+/* Compact sound keys reuse the shared workspace window and pixel theme. */
+#workspace-sounds .workspace-window-content { scroll-padding-bottom: 56px; }
+.focus-sounds { padding: 18px 16px 0; font-size: 12px; }
+.focus-sounds button { cursor: pointer; border-radius: 3px; }
+.focus-sounds button:disabled, .focus-sounds input:disabled { cursor: default; opacity: .5; }
+.focus-sounds button:focus-visible, .focus-sounds input:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 3px; }
+.focus-sounds-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 8px; }
+.focus-sounds-toggle { display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; padding: 0 0 4px; color: var(--pixel-muted); }
+.focus-sounds-key { display: grid; place-items: center; width: 52px; height: 52px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); box-shadow: 0 3px 0 var(--pixel-shadow); }
+.focus-sounds-toggle:hover:not(:disabled) .focus-sounds-key { background: var(--pixel-screen); color: var(--pixel-ink); }
+.focus-sounds-toggle[aria-pressed="true"] .focus-sounds-key,
+.focus-sounds-toggle:active:not(:disabled) .focus-sounds-key { transform: translateY(2px); background: var(--pixel-screen); color: var(--pixel-ink); box-shadow: inset 0 2px 3px var(--pixel-shadow); border-color: var(--pixel-muted); }
+.focus-sounds-name { max-width: 100%; font-size: 10px; line-height: 1.4; text-align: center; overflow-wrap: anywhere; }
+.focus-sounds-toggle[aria-pressed="true"] .focus-sounds-name { color: var(--pixel-ink); }
+.focus-sounds-footer { position: sticky; bottom: 0; display: flex; align-items: center; justify-content: center; gap: 9px; min-height: 52px; margin-top: 8px; background: var(--pixel-paper); color: var(--pixel-muted); }
+.focus-sounds-footer label { display: flex; align-items: center; }
+.focus-sounds-footer input { appearance: none; -webkit-appearance: none; width: 136px; min-width: 0; height: 28px; margin: 0; background: transparent; cursor: pointer; }
+.focus-sounds-footer input::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: var(--pixel-line); }
+.focus-sounds-footer input::-moz-range-track { height: 3px; border-radius: 2px; background: var(--pixel-line); }
+.focus-sounds-footer input::-webkit-slider-thumb { appearance: none; -webkit-appearance: none; width: 10px; height: 10px; margin-top: -3.5px; border: 0; border-radius: 50%; background: var(--pixel-muted); }
+.focus-sounds-footer input::-moz-range-thumb { width: 10px; height: 10px; border: 0; border-radius: 50%; background: var(--pixel-muted); }
+.focus-sounds-footer input:hover::-webkit-slider-thumb, .focus-sounds-footer input:active::-webkit-slider-thumb { background: var(--pixel-ink); }
+.focus-sounds-footer input:hover::-moz-range-thumb, .focus-sounds-footer input:active::-moz-range-thumb { background: var(--pixel-ink); }
+.focus-sounds-footer output { width: 4ch; font-size: 10px; text-align: right; font-variant-numeric: tabular-nums; }
+.focus-sounds-resume { margin-bottom: 16px; text-align: center; }
+.focus-sounds-resume button, .focus-sounds-error button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 6px 8px; color: var(--pixel-ink); }
+.focus-sounds-resume button:hover, .focus-sounds-error button:hover { background: var(--pixel-screen); }
+.focus-sounds-resume button:active, .focus-sounds-error button:active { background: var(--pixel-shadow); }
+.focus-sounds-error { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; font-size: 11px; color: var(--pixel-muted); }
+.focus-sounds-error button { flex-shrink: 0; text-decoration: underline; text-underline-offset: 3px; }
+.focus-sounds-badge { display: inline-grid; place-items: center; min-width: 16px; height: 16px; padding: 0 3px; background: var(--pixel-tomato-soft); color: var(--pixel-tomato-ink); border-radius: 3px; font-size: 10px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.workspace-dock .focus-sounds-badge { position: absolute; right: 1px; top: 2px; }
+@media (max-width: 719px) {
+  .focus-sounds-footer input { height: 36px; }
+  .focus-sounds-resume button, .focus-sounds-error button { min-height: 44px; }
+}
+@media (forced-colors: active) {
+  .focus-sounds-key { border-color: ButtonText; }
+  .focus-sounds-toggle[aria-pressed="true"] .focus-sounds-key { outline: 2px solid Highlight; outline-offset: -4px; }
+  .focus-sounds-footer input { appearance: auto; -webkit-appearance: auto; }
+  .focus-sounds-badge { border: 1px solid ButtonText; }
+}
