@@ -75,43 +75,51 @@ export default function Habits({ compact = false }: { compact?: boolean }) {
     const checked = habit.completions.some((entry) => entry.date === date)
     const unavailable = date > today || date < habit.startDate || habit.archived
     return <button type="button" className={`habit-check ${history ? 'habit-day' : ''}`} aria-pressed={checked} aria-label={`${checked ? c.unmark : c.mark}: ${habit.title}, ${dateLabel(date)}`} title={`${dateLabel(date)}${unavailable ? ` · ${c.unavailable}` : ''}`} disabled={!!pending || unavailable} aria-busy={pending === habit.id} onClick={() => void commit({ date, completed: !checked }, habit.id)}>
-      {checked ? <Check size={17} aria-hidden="true" /> : <span aria-hidden="true">{history ? new Date(`${date}T12:00:00`).getDate() : ''}</span>}
+      {checked ? <Check size={17} aria-hidden="true" /> : <span aria-hidden="true" />}
     </button>
   }
 
   return <section className={`habits ${compact ? 'habits-compact' : ''}`} data-no-translate lang={language} aria-label={c.title}>
-    {!compact && <header className="habits-heading"><h1>{c.title}</h1><p>{c.subtitle}</p></header>}
+    {!compact && <header className="habits-heading">
+      <div><span className="habits-kicker">{c.active}</span><h1>{c.title}</h1><p>{c.subtitle}</p></div>
+      {today && <time dateTime={today}>{dateLabel(today, { weekday: 'long', month: 'long', day: 'numeric' })}</time>}
+    </header>}
     <div className="habit-feedback" aria-live="polite" role="status">{saveError ? <span className="habit-error">{c.saveError}</span> : message}</div>
     {loading ? <p className="habit-state" role="status">{c.loading}</p> : error && !habits ? <div className="habit-state" role="alert"><p>{c.loadError}</p><button className="habit-button" onClick={retry}>{c.retry}</button></div> : <>
       {error && <div className="habit-state" role="alert"><p>{c.loadError}</p><button className="habit-button" onClick={retry}>{c.retry}</button></div>}
-      <div className="habits-today">
-        <div className="habits-summary"><h2>{c.today}</h2><span>{completed.toLocaleString(language)} / {active.length.toLocaleString(language)} {c.done}</span></div>
-        <progress max={active.length || 1} value={completed} aria-label={c.done} />
-        {active.length === 0 ? <p className="habit-empty">{compact ? c.emptyToday : c.empty}</p> : <>
-          {completed === active.length && <p className="habit-all-done">{c.allDone}</p>}
-          <ul className="habit-list">{active.map((habit) => <li key={habit.id}>
-            {mark(habit, today)}
-            <div className="habit-name"><span>{habit.title}</span><small><Flame size={12} aria-hidden="true" />{habitStreak(habit, today).toLocaleString(language)} {c.streak}</small></div>
-            {!compact && <div className="habit-row-actions">
-              <button id={`habit-edit-${habit.id}`} className="habit-icon" type="button" title={c.edit} aria-label={`${c.edit}: ${habit.title}`} disabled={!!pending} onClick={() => { setEditing(habit.id); requestAnimationFrame(() => document.getElementById('habit-edit-name')?.focus()) }}><Pencil size={16} aria-hidden="true" /></button>
-              <button className="habit-icon" type="button" title={c.archive} aria-label={`${c.archive}: ${habit.title}`} disabled={!!pending} onClick={() => void commit({ archived: true }, habit.id, c.archivedStatus).then((saved) => { if (saved) { setEditing(null); document.getElementById('habit-new-name')?.focus() } })}><Archive size={16} aria-hidden="true" /></button>
-            </div>}
-          </li>)}</ul>
-        </>}
+      <div className={compact ? undefined : 'habits-overview'}>
+        <div className="habits-today">
+          <div className="habits-summary"><h2>{c.today}</h2><span><strong>{completed.toLocaleString(language)}</strong> / {active.length.toLocaleString(language)} {c.done}</span></div>
+          <progress max={active.length || 1} value={completed} aria-label={c.done} />
+          {active.length === 0 ? <p className="habit-empty">{compact ? c.emptyToday : c.empty}</p> : <>
+            {completed === active.length && <p className="habit-all-done"><Check size={14} aria-hidden="true" />{c.allDone}</p>}
+            <ul className="habit-list">{active.map((habit) => <li key={habit.id}>
+              {mark(habit, today)}
+              <div className="habit-name"><span>{habit.title}</span><small><Flame size={12} aria-hidden="true" />{habitStreak(habit, today).toLocaleString(language)} {c.streak}</small></div>
+              {!compact && <div className="habit-row-actions">
+                <button id={`habit-edit-${habit.id}`} className="habit-icon" type="button" title={c.edit} aria-label={`${c.edit}: ${habit.title}`} disabled={!!pending} onClick={() => { setEditing(habit.id); requestAnimationFrame(() => document.getElementById('habit-edit-name')?.focus()) }}><Pencil size={16} aria-hidden="true" /></button>
+                <button className="habit-icon" type="button" title={c.archive} aria-label={`${c.archive}: ${habit.title}`} disabled={!!pending} onClick={() => void commit({ archived: true }, habit.id, c.archivedStatus).then((saved) => { if (saved) { setEditing(null); document.getElementById('habit-new-name')?.focus() } })}><Archive size={16} aria-hidden="true" /></button>
+              </div>}
+            </li>)}</ul>
+          </>}
+        </div>
+        {!compact && <aside className="habit-create-panel">
+          {editing && active.some((habit) => habit.id === editing) ? <HabitNameForm key={editing} initial={active.find((habit) => habit.id === editing)!.title} onSave={async (title) => {
+            const saved = await commit({ title }, editing)
+            if (saved) { document.getElementById(`habit-edit-${editing}`)?.focus(); setEditing(null) }
+            return saved
+          }} onCancel={() => { document.getElementById(`habit-edit-${editing}`)?.focus(); setEditing(null) }} /> : <HabitNameForm onSave={async (title) => {
+            if (!createAttempt.current || createAttempt.current.title !== title) {
+              createAttempt.current = { id: crypto.randomUUID(), title, startDate: today }
+            }
+            const saved = await commit(createAttempt.current, undefined, c.created)
+            if (saved) createAttempt.current = null
+            return saved
+          }} />}
+          {(!user || user.isAnonymous) && <p className="habit-guest">{c.guest}</p>}
+        </aside>}
       </div>
       {compact ? <Link className="habit-button habit-manage" href="/habits">{c.manage}<ChevronRight size={16} aria-hidden="true" /></Link> : <>
-        {editing && active.some((habit) => habit.id === editing) ? <HabitNameForm key={editing} initial={active.find((habit) => habit.id === editing)!.title} onSave={async (title) => {
-          const saved = await commit({ title }, editing)
-          if (saved) { document.getElementById(`habit-edit-${editing}`)?.focus(); setEditing(null) }
-          return saved
-        }} onCancel={() => { document.getElementById(`habit-edit-${editing}`)?.focus(); setEditing(null) }} /> : <HabitNameForm onSave={async (title) => {
-          if (!createAttempt.current || createAttempt.current.title !== title) {
-            createAttempt.current = { id: crypto.randomUUID(), title, startDate: today }
-          }
-          const saved = await commit(createAttempt.current, undefined, c.created)
-          if (saved) createAttempt.current = null
-          return saved
-        }} />}
         {habits && habits.length > 0 && <section className="habit-history" aria-label={c.history}>
           <div className="habit-history-heading"><h2>{c.history}</h2><div className="habit-week-nav">
             <button className="habit-icon" type="button" aria-label={c.previous} title={c.previous} disabled={monday <= earliest} onClick={() => setOffset((value) => value - 1)}><ChevronLeft size={18} /></button>
@@ -119,12 +127,11 @@ export default function Habits({ compact = false }: { compact?: boolean }) {
             <button className="habit-icon" type="button" aria-label={c.next} title={c.next} disabled={offset === 0} onClick={() => setOffset((value) => Math.min(0, value + 1))}><ChevronRight size={18} /></button>
             <button className="habit-button" type="button" disabled={offset === 0} onClick={() => setOffset(0)}>{c.current}</button>
           </div></div>
-          <div className="habit-history-scroll"><table><caption className="sr-only">{c.history}</caption><thead><tr><th scope="col">{c.name}</th>{days.map((date) => <th scope="col" key={date} aria-current={date === today ? 'date' : undefined}>{dateLabel(date, { weekday: 'short' })}</th>)}<th scope="col">{c.total}</th></tr></thead><tbody>
+          <div className="habit-history-scroll"><table><caption className="sr-only">{c.history}</caption><thead><tr><th scope="col">{c.name}</th>{days.map((date) => <th scope="col" key={date} aria-current={date === today ? 'date' : undefined}><span>{dateLabel(date, { weekday: 'short' })}</span><strong>{new Date(`${date}T12:00:00`).getDate()}</strong></th>)}<th scope="col">{c.total}</th></tr></thead><tbody>
             {habits.map((habit) => <tr key={habit.id}><th scope="row"><span>{habit.title}</span>{habit.archived && <small>{c.archived}</small>}</th>{days.map((date) => <td key={date}>{mark(habit, date, true)}</td>)}<td>{habit.completions.length.toLocaleString(language)}</td></tr>)}
           </tbody></table></div>
         </section>}
         {archived.length > 0 && <details className="habit-archive"><summary>{c.archived} ({archived.length.toLocaleString(language)})</summary><p>{c.archiveHint}</p><ul className="habit-list">{archived.map((habit) => <li key={habit.id}><span className="habit-name">{habit.title}</span><button className="habit-button" type="button" disabled={!!pending} onClick={() => void commit({ archived: false }, habit.id, c.restored)}><RotateCcw size={14} aria-hidden="true" />{c.restore}</button></li>)}</ul></details>}
-        {(!user || user.isAnonymous) && <p className="habit-guest">{c.guest}</p>}
       </>}
     </>}
   </section>
