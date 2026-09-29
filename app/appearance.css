@@ -4,15 +4,10 @@
 .workspace-background-media, .workspace-background-wash { position: absolute; inset: 0; width: 100%; height: 100%; }
 .workspace-background-media { object-fit: cover; }
 .workspace-background-wash { background: color-mix(in srgb, var(--pixel-page) 20%, transparent); }
-.pomodoro-home:has(.workspace-background) .workspace-dock,
 .seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer) {
   background: color-mix(in srgb, var(--pixel-page) 12%, transparent);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
-}
-.pomodoro-home:has(.workspace-background) .workspace-dock {
-  border: 1px solid color-mix(in srgb, var(--pixel-line) 25%, transparent);
-  box-shadow: none;
 }
 /* Foreground roles are local to glass; opaque dialogs and controls keep theme colors. */
 [data-scenery-text="light"] { --scenery-ink: #fff; --scenery-shadow: 0 1px 3px #000c, 0 0 12px #0006; }
@@ -177,7 +172,7 @@
   --scene-popover: rgb(20 25 23 / 96%);
 }
 /* The local scrim supplies contrast even over white imagery; no global dark wash. */
-:is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.focus-station, .working-sidebar, .seo-timer, .seo-social) {
+:is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.focus-station, .working-sidebar, .seo-timer, .seo-social, .workspace-dock, .workspace-navigation-control) {
   color: var(--scene-primary);
   background: var(--scene-panel);
   border-color: var(--scene-border);
@@ -186,6 +181,23 @@
   -webkit-backdrop-filter: blur(18px) saturate(110%);
   backdrop-filter: blur(18px) saturate(110%);
 }
+/* Navigation shares the scene palette without changing opaque dialogs elsewhere. */
+:is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.workspace-dock, .workspace-navigation) {
+  --pixel-paper: var(--scene-popover);
+  --pixel-page: var(--scene-task);
+  --pixel-ink: var(--scene-primary);
+  --pixel-muted: var(--scene-secondary);
+  --pixel-line: var(--scene-border);
+  --pixel-screen: var(--scene-hover);
+  --pixel-shadow: var(--scene-selected);
+  --pixel-accent: var(--scene-accent);
+  --pixel-tomato-soft: var(--scene-selected);
+  --pixel-tomato-ink: var(--scene-accent);
+  --scenery-ink: var(--scene-primary);
+  color: var(--scene-primary);
+}
+:is(.pomodoro-home, .seo-shell):has(.workspace-background) .workspace-dock { border-width: 1px; }
+:is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.workspace-navigation-panel, .workspace-account-card, .workspace-dock-tooltip) { box-shadow: var(--scene-shadow); }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) [data-timer-panel] {
   color: var(--scene-primary);
   --timer-focus-color: var(--timer-focus-on-dark);
@@ -248,7 +260,7 @@
     --scene-selected: Canvas; --scene-shadow: none; --scene-accent: Highlight;
     --scene-task: Canvas; --scene-task-hover: Canvas; --scene-popover: Canvas;
   }
-  :is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.focus-station, .working-sidebar, .seo-timer, .seo-social, .current-task-trigger), .task-popover[data-background-mode] {
+  :is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.focus-station, .working-sidebar, .seo-timer, .seo-social, .current-task-trigger, .workspace-dock, .workspace-navigation-control), .task-popover[data-background-mode] {
     -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; outline: 1px solid CanvasText;
   }
   :is(.pomodoro-home, .seo-shell):has(.workspace-background) [data-timer-panel] .pixel-timer-track span { background: Canvas; outline: 1px solid GrayText; }

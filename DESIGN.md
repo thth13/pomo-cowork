@@ -326,8 +326,8 @@ blur, fine white inset border and restrained shadow. `app/appearance.css` owns t
 `--scene-*` roles: a 68% dark local scrim keeps white primary/secondary text readable
 even over bright imagery while preserving visible scenery. The existing gentle page
 wash remains; no extra full-screen dark layer is added. Layout, dimensions, spacing,
-fonts and behavior are shared with normal mode. Background-specific panel padding
-was removed so switching scenery does not resize the controls.
+fonts and behavior are shared with normal mode. The presence rail has 24px vertical padding in both modes so its heading clears the
+panel edge; switching scenery does not resize the controls.
 
 The task selector uses a darker translucent inset; its portalled popover explicitly
 carries `data-background-mode` from the appearance store and uses a nearly opaque
@@ -336,8 +336,11 @@ segments remain translucent white, and Start keeps the
 existing terracotta fill. The same surface roles apply to search timer pages.
 Forced colors restores system surfaces, text and focus outlines without blur.
 
-`useSceneryContrast` now samples only the dock and editorial surfaces, which retain
-their prior light glass treatment. The timer and coworker rail use fixed light text
+`useSceneryContrast` samples only editorial surfaces, which retain their light glass
+treatment. The dock and compact account/menu control share the timer’s dark scene
+surface and border; their tooltips, account preview and menu use the dark popover
+roles. Navigation text, separators and interaction states inherit local scene tokens.
+The timer, navigation and coworker rail use fixed light text
 on their own dark surface, independent of image sampling or video frames. Main-surface
 colors do not leak into settings dialogs, avatars or other opaque application UI.
 
