@@ -529,9 +529,6 @@ export default function UserProfilePage() {
     <div className="community-page garden-page profile-page" lang={language} data-no-translate>
       <ProfilePageHeader />
       <main className="community-layout">
-        <div className="community-intro">
-          <p className="community-eyebrow"><Sprout size={15} aria-hidden="true" />{copy.profile}</p>
-        </div>
         <header className="profile-header">
           {profile.user.avatarUrl ? <Image src={profile.user.avatarUrl} alt="" width={88} height={88} className="community-avatar profile-avatar" /> : <span className="community-avatar profile-avatar" aria-hidden="true">{profile.user.username.charAt(0).toUpperCase()}</span>}
           <div className="profile-identity">
