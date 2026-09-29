@@ -1,4 +1,4 @@
-import { MutableRefObject, useEffect } from 'react'
+import { MutableRefObject, useEffect, useRef, useState } from 'react'
 import useSWR, { KeyedMutator } from 'swr'
 import { PomodoroSession, SessionStatus, SessionType, User } from '@/types'
 import { sessionService } from '@/services/sessionService'
@@ -37,6 +37,55 @@ export function useSessionRestore({
   ignoreSessionIdRef,
 }: UseSessionRestoreOptions) {
   const ignoredSessionId = ignoreSessionIdRef?.current
+  const userId = user?.id
+  const completionAttempts = useRef(new Map<string, {
+    attempts: number
+    pending: boolean
+    completed: boolean
+    retryAt: number
+  }>())
+  const mountedRef = useRef(false)
+  const [retryAt, setRetryAt] = useState<number | null>(null)
+
+  useEffect(() => {
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
+
+  useEffect(() => {
+    if (retryAt === null) return
+    const timer = window.setTimeout(() => setRetryAt(null), Math.max(0, retryAt - Date.now()))
+    return () => window.clearTimeout(timer)
+  }, [retryAt])
+
+  useEffect(() => {
+    if (!userId) return
+
+    const retryFailedCompletions = () => {
+      if (!navigator.onLine) return
+
+      let nextRetryAt: number | null = null
+      for (const [key, attempt] of Array.from(completionAttempts.current)) {
+        if (!key.startsWith(`${userId}:`) || attempt.pending || attempt.completed || attempt.attempts < 3) {
+          continue
+        }
+
+        // Allow a new bounded batch, retaining the cooldown against repeated focus/online events.
+        attempt.attempts = 0
+        nextRetryAt = Math.min(nextRetryAt ?? attempt.retryAt, attempt.retryAt)
+      }
+
+      // Wake the effect even when SWR returns the same session data after reconnecting.
+      if (nextRetryAt !== null) setRetryAt(nextRetryAt)
+    }
+
+    window.addEventListener('online', retryFailedCompletions)
+    window.addEventListener('focus', retryFailedCompletions)
+    return () => {
+      window.removeEventListener('online', retryFailedCompletions)
+      window.removeEventListener('focus', retryFailedCompletions)
+    }
+  }, [userId])
 
   const { data: sessions, mutate } = useSWR<PomodoroSession[]>(
     user ? '/api/sessions?activeOnly=1' : null,
@@ -85,8 +134,37 @@ export function useSessionRestore({
           : Math.max(0, totalDuration - elapsed)
 
         if (currentTimeRemaining === 0) {
-          await sessionService.complete(activeSession.id)
-          await mutate()
+          const key = `${user.id}:${activeSession.id}`
+          const attempt = completionAttempts.current.get(key) ?? {
+            attempts: 0, pending: false, completed: false, retryAt: 0,
+          }
+          if (attempt.pending || attempt.completed || attempt.attempts >= 3 || attempt.retryAt > Date.now()) {
+            return
+          }
+
+          // Reserve before awaiting: effect cleanup does not cancel the HTTP request.
+          attempt.pending = true
+          attempt.attempts += 1
+          completionAttempts.current.set(key, attempt)
+          try {
+            await sessionService.complete(activeSession.id)
+            attempt.completed = true
+          } catch (error) {
+            attempt.retryAt = Date.now() + 5000 * 2 ** (attempt.attempts - 1)
+            if (mountedRef.current && attempt.attempts < 3) {
+              setRetryAt(attempt.retryAt)
+            }
+            throw error
+          } finally {
+            attempt.pending = false
+          }
+
+          // Remove stale data before revalidation can trigger another render.
+          await mutate(
+            (cached) => cached?.filter((session) => session.id !== activeSession.id),
+            { revalidate: false }
+          )
+          if (mountedRef.current) await mutate()
           return
         }
 
@@ -134,6 +212,7 @@ export function useSessionRestore({
     emitSessionSync,
     mutate,
     ignoredSessionId,
+    retryAt,
   ])
 
   return { mutateSessions: mutate as KeyedMutator<PomodoroSession[]> }

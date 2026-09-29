@@ -203,12 +203,12 @@ export function useSocket() {
     syncCurrentSession()
   }
 
-  const emitSessionSync = (sessionData: ActiveSession) => {
+  const emitSessionSync = useCallback((sessionData: ActiveSession) => {
     if (sessionData.userId !== currentOwnerId()) return
     const snapshot = withSessionProfile(sessionData)
     sessionSnapshots.set(snapshot.id, snapshot)
     if (sharedSocket?.connected) sharedSocket.emit('session-sync', snapshot)
-  }
+  }, [])
 
   const emitSessionPause = (sessionId: string) => {
     if (sharedSocket?.connected) sharedSocket.emit('session-pause', sessionId)

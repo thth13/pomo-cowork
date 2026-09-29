@@ -38,6 +38,9 @@ interface SessionUpdateResult {
   } | null
 }
 
+// Timer completion and session restoration can overlap within the same tab.
+const pendingCompletions = new Map<string, Promise<SessionUpdateResult>>()
+
 const applySessionProgression = (result: SessionUpdateResult) => {
   if (result.progression) {
     useAuthStore.setState((state) => ({
@@ -137,29 +140,42 @@ export const sessionService = {
     }
 
     const token = useAuthStore.getState().token
+    const owner = useAuthStore.getState().user?.id ?? getOrCreateAnonymousId()
+    const key = `${owner}:${id}`
+    const pending = pendingCompletions.get(key)
+    if (pending) return pending
 
-    const body: Record<string, any> = {
-      status: 'COMPLETED',
-      completedAt: new Date().toISOString(),
-      endedAt: new Date().toISOString(),
-      pausedAt: null,
-      timeRemaining: 0,
+    const completion = (async () => {
+      const body: Record<string, any> = {
+        status: 'COMPLETED',
+        completedAt: new Date().toISOString(),
+        endedAt: new Date().toISOString(),
+        pausedAt: null,
+        timeRemaining: 0,
+      }
+
+      if (!token) {
+        body.anonymousId = getOrCreateAnonymousId()
+      }
+
+      const response = await fetch(`/api/sessions/${id}`, {
+        method: 'PUT',
+        headers: buildHeaders(token),
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to complete session ${id}, status ${response.status}`)
+      }
+
+      return applySessionProgression(await response.json())
+    })()
+
+    pendingCompletions.set(key, completion)
+    try {
+      return await completion
+    } finally {
+      pendingCompletions.delete(key)
     }
-
-    if (!token) {
-      body.anonymousId = getOrCreateAnonymousId()
-    }
-
-    const response = await fetch(`/api/sessions/${id}`, {
-      method: 'PUT',
-      headers: buildHeaders(token),
-      body: JSON.stringify(body),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to complete session ${id}, status ${response.status}`)
-    }
-
-    return applySessionProgression(await response.json())
   },
 }
