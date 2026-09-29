@@ -418,7 +418,9 @@ Search is transient local state. Enter creates and selects a new task (or select
 exact existing match); arrows move through controls, Escape closes, and focus returns
 to the trigger. Inline rename and completion keep the disclosure open; deletion needs
 an explicit inline confirmation. Completed tasks remain in My Tasks but are omitted
-from quick selection. Active and paused sessions retain the existing task/mode lock.
+from quick selection. Work and Time Tracking sessions retain the task lock, including while paused.
+Short and Long Break keep the task picker visible and editable in both main and mini
+timers; selection prepares the next focus session without changing the running break.
 `taskService` owns task mutation requests for both TaskList and quick actions;
 `useQuickTasks` updates the timer store and publishes successful changes to TaskList.
 English/Spanish copy lives in `lib/i18n/taskPicker.ts`. Failures preserve input and
@@ -432,7 +434,7 @@ including idle previews, paused sessions and automatic transitions. `--timer-mod
 resolves to terracotta for Work/time tracking, natural sage for Short Break and muted
 blue-gray for Long Break. The static label marker, active tab text, tinted background, underline and filled
 progress segments use it. Active selection remains visible while running or paused;
-Time Tracking selects Focus in the three-mode control. Digits, buttons, panel surfaces and inactive segments retain
+Time Tracking hides the three-mode control, including before starting and while paused. Digits, buttons, panel surfaces and inactive segments retain
 their existing neutral/brand treatments; the mode marker remains visible while paused.
 
 `app/globals.css` owns the semantic role mapping: light mode reuses `--pixel-accent`

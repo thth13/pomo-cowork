@@ -1,5 +1,7 @@
 'use client'
 
+import { isTaskSelectionLocked } from '@/lib/taskSelection'
+
 import { RefObject, memo, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -32,7 +34,6 @@ interface TaskPickerProps {
 
 export const TaskPicker = memo(function TaskPicker({
   variant = 'default',
-  sessionType,
   isDisabled,
   isOpen,
   onToggle,
@@ -62,8 +63,7 @@ export const TaskPicker = memo(function TaskPicker({
     width: number
     maxHeight: number
   } | null>(null)
-  const isVisible = isOpen && !isDisabled &&
-    (sessionType === SessionType.WORK || sessionType === SessionType.TIME_TRACKING)
+  const isVisible = isOpen && !isDisabled
 
   const { loading, loadError, saving, error, mutate, retry } = useQuickTasks(isVisible)
   const options = filteredTaskOptions.filter(task => !task.completed && !task.id.startsWith('temp_') && `${task.title} ${task.description ?? ''}`.toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()))
@@ -77,14 +77,14 @@ export const TaskPicker = memo(function TaskPicker({
 
   const close = () => { onClose(); triggerRef.current?.focus() }
   const select = (task: TaskOption | null) => {
-    if (saving || useTimerStore.getState().currentSession) return
+    if (saving || isDisabled || isTaskSelectionLocked(useTimerStore.getState().currentSession)) return
     onSelectTask(task)
     close()
   }
   const create = async () => {
     if (!canCreate) return
     const result = await mutate(async () => ({ task: await taskService.create({ title: query }) }))
-    if (result && 'task' in result && !useTimerStore.getState().currentSession) { onSelectTask(result.task); close() }
+    if (result && 'task' in result && !isTaskSelectionLocked(useTimerStore.getState().currentSession)) { onSelectTask(result.task); close() }
   }
   const update = async (task: TaskOption, action: 'rename' | 'complete' | 'delete') => {
     const result = await mutate(async () => action === 'delete'
@@ -136,10 +136,6 @@ export const TaskPicker = memo(function TaskPicker({
       observer.disconnect()
     }
   }, [isVisible, variant])
-
-  if (sessionType !== SessionType.WORK && sessionType !== SessionType.TIME_TRACKING) {
-    return null
-  }
 
   return (
     <div className={variant === 'mini-timer' ? 'mini-timer-task-picker' : 'current-task-picker'} data-i18n-ignore>

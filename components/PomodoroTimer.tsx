@@ -1,5 +1,7 @@
 'use client'
 
+import { isTaskSelectionLocked } from '@/lib/taskSelection'
+
 import { usePetStore } from '@/store/usePetStore'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Settings } from 'lucide-react'
@@ -298,7 +300,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     [dispatchTimer, isAutoStartEnabled]
   )
 
-  const isTaskPickerDisabled = !!currentSession
+  const isTaskPickerDisabled = isTaskSelectionLocked(currentSession)
   const isRoomSwitchDisabled = Boolean(isRunning && currentSession)
   const isTimerRunning = Boolean(currentSession && isRunning)
 

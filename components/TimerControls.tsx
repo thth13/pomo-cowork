@@ -105,30 +105,32 @@ export const TimerControls = memo(function TimerControls({
 
       <TimerActions {...actions} />
 
-      <div className="timer-mode-tabs" role="group" aria-label={t.timer.focus}>
-        {[SessionType.WORK, SessionType.SHORT_BREAK, SessionType.LONG_BREAK].map((type) => {
-          const isActive = sessionType === type || (type === SessionType.WORK && sessionType === SessionType.TIME_TRACKING)
-          const label =
-            type === SessionType.WORK
-              ? t.timer.focus
-              : type === SessionType.SHORT_BREAK
-                ? t.timer.shortBreak
-                : t.timer.longBreak
+      {sessionType !== SessionType.TIME_TRACKING && (
+        <div className="timer-mode-tabs" role="group" aria-label={t.timer.focus}>
+          {[SessionType.WORK, SessionType.SHORT_BREAK, SessionType.LONG_BREAK].map((type) => {
+            const isActive = sessionType === type
+            const label =
+              type === SessionType.WORK
+                ? t.timer.focus
+                : type === SessionType.SHORT_BREAK
+                  ? t.timer.shortBreak
+                  : t.timer.longBreak
 
-          return (
-            <button
-              type="button"
-              key={type}
-              aria-pressed={isActive}
-              onClick={() => onSessionTypeChange(type)}
-              disabled={!!currentSession}
-              className="timer-mode-tab"
-            >
-              {label}
-            </button>
-          )
-        })}
-      </div>
+            return (
+              <button
+                type="button"
+                key={type}
+                aria-pressed={isActive}
+                onClick={() => onSessionTypeChange(type)}
+                disabled={!!currentSession}
+                className="timer-mode-tab"
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      )}
     </>
   )
 })

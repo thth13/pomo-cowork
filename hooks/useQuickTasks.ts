@@ -1,5 +1,7 @@
 'use client'
 
+import { isTaskSelectionLocked } from '@/lib/taskSelection'
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -36,7 +38,7 @@ export function useQuickTasks(isOpen: boolean) {
   }, [isOpen, token, revision])
 
   const mutate = useCallback(async (operation: () => Promise<TaskChange>) => {
-    if (pending.current || useTimerStore.getState().currentSession) return null
+    if (pending.current || isTaskSelectionLocked(useTimerStore.getState().currentSession)) return null
     pending.current = true
     setSaving(true)
     setError(false)
@@ -51,7 +53,7 @@ export function useQuickTasks(isOpen: boolean) {
       const options = store.taskOptions.filter(task => task.id !== id)
       if ('task' in change) options.unshift({ ...previous, ...change.task })
       store.setTaskOptions(options)
-      if (!store.currentSession && store.selectedTask?.id === id) {
+      if (!isTaskSelectionLocked(store.currentSession) && store.selectedTask?.id === id) {
         store.setSelectedTask('task' in change && !change.task.completed ? change.task : null)
       }
       window.dispatchEvent(new CustomEvent<TaskChange>(TASK_CHANGED_EVENT, { detail: change }))

@@ -1,5 +1,7 @@
 'use client'
 
+import { isTaskSelectionLocked } from '@/lib/taskSelection'
+
 import { useEffect, useId, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { PictureInPicture2, X } from 'lucide-react'
@@ -45,7 +47,7 @@ export function TimerPictureInPicture({
   const messageId = useId()
   const status = actions.isPaused ? t.activeSessions.paused : actions.isRunning ? t.timer.running : t.timer.ready
   const label = pipWindow ? t.timer.closeMiniTimer : t.timer.openMiniTimer
-  const isTaskPickerDisabled = !!actions.currentSession || actions.isStarting || actions.isStopping
+  const isTaskPickerDisabled = isTaskSelectionLocked(actions.currentSession) || actions.isStarting || actions.isStopping
   const {
     isTaskMenuOpen,
     setIsTaskMenuOpen,
@@ -53,7 +55,7 @@ export function TimerPictureInPicture({
     setTaskSearch,
     taskPickerRef,
     taskDropdownRef,
-  } = useTaskMenu(isTaskPickerDisabled || !pipWindow || (sessionType !== SessionType.WORK && sessionType !== SessionType.TIME_TRACKING))
+  } = useTaskMenu(isTaskPickerDisabled || !pipWindow)
 
   useEffect(() => {
     if (pipWindow) pipWindow.document.title = `${formattedTime} · ${sessionLabel} | Pomo Cowork`
