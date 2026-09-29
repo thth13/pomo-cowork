@@ -26,6 +26,7 @@ export async function GET(
         proExpiresAt: true,
         lastSeenAt: true,
         profileViews: true,
+        experience: true,
         _count: {
           select: {
             sessions: true
@@ -125,6 +126,7 @@ export async function GET(
         isPro: syncedUser.isPro,
         lastSeenAt: syncedUser.lastSeenAt,
         profileViews: syncedUser.profileViews,
+        experience: syncedUser.experience,
         totalSessions: syncedUser._count.sessions
       },
       stats: {

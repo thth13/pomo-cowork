@@ -7,6 +7,7 @@ import Highcharts from 'highcharts'
 import CommunityDialog from '@/components/CommunityDialog'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
+import { getRank } from '@/lib/ranks'
 import { enUS, es } from 'date-fns/locale'
 import Image from 'next/image'
 import { ArrowLeft, Clock, TrendingUp, Calendar, Coffee, Flame, Pencil, LogOut, Crown, Eye, MessageSquare, Send, Sprout, Trash2 } from 'lucide-react'
@@ -26,6 +27,7 @@ interface UserProfile {
     description?: string
     createdAt: string
     totalSessions: number
+    experience: number
     isPro?: boolean
     lastSeenAt?: string | null
     profileViews?: number
@@ -93,10 +95,26 @@ interface WallMessage {
   }
 }
 
+function ProfilePageHeader() {
+  const { language } = useI18n()
+
+  return (
+    <div className="profile-sitebar">
+      <div className="profile-sitebar-inner">
+        <Link href="/" className="profile-sitebar-brand">Pomo Cowork</Link>
+        <div className="profile-sitebar-actions">
+          <Link href="/" className="community-link"><ArrowLeft size={15} aria-hidden="true" />{communityCopy[language].back}</Link>
+          <Navbar compact />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function UserProfilePage() {
   const params = useParams()
   const router = useRouter()
-  const { language } = useI18n()
+  const { language, t } = useI18n()
   const copy = communityCopy[language]
   const locale = language === 'es' ? 'es-ES' : 'en-US'
   const dateLocale = language === 'es' ? es : enUS
@@ -495,10 +513,11 @@ export default function UserProfilePage() {
 
   const selectedHeatmapDay = yearlyHeatmap.find(day => day.date === selectedDay)
   const firstHeatmapDay = heatmapColumns.flatMap(column => column.days).find(day => day !== null)
+  const experience = profile?.user.experience ?? 0
+  const rank = getRank(experience)
 
   if (loading || error || !profile) {
-    return <div className="community-page garden-page" lang={language} data-no-translate><Navbar compact /><main className="community-layout">
-      <Link href="/" className="community-link"><ArrowLeft size={15} aria-hidden="true" />{copy.back}</Link>
+    return <div className="community-page garden-page profile-page" lang={language} data-no-translate><ProfilePageHeader /><main className="community-layout">
       <div className="community-panel community-state" role={loading ? 'status' : undefined}>
         {loading ? <><span className="community-spinner" aria-hidden="true" />{copy.loading}</> : <><Sprout aria-hidden="true" /><h1>{copy.userNotFound}</h1><p>{error}</p><button type="button" className="community-button" onClick={() => setRetry(value => value + 1)}>{copy.retry}</button></>}
       </div>
@@ -506,17 +525,23 @@ export default function UserProfilePage() {
   }
 
   return (
-    <div className="community-page garden-page" lang={language} data-no-translate>
-      <Navbar compact />
+    <div className="community-page garden-page profile-page" lang={language} data-no-translate>
+      <ProfilePageHeader />
       <main className="community-layout">
         <div className="community-intro">
           <p className="community-eyebrow"><Sprout size={15} aria-hidden="true" />{copy.profile}</p>
-          <Link href="/" className="community-button"><ArrowLeft size={15} aria-hidden="true" />{copy.back}</Link>
         </div>
         <header className="profile-header">
           {profile.user.avatarUrl ? <Image src={profile.user.avatarUrl} alt="" width={88} height={88} className="community-avatar profile-avatar" /> : <span className="community-avatar profile-avatar" aria-hidden="true">{profile.user.username.charAt(0).toUpperCase()}</span>}
           <div className="profile-identity">
             <div className="profile-name"><h1>{profile.user.username}</h1>{profile.user.isPro && <span className="community-badge community-badge-accent"><Crown size={12} aria-hidden="true" />PRO</span>}</div>
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="community-badge">
+                <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: rank.ring }} aria-hidden="true" />
+                {copy.rank}: {t.todayContribution.ranks[rank.id]}
+              </span>
+              <span className="community-badge tabular-nums">{experience.toLocaleString(locale)} EXP</span>
+            </div>
             {profile.user.description && <p className="profile-bio">{profile.user.description}</p>}
             <div className="profile-meta"><span><Calendar size={13} aria-hidden="true" />{copy.joined} {formatDate(profile.user.createdAt)}</span><span><Eye size={13} aria-hidden="true" />{(profile.user.profileViews ?? 0).toLocaleString(locale)} {copy.views}</span></div>
             {!isUserOnline && <p className="community-muted mt-2">{getLastSeenLabel(profile.user.lastSeenAt)}</p>}

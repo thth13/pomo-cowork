@@ -351,3 +351,9 @@ beside recent sessions. Panels stack on phones, with horizontal overflow confine
 the yearly map. Chart colors follow theme tokens and avoid entrance animation.
 English/Spanish copy belongs to `lib/i18n/community.ts`, excluding these surfaces from
 DOM translation. `/profile` redirects authenticated users to their real public profile.
+
+The public profile has a minimal paper header with the Pomo Cowork home link,
+back-to-timer link and shared compact Navbar menu. The menu sits in the header's
+normal flow with an anchored overlay; the header wraps on narrow screens and stays
+visible in loading/error states. Profile content starts below it with 32px spacing
+(24px on phones), without the floating menu's previous top clearance.
