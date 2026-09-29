@@ -430,8 +430,9 @@ expose inline recovery, while pending mutations prevent duplicate submissions.
 `data-timer-mode` follows the effective session type in the main and mini timers,
 including idle previews, paused sessions and automatic transitions. `--timer-mode-color`
 resolves to terracotta for Work/time tracking, natural sage for Short Break and muted
-blue-gray for Long Break. Only the static label marker, active tab underline and filled
-progress segments use it. Digits, buttons, panel surfaces and inactive segments retain
+blue-gray for Long Break. The static label marker, active tab text, tinted background, underline and filled
+progress segments use it. Active selection remains visible while running or paused;
+Time Tracking selects Focus in the three-mode control. Digits, buttons, panel surfaces and inactive segments retain
 their existing neutral/brand treatments; the mode marker remains visible while paused.
 
 `app/globals.css` owns the semantic role mapping: light mode reuses `--pixel-accent`

@@ -3,7 +3,7 @@
 import { RefObject, memo, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Check, ChevronDown, Circle, MoreHorizontal, Plus, X } from 'lucide-react'
+import { Check, ChevronDown, MoreHorizontal, Plus, X } from 'lucide-react'
 import { taskPickerCopy } from '@/lib/i18n/taskPicker'
 import { useQuickTasks } from '@/hooks/useQuickTasks'
 import { taskService } from '@/services/taskService'
@@ -167,7 +167,7 @@ export const TaskPicker = memo(function TaskPicker({
           title={isDisabled ? copy.locked : selectedTask?.title}
           className={`current-task-trigger ${variant === 'mini-timer' ? 'mini-timer-task-trigger' : ''}`}
         >
-          {selectedTask ? <Circle size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
+          {!selectedTask && <Plus size={16} aria-hidden="true" />}
           <span>{selectedTask?.title ?? copy.prompt}</span>
           <ChevronDown size={14} aria-hidden="true" className={isVisible ? 'rotate-180' : ''} />
         </button>
@@ -230,10 +230,10 @@ export const TaskPicker = memo(function TaskPicker({
                       <div className="task-option" key={task.id}>
                         <div className="task-option-row" data-selected={selectedTask?.id === task.id}>
                           <button type="button" className="task-option-select" disabled={saving} aria-pressed={selectedTask?.id === task.id} onClick={() => select(task)}>
-                            {selectedTask?.id === task.id ? <Check size={16} /> : <Circle size={16} />}
                             <span><span className="task-option-title">{task.title}</span>
                               {Boolean(task.focusMinutes) && <small>{task.focusMinutes} {copy.minutes}</small>}
                             </span>
+                            {selectedTask?.id === task.id && <Check size={16} aria-hidden="true" />}
                           </button>
                           <button type="button" className="task-option-more" disabled={saving} aria-label={`${copy.more}: ${task.title}`} aria-expanded={actionId === task.id}
                             onClick={() => { setActionId(actionId === task.id ? null : task.id); setEditing(null); setName(task.title) }}><MoreHorizontal size={18} /></button>

@@ -107,7 +107,7 @@ export const TimerControls = memo(function TimerControls({
 
       <div className="timer-mode-tabs" role="group" aria-label={t.timer.focus}>
         {[SessionType.WORK, SessionType.SHORT_BREAK, SessionType.LONG_BREAK].map((type) => {
-          const isActive = sessionType === type
+          const isActive = sessionType === type || (type === SessionType.WORK && sessionType === SessionType.TIME_TRACKING)
           const label =
             type === SessionType.WORK
               ? t.timer.focus

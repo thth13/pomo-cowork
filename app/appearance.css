@@ -217,7 +217,7 @@
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .current-task-trigger svg { color: var(--scene-icon); }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .current-task-trigger:is(:hover:not(:disabled), [aria-expanded="true"]) { background: var(--scene-task-hover); border-color: rgb(255 255 255 / 30%); }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .timer-mode-tab { color: var(--scene-secondary); }
-:is(.pomodoro-home, .seo-shell):has(.workspace-background) .timer-mode-tab[aria-pressed="true"] { color: var(--scene-primary); }
+:is(.pomodoro-home, .seo-shell):has(.workspace-background) .timer-mode-tab[aria-pressed="true"] { color: var(--timer-mode-color); }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .timer-mode-tab[aria-pressed="true"]::after { background: var(--timer-mode-color); }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .timer-mode-tab:hover:not(:disabled) { color: #fff; background: var(--scene-hover); }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .timer-mode-tab:disabled { opacity: .8; }
