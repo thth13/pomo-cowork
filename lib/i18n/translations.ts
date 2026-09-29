@@ -21,7 +21,7 @@ export const translations = {
       theme: 'Theme',
     },
     nav: {
-      coworkers: 'Coworkers',
+      leaderboard: 'Leaderboard',
       login: 'Login',
       logout: 'Log out',
       online: 'online',
@@ -309,7 +309,7 @@ export const translations = {
       theme: 'Tema',
     },
     nav: {
-      coworkers: 'Compañeros',
+      leaderboard: 'Clasificación',
       login: 'Iniciar sesión',
       logout: 'Cerrar sesión',
       online: 'en línea',

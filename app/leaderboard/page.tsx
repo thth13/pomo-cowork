@@ -10,6 +10,8 @@ import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
 import { leaderboardCopy } from '@/lib/i18n/leaderboard'
+import { getRank } from '@/lib/ranks'
+import { ranksCopy } from '@/lib/i18n/ranks'
 import 'react-day-picker/dist/style.css'
 import './leaderboard.css'
 
@@ -18,6 +20,7 @@ interface LeaderboardUser {
   id: string
   username: string
   avatarUrl?: string
+  experience: number
   totalPomodoros: number
   totalMinutes: number
   rank: number
@@ -67,7 +70,7 @@ function Avatar({ user, large = false }: { user: LeaderboardUser; large?: boolea
   )
 }
 
-export default function UsersPage() {
+export default function LeaderboardPage() {
   const { user: currentUser, token } = useAuthStore()
   const { language, t } = useI18n()
   const copy = leaderboardCopy[language]
@@ -237,13 +240,16 @@ export default function UsersPage() {
                   <div className="lb-table-wrap">
                     <table className="lb-table">
                       <caption className="sr-only">{t.leaderboard.fullRanking} — {data?.periodLabel}</caption>
-                      <thead><tr><th scope="col">{copy.rank}</th><th scope="col">{copy.participant}</th><th scope="col">{t.leaderboard.focus} <span>({copy.timeUnit})</span></th><th scope="col">{t.leaderboard.pomos}</th></tr></thead>
-                      <tbody>{pageRows.map(person => <tr key={person.id} className={person.id === currentUser?.id ? 'lb-row-self' : undefined}>
+                      <thead><tr><th scope="col">{copy.rank}</th><th scope="col">{copy.participant}</th><th scope="col">{ranksCopy[language].rank}</th><th scope="col">{t.leaderboard.focus} <span>({copy.timeUnit})</span></th><th scope="col">{t.leaderboard.pomos}</th></tr></thead>
+                      <tbody>{pageRows.map(person => {
+                        const userRank = getRank(person.experience)
+                        return <tr key={person.id} className={person.id === currentUser?.id ? 'lb-row-self' : undefined}>
                         <td><span className={`lb-position${person.rank <= 3 ? ' lb-position-top' : ''}`}>{String(person.rank).padStart(2, '0')}</span></td>
                         <th scope="row"><Link href={profileHref(person.id)} className="lb-person"><Avatar user={person} /><span className="lb-person-name">{person.username}{person.id === currentUser?.id && <span className="lb-you">{t.leaderboard.you}</span>}</span></Link></th>
+                        <td><span className="lb-user-rank"><span className="lb-rank-mark" style={{ background: userRank.ring }} aria-hidden="true" />{t.todayContribution.ranks[userRank.id]}</span></td>
                         <td><strong className="lb-time">{formatTime(person.totalMinutes)}</strong><span className="lb-time-track" aria-hidden="true"><span style={{ width: `${Math.max(1, person.totalMinutes / maxMinutes * 100)}%` }} /></span></td>
                         <td className="lb-pomos">{number(person.totalPomodoros)}</td>
-                      </tr>)}</tbody>
+                      </tr>})}</tbody>
                     </table>
                   </div>
                   <nav className="lb-pagination" aria-label={t.leaderboard.fullRanking}>

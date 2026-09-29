@@ -289,7 +289,7 @@ export default function TodayContribution() {
 
         <div className="mt-5 grid grid-cols-2 gap-3">
           <Link
-            href="/users"
+            href="/leaderboard"
             className="group/rank-today rounded-xl border border-slate-200 px-3.5 py-3 outline-none transition-all hover:border-amber-300 hover:bg-amber-50/50 focus-visible:border-amber-400 focus-visible:ring-2 focus-visible:ring-amber-400/20 dark:border-slate-700 dark:hover:border-amber-700 dark:hover:bg-amber-950/20"
             aria-label={t.todayContribution.openTodayLeaderboard}
           >

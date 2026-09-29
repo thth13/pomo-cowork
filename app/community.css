@@ -228,3 +228,8 @@ button.profile-heatmap-cell:hover, button.profile-heatmap-cell:active { outline:
   .community-panel, .community-dialog, .room-card { box-shadow: none; border-color: CanvasText; }
   .profile-heatmap-cell[data-level="4"], .room-contribution > span { background: Highlight; }
 }
+
+.profile-rank-link { cursor: pointer; }
+.profile-rank-link:hover { background: var(--pixel-screen); color: var(--pixel-ink); }
+.profile-rank-link:active { background: var(--pixel-shadow); }
+.profile-rank-link:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 3px; }

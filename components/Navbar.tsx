@@ -353,14 +353,14 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               </span>
             </Link>
             <Link 
-              href="/users" 
+              href="/leaderboard"
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                pathname === '/users' 
+                pathname === '/leaderboard'
                   ? 'bg-rose-600 text-white'
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
             >
-              <FontAwesomeIcon icon={faUsers} className="mr-2" />{t.nav.coworkers}
+              <FontAwesomeIcon icon={faUsers} className="mr-2" />{t.nav.leaderboard}
             </Link>
             <div className="flex flex-col items-start">
             <Link
@@ -648,16 +648,16 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 </span>
               </Link>
               <Link 
-                href="/users" 
+                href="/leaderboard"
                 onClick={handleMobileLinkClick}
                 className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${
-                  pathname === '/users' 
+                  pathname === '/leaderboard'
                     ? 'bg-rose-600 text-white'
                     : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
                 }`}
               >
                 <FontAwesomeIcon icon={faUsers} className="mr-3 w-4" />
-                {t.nav.coworkers}
+                {t.nav.leaderboard}
               </Link>
               <Link
                 href="/stats"

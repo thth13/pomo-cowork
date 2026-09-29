@@ -4,7 +4,7 @@ import { seoSlugs } from '@/lib/seoRoutes'
 
 // Next.js serves this metadata route as /sitemap.xml. Keep one generated sitemap
 // so published blog posts and the shared tool registry cannot fall out of sync.
-const publicPages = ['', '/pricing', '/rooms', '/users', '/privacy', '/terms', '/refund']
+const publicPages = ['', '/pricing', '/rooms', '/leaderboard', '/privacy', '/terms', '/refund']
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const posts = await getBlogPosts()

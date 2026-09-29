@@ -107,8 +107,10 @@ The homepage companion is temporarily commented out; its implementation and stor
 ## Leaderboard workflow
 
 `app/api/stats/leaderboard/route.ts` remains authoritative for ranking and totals.
-`/users` includes only entries with positive focus minutes, ordered by the server's
+`/leaderboard` includes only entries with positive focus minutes, ordered by the server's
 rank; work and time-tracking sessions retain their existing counting rules.
+`/users` permanently redirects to `/leaderboard`, preserving query parameters.
+The separate Rank column uses lifetime experience and the shared `getRank` thresholds.
 The existing API returns the complete dataset, so search and 100-row pagination are
 local. Period, offset, applied dates, query and page persist in URL parameters using
 replaceState; popstate restores the view. Period/search changes reset to page one;

@@ -203,7 +203,7 @@ index-only component classes. The article reading layout stays unchanged.
 
 ## Community leaderboard
 
-`/users` reuses Navbar’s compact menu with safe-area clearance above its content.
+`/leaderboard` reuses Navbar’s compact menu with safe-area clearance above its content.
 The heading has no promotional subtitle or description. It follows the Pocket Garden
 identity with a pixel display heading, a quiet
 three-metric strip, and a sage first-place card followed by the next two coworkers.
@@ -212,7 +212,7 @@ uses Inter, tabular time values, fine row dividers and a tomato edge for the cur
 user. A paper personal-progress panel sits beside the table and moves below it on
 small screens. This is a document-scrolling route, not a floating-window workspace.
 The date-range picker expands within the period panel; it uses the existing DayPicker
-with token-derived colors and square selection geometry. `app/users/leaderboard.css`
+with token-derived colors and square selection geometry. `app/leaderboard/leaderboard.css`
 owns route-specific composition; all colors and typography derive from existing global
 tokens. `lib/i18n/leaderboard.ts` owns new English/Spanish copy through I18nProvider.
 
@@ -357,3 +357,7 @@ back-to-timer link and shared compact Navbar menu. The menu sits in the header's
 normal flow with an anchored overlay; the header wraps on narrow screens and stays
 visible in loading/error states. Profile content starts below it with 32px spacing
 (24px on phones), without the floating menu's previous top clearance.
+
+Leaderboard rows include a localized rank name and colored marker based on lifetime XP.
+The table owns horizontal overflow on narrow screens. The profile rank badge links to
+`/ranks`, with a localized tooltip and keyboard focus; no separate guide text is shown.

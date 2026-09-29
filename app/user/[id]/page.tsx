@@ -534,12 +534,11 @@ export default function UserProfilePage() {
           <div className="profile-identity">
             <div className="profile-name"><h1>{profile.user.username}</h1>{profile.user.isPro && <span className="community-badge community-badge-accent"><Crown size={12} aria-hidden="true" />PRO</span>}</div>
             <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="community-badge">
+              <Link href="/ranks" className="community-badge profile-rank-link" title={ranksCopy[language].link} aria-label={`${copy.rank}: ${t.todayContribution.ranks[rank.id]} · ${ranksCopy[language].link}`}>
                 <span className="h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: rank.ring }} aria-hidden="true" />
                 {copy.rank}: {t.todayContribution.ranks[rank.id]}
-              </span>
+              </Link>
               <span className="community-badge tabular-nums">{experience.toLocaleString(locale)} EXP</span>
-              <Link href="/ranks" className="community-link">{ranksCopy[language].link}</Link>
             </div>
             {profile.user.description && <p className="profile-bio">{profile.user.description}</p>}
             <div className="profile-meta"><span><Calendar size={13} aria-hidden="true" />{copy.joined} {formatDate(profile.user.createdAt)}</span><span><Eye size={13} aria-hidden="true" />{(profile.user.profileViews ?? 0).toLocaleString(locale)} {copy.views}</span></div>
