@@ -1305,7 +1305,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     : 0
 
   return (
-    <div className="flex flex-col items-center" data-timer-panel>
+    <div className="flex flex-col items-center" data-timer-panel data-timer-mode={activeSessionType}>
       {(currentRoomId || lastRoomId) && (
         <button
           type="button"
@@ -1347,7 +1347,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
           progress={progress}
           isTimeTracking={isTimeTrackingSession}
         />
-        <div className="pixel-timer-status"><span className={isRunning ? 'pixel-led active' : 'pixel-led'} />{getSessionTypeLabel(activeSessionType)}</div>
+        <div className="pixel-timer-status"><span className="pixel-led timer-mode-marker" aria-hidden="true" />{getSessionTypeLabel(activeSessionType)}</div>
         <AppearanceSettings />
         <button type="button" onClick={openSettings} className="pixel-timer-settings" aria-label={t.settingsModal.title} title={t.settingsModal.title}><Settings size={18} /></button>
         <div className={`pixel-timer-digits ${timerDisplaySeconds >= 6000 ? 'pixel-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={getSessionTypeLabel(activeSessionType)}>{formatTime(timerDisplaySeconds)}</div>

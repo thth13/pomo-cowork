@@ -108,11 +108,10 @@ export function TimerPictureInPicture({
         )}
       </div>
       {pipWindow && createPortal(
-        <main className="mini-timer" lang={language} data-no-translate="true">
+        <main className="mini-timer" data-timer-mode={sessionType} lang={language} data-no-translate="true">
           <header className="mini-timer-header">
-            <span className="mini-timer-label">{sessionLabel}</span>
+            <span className="mini-timer-label"><span className="pixel-led timer-mode-marker" aria-hidden="true" />{sessionLabel}</span>
             <span className="mini-timer-status" role="status">
-              <span className={actions.isRunning ? 'pixel-led active' : 'pixel-led'} aria-hidden="true" />
               {status}
             </span>
           </header>

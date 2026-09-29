@@ -4,6 +4,8 @@ import { useState, useEffect, useImperativeHandle, forwardRef, useRef, useCallba
 import { motion, AnimatePresence } from 'framer-motion'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { taskService } from '@/services/taskService'
+import { TASK_CHANGED_EVENT, TaskChange } from '@/hooks/useQuickTasks'
 import NotificationToast from '@/components/NotificationToast'
 import { getAnonymousId, getOrCreateAnonymousId } from '@/lib/anonymousUser'
 
@@ -79,10 +81,11 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const { selectedTask, setSelectedTask, setTaskOptions, isRunning } = useTimerStore()
   const { user, token } = useAuthStore()
   const hasRestoredSelectedTask = useRef(false)
+  const loadVersion = useRef(0)
   const deleteConfirmTimeoutRef = useRef<number | null>(null)
 
   const loadTasks = useCallback(async () => {
-    console.log('TaskList: Loading tasks...')
+    const version = ++loadVersion.current
     try {
       const headers = buildTaskHeaders(token)
       if (!headers.Authorization && !headers['X-Anonymous-Id']) {
@@ -98,7 +101,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
 
       if (response.ok) {
         const data = await response.json()
-        console.log('TaskList: Received tasks from API:', data)
+        if (version !== loadVersion.current) return
         const normalized: Task[] = data.map((task: any) => ({
           id: task.id,
           backendId: task.id,
@@ -122,6 +125,24 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       setIsLoading(false)
     }
   }, [token, setTaskOptions])
+
+  useEffect(() => {
+    const onTaskChange = (event: Event) => {
+      loadVersion.current++
+      const change = (event as CustomEvent<TaskChange>).detail
+      setTasks(previous => {
+        if ('deletedId' in change) return previous.filter(task => getTaskCanonicalId(task) !== change.deletedId)
+        const existing = previous.find(task => getTaskCanonicalId(task) === change.task.id)
+        const updated = { ...existing, ...change.task, backendId: change.task.id, isPending: false }
+        return existing
+          ? previous.map(task => getTaskCanonicalId(task) === change.task.id ? updated : task)
+          : [updated, ...previous]
+      })
+      setIsLoading(false)
+    }
+    window.addEventListener(TASK_CHANGED_EVENT, onTaskChange)
+    return () => window.removeEventListener(TASK_CHANGED_EVENT, onTaskChange)
+  }, [])
 
   useImperativeHandle(ref, () => ({
     refreshTasks: loadTasks
@@ -267,15 +288,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
     }
 
     try {
-      const response = await fetch(`/api/tasks/${task.backendId}`, {
-        method: 'PUT',
-        headers: buildTaskHeaders(token, true),
-        body: JSON.stringify({ completed: newCompleted })
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to toggle task')
-      }
+      await taskService.update(task.backendId, { completed: newCompleted })
     } catch (error) {
       console.error('Failed to toggle task:', error)
       setTasks(prev => prev.map(t => (
@@ -302,14 +315,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
     }
 
     try {
-      const response = await fetch(`/api/tasks/${task.backendId}`, {
-        method: 'DELETE',
-        headers: buildTaskHeaders(token)
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to delete task')
-      }
+      await taskService.remove(task.backendId)
     } catch (error) {
       console.error('Failed to delete task:', error)
       setTasks(prev => {
@@ -377,22 +383,12 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
     setNewTaskPriority('Medium')
 
     try {
-      const response = await fetch('/api/tasks', {
-        method: 'POST',
-        headers: buildTaskHeaders(token, true, true),
-        body: JSON.stringify({
-          title: optimisticTask.title,
-          description: optimisticTask.description,
-          pomodoros: optimisticTask.pomodoros,
-          priority: optimisticTask.priority
-        })
+      const createdTask = await taskService.create({
+        title: optimisticTask.title,
+        description: optimisticTask.description,
+        pomodoros: optimisticTask.pomodoros,
+        priority: optimisticTask.priority,
       })
-
-      if (!response.ok) {
-        throw new Error('Failed to create task')
-      }
-
-      const createdTask = await response.json()
       setTasks(prev => prev.map(task => (
         task.id === tempId
           ? {

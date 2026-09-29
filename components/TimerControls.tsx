@@ -39,14 +39,14 @@ export const TimerActions = memo(function TimerActions({
   const isBusy = isStarting || isStopping || isPausing || isResuming
 
   return (
-    <div className={`timer-actions flex flex-col items-center gap-3 sm:gap-4 mb-6 sm:mb-8 px-4 sm:px-0 w-full sm:w-auto${compact ? ' timer-actions-compact' : ''}`} aria-busy={isBusy}>
+    <div className={`timer-actions flex flex-col items-center gap-3 sm:gap-4 px-4 sm:px-0 w-full sm:w-auto${compact ? ' timer-actions-compact' : ''}`} aria-busy={isBusy}>
       <div className="w-full sm:w-auto">
         {!currentSession ? (
           <button
             type="button"
             onClick={onStart}
             disabled={isBusy}
-            className={`w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white px-6 sm:px-8 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+            className={`timer-primary-action w-full sm:w-auto bg-rose-500 hover:bg-rose-600 text-white px-6 sm:px-8 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
               isStarting ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >
@@ -59,7 +59,7 @@ export const TimerActions = memo(function TimerActions({
               type="button"
               onClick={onStop}
               disabled={isBusy}
-              className={`flex-1 sm:flex-none w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+              className={`timer-stop-action flex-1 sm:flex-none w-full sm:w-auto bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
                 isStopping ? 'opacity-50 cursor-not-allowed' : ''
               }`}
             >
@@ -70,7 +70,7 @@ export const TimerActions = memo(function TimerActions({
               type="button"
               onClick={isPaused ? onResume : onPause}
               disabled={isBusy || (!isPaused && (!isRunning || currentSession.id.startsWith('temp_')))}
-              className={`flex-1 sm:flex-none w-full sm:w-auto text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
+              className={`timer-primary-action flex-1 sm:flex-none w-full sm:w-auto text-white px-6 py-3 rounded-xl font-medium transition-colors flex items-center justify-center space-x-2 ${
                 isPaused ? 'bg-green-500 hover:bg-green-600' : 'bg-amber-500 hover:bg-amber-600'
               }`}
             >
@@ -101,11 +101,11 @@ export const TimerControls = memo(function TimerControls({
 
   return (
     <>
-      <TimerActions {...actions} />
-
       {children}
 
-      <div className="flex bg-white dark:bg-slate-800 rounded-xl p-1 border border-gray-200 dark:border-slate-700 mb-4 sm:mb-6 mx-4 sm:mx-0">
+      <TimerActions {...actions} />
+
+      <div className="timer-mode-tabs" role="group" aria-label={t.timer.focus}>
         {[SessionType.WORK, SessionType.SHORT_BREAK, SessionType.LONG_BREAK].map((type) => {
           const isActive = sessionType === type
           const label =
@@ -117,15 +117,12 @@ export const TimerControls = memo(function TimerControls({
 
           return (
             <button
+              type="button"
               key={type}
               aria-pressed={isActive}
               onClick={() => onSessionTypeChange(type)}
               disabled={!!currentSession}
-              className={`flex-1 sm:flex-none sm:px-6 px-3 py-2 rounded-lg font-medium text-sm sm:text-base ${
-                isActive
-                  ? 'bg-rose-500 text-white'
-                  : 'text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white'
-              } ${currentSession ? 'opacity-50 cursor-not-allowed' : ''}`}
+              className="timer-mode-tab"
             >
               {label}
             </button>

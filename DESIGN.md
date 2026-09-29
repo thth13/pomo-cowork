@@ -320,20 +320,27 @@ optional scenery; `public/backgrounds/README.md` records sources and generation 
 Scenery appears on home and the search timer pages. Existing room backgrounds keep
 their own owner. Personal choice is shared per browser, independent of the account.
 
-Chosen scenery fills the viewport beneath the page. At the user's request, surfaces
-behind the timer, online rail and editorial text use a barely tinted glass treatment:
-12% page color with 6px backdrop blur; timer and rail borders use 25% line color.
-`app/appearance.css` derives these from existing theme tokens in both themes.
-The left workspace dock shares the same glass tint and blur without its hard shadow.
-`useSceneryContrast` samples the image crop beneath each glass surface and chooses
-white or near-black (`#101914`) foregrounds using relative luminance, accounting for
-the wash and tint. Video uses its poster for stable color rather than changing per frame.
-`app/appearance.css` owns `--scenery-ink` and `--scenery-shadow`; a subtle contrasting
-text shadow helps over image details. These roles affect exposed glass text/icons only;
-opaque controls, tooltips and dialogs retain theme colors. Sampling updates after image
-load, viewport/layout changes, scrolling and theme changes. Forced colors restores
-opaque system surfaces and CanvasText without blur or text shadow. Contrast over each
-scene and moving video still requires manual visual verification.
+Chosen scenery fills the viewport beneath the page. In background mode the existing
+timer and Currently Working components use a shared dark translucent surface, 18px
+blur, fine white inset border and restrained shadow. `app/appearance.css` owns the
+`--scene-*` roles: a 68% dark local scrim keeps white primary/secondary text readable
+even over bright imagery while preserving visible scenery. The existing gentle page
+wash remains; no extra full-screen dark layer is added. Layout, dimensions, spacing,
+fonts and behavior are shared with normal mode. Background-specific panel padding
+was removed so switching scenery does not resize the controls.
+
+The task selector uses a darker translucent inset; its portalled popover explicitly
+carries `data-background-mode` from the appearance store and uses a nearly opaque
+dark surface. The separate mini window retains its ordinary theme. Active tabs and filled progress segments use the semantic timer mode accent; inactive
+segments remain translucent white, and Start keeps the
+existing terracotta fill. The same surface roles apply to search timer pages.
+Forced colors restores system surfaces, text and focus outlines without blur.
+
+`useSceneryContrast` now samples only the dock and editorial surfaces, which retain
+their prior light glass treatment. The timer and coworker rail use fixed light text
+on their own dark surface, independent of image sampling or video frames. Main-surface
+colors do not leak into settings dialogs, avatars or other opaque application UI.
+
 The gallery uses native radio inputs, visible selection checks and keyboard focus;
 it scrolls within a bounded dialog while the header and Done action remain reachable.
 English/Spanish text follows I18nProvider via `lib/i18n/appearance.ts`.
@@ -388,3 +395,38 @@ state switches. Inter owns labels and help; pixel digits emphasize editable valu
 The focus-duration card has a tomato top edge. Locked time tracking keeps its disabled switch visible with a compact Pro action
 above it; the mode heading has no Beta badge. The footer stays visible while the settings body scrolls;
 all colors and shadows derive from the existing pixel tokens in app/community.css.
+
+## Central timer interaction
+
+The timer stack is mode → digits → quiet segmented progress → current task → action →
+light mode tabs. TaskPicker owns the shared authored, non-modal task disclosure,
+including the mini timer. Its 340px paper trigger precedes a 116px terracotta action;
+mobile keeps 16px inner margins. The popover anchors below, flipping above only when
+space requires it, and owns its scroll without shifting the timer. Colors, 3px geometry,
+Inter and pixel numerals retain the runtime owners above; no palette or font is added.
+
+Search is transient local state. Enter creates and selects a new task (or selects an
+exact existing match); arrows move through controls, Escape closes, and focus returns
+to the trigger. Inline rename and completion keep the disclosure open; deletion needs
+an explicit inline confirmation. Completed tasks remain in My Tasks but are omitted
+from quick selection. Active and paused sessions retain the existing task/mode lock.
+`taskService` owns task mutation requests for both TaskList and quick actions;
+`useQuickTasks` updates the timer store and publishes successful changes to TaskList.
+English/Spanish copy lives in `lib/i18n/taskPicker.ts`. Failures preserve input and
+expose inline recovery, while pending mutations prevent duplicate submissions.
+
+
+## Semantic timer modes
+
+`data-timer-mode` follows the effective session type in the main and mini timers,
+including idle previews, paused sessions and automatic transitions. `--timer-mode-color`
+resolves to terracotta for Work/time tracking, natural sage for Short Break and muted
+blue-gray for Long Break. Only the static label marker, active tab underline and filled
+progress segments use it. Digits, buttons, panel surfaces and inactive segments retain
+their existing neutral/brand treatments; the mode marker remains visible while paused.
+
+`app/globals.css` owns the semantic role mapping: light mode reuses `--pixel-accent`
+and `--pixel-growth`, with blue-gray #647d91. Dark/scenery variants use #e39a87,
+#a7bc91 and #a0b5c6 for legibility. `app/appearance.css` selects those same dark roles
+for photographic backgrounds. Forced colors uses Highlight and preserves mode labels
+and tab selection semantics so meaning never depends on color alone.

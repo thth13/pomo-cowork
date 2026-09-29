@@ -2,7 +2,7 @@
 
 import { useEffect, type RefObject } from 'react'
 
-const surfaces = '.focus-station, .working-sidebar, .workspace-dock, .seo-header, .seo-content, .seo-footer'
+const surfaces = '.workspace-dock, .seo-header, .seo-content, .seo-footer'
 
 // Sample each glass surface's actual object-fit: cover crop. Videos use their
 // still poster so text does not flicker as frames change.

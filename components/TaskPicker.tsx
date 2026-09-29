@@ -1,9 +1,14 @@
 'use client'
 
-import { RefObject, memo, useId, useLayoutEffect, useRef, useState } from 'react'
+import { RefObject, memo, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ChevronDown } from 'lucide-react'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { Check, ChevronDown, Circle, MoreHorizontal, Plus, X } from 'lucide-react'
+import { taskPickerCopy } from '@/lib/i18n/taskPicker'
+import { useQuickTasks } from '@/hooks/useQuickTasks'
+import { taskService } from '@/services/taskService'
+import { useAppearanceStore } from '@/store/useAppearanceStore'
+import { useTimerStore } from '@/store/useTimerStore'
 import { SessionType } from '@/types'
 import { TaskOption } from '@/types/task'
 import { useI18n } from '@/components/I18nProvider'
@@ -39,9 +44,15 @@ export const TaskPicker = memo(function TaskPicker({
   filteredTaskOptions,
   taskSearch,
   onTaskSearchChange,
-  hasTaskOptions,
 }: TaskPickerProps) {
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const copy = taskPickerCopy[language]
+  const reducedMotion = useReducedMotion()
+  const backgroundId = useAppearanceStore(state => state.backgroundId)
+  const searchRef = useRef<HTMLInputElement>(null)
+  const [actionId, setActionId] = useState<string | null>(null)
+  const [editing, setEditing] = useState<'rename' | 'delete' | null>(null)
+  const [name, setName] = useState('')
   const pickerId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [position, setPosition] = useState<{
@@ -54,6 +65,34 @@ export const TaskPicker = memo(function TaskPicker({
   const isVisible = isOpen && !isDisabled &&
     (sessionType === SessionType.WORK || sessionType === SessionType.TIME_TRACKING)
 
+  const { loading, loadError, saving, error, mutate, retry } = useQuickTasks(isVisible)
+  const options = filteredTaskOptions.filter(task => !task.completed && !task.id.startsWith('temp_') && `${task.title} ${task.description ?? ''}`.toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()))
+  const query = taskSearch.trim()
+  const exactMatch = options.find(task => task.title.toLocaleLowerCase() === query.toLocaleLowerCase())
+  const canCreate = Boolean(query && !exactMatch && !loading && !loadError)
+
+  useEffect(() => {
+    if (!isVisible) { setActionId(null); setEditing(null) }
+  }, [isVisible])
+
+  const close = () => { onClose(); triggerRef.current?.focus() }
+  const select = (task: TaskOption | null) => {
+    if (saving || useTimerStore.getState().currentSession) return
+    onSelectTask(task)
+    close()
+  }
+  const create = async () => {
+    if (!canCreate) return
+    const result = await mutate(async () => ({ task: await taskService.create({ title: query }) }))
+    if (result && 'task' in result && !useTimerStore.getState().currentSession) { onSelectTask(result.task); close() }
+  }
+  const update = async (task: TaskOption, action: 'rename' | 'complete' | 'delete') => {
+    const result = await mutate(async () => action === 'delete'
+      ? (await taskService.remove(task.id), { deletedId: task.id })
+      : { task: await taskService.update(task.id, action === 'rename' ? { title: name.trim() } : { completed: true }) })
+    if (result) { setActionId(null); setEditing(null); searchRef.current?.focus() }
+  }
+
   useLayoutEffect(() => {
     if (!isVisible) return
     const ownerWindow = triggerRef.current?.ownerDocument.defaultView
@@ -63,10 +102,13 @@ export const TaskPicker = memo(function TaskPicker({
       const trigger = triggerRef.current
       if (!trigger) return
       const rect = trigger.getBoundingClientRect()
-      const gap = variant === 'mini-timer' ? 4 : 12
+      const gap = 6
       const margin = 8
-      const below = ownerWindow.innerHeight - rect.bottom - gap - margin
-      const above = rect.top - gap - margin
+      const viewport = ownerWindow.visualViewport
+      const viewportTop = viewport?.offsetTop ?? 0
+      const viewportBottom = viewportTop + (viewport?.height ?? ownerWindow.innerHeight)
+      const below = viewportBottom - rect.bottom - gap - margin
+      const above = rect.top - viewportTop - gap - margin
       const openAbove = below < 256 && above > below
       const width = Math.min(rect.width, ownerWindow.innerWidth - margin * 2)
       setPosition({
@@ -75,16 +117,20 @@ export const TaskPicker = memo(function TaskPicker({
           ? { bottom: ownerWindow.innerHeight - rect.top + gap }
           : { top: rect.bottom + gap }),
         width,
-        maxHeight: Math.max(0, Math.min(320, openAbove ? above : below)),
+        maxHeight: Math.max(0, Math.min(380, openAbove ? above : below)),
       })
     }
 
     updatePosition()
+    ownerWindow.visualViewport?.addEventListener('resize', updatePosition)
+    ownerWindow.visualViewport?.addEventListener('scroll', updatePosition)
     ownerWindow.addEventListener('resize', updatePosition)
     ownerWindow.addEventListener('scroll', updatePosition, true)
     const observer = new ResizeObserver(updatePosition)
     if (triggerRef.current) observer.observe(triggerRef.current)
     return () => {
+      ownerWindow.visualViewport?.removeEventListener('resize', updatePosition)
+      ownerWindow.visualViewport?.removeEventListener('scroll', updatePosition)
       ownerWindow.removeEventListener('resize', updatePosition)
       ownerWindow.removeEventListener('scroll', updatePosition, true)
       observer.disconnect()
@@ -95,150 +141,136 @@ export const TaskPicker = memo(function TaskPicker({
     return null
   }
 
-  const handleToggle = () => {
-    if (!isDisabled) {
-      onToggle()
-    }
-  }
-
   return (
-    <div className={variant === 'mini-timer' ? 'mini-timer-task-picker' : 'mb-6 w-full max-w-sm px-4 sm:px-0'}>
-      <div className="relative" ref={taskPickerRef}>
+    <div className={variant === 'mini-timer' ? 'mini-timer-task-picker' : 'current-task-picker'} data-i18n-ignore>
+      <div ref={taskPickerRef}>
         <button
           ref={triggerRef}
           id={pickerId}
           type="button"
-          onClick={handleToggle}
-          onKeyDown={(event) => {
-            if (isVisible && (event.key === 'ArrowDown' || (event.key === 'Tab' && !event.shiftKey))) {
+          onClick={onToggle}
+          onKeyDown={event => {
+            if (event.key === 'ArrowDown') {
               event.preventDefault()
-              taskDropdownRef.current?.querySelector('button')?.focus()
+              if (!isVisible) onToggle()
+              else searchRef.current?.focus()
+            }
+            if (isVisible && event.key === 'Tab' && !event.shiftKey) {
+              event.preventDefault(); searchRef.current?.focus()
             }
           }}
           disabled={isDisabled}
-          aria-expanded={isOpen && !isDisabled}
-          aria-controls={`${pickerId}-options`}
-          aria-label={`${t.timer.currentTask}: ${selectedTask ? selectedTask.title : t.timer.selectTask}`}
-          className={`${variant === 'mini-timer' ? 'mini-timer-task-trigger ' : 'scenery-task-trigger '}flex min-h-10 w-full items-center justify-center gap-2 rounded-sm px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:underline focus-visible:underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white`}
+          aria-expanded={isVisible}
+          aria-haspopup="dialog"
+          aria-controls={isVisible ? `${pickerId}-options` : undefined}
+          aria-label={`${t.timer.currentTask}: ${selectedTask?.title ?? copy.prompt}`}
+          title={isDisabled ? copy.locked : selectedTask?.title}
+          className={`current-task-trigger ${variant === 'mini-timer' ? 'mini-timer-task-trigger' : ''}`}
         >
-          {variant !== 'mini-timer' && <span className="shrink-0 text-xs text-gray-500 dark:text-slate-400">{t.timer.currentTask}:</span>}
-          <span className="min-w-0 truncate" title={selectedTask?.title}>
-            {selectedTask ? selectedTask.title : t.timer.selectTask}
-          </span>
-          <ChevronDown size={14} aria-hidden="true" className={`shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+          {selectedTask ? <Circle size={16} aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}
+          <span>{selectedTask?.title ?? copy.prompt}</span>
+          <ChevronDown size={14} aria-hidden="true" className={isVisible ? 'rotate-180' : ''} />
         </button>
 
         {position && createPortal(
           <AnimatePresence>
             {isVisible && (
               <motion.div
-                key="task-dropdown"
                 ref={taskDropdownRef}
                 style={position}
                 id={`${pickerId}-options`}
+                role="dialog"
+                aria-label={t.timer.currentTask}
+                aria-busy={loading || saving}
+                data-i18n-ignore
+                data-background-mode={variant !== 'mini-timer' && backgroundId !== 'default' || undefined}
                 data-mini-timer-picker={variant === 'mini-timer' || undefined}
-                initial={{ opacity: 0, y: -8, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: -4, scale: 0.98 }}
-                transition={{ duration: 0.16, ease: 'easeOut' }}
-                className="fixed z-40 flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-slate-900"
+                initial={{ opacity: 0, y: reducedMotion ? 0 : -4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: reducedMotion ? 0 : -4 }}
+                transition={{ duration: reducedMotion ? 0 : 0.15 }}
+                className="task-popover"
+                onBlur={event => {
+                  if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget as Node) && !taskPickerRef.current?.contains(event.relatedTarget as Node)) onClose()
+                }}
+                onKeyDown={event => {
+                  if (event.nativeEvent.isComposing) return
+                  if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return }
+                  if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && !((event.target as HTMLElement).tagName === 'INPUT' && editing)) {
+                    event.preventDefault()
+                    const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled), button:not(:disabled)'))
+                    const index = controls.indexOf(event.target as HTMLElement)
+                    controls[(index + (event.key === 'ArrowDown' ? 1 : -1) + controls.length) % controls.length]?.focus()
+                  }
+                  if (event.key === 'Tab' && !event.shiftKey) {
+                    const controls = event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled), button:not(:disabled)')
+                    if (event.target === controls[controls.length - 1]) { event.preventDefault(); close() }
+                  }
+                  if (event.key === 'Tab' && event.shiftKey && event.target === searchRef.current) { event.preventDefault(); close() }
+                }}
               >
-                {/* <div className="flex items-center gap-2 border-b border-gray-100 px-3 py-3 text-xs text-gray-400 dark:border-slate-800 dark:text-slate-500">
-                  <Search size={14} />
-                  <input
-                    autoFocus
-                    value={taskSearch}
-                    onChange={(event) => onTaskSearchChange(event.target.value)}
-                    placeholder="Find task..."
-                    className="w-full bg-transparent text-sm text-gray-600 outline-none placeholder:text-gray-400 dark:text-slate-200 dark:placeholder:text-slate-500"
-                  />
-                </div> */}
-
-                <div className="min-h-0 overflow-y-auto overscroll-contain py-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      onSelectTask(null)
-                      onClose()
-                      triggerRef.current?.focus()
-                    }}
-                    className={`flex w-full items-start gap-3 px-4 py-3 text-left text-sm transition ${
-                      !selectedTask
-                        ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300'
-                        : 'text-gray-500 hover:bg-gray-50 dark:text-slate-400 dark:hover:bg-slate-800'
-                    }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-medium">{t.timer.noTaskSelected}</span>
-                      {variant !== 'mini-timer' && <span className="text-xs text-gray-400 dark:text-slate-500">
-                        {t.timer.noTaskSubtitle}
-                      </span>}
-                    </div>
-                  </button>
-
-                  {filteredTaskOptions.length ? (
-                    filteredTaskOptions.map((taskOption) => {
-                      const isActive = selectedTask?.id === taskOption.id
-                      return (
-                        <button
-                          type="button"
-                          key={taskOption.id}
-                          onClick={() => {
-                            onSelectTask(taskOption)
-                            onClose()
-                            triggerRef.current?.focus()
-                          }}
-                          className={`flex w-full items-start gap-3 px-4 py-3 text-left transition ${
-                            isActive
-                              ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-300'
-                              : 'hover:bg-gray-50 dark:hover:bg-slate-800'
-                          }`}
-                        >
-                          <div className="flex min-w-0 flex-1 flex-col">
-                            <span className="truncate text-sm font-medium" title={taskOption.title}>
-                              {taskOption.title}
+                <form noValidate className="task-search" onSubmit={event => {
+                  event.preventDefault()
+                  if (loading || loadError || saving) return
+                  if (exactMatch) select(exactMatch)
+                  else if (canCreate) void create()
+                  else if (options[0]) select(options[0])
+                }}>
+                  <input ref={searchRef} autoFocus value={taskSearch} disabled={saving}
+                    onChange={event => { onTaskSearchChange(event.target.value); setActionId(null); setEditing(null) }}
+                    onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }}
+                    aria-label={copy.search} placeholder={copy.search} />
+                  {taskSearch && <button type="button" disabled={saving} aria-label={copy.clear} onClick={() => { onTaskSearchChange(''); searchRef.current?.focus() }}><X size={16} /></button>}
+                </form>
+                <div className="task-popover-list">
+                  {loading ? <p className="task-popover-message" role="status">{copy.loading}</p> : loadError ? (
+                    <div className="task-popover-message" role="alert">{copy.loadError} <button type="button" onClick={retry}>{copy.retry}</button></div>
+                  ) : <>
+                    {options.map(task => (
+                      <div className="task-option" key={task.id}>
+                        <div className="task-option-row" data-selected={selectedTask?.id === task.id}>
+                          <button type="button" className="task-option-select" disabled={saving} aria-pressed={selectedTask?.id === task.id} onClick={() => select(task)}>
+                            {selectedTask?.id === task.id ? <Check size={16} /> : <Circle size={16} />}
+                            <span><span className="task-option-title">{task.title}</span>
+                              {Boolean(task.focusMinutes) && <small>{task.focusMinutes} {copy.minutes}</small>}
                             </span>
-                            {variant !== 'mini-timer' && taskOption.description && (
-                              <span className="line-clamp-2 text-xs text-gray-400 dark:text-slate-400">
-                                {taskOption.description}
-                              </span>
-                          )}
+                          </button>
+                          <button type="button" className="task-option-more" disabled={saving} aria-label={`${copy.more}: ${task.title}`} aria-expanded={actionId === task.id}
+                            onClick={() => { setActionId(actionId === task.id ? null : task.id); setEditing(null); setName(task.title) }}><MoreHorizontal size={18} /></button>
                         </div>
-                      </button>
-                    )
-                  })
-                ) : (
-                  <div className="px-4 py-6 text-center text-sm text-gray-400 dark:text-slate-500">
-                    {t.timer.noMatchingTasks}
-                  </div>
-                )}
-              </div>
-
-              {!hasTaskOptions && (
-                <div className="shrink-0 border-t border-gray-100 bg-gray-50 px-4 py-3 text-xs text-gray-500 dark:border-slate-800 dark:bg-slate-900/60 dark:text-slate-400">
-                  {t.timer.taskMenuEmpty}
+                        {actionId === task.id && <div className="task-inline-actions">
+                          {editing === 'rename' ? <form noValidate onSubmit={event => { event.preventDefault(); if (name.trim()) void update(task, 'rename') }}>
+                            <input autoFocus aria-label={copy.name} value={name} disabled={saving} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
+                            <div><button type="button" disabled={saving} onClick={() => { setEditing(null); searchRef.current?.focus() }}>{copy.cancel}</button><button type="submit" disabled={saving || !name.trim()}>{copy.save}</button></div>
+                          </form> : editing === 'delete' ? <>
+                            <p>{copy.deleteHint}</p>
+                            <button type="button" autoFocus disabled={saving} onClick={() => { setEditing(null); searchRef.current?.focus() }}>{copy.cancel}</button>
+                            <button type="button" className="task-delete" disabled={saving} onClick={() => void update(task, 'delete')}>{copy.delete}</button>
+                          </> : <>
+                            <button type="button" disabled={saving} onClick={() => setEditing('rename')}>{copy.rename}</button>
+                            <button type="button" disabled={saving} onClick={() => void update(task, 'complete')}>{copy.complete}</button>
+                            <button type="button" className="task-delete" disabled={saving} onClick={() => setEditing('delete')}>{copy.delete}</button>
+                          </>}
+                        </div>}
+                      </div>
+                    ))}
+                    {!options.length && !query && <p className="task-popover-message">{copy.empty}</p>}
+                    {!options.length && query && <p className="task-popover-message">{t.timer.noMatchingTasks}</p>}
+                  </>}
                 </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>,
-        triggerRef.current?.ownerDocument.body ?? document.body
+                <div className="task-popover-footer">
+                  <button type="button" disabled={saving || loading || loadError} onClick={() => canCreate ? void create() : searchRef.current?.focus()}>
+                    <Plus size={16} /><span>{canCreate ? `${copy.create} “${query}”` : copy.add}</span>
+                  </button>
+                  {selectedTask && <button type="button" disabled={saving} onClick={() => select(null)}>{copy.noTask}</button>}
+                </div>
+                {saving && <p className="task-popover-message" role="status">{copy.saving}</p>}
+                {error && <p className="task-popover-message task-delete" role="alert">{copy.error}</p>}
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          triggerRef.current?.ownerDocument.body ?? document.body
         )}
-
-        <AnimatePresence>
-          {variant !== 'mini-timer' && selectedTask?.description && (
-            <motion.div
-              key="task-description"
-              initial={{ opacity: 0, y: -4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.18 }}
-              className="mt-1 px-2 text-center text-xs leading-relaxed text-gray-500 dark:text-slate-400"
-            >
-              {selectedTask.description}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </div>
   )
