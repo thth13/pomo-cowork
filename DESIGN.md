@@ -102,6 +102,12 @@ place it below the timer in a bounded grid row, except on mobile (up to 719px), 
 the page scrolls naturally and the full session list has no height limit or internal scrollbar.
 On desktop the rail aligns to the right
 edge of the page content without auto margins; equal inline padding centers the empty state.
+The rail opens by default and remembers its collapsed state in browser localStorage.
+HomeWorkspace owns the disclosure; ActiveSessions keeps one live session list mounted.
+Collapsed desktop width is 96px with avatars, green presence dots and elapsed mini timers;
+small screens use a horizontal avatar strip. The page grid stays fixed during a 280ms
+width transition, and reduced motion disables transitions. The disclosure remains
+available in the empty state. Colors reuse pixel and local scenery roles.
 Only real sessions appear in the rail and online count; mock participants are removed.
 Coworkers form a vertical list with 40px avatars on the left and names, activities,
 time, status and a remaining-time meter on the right. Time tracking shows elapsed time

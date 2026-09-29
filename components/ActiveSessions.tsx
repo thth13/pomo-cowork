@@ -257,13 +257,18 @@ function SessionCard({
         <Link
           href={`/user/${session.userId}`}
           className="coworker-tile-profile"
+          aria-label={`${session.username} · ${t.activeSessions.online} · ${statusLabel} · ${session.task || ''} · ${formatTime(elapsedSeconds)}`}
           title={`${session.username}${isCurrentUser ? ` (${t.activeSessions.you})` : ''} · ${statusLabel} · ${session.task || ''}`}
         >
-          <span className="coworker-tile-avatar">
-            {session.avatarUrl ? (
-              <Image src={session.avatarUrl} alt="" width={64} height={64} className="h-full w-full object-cover" />
-            ) : session.username.charAt(0).toUpperCase()}
+          <span className="coworker-tile-portrait">
+            <span className="coworker-tile-avatar">
+              {session.avatarUrl ? (
+                <Image src={session.avatarUrl} alt="" width={64} height={64} className="h-full w-full object-cover" />
+              ) : session.username.charAt(0).toUpperCase()}
+            </span>
+            <span className="coworker-tile-online bg-green-400" aria-hidden="true" />
           </span>
+          <span className="coworker-tile-mini-time" aria-hidden="true"><Clock size={10} />{formatTime(elapsedSeconds)}</span>
           <span className="coworker-tile-details">
             <span className="coworker-tile-name">{session.username}</span>
             <span className="coworker-tile-task">{session.task || getSessionTypeLabel(session.type)}</span>
@@ -761,7 +766,7 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
   if (allActiveSessions.length === 0) {
     return (
       <div className={`${surfaceClassName}${variant === 'page' ? ' focus-page-community-empty' : ''}`}>
-        <div className={variant === 'page' ? 'coworker-strip-empty' : 'text-center py-8'}>
+        <div className={variant === 'page' ? 'coworker-strip-empty' : 'text-center py-8'} title={t.activeSessions.noActiveSessions}>
           <User className="w-12 h-12 text-gray-300 dark:text-slate-600 mx-auto mb-4" />
           <h3 className="text-lg font-semibold text-gray-600 dark:text-slate-300 mb-2">
             {t.activeSessions.noActiveSessions}

@@ -14,7 +14,7 @@ import TodayContribution from '@/components/TodayContribution'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks } from 'lucide-react'
+import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks, ChevronLeft, ChevronRight } from 'lucide-react'
 import Habits from '@/components/Habits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
@@ -22,6 +22,7 @@ import { getRank } from '@/lib/ranks'
 import { HOME_TITLE } from '@/lib/homeSeo'
 
 type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits'
+const WORKING_COLLAPSED_STORAGE_KEY = 'pomo:working:collapsed:v1'
 const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v2'
 const isPanelId = (value: unknown): value is PanelId =>
   value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits'
@@ -31,6 +32,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const { t, language } = useI18n()
   const copy = gardenCopy[language]
   const [mounted, setMounted] = useState(false)
+  const [workingCollapsed, setWorkingCollapsed] = useState(false)
   const taskListRef = useRef<TaskListRef>(null)
   const rank = getRank(user?.experience ?? 0)
   const [openPanels, setOpenPanels] = useState<PanelId[]>([])
@@ -64,6 +66,11 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     } catch {
       // Invalid or unavailable storage must not prevent using the windows.
     }
+    try {
+      setWorkingCollapsed(localStorage.getItem(WORKING_COLLAPSED_STORAGE_KEY) === 'true')
+    } catch {
+      // The rail stays open when storage is unavailable.
+    }
     setMounted(true)
   }, [])
 
@@ -77,6 +84,16 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       // Keep window state in memory when browser storage is unavailable.
     }
   }, [mounted, openPanels])
+
+  const toggleWorking = () => {
+    const next = !workingCollapsed
+    setWorkingCollapsed(next)
+    try {
+      localStorage.setItem(WORKING_COLLAPSED_STORAGE_KEY, String(next))
+    } catch {
+      // Keep the choice in memory when storage is unavailable.
+    }
+  }
 
   useEffect(() => {
     if (!tooltipPanel) return
@@ -212,8 +229,22 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
             <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
               <PomodoroTimer idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />
             </section>
-            <aside id="workspace-working" className="working-sidebar" aria-label={t.activeSessions.title}>
-              <ActiveSessions variant="page" />
+            <aside id="workspace-working" className="working-sidebar" data-collapsed={workingCollapsed} aria-label={t.activeSessions.title}>
+              <button
+                type="button"
+                className="working-sidebar-toggle"
+                aria-expanded={!workingCollapsed}
+                aria-controls="workspace-working-content"
+                aria-label={workingCollapsed ? copy.expandWorking : copy.collapseWorking}
+                title={workingCollapsed ? copy.expandWorking : copy.collapseWorking}
+                onClick={toggleWorking}
+                data-no-translate
+              >
+                {workingCollapsed ? <ChevronLeft size={16} strokeWidth={1.5} aria-hidden="true" /> : <ChevronRight size={16} strokeWidth={1.5} aria-hidden="true" />}
+              </button>
+              <div id="workspace-working-content" className="working-sidebar-content">
+                <ActiveSessions variant="page" />
+              </div>
             </aside>
             {/* <PocketGarden /> */}
           </div>
