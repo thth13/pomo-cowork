@@ -1348,6 +1348,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
           isTimeTracking={isTimeTrackingSession}
         />
         <div className="pixel-timer-status"><span className={isRunning ? 'pixel-led active' : 'pixel-led'} />{getSessionTypeLabel(activeSessionType)}</div>
+        <AppearanceSettings />
         <button type="button" onClick={openSettings} className="pixel-timer-settings" aria-label={t.settingsModal.title} title={t.settingsModal.title}><Settings size={18} /></button>
         <div className={`pixel-timer-digits ${timerDisplaySeconds >= 6000 ? 'pixel-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={getSessionTypeLabel(activeSessionType)}>{formatTime(timerDisplaySeconds)}</div>
         <div className="pixel-timer-track" role="progressbar" aria-label={getSessionTypeLabel(activeSessionType)} aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
@@ -1376,8 +1377,6 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
           hasTaskOptions={taskOptions.length > 0}
         />
       </TimerControls>
-
-      <AppearanceSettings />
 
       <SettingsModal
         isOpen={isSettingsOpen}
