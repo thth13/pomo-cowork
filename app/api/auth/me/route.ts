@@ -5,8 +5,6 @@ import { syncExpiredProStatus } from '@/lib/pro'
 
 export const dynamic = 'force-dynamic'
 
-let debugEnvLogged = false
-
 export async function GET(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -25,13 +23,6 @@ export async function GET(request: NextRequest) {
         { error: 'Invalid token' },
         { status: 401 }
       )
-    }
-
-    // Temporary diagnostics: these values contain credentials.
-    if (!debugEnvLogged) {
-      console.log('[server-env] DATABASE_URL:', process.env.DATABASE_URL)
-      console.log('[server-env] GOOGLE_CLIENT_SECRET:', process.env.GOOGLE_CLIENT_SECRET)
-      debugEnvLogged = true
     }
 
     // Get user from database
