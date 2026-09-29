@@ -1,8 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Crown, Lock } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Check, Crown, DoorOpen, Globe2, Lock, Plus, Sprout, Users } from 'lucide-react'
+import Link from 'next/link'
+import CommunityDialog from '@/components/CommunityDialog'
+import { useI18n } from '@/components/I18nProvider'
+import { communityCopy } from '@/lib/i18n/community'
 import Navbar from '@/components/Navbar'
 import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
@@ -15,38 +19,13 @@ interface RoomFormState {
   privacy: RoomPrivacy
 }
 
-const RoomsListSkeleton = () => (
-  <div className="space-y-3">
-    {Array.from({ length: 4 }).map((_, i) => (
-      <div
-        key={i}
-        className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 animate-pulse"
-      >
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-40 bg-gray-200 dark:bg-slate-700 rounded" />
-              <div className="h-5 w-16 bg-gray-200 dark:bg-slate-700 rounded-full" />
-              <div className="h-5 w-14 bg-gray-200 dark:bg-slate-700 rounded-full" />
-            </div>
-            <div className="mt-2 h-3 w-24 bg-gray-200 dark:bg-slate-700 rounded" />
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="h-10 w-24 bg-gray-200 dark:bg-slate-700 rounded-lg" />
-            <div className="h-10 w-24 bg-gray-200 dark:bg-slate-700 rounded-lg" />
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
-)
-
 export default function RoomsPage() {
   const router = useRouter()
+  const { language } = useI18n()
+  const copy = communityCopy[language]
   const searchParams = useSearchParams()
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
-  const { currentRoomId, currentRoomName, setCurrentRoom, resetToGlobal } = useRoomStore()
+  const { currentRoomId, setCurrentRoom, resetToGlobal } = useRoomStore()
 
   const isProMember = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
 
@@ -67,6 +46,7 @@ export default function RoomsPage() {
   })
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+  const nameInputRef = useRef<HTMLInputElement>(null)
 
   const openPaywallOrRegister = () => {
     if (!isAuthenticated || user?.isAnonymous) {
@@ -93,7 +73,7 @@ export default function RoomsPage() {
 
       const response = await fetch('/api/rooms', { headers })
       if (!response.ok) {
-        setError('Failed to load rooms')
+        setError(copy.roomsLoadError)
         return
       }
 
@@ -101,7 +81,7 @@ export default function RoomsPage() {
       setRooms(data)
     } catch (e) {
       console.error('Failed to load rooms:', e)
-      setError('Failed to load rooms')
+      setError(copy.roomsLoadError)
     } finally {
       setLoading(false)
     }
@@ -167,7 +147,7 @@ export default function RoomsPage() {
 
     const token = getToken()
     if (!token) {
-      setError('Login required to join a room')
+      setError(copy.loginRequired)
       return
     }
 
@@ -186,17 +166,19 @@ export default function RoomsPage() {
 
   const onCreateRoom = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (creating) return
     setError(null)
 
     const token = getToken()
     if (!token) {
-      setError('Login required to create a room')
+      setError(copy.loginRequired)
       return
     }
 
     const name = createForm.name.trim()
     if (!name) {
-      setError('Room name is required')
+      setError(copy.nameRequired)
+      nameInputRef.current?.focus()
       return
     }
 
@@ -216,7 +198,7 @@ export default function RoomsPage() {
 
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as { error?: string } | null
-        setError(data?.error ?? 'Failed to create room')
+        setError(data?.error ?? copy.createError)
         return
       }
 
@@ -230,247 +212,97 @@ export default function RoomsPage() {
       router.push(`/rooms/${created.id}`)
     } catch (e) {
       console.error('Failed to create room:', e)
-      setError('Failed to create room')
+      setError(copy.createError)
     } finally {
       setCreating(false)
     }
   }
 
 
-  const privacyLabel = (privacy: RoomPrivacy) => {
-    return privacy === RoomPrivacy.PRIVATE ? 'Private' : 'Public'
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
-      <Navbar />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="flex items-start justify-between gap-4 mb-8">
+    <div className="community-page garden-page" data-no-translate lang={language}>
+      <Navbar compact />
+      <main className="community-layout">
+        <header className="community-intro">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">Rooms</h1>
-            <p className="text-gray-600 dark:text-slate-300">
-              Current: <span className="font-semibold">{currentRoomName}</span>
-            </p>
+            <p className="community-eyebrow"><Sprout size={15} aria-hidden="true" />{copy.community}</p>
+            <h1>{copy.rooms}</h1>
+            <p>{copy.roomsHint}</p>
           </div>
-
-          <div className="flex items-center gap-2">
-            {isProMember ? (
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(true)}
-                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
-              >
-                Create room
-              </button>
-            ) : (
-              <div className="relative">
-                <button
-                  type="button"
-                  onClick={openPaywallOrRegister}
-                  aria-disabled="true"
-                  className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white opacity-60 cursor-pointer transition-colors"
-                >
-                  <span className="inline-flex items-center gap-2">
-                    <Lock className="w-4 h-4" />
-                    Create room
-                  </span>
-                </button>
-
-                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-lg">
-                  <Crown className="w-3 h-3" />
-                  <span>PRO</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {error && (
-          <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
-            {error}
-          </div>
-        )}
-
-        {isRedirecting ? (
-          <RoomsListSkeleton />
-        ) : (
-        <div className="space-y-3 mb-8">
-          <div
-            role="button"
-            tabIndex={0}
-            onClick={onJoinGlobal}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') onJoinGlobal()
-            }}
-            className="flex items-center justify-between rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700/50 transition-colors"
-          >
-            <div>
-              <div className="font-semibold text-gray-900 dark:text-white">Global</div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">Default room</div>
-            </div>
-            <button
-              type="button"
-              onClick={onJoinGlobal}
-              onClickCapture={(e) => e.stopPropagation()}
-              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                currentRoomId === null
-                  ? 'bg-red-500 text-white'
-                  : 'bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700'
-              }`}
-            >
-              {currentRoomId === null ? 'Selected' : 'Join'}
+          <div className="community-actions">
+            <Link href="/" className="community-button"><ArrowLeft size={15} aria-hidden="true" />{copy.back}</Link>
+            <button type="button" className="community-button community-button-primary" onClick={() => {
+              if (!isProMember) { openPaywallOrRegister(); return }
+              setError(null)
+              setIsCreateModalOpen(true)
+            }}>
+              {isProMember ? <Plus size={16} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />}
+              {copy.createRoom}{!isProMember && <span className="community-badge">PRO</span>}
             </button>
           </div>
+        </header>
 
-          {loading ? (
-            <RoomsListSkeleton />
-          ) : rooms.length === 0 ? (
-            <div className="text-sm text-gray-500 dark:text-slate-400">No rooms yet</div>
-          ) : (
-            rooms.map((room) => {
-              const isOwner = user?.id && room.ownerId === user.id
-              const isSelected = currentRoomId === room.id
+        {error && !isCreateModalOpen && <div className="community-error" role="alert"><p>{error}</p><button type="button" className="community-button" onClick={() => void loadRooms()}>{copy.retry}</button></div>}
 
-              return (
-                <div
-                  key={room.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      onOpenRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })
-                    }
-                  }}
-                  className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/40 transition-colors"
-                >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <div className="font-semibold text-gray-900 dark:text-white truncate">{room.name}</div>
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300">
-                          {privacyLabel(room.privacy)}
-                        </span>
-                        {isOwner && (
-                          <span className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
-                            Owner
-                          </span>
-                        )}
-                      </div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">
-                        {room.memberCount ?? 0} {room.memberCount === 1 ? 'участник' : 'участников'}
-                      </div>
-                    </div>
+        {isRedirecting ? <div className="community-state" role="status"><span className="community-spinner" aria-hidden="true" />{copy.loading}</div> : <>
+          <section className="rooms-global" aria-labelledby="global-room-title">
+            <div className="rooms-global-symbol"><Globe2 size={30} aria-hidden="true" /></div>
+            <div className="rooms-global-copy">
+              <h2 id="global-room-title">{copy.global}</h2><p>{copy.globalHint}</p>
+            </div>
+            <button type="button" className="community-button" onClick={onJoinGlobal} aria-pressed={currentRoomId === null}>
+              {currentRoomId === null ? <Check size={16} aria-hidden="true" /> : <ArrowUpRight size={16} aria-hidden="true" />}
+              {currentRoomId === null ? copy.selected : copy.join}
+            </button>
+          </section>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (isSelected) {
-                            onOpenRoom({
-                              id: room.id,
-                              name: room.name,
-                              backgroundGradientKey: room.backgroundGradientKey ?? null,
-                            })
-                            return
-                          }
-
-                          void onJoinRoom(room)
-                        }}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                          isSelected
-                            ? 'bg-red-500 text-white'
-                            : 'bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200'
-                        }`}
-                      >
-                        {isSelected ? 'Selected' : 'Join'}
-                      </button>
+          <section aria-labelledby="room-directory-title">
+            <div className="rooms-directory-heading"><h2 id="room-directory-title">{copy.roomDirectory}</h2><span>{!loading && `${rooms.length} ${copy.roomCount}`}</span></div>
+            {loading ? <div className="community-state" role="status"><span className="community-spinner" aria-hidden="true" />{copy.loading}</div> : rooms.length === 0 ? (
+              <div className="community-panel community-state"><DoorOpen aria-hidden="true" /><h2>{copy.emptyRooms}</h2><p>{copy.emptyRoomsHint}</p></div>
+            ) : <div className="rooms-grid">
+              {rooms.map(room => {
+                const isOwner = user?.id === room.ownerId
+                const isSelected = currentRoomId === room.id
+                return <article key={room.id} className="room-card" data-current={isSelected}>
+                  <div className="room-card-top">
+                    <span className="room-card-symbol"><DoorOpen size={22} aria-hidden="true" /></span>
+                    <div className="community-actions">
+                      <span className="community-badge">{room.privacy === RoomPrivacy.PRIVATE ? <Lock size={11} aria-hidden="true" /> : <Globe2 size={11} aria-hidden="true" />}{room.privacy === RoomPrivacy.PRIVATE ? copy.private : copy.public}</span>
+                      {isOwner && <span className="community-badge"><Crown size={11} aria-hidden="true" />{copy.owner}</span>}
                     </div>
                   </div>
-                </div>
-              )
-            })
-          )}
-        </div>
-        )}
+                  <div><h3><Link href={`/rooms/${room.id}`}>{room.name}</Link></h3><p className="community-muted">{isSelected ? copy.selected : copy.room}</p></div>
+                  <footer className="room-card-footer">
+                    <span className="community-muted"><Users size={14} className="inline mr-1" aria-hidden="true" />{room.memberCount ?? 0} {room.memberCount === 1 ? copy.participant : copy.participantPlural}</span>
+                    <button type="button" className={`community-button ${isSelected ? '' : 'community-button-primary'}`} onClick={() => isSelected ? onOpenRoom(room) : onJoinRoom(room)}>
+                      {isSelected ? copy.open : copy.join}<ArrowUpRight size={14} aria-hidden="true" />
+                    </button>
+                  </footer>
+                </article>
+              })}
+            </div>}
+          </section>
+        </>}
       </main>
-
-      {isCreateModalOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-          onClick={(event) => {
-            if (event.target === event.currentTarget) {
-              setIsCreateModalOpen(false)
-            }
-          }}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-gray-200 dark:border-slate-700 p-6 space-y-4"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Create room</h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                  Pick a name and privacy.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsCreateModalOpen(false)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-              >
-                Close
-              </button>
-            </div>
-
-            <form onSubmit={onCreateRoom} className="grid grid-cols-1 gap-3">
-              <label className="block">
-                <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Name</span>
-                <input
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm((s) => ({ ...s, name: e.target.value }))}
-                  placeholder="Room name"
-                  className="mt-1 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
-                  autoFocus
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Privacy</span>
-                <select
-                  value={createForm.privacy}
-                  onChange={(e) => setCreateForm((s) => ({ ...s, privacy: e.target.value as RoomPrivacy }))}
-                  className="mt-1 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
-                >
-                  <option value={RoomPrivacy.PUBLIC}>Public</option>
-                  <option value={RoomPrivacy.PRIVATE}>Private</option>
-                </select>
-              </label>
-
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsCreateModalOpen(false)}
-                  className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={!user || creating}
-                  className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
-                >
-                  {creating ? 'Creating...' : 'Create'}
-                </button>
-              </div>
-            </form>
+      <CommunityDialog open={isCreateModalOpen} title={copy.createRoom} description={copy.createHint} busy={creating} onClose={() => setIsCreateModalOpen(false)}>
+        <form noValidate onSubmit={onCreateRoom}>
+          <label className="community-field"><span>{copy.name}</span>
+            <input ref={nameInputRef} value={createForm.name} onChange={event => setCreateForm(s => ({ ...s, name: event.target.value }))} placeholder={copy.roomName} disabled={creating} aria-invalid={error === copy.nameRequired} aria-describedby={error ? 'create-room-error' : undefined} />
+          </label>
+          <fieldset className="community-privacy" disabled={creating}><legend>{copy.privacy}</legend><div>
+            {[RoomPrivacy.PUBLIC, RoomPrivacy.PRIVATE].map(privacy => <label key={privacy}>
+              <input type="radio" name="create-room-privacy" value={privacy} checked={createForm.privacy === privacy} onChange={() => setCreateForm(s => ({ ...s, privacy }))} />
+              <span>{privacy === RoomPrivacy.PUBLIC ? copy.public : copy.private}<small>{privacy === RoomPrivacy.PUBLIC ? copy.publicHint : copy.privateHint}</small></span>
+            </label>)}
+          </div></fieldset>
+          {error && <p id="create-room-error" className="community-error" role="alert">{error}</p>}
+          <div className="community-dialog-actions">
+            <button type="button" className="community-button" onClick={() => setIsCreateModalOpen(false)} disabled={creating}>{copy.cancel}</button>
+            <button type="submit" className="community-button community-button-primary" disabled={!user || creating} aria-busy={creating}>{creating ? copy.creating : copy.create}</button>
           </div>
-        </div>
-      )}
-
+        </form>
+      </CommunityDialog>
       {isPaywallOpen && <PaywallModal onClose={() => setIsPaywallOpen(false)} />}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
     </div>

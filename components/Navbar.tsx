@@ -7,7 +7,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import ThemeToggle from './ThemeToggle'
-import { Crown, User, Menu, X } from 'lucide-react'
+import { Crown, User, Menu, X, ListChecks } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
@@ -15,7 +15,9 @@ import { useRoomStore } from '@/store/useRoomStore'
 import { NotificationItem } from '@/types'
 import NotificationsMenu from './NotificationsMenu'
 import PixelSprout from '@/components/PixelSprout'
+import { habitsCopy } from '@/lib/i18n/habits'
 import { gardenCopy } from '@/lib/i18n/garden'
+import { statisticsCopy } from '@/lib/i18n/statistics'
 import { useI18n } from '@/components/I18nProvider'
 import RankAvatarFrame from '@/components/RankAvatarFrame'
 import {
@@ -360,6 +362,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             >
               <FontAwesomeIcon icon={faUsers} className="mr-2" />{t.nav.coworkers}
             </Link>
+            <div className="flex flex-col items-start">
             <Link
               href="/stats"
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
@@ -369,6 +372,13 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               }`}
             >
               <FontAwesomeIcon icon={faChartLine} className="mr-2 text-xs" />{t.nav.stats}
+            </Link>
+            <Link href="/statistics" aria-current={pathname === '/statistics' ? 'page' : undefined} className={`inline-flex items-center px-4 py-1 rounded-lg text-xs font-medium transition-all ${pathname === '/statistics' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
+              {statisticsCopy[language].newView}
+            </Link>
+            </div>
+            <Link href="/habits" aria-current={pathname === '/habits' ? 'page' : undefined} className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all ${pathname === '/habits' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
+              <ListChecks size={16} className="mr-2" aria-hidden="true" />{habitsCopy[language].title}
             </Link>
             <Link
               href="/blog"
@@ -660,6 +670,12 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               >
                 <FontAwesomeIcon icon={faChartLine} className="mr-3 w-4 text-xs" />
                 {t.nav.stats}
+              </Link>
+              <Link href="/statistics" onClick={handleMobileLinkClick} aria-current={pathname === '/statistics' ? 'page' : undefined} className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${pathname === '/statistics' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
+                <FontAwesomeIcon icon={faChartLine} className="mr-3 w-4 text-xs" aria-hidden="true" />{statisticsCopy[language].navigation}
+              </Link>
+              <Link href="/habits" onClick={handleMobileLinkClick} aria-current={pathname === '/habits' ? 'page' : undefined} className={`flex items-center px-4 py-3 rounded-lg font-medium transition-all ${pathname === '/habits' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
+                <ListChecks size={16} className="mr-3" aria-hidden="true" />{habitsCopy[language].title}
               </Link>
               <Link
                 href="/blog"

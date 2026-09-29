@@ -1,22 +1,22 @@
 'use client'
 
-import { useState, useEffect, useMemo, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import Highcharts from 'highcharts'
+import CommunityDialog from '@/components/CommunityDialog'
+import { useI18n } from '@/components/I18nProvider'
+import { communityCopy } from '@/lib/i18n/community'
+import { enUS, es } from 'date-fns/locale'
 import Image from 'next/image'
-import { ArrowLeft, Clock, CheckCircle, TrendingUp, Calendar, Activity, Coffee, Utensils, Flame, BarChart3, Pencil, LogOut, Crown, Eye, MessageSquare, Send, X } from 'lucide-react'
+import { ArrowLeft, Clock, TrendingUp, Calendar, Coffee, Flame, Pencil, LogOut, Crown, Eye, MessageSquare, Send, Sprout, Trash2 } from 'lucide-react'
 import { formatDistanceToNowStrict } from 'date-fns'
 import { useAuthStore } from '@/store/useAuthStore'
-import { useTimerStore } from '@/store/useTimerStore'
 import { useThemeStore } from '@/store/useThemeStore'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import Navbar from '@/components/Navbar'
 import ActiveSessionTimer from '@/components/ActiveSessionTimer'
 import WeeklyActivityChart from '@/components/WeeklyActivityChart'
-
-let Highcharts: any = null
-let isHeatmapInitialized = false
 
 interface UserProfile {
   user: {
@@ -82,21 +82,6 @@ interface HeatmapColumn {
   days: Array<HeatmapDay | null>
 }
 
-interface HeatmapTooltip {
-  label: string
-  x: number
-  y: number
-}
-
-const heatmapDayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-const heatmapCellClasses = [
-  'bg-[#E7ECF3] border border-[#D7DFEA]',
-  'bg-[#CFE0FF] border border-[#B8D0FF]',
-  'bg-[#9EC0FF] border border-[#86B1FF]',
-  'bg-[#5D95FF] border border-[#4B85F1]',
-  'bg-[#2563EB] border border-[#1D4ED8] shadow-[0_8px_18px_rgba(37,99,235,0.24)]'
-]
-
 interface WallMessage {
   id: string
   message: string
@@ -111,15 +96,18 @@ interface WallMessage {
 export default function UserProfilePage() {
   const params = useParams()
   const router = useRouter()
+  const { language } = useI18n()
+  const copy = communityCopy[language]
+  const locale = language === 'es' ? 'es-ES' : 'en-US'
+  const dateLocale = language === 'es' ? es : enUS
+  const heatmapDayLabels = Array.from({ length: 7 }, (_, day) => new Date(2024, 0, 7 + day).toLocaleDateString(locale, { weekday: 'short' }))
   const { user: currentUser, logout } = useAuthStore()
-  const { activeSessions } = useTimerStore()
   const { theme } = useThemeStore()
   const { onlineUserIds } = useConnectionStore()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [userStats, setUserStats] = useState<UserStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [chartReady, setChartReady] = useState(false)
   const [wallMessages, setWallMessages] = useState<WallMessage[]>([])
   const [wallLoading, setWallLoading] = useState(true)
   const [wallLoadingMore, setWallLoadingMore] = useState(false)
@@ -129,7 +117,10 @@ export default function UserProfilePage() {
   const [wallDeletingId, setWallDeletingId] = useState<string | null>(null)
   const [wallHasMore, setWallHasMore] = useState(false)
   const [wallCursor, setWallCursor] = useState<string | null>(null)
-  const [heatmapTooltip, setHeatmapTooltip] = useState<HeatmapTooltip | null>(null)
+  const [selectedDay, setSelectedDay] = useState<string | null>(null)
+  const [pendingWallDelete, setPendingWallDelete] = useState<string | null>(null)
+  const [retry, setRetry] = useState(0)
+  const [wallRetry, setWallRetry] = useState(0)
 
   const userId = params?.id as string
   const isDark = theme === 'dark'
@@ -142,91 +133,82 @@ export default function UserProfilePage() {
   }
 
   useEffect(() => {
-    if (typeof window === 'undefined' || isHeatmapInitialized) {
-      return
-    }
-
-    const initHighcharts = async () => {
-      try {
-        const HighchartsModule = await import('highcharts')
-        Highcharts = HighchartsModule.default || HighchartsModule
-        
-        const heatmapModule = await import('highcharts/modules/heatmap')
-        const heatmapInit = heatmapModule.default || heatmapModule
-        
-        if (Highcharts && heatmapInit) {
-          (heatmapInit as any)(Highcharts)
-          isHeatmapInitialized = true
-        }
-        
-        setChartReady(true)
-      } catch (error) {
-        console.error('Failed to initialize Highcharts:', error)
-        setChartReady(true) // Still set ready to show the rest of the page
-      }
-    }
-
-    initHighcharts()
-  }, [])
-
-  useEffect(() => {
+    const controller = new AbortController()
+    let active = true
+    let timedOut = false
+    const timeout = window.setTimeout(() => { timedOut = true; controller.abort() }, 20000)
+    setError(null)
+    setProfile(null)
+    setUserStats(null)
+    setSelectedDay(null)
+    setPendingWallDelete(null)
+    setWallMessageText('')
     const fetchUserProfile = async () => {
       try {
         setLoading(true)
         const [profileResponse, statsResponse] = await Promise.all([
-          fetch(`/api/users/${userId}`),
-          fetch(`/api/users/${userId}/stats`)
+          fetch(`/api/users/${userId}`, { signal: controller.signal }),
+          fetch(`/api/users/${userId}/stats`, { signal: controller.signal })
         ])
         
         if (profileResponse.ok) {
           const data = await profileResponse.json()
-          setProfile(data)
+          if (active) setProfile(data)
         } else {
-          setError('User not found')
+          if (active) setError(copy.userNotFound)
         }
 
         if (statsResponse.ok) {
           const statsData = await statsResponse.json()
-          setUserStats(statsData)
+          if (active) setUserStats(statsData)
         }
       } catch (error) {
         console.error('Error fetching user profile:', error)
-        setError('Error loading profile')
+        if (active && (!controller.signal.aborted || timedOut)) setError(copy.profileError)
       } finally {
-        setLoading(false)
+        window.clearTimeout(timeout)
+        if (active) setLoading(false)
       }
     }
 
     if (userId) {
       fetchUserProfile()
     }
-  }, [userId])
+    return () => { active = false; controller.abort(); window.clearTimeout(timeout) }
+  }, [userId, retry, copy.userNotFound, copy.profileError])
 
   useEffect(() => {
+    let active = true
+    const controller = new AbortController()
+    setWallMessages([])
+    const timeout = window.setTimeout(() => controller.abort(), 20000)
     const fetchWallMessages = async () => {
       if (!userId) return
       try {
         setWallLoading(true)
         setWallError(null)
         setWallCursor(null)
-        const response = await fetch(`/api/users/${userId}/wall?take=5`)
+        const response = await fetch(`/api/users/${userId}/wall?take=5`, { signal: controller.signal })
         if (!response.ok) {
-          throw new Error('Failed to load wall messages')
+          throw new Error(copy.wallLoadError)
         }
         const data = await response.json()
+        if (!active) return
         setWallMessages(data.messages || [])
         setWallHasMore(Boolean(data.hasMore))
         setWallCursor(data.nextCursor || null)
       } catch (error) {
         console.error('Error loading wall messages:', error)
-        setWallError('Failed to load wall messages')
+        if (active) setWallError(copy.wallLoadError)
       } finally {
-        setWallLoading(false)
+        window.clearTimeout(timeout)
+        if (active) setWallLoading(false)
       }
     }
 
     fetchWallMessages()
-  }, [userId])
+    return () => { active = false; controller.abort(); window.clearTimeout(timeout) }
+  }, [userId, retry, wallRetry, copy.wallLoadError])
 
   const loadMoreWallMessages = async () => {
     if (!userId || !wallHasMore || wallLoadingMore || !wallCursor) return
@@ -234,7 +216,7 @@ export default function UserProfilePage() {
       setWallLoadingMore(true)
       const response = await fetch(`/api/users/${userId}/wall?take=5&cursor=${wallCursor}`)
       if (!response.ok) {
-        throw new Error('Failed to load more messages')
+        throw new Error(copy.wallLoadError)
       }
       const data = await response.json()
       setWallMessages((prev) => [...prev, ...(data.messages || [])])
@@ -254,7 +236,7 @@ export default function UserProfilePage() {
 
     const message = wallMessageText.trim()
     if (!message) {
-      setWallError('Message cannot be empty')
+      setWallError(copy.messageRequired)
       return
     }
 
@@ -263,7 +245,7 @@ export default function UserProfilePage() {
       setWallError(null)
       const token = localStorage.getItem('token')
       if (!token) {
-        setWallError('Login required to post on the wall')
+        setWallError(copy.loginRequired)
         return
       }
 
@@ -278,7 +260,7 @@ export default function UserProfilePage() {
 
       const payload = await response.json()
       if (!response.ok) {
-        setWallError(payload?.error || 'Failed to send message')
+        setWallError(payload?.error || copy.wallSendError)
         return
       }
 
@@ -286,7 +268,7 @@ export default function UserProfilePage() {
       setWallMessageText('')
     } catch (error) {
       console.error('Error sending wall message:', error)
-      setWallError('Failed to send message')
+      setWallError(copy.wallSendError)
     } finally {
       setWallSubmitting(false)
     }
@@ -300,7 +282,7 @@ export default function UserProfilePage() {
       setWallError(null)
       const token = localStorage.getItem('token')
       if (!token) {
-        setWallError('Login required to delete messages')
+        setWallError(copy.loginRequired)
         return
       }
 
@@ -313,14 +295,15 @@ export default function UserProfilePage() {
 
       const payload = await response.json()
       if (!response.ok) {
-        setWallError(payload?.error || 'Failed to delete message')
+        setWallError(payload?.error || copy.wallDeleteError)
         return
       }
 
       setWallMessages((prev) => prev.filter((message) => message.id !== messageId))
+      return true
     } catch (error) {
       console.error('Error deleting wall message:', error)
-      setWallError('Failed to delete message')
+      setWallError(copy.wallDeleteError)
     } finally {
       setWallDeletingId(null)
     }
@@ -368,7 +351,6 @@ export default function UserProfilePage() {
   const totalHeatmapMinutes = yearlyHeatmap.reduce((sum, day) => sum + day.minutes, 0)
   const totalHeatmapHours = Math.floor(totalHeatmapMinutes / 60)
   const totalHeatmapRemainder = String(totalHeatmapMinutes % 60).padStart(2, '0')
-  const activeHeatmapDays = yearlyHeatmap.filter((day) => day.minutes > 0)
 
   const heatmapColumnsMap = new Map<number, HeatmapColumn>()
   yearlyHeatmap.forEach((day) => {
@@ -402,7 +384,7 @@ export default function UserProfilePage() {
     if (monthKey !== previousMonthKey) {
       previousMonthKey = monthKey
       heatmapMonthMarkers.push({
-        label: date.toLocaleDateString('en-US', { month: 'short' }),
+        label: date.toLocaleDateString(locale, { month: 'short' }),
         column: columnIndex
       })
     }
@@ -412,16 +394,16 @@ export default function UserProfilePage() {
     return userStats?.weeklyActivity?.map(item => {
       const [year, month, day] = item.date.split('-').map(Number)
       const date = new Date(year, month - 1, day)
-      return heatmapDayLabels[date.getDay()]
+      return date.toLocaleDateString(locale, { weekday: 'short' })
     }) || []
-  }, [userStats?.weeklyActivity])
+  }, [userStats?.weeklyActivity, locale])
 
   // Check if user is online (connected to socket)
   const isUserOnline = onlineUserIds[userId] === true
   const isUserWorking = profile?.activeSession ? true : false
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'long',
       day: 'numeric'
@@ -429,7 +411,7 @@ export default function UserProfilePage() {
   }
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
+    return new Date(dateString).toLocaleTimeString(locale, {
       hour: '2-digit',
       minute: '2-digit'
     })
@@ -464,10 +446,10 @@ export default function UserProfilePage() {
 
   const formatHeatmapCellLabel = (day: HeatmapDay | null) => {
     if (!day) {
-      return 'No tracked activity'
+      return copy.noActivity
     }
 
-    const formattedDate = new Date(day.date + 'T00:00:00').toLocaleDateString('en-US', {
+    const formattedDate = new Date(day.date + 'T00:00:00').toLocaleDateString(locale, {
       day: 'numeric',
       month: 'short',
       year: 'numeric'
@@ -480,654 +462,138 @@ export default function UserProfilePage() {
     return `${formattedDate}: ${formatHeatmapHours(day.minutes)}`
   }
 
-  const showHeatmapTooltipAt = (label: string, x: number, y: number) => {
-    setHeatmapTooltip({ label, x, y })
-  }
-
-  const showHeatmapTooltip = (label: string, event: ReactMouseEvent<HTMLButtonElement>) => {
-    showHeatmapTooltipAt(label, event.clientX, event.clientY)
-  }
-
-  const showHeatmapTooltipFromFocus = (label: string, event: ReactFocusEvent<HTMLButtonElement>) => {
-    const bounds = event.currentTarget.getBoundingClientRect()
-    showHeatmapTooltipAt(label, bounds.left + bounds.width / 2, bounds.top)
-  }
-
-  const hideHeatmapTooltip = () => {
-    setHeatmapTooltip(null)
-  }
-
   const getSessionTypeLabel = (type: string) => {
     switch (type) {
-      case 'WORK': return 'Work'
-      case 'SHORT_BREAK': return 'Short Break'
-      case 'LONG_BREAK': return 'Long Break'
-      case 'TIME_TRACKING': return 'Time Tracking'
+      case 'WORK': return copy.work
+      case 'SHORT_BREAK': return copy.shortBreak
+      case 'LONG_BREAK': return copy.longBreak
+      case 'TIME_TRACKING': return copy.tracking
       default: return type
-    }
-  }
-
-  const getSessionStatusLabel = (status: string) => {
-    switch (status) {
-      case 'COMPLETED': return 'Completed'
-      case 'CANCELLED': return 'Cancelled'
-      case 'ACTIVE': return 'Active'
-      case 'PAUSED': return 'Paused'
-      default: return status
-    }
-  }
-
-  const getSessionIcon = (type: string) => {
-    switch (type) {
-      case 'WORK': return <Clock className="w-4 h-4 text-red-500" />
-      case 'SHORT_BREAK': return <Coffee className="w-4 h-4 text-green-500" />
-      case 'LONG_BREAK': return <Utensils className="w-4 h-4 text-blue-500" />
-      case 'TIME_TRACKING': return <Clock className="w-4 h-4 text-indigo-500" />
-      default: return <Clock className="w-4 h-4 text-gray-500" />
-    }
-  }
-
-  const getSessionBgColor = (type: string) => {
-    switch (type) {
-      case 'WORK': return 'bg-red-100'
-      case 'SHORT_BREAK': return 'bg-green-100'
-      case 'LONG_BREAK': return 'bg-blue-100'
-      default: return 'bg-gray-100'
     }
   }
 
   const getLastSeenLabel = (lastSeenAt?: string | null) => {
     if (!lastSeenAt) {
-      return 'Last seen a long time ago'
+      return copy.longAgo
     }
 
     const lastSeenDate = new Date(lastSeenAt)
     if (Number.isNaN(lastSeenDate.getTime())) {
-      return 'Last seen a long time ago'
+      return copy.longAgo
     }
 
-    return `Last seen ${formatDistanceToNowStrict(lastSeenDate, { addSuffix: true })}`
+    return `${copy.lastSeen} ${formatDistanceToNowStrict(lastSeenDate, { addSuffix: true, locale: dateLocale })}`
   }
 
   const formatRelativeDate = (dateString: string) => {
     const parsed = new Date(dateString)
     if (Number.isNaN(parsed.getTime())) {
-      return 'Just now'
+      return copy.justNow
     }
-    return formatDistanceToNowStrict(parsed, { addSuffix: true })
+    return formatDistanceToNowStrict(parsed, { addSuffix: true, locale: dateLocale })
   }
 
-  if (loading || !chartReady) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
-        <Navbar />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Profile Header Skeleton */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 animate-pulse">
-            <div className="flex flex-col lg:flex-row items-start gap-6 lg:justify-between">
-              <div className="flex items-start space-x-4 sm:space-x-6">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl bg-gray-200 dark:bg-slate-700"></div>
-                <div className="space-y-3 flex-1 min-w-0">
-                  <div className="h-6 sm:h-8 w-32 sm:w-48 bg-gray-200 dark:bg-slate-700 rounded"></div>
-                  <div className="h-4 sm:h-5 w-full max-w-xs bg-gray-200 dark:bg-slate-700 rounded"></div>
-                  <div className="h-3 sm:h-4 w-24 sm:w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
-                </div>
-              </div>
-              <div className="w-full lg:w-[280px] h-32 bg-gray-200 dark:bg-slate-700 rounded-xl"></div>
-            </div>
-          </div>
+  const selectedHeatmapDay = yearlyHeatmap.find(day => day.date === selectedDay)
+  const firstHeatmapDay = heatmapColumns.flatMap(column => column.days).find(day => day !== null)
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-            {/* Main Stats Skeleton */}
-            <div className="lg:col-span-2 space-y-8">
-              {/* Stats Overview Skeleton */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 bg-gray-200 dark:bg-slate-700 rounded-xl"></div>
-                      <div className="w-12 h-4 bg-gray-200 dark:bg-slate-700 rounded"></div>
-                    </div>
-                    <div className="h-8 w-16 bg-gray-200 dark:bg-slate-700 rounded mb-2"></div>
-                    <div className="h-4 w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Heatmap Skeleton */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8 animate-pulse">
-                <div className="h-6 w-48 bg-gray-200 dark:bg-slate-700 rounded mb-8"></div>
-                <div className="h-40 bg-gray-200 dark:bg-slate-700 rounded"></div>
-              </div>
-
-              {/* Weekly Chart Skeleton */}
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8 animate-pulse">
-                <div className="h-6 w-48 bg-gray-200 dark:bg-slate-700 rounded mb-8"></div>
-                <div className="h-80 bg-gray-200 dark:bg-slate-700 rounded"></div>
-              </div>
-            </div>
-
-            {/* Recent Sessions Sidebar Skeleton */}
-            <div className="lg:col-span-1">
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 animate-pulse">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="h-6 w-32 bg-gray-200 dark:bg-slate-700 rounded"></div>
-                  <div className="h-4 w-16 bg-gray-200 dark:bg-slate-700 rounded"></div>
-                </div>
-                <div className="space-y-4">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-8 h-8 bg-gray-200 dark:bg-slate-600 rounded-lg"></div>
-                        <div className="space-y-2">
-                          <div className="h-4 w-20 bg-gray-200 dark:bg-slate-600 rounded"></div>
-                          <div className="h-3 w-32 bg-gray-200 dark:bg-slate-600 rounded"></div>
-                        </div>
-                      </div>
-                      <div className="space-y-2 text-right">
-                        <div className="h-4 w-12 bg-gray-200 dark:bg-slate-600 rounded ml-auto"></div>
-                        <div className="h-3 w-16 bg-gray-200 dark:bg-slate-600 rounded ml-auto"></div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+  if (loading || error || !profile) {
+    return <div className="community-page garden-page" lang={language} data-no-translate><Navbar compact /><main className="community-layout">
+      <Link href="/" className="community-link"><ArrowLeft size={15} aria-hidden="true" />{copy.back}</Link>
+      <div className="community-panel community-state" role={loading ? 'status' : undefined}>
+        {loading ? <><span className="community-spinner" aria-hidden="true" />{copy.loading}</> : <><Sprout aria-hidden="true" /><h1>{copy.userNotFound}</h1><p>{error}</p><button type="button" className="community-button" onClick={() => setRetry(value => value + 1)}>{copy.retry}</button></>}
       </div>
-    )
-  }
-
-  if (error || !profile) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800 flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-6xl mb-4">😞</div>
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">User not found</h1>
-          <p className="text-gray-600 dark:text-slate-400 mb-6">{error}</p>
-          <button
-            onClick={() => router.back()}
-            className="bg-red-500 text-white px-6 py-2 rounded-xl hover:bg-red-600 transition-colors"
-          >
-            Back
-          </button>
-        </div>
-      </div>
-    )
+    </main></div>
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
-      <Navbar />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Profile Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8"
-        >
-          <div className="flex flex-col lg:flex-row items-start gap-6 lg:justify-between">
-            <div className="flex items-start space-x-4 sm:space-x-6">
-              <div className="relative flex-shrink-0">
-                {profile.user.avatarUrl ? (
-                  <Image 
-                    src={profile.user.avatarUrl} 
-                    alt={profile.user.username}
-                    width={96}
-                    height={96}
-                    className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl object-cover"
-                  />
-                ) : (
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-2xl bg-gradient-to-br from-red-400 to-red-600 flex items-center justify-center text-white text-2xl sm:text-3xl font-bold">
-                    {profile.user.username.charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div className={`absolute -top-1 -right-1 w-8 h-8 ${isUserOnline ? 'bg-green-400' : 'bg-gray-400'} rounded-full border-4 border-white dark:border-slate-800 flex items-center justify-center`}>
-                  <div className="w-3 h-3 bg-white rounded-full"></div>
-                </div>
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white break-words">{profile.user.username}</h1>
-                  {profile.user.isPro && (
-                    <span className="inline-flex items-center gap-1 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 text-[10px] font-bold px-2.5 py-1 rounded-full shadow-lg">
-                      <Crown className="w-3 h-3" />
-                      <span>PRO</span>
-                    </span>
-                  )}
-                  {isOwnProfile && (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => router.push('/settings')}
-                        aria-label="Edit profile"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700 dark:hover:text-white"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleLogout}
-                        aria-label="Logout"
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-600 transition-colors hover:bg-red-100 hover:text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300"
-                      >
-                        <LogOut className="h-4 w-4" />
-                      </button>
-                    </>
-                  )}
-                </div>
-                {profile.user.description && (
-                  <p className="text-sm sm:text-base lg:text-lg text-gray-600 dark:text-slate-300 mb-3 break-words">{profile.user.description}</p>
-                )}
-                <div className="flex items-center flex-wrap gap-4 text-xs sm:text-sm text-gray-500 dark:text-slate-400">
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>Joined {formatDate(profile.user.createdAt)}</span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Eye className="w-4 h-4" />
-                    <span>{(profile.user.profileViews ?? 0).toLocaleString()} views</span>
-                  </div>
-                </div>
-                {!isUserOnline && (
-                  <div className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-slate-400">
-                    {getLastSeenLabel(profile.user.lastSeenAt)}
-                  </div>
-                )}
-              </div>
-            </div>
-            {/* Current Status */}
-            <ActiveSessionTimer 
-              activeSession={profile.activeSession}
-              isUserOnline={isUserOnline}
-              isUserWorking={isUserWorking}
-            />
-          </div>
-        </motion.div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
-          {/* Main Stats */}
-          <div className="lg:col-span-2 space-y-4 sm:space-y-6 lg:space-y-8">
-            {/* Stats Overview */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6"
-            >
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-red-100 dark:bg-red-900/30 rounded-xl flex items-center justify-center">
-                    <Clock className="w-5 h-5 sm:w-6 sm:h-6 text-red-500 dark:text-red-400" />
-                  </div>
-                  <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Total</span>
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{totalPomodoros.toLocaleString()}</div>
-                <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Pomodoros Completed</div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                    <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-green-500 dark:text-green-400" />
-                  </div>
-                  <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Streak</span>
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{userStats?.currentStreak || 0}</div>
-                <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Days in a row</div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                    <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-500 dark:text-blue-400" />
-                  </div>
-                  <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Average</span>
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">
-                  {avgPomodorosDisplay}
-                </div>
-                <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Pomodoros per day</div>
-              </div>
-
-              <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-3 sm:p-4 lg:p-6">
-                <div className="flex items-center justify-between mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 dark:bg-purple-900/30 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-purple-500 dark:text-purple-400" />
-                  </div>
-                  <span className="text-xs sm:text-sm text-gray-500 dark:text-slate-400">Total</span>
-                </div>
-                <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-1">{totalFocusDisplay}</div>
-                <div className="text-xs sm:text-sm text-gray-600 dark:text-slate-300">Work Time</div>
-              </div>
-            </motion.div>
-
-            {/* Wall */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.15 }}
-              className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-5 sm:p-6 lg:p-8"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
-                    <MessageSquare className="w-4 h-4 text-indigo-500 dark:text-indigo-300" />
-                  </div>
-                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Wall</h3>
-                </div>
-                <span className="text-xs text-gray-500 dark:text-slate-400">Public messages</span>
-              </div>
-
-              {canPostWallMessage ? (
-                <form onSubmit={handleWallSubmit} className="space-y-3">
-                  <div className="relative">
-                    <textarea
-                      value={wallMessageText}
-                      onChange={(event) => setWallMessageText(event.target.value)}
-                      rows={3}
-                      maxLength={500}
-                      placeholder={`Leave ${profile.user.username} a message...`}
-                      className="w-full resize-none rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    />
-                    <div className="absolute bottom-2 right-3 text-[10px] text-gray-400 dark:text-slate-500">
-                      {wallMessageText.trim().length}/500
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-end">
-                    <button
-                      type="submit"
-                      disabled={wallSubmitting || wallMessageText.trim().length === 0}
-                      className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-indigo-400"
-                    >
-                      <Send className="h-3.5 w-3.5" />
-                      {wallSubmitting ? 'Sending...' : 'Post'}
-                    </button>
-                  </div>
-                </form>
-              ) : isOwnProfile ? (
-                wallMessages.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
-                    This is your wall. Other users can leave messages here.
-                  </div>
-                ) : null
-              ) : (
-                <div className="rounded-xl border border-dashed border-gray-200 dark:border-slate-700 px-4 py-3 text-sm text-gray-500 dark:text-slate-400">
-                  Log in to leave a message on this wall.
-                </div>
-              )}
-
-              {wallError && (
-                <div className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-600 dark:bg-red-900/30 dark:text-red-300">
-                  {wallError}
-                </div>
-              )}
-
-              <div className="mt-5 space-y-3">
-                {wallLoading ? (
-                  <div className="text-sm text-gray-500 dark:text-slate-400">Loading messages...</div>
-                ) : wallMessages.length === 0 ? (
-                  isOwnProfile ? null : (
-                    <div className="text-sm text-gray-500 dark:text-slate-400">No messages yet. Be the first!</div>
-                  )
-                ) : (
-                  wallMessages.map((message) => (
-                    <div key={message.id} className="group flex items-start gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/40 px-4 py-3 relative">
-                      <Link
-                        href={`/user/${message.author.id}`}
-                        className="shrink-0 rounded-full focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                      >
-                        {message.author.avatarUrl ? (
-                          <Image
-                            src={message.author.avatarUrl}
-                            alt={message.author.username}
-                            width={36}
-                            height={36}
-                            className="h-9 w-9 rounded-full object-cover"
-                          />
-                        ) : (
-                          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-indigo-400 to-indigo-600 flex items-center justify-center text-white text-sm font-semibold">
-                            {message.author.username.charAt(0).toUpperCase()}
-                          </div>
-                        )}
-                      </Link>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <Link
-                            href={`/user/${message.author.id}`}
-                            className="text-sm font-semibold text-gray-900 dark:text-white hover:text-indigo-600 dark:hover:text-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 rounded"
-                          >
-                            {message.author.username}
-                          </Link>
-                          <div className="text-[11px] text-gray-400 dark:text-slate-500 whitespace-nowrap">
-                            {formatRelativeDate(message.createdAt)}
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-700 dark:text-slate-300 break-words">{message.message}</p>
-                      </div>
-                      {(isOwnProfile || currentUser?.id === message.author.id) && (
-                        <button
-                          type="button"
-                          onClick={() => handleWallDelete(message.id)}
-                          disabled={wallDeletingId === message.id}
-                          aria-label="Delete wall message"
-                          className="absolute -right-2 -top-2 inline-flex h-5 w-5 items-center justify-center rounded-md border border-red-200 bg-red-50 text-red-600 opacity-0 transition-all hover:bg-red-100 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-60 group-hover:opacity-100 dark:border-red-800 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      )}
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {wallHasMore && !wallLoading && (
-                <div className="mt-4">
-                  <button
-                    type="button"
-                    onClick={loadMoreWallMessages}
-                    disabled={wallLoadingMore}
-                    className="w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2 text-xs font-semibold text-gray-600 dark:text-slate-300 transition-colors hover:bg-gray-50 dark:hover:bg-slate-700 disabled:cursor-not-allowed"
-                  >
-                    {wallLoadingMore ? 'Loading...' : 'Load more'}
-                  </button>
-                </div>
-              )}
-            </motion.div>
-
-            {/* Activity Heatmap */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 shadow-sm"
-            >
-              {heatmapTooltip && (
-                <div
-                  className="pointer-events-none fixed z-[70] rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.14)]"
-                  style={{ left: heatmapTooltip.x + 12, top: heatmapTooltip.y - 36 }}
-                >
-                  {heatmapTooltip.label}
-                </div>
-              )}
-
-              <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Yearly Activity</h3>
-                <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {totalHeatmapHours}:{totalHeatmapRemainder} Total hours in the last 365 days
-                </div>
-              </div>
-
-              <div className="overflow-x-auto pb-2">
-                <div className="w-fit mx-auto">
-                  <div className="flex gap-2">
-                    <div className="mt-[24px] flex w-fit shrink-0 flex-col gap-[1px] md:gap-[2px] text-[10px] font-medium text-gray-400 dark:text-slate-500">
-                      {heatmapDayLabels.map((label, index) => (
-                        <div key={label} className="flex h-[10.4px] md:h-[11.4px] items-center justify-end pr-1 leading-none">
-                          {index % 2 === 1 ? label : ''}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="w-fit shrink-0">
-                      <div className="relative mb-2 h-4 overflow-hidden">
-                        {heatmapMonthMarkers.map((marker, markerIndex) => {
-                          const left = heatmapColumns.length <= 1
-                            ? 0
-                            : (marker.column / Math.max(heatmapColumns.length - 1, 1)) * 100
-                          const isFirstMarker = markerIndex === 0
-                          const isLastMarker = markerIndex === heatmapMonthMarkers.length - 1
-
-                          return (
-                            <span
-                              key={`${marker.label}-${marker.column}`}
-                              className="absolute top-0 text-[10px] font-medium text-gray-500 dark:text-slate-400"
-                              style={{
-                                left: `${left}%`,
-                                transform: isFirstMarker
-                                  ? 'translateX(0)'
-                                  : isLastMarker
-                                    ? 'translateX(-100%)'
-                                    : 'translateX(-10%)'
-                              }}
-                            >
-                              {marker.label}
-                            </span>
-                          )
-                        })}
-                      </div>
-
-                      <div className="flex gap-[1px] md:gap-[2px]">
-                        {heatmapColumns.map((column) => (
-                          <div key={column.week} className="flex flex-col gap-[1px] md:gap-[2px]">
-                            {column.days.map((day, dayIndex) => {
-                              if (!day) {
-                                return <div key={`${column.week}-${dayIndex}-empty`} className="h-[10.4px] w-[10.4px] md:h-[11.4px] md:w-[11.4px]" />
-                              }
-
-                              const intensity = getHeatmapIntensity(day.minutes)
-                              const label = formatHeatmapCellLabel(day)
-
-                              return (
-                                <button
-                                  type="button"
-                                  key={`${column.week}-${dayIndex}`}
-                                  title={label}
-                                  aria-label={label}
-                                  onMouseEnter={(event) => showHeatmapTooltip(label, event)}
-                                  onMouseMove={(event) => showHeatmapTooltip(label, event)}
-                                  onMouseLeave={hideHeatmapTooltip}
-                                  onFocus={(event) => showHeatmapTooltipFromFocus(label, event)}
-                                  onBlur={hideHeatmapTooltip}
-                                  className={`h-[10.4px] w-[10.4px] md:h-[11.4px] md:w-[11.4px] rounded-[3px] transition-transform duration-150 hover:scale-110 focus:scale-110 focus:outline-none ${heatmapCellClasses[intensity]}`}
-                                />
-                              )
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-2 flex justify-end text-xs text-gray-500 dark:text-slate-400">
-                <div className="flex items-center gap-2">
-                  <span>Less</span>
-                  <div className="flex items-center gap-[2px]">
-                    {heatmapCellClasses.map((cellClass, index) => (
-                      <div key={index} className={`h-[10.4px] w-[10.4px] rounded-[3px] md:h-[11.4px] md:w-[11.4px] ${cellClass}`} />
-                    ))}
-                  </div>
-                  <span>More</span>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Weekly Activity Chart */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-8"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">Weekly Activity</h3>
-              </div>
-              <WeeklyActivityChart 
-                Highcharts={Highcharts}
-                weeklyData={weeklyData}
-                weeklyCategories={weeklyCategories}
-                isDark={isDark}
-                weeklyActivity={userStats?.weeklyActivity}
-              />
-            </motion.div>
-          </div>
-
-          {/* Recent Sessions Sidebar */}
-          <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.2 }}
-              className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6"
-            >
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Recent Sessions</h3>
-                <span className="text-sm text-gray-500 dark:text-slate-400">Latest</span>
-              </div>
-
-              {profile.recentSessions.length > 0 ? (
-                <>
-                  <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                    {profile.recentSessions.map((session) => (
-                      <div key={session.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-700 rounded-lg">
-                        <div className="flex items-center space-x-3">
-                          <div className={`w-8 h-8 ${getSessionBgColor(session.type)} rounded-lg flex items-center justify-center`}>
-                            {getSessionIcon(session.type)}
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">{getSessionTypeLabel(session.type)}</div>
-                            <div className="text-xs text-gray-500 dark:text-slate-400">{session.task}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-gray-900 dark:text-white">{session.duration}:00</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">{formatTime(session.createdAt)}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-700">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600 dark:text-slate-300">Total time:</span>
-                      <span className="font-bold text-gray-900 dark:text-white">{totalFocusDisplay}</span>
-                    </div>
-                  </div>
-                </>
-              ) : (
-                <div className="text-center py-12 text-gray-500 dark:text-slate-400">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-slate-600" />
-                  <p>No sessions</p>
-                </div>
-              )}
-            </motion.div>
-          </div>
+    <div className="community-page garden-page" lang={language} data-no-translate>
+      <Navbar compact />
+      <main className="community-layout">
+        <div className="community-intro">
+          <p className="community-eyebrow"><Sprout size={15} aria-hidden="true" />{copy.profile}</p>
+          <Link href="/" className="community-button"><ArrowLeft size={15} aria-hidden="true" />{copy.back}</Link>
         </div>
-      </div>
+        <header className="profile-header">
+          {profile.user.avatarUrl ? <Image src={profile.user.avatarUrl} alt="" width={88} height={88} className="community-avatar profile-avatar" /> : <span className="community-avatar profile-avatar" aria-hidden="true">{profile.user.username.charAt(0).toUpperCase()}</span>}
+          <div className="profile-identity">
+            <div className="profile-name"><h1>{profile.user.username}</h1>{profile.user.isPro && <span className="community-badge community-badge-accent"><Crown size={12} aria-hidden="true" />PRO</span>}</div>
+            {profile.user.description && <p className="profile-bio">{profile.user.description}</p>}
+            <div className="profile-meta"><span><Calendar size={13} aria-hidden="true" />{copy.joined} {formatDate(profile.user.createdAt)}</span><span><Eye size={13} aria-hidden="true" />{(profile.user.profileViews ?? 0).toLocaleString(locale)} {copy.views}</span></div>
+            {!isUserOnline && <p className="community-muted mt-2">{getLastSeenLabel(profile.user.lastSeenAt)}</p>}
+            {isOwnProfile && <div className="community-actions mt-4"><Link href="/settings" className="community-button"><Pencil size={14} aria-hidden="true" />{copy.edit}</Link><button type="button" className="community-button" onClick={handleLogout}><LogOut size={14} aria-hidden="true" />{copy.logout}</button></div>}
+          </div>
+          <ActiveSessionTimer activeSession={profile.activeSession} isUserOnline={isUserOnline} isUserWorking={isUserWorking} />
+        </header>
 
-      <style jsx global>{`
-        .pulse-dot {
-          animation: pulse 2s infinite;
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
-      `}</style>
+        {userStats ? <section className="community-metrics profile-metrics" aria-label={copy.workTime}>
+          <div className="community-metric"><span><Clock size={14} aria-hidden="true" />{copy.workTime}</span><strong>{totalFocusDisplay}</strong></div>
+          <div className="community-metric"><span><Flame size={14} aria-hidden="true" />{copy.pomodoros}</span><strong>{totalPomodoros.toLocaleString(locale)}</strong></div>
+          <div className="community-metric"><span><Calendar size={14} aria-hidden="true" />{copy.streak}</span><strong>{(userStats.currentStreak || 0).toLocaleString(locale)}</strong></div>
+          <div className="community-metric"><span><TrendingUp size={14} aria-hidden="true" />{copy.perDay}</span><strong>{avgPomodorosDisplay}</strong></div>
+        </section> : <p className="community-error" role="status">{copy.statsUnavailable}</p>}
+
+        <div className="profile-columns">
+          <div className="community-stack">
+            <section className="community-panel" aria-labelledby="profile-yearly-heading">
+              <header className="community-panel-heading"><div><h2 id="profile-yearly-heading">{copy.yearly}</h2><p>{copy.yearlyHint}</p></div>{userStats && <span className="community-badge">{totalHeatmapHours}:{totalHeatmapRemainder}</span>}</header>
+              {heatmapColumns.length ? <>
+                <div className="profile-heatmap-scroll">
+                  <div className="profile-heatmap-months" style={{ width: heatmapColumns.length * 13 }}>{heatmapMonthMarkers.map(marker => <span key={`${marker.label}-${marker.column}`} style={{ left: `${marker.column * 13}px` }}>{marker.label}</span>)}</div>
+                  <div className="profile-heatmap" role="group" aria-label={copy.yearly}>
+                    <div className="profile-heatmap-labels" aria-hidden="true">{heatmapDayLabels.map((label, index) => <span key={index}>{index % 2 ? label : ''}</span>)}</div>
+                    {heatmapColumns.map(column => <div className="profile-heatmap-column" key={column.week}>{column.days.map((day, index) => day ? <button
+                      key={day.date} type="button" className="profile-heatmap-cell" data-level={getHeatmapIntensity(day.minutes)} data-date={day.date}
+                      title={formatHeatmapCellLabel(day)} aria-label={formatHeatmapCellLabel(day)} aria-pressed={selectedDay === day.date}
+                      tabIndex={(selectedDay ?? firstHeatmapDay?.date) === day.date ? 0 : -1}
+                      onClick={() => setSelectedDay(day.date)} onFocus={() => setSelectedDay(day.date)}
+                      onKeyDown={event => {
+                        const offsets: Record<string, number> = { ArrowUp: -1, ArrowDown: 1, ArrowLeft: -7, ArrowRight: 7 }
+                        if (!(event.key in offsets) && event.key !== 'Home' && event.key !== 'End') return
+                        event.preventDefault()
+                        const cells = Array.from(event.currentTarget.closest('.profile-heatmap')?.querySelectorAll<HTMLButtonElement>('button[data-date]') ?? [])
+                        const current = cells.indexOf(event.currentTarget)
+                        const target = event.key === 'Home' ? 0 : event.key === 'End' ? cells.length - 1 : Math.max(0, Math.min(cells.length - 1, current + offsets[event.key]))
+                        cells[target]?.focus()
+                      }}
+                    /> : <span key={`empty-${index}`} className="profile-heatmap-cell invisible" aria-hidden="true" />)}</div>)}
+                  </div>
+                </div>
+                <div className="profile-heatmap-caption"><span role="status">{selectedHeatmapDay ? formatHeatmapCellLabel(selectedHeatmapDay) : copy.yearlyHint}</span><span className="profile-heatmap-key" aria-hidden="true">{copy.less}{[0, 1, 2, 3, 4].map(level => <span key={level} className="profile-heatmap-cell" data-level={level} />)}{copy.moreActivity}</span></div>
+              </> : <p className="community-muted">{userStats ? copy.noActivity : copy.statsUnavailable}</p>}
+            </section>
+            <section className="community-panel"><header className="community-panel-heading"><div><h2>{copy.weekly}</h2><p>{copy.weekHint}</p></div></header>
+              {userStats ? <WeeklyActivityChart Highcharts={Highcharts} weeklyData={weeklyData} weeklyCategories={weeklyCategories} isDark={isDark} weeklyActivity={userStats.weeklyActivity} /> : <p className="community-muted">{copy.statsUnavailable}</p>}
+            </section>
+            <section className="community-panel" aria-labelledby="profile-wall-heading">
+              <header className="community-panel-heading"><h2 id="profile-wall-heading"><MessageSquare size={18} aria-hidden="true" />{copy.wall}</h2><span className="community-badge">{copy.wallHint}</span></header>
+              {canPostWallMessage ? <form noValidate onSubmit={handleWallSubmit}>
+                <label className="community-field"><span>{copy.message}</span><textarea className="resize-none" value={wallMessageText} onChange={event => setWallMessageText(event.target.value)} rows={3} maxLength={500} placeholder={copy.messageHint} disabled={wallSubmitting} aria-describedby={wallError ? 'profile-wall-error' : undefined} /></label>
+                <div className="profile-wall-form-footer"><span className="community-muted">{wallMessageText.length}/500</span><button type="submit" className="community-button community-button-primary" disabled={wallSubmitting || wallMessageText.trim().length === 0} aria-busy={wallSubmitting}><Send size={14} aria-hidden="true" />{wallSubmitting ? copy.sending : copy.post}</button></div>
+              </form> : <p className="community-muted">{isOwnProfile ? copy.ownWall : copy.loginWall}</p>}
+              {wallError && <div id="profile-wall-error" className="community-error mt-4" role="alert"><p>{wallError}</p>{wallError === copy.wallLoadError && <button type="button" className="community-button" onClick={() => setWallRetry(value => value + 1)}>{copy.retry}</button>}</div>}
+              <div className="profile-wall-list">
+                {wallLoading ? <p className="community-muted" role="status">{copy.loadingMessages}</p> : wallMessages.length === 0 ? <p className="community-muted">{copy.noMessages}</p> : wallMessages.map(message => <article className="profile-wall-message" key={message.id}>
+                  <Link href={`/user/${message.author.id}`} aria-label={message.author.username}>{message.author.avatarUrl ? <Image src={message.author.avatarUrl} alt="" width={40} height={40} className="community-avatar" /> : <span className="community-avatar" aria-hidden="true">{message.author.username.charAt(0).toUpperCase()}</span>}</Link>
+                  <div><header><Link href={`/user/${message.author.id}`}>{message.author.username}</Link><time dateTime={message.createdAt}>{formatRelativeDate(message.createdAt)}</time></header><p>{message.message}</p></div>
+                  {(isOwnProfile || currentUser?.id === message.author.id) && <button type="button" className="community-icon-button profile-wall-delete" aria-label={copy.deleteMessage} title={copy.deleteMessage} disabled={Boolean(wallDeletingId)} onClick={() => { setWallError(null); setPendingWallDelete(message.id) }}><Trash2 size={14} aria-hidden="true" /></button>}
+                </article>)}
+              </div>
+              {wallHasMore && !wallLoading && <button type="button" className="community-button mt-4" disabled={wallLoadingMore} onClick={loadMoreWallMessages}>{wallLoadingMore ? copy.loadingMessages : copy.more}</button>}
+            </section>
+          </div>
+          <aside className="community-panel" aria-labelledby="profile-recent-heading">
+            <header className="community-panel-heading"><h2 id="profile-recent-heading">{copy.recent}</h2></header>
+            {profile.recentSessions.length ? <div className="profile-recent-list">{profile.recentSessions.map(session => <div key={session.id} className="profile-session">
+              {session.type === 'WORK' || session.type === 'TIME_TRACKING' ? <Clock size={16} aria-hidden="true" /> : <Coffee size={16} aria-hidden="true" />}
+              <div><strong>{getSessionTypeLabel(session.type)}</strong><p>{session.task}</p></div><div className="profile-session-time"><strong>{session.duration}:00</strong><time dateTime={session.createdAt}>{formatTime(session.createdAt)}</time></div>
+            </div>)}</div> : <p className="community-muted">{copy.noSessions}</p>}
+          </aside>
+        </div>
+      </main>
+      <CommunityDialog open={Boolean(pendingWallDelete)} title={copy.deleteMessageTitle} description={copy.deleteMessageHint} busy={Boolean(wallDeletingId)} onClose={() => setPendingWallDelete(null)}>
+        {wallError && <p className="community-error" role="alert">{wallError}</p>}
+        <div className="community-dialog-actions"><button type="button" className="community-button" disabled={Boolean(wallDeletingId)} onClick={() => setPendingWallDelete(null)}>{copy.cancel}</button><button type="button" className="community-button community-button-danger" disabled={Boolean(wallDeletingId)} onClick={async () => { if (pendingWallDelete && await handleWallDelete(pendingWallDelete)) setPendingWallDelete(null) }}>{copy.deleteMessage}</button></div>
+      </CommunityDialog>
     </div>
   )
 }

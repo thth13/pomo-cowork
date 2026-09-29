@@ -14,15 +14,17 @@ import TodayContribution from '@/components/TodayContribution'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { MessageCircle, History, ListTodo, Medal, HelpCircle } from 'lucide-react'
+import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks } from 'lucide-react'
+import Habits from '@/components/Habits'
+import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
 import { getRank } from '@/lib/ranks'
 import { HOME_TITLE } from '@/lib/homeSeo'
 
-type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about'
+type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits'
 const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v2'
 const isPanelId = (value: unknown): value is PanelId =>
-  value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress'
+  value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits'
 
 export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const { user, isLoading, checkAuth } = useAuthStore()
@@ -45,6 +47,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     { id: 'chat', title: copy.chat, icon: MessageCircle },
     { id: 'history', title: copy.history, icon: History },
     { id: 'tasks', title: copy.tasks, icon: ListTodo },
+    { id: 'habits', title: habitsCopy[language].title, icon: ListChecks },
     { id: 'progress', title: t.todayContribution.yourProgress, icon: Medal },
     { id: 'about', title: copy.aboutTimer, icon: HelpCircle },
   ] as const
@@ -222,7 +225,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       {/* Keep help in the initial HTML; only account-dependent panels wait for auth. */}
       {panels.map(({ id, title }, index) => workspaceLoading && id !== 'about' ? null : (
         <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)}>
-          {id === 'about' ? overview : id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution /> : <WorkHistory />}
+          {id === 'about' ? overview : id === 'habits' ? <Habits compact /> : id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution /> : <WorkHistory />}
         </WorkspaceWindow>
       ))}
     </div>

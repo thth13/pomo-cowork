@@ -1,4 +1,6 @@
 import './globals.css'
+import './appearance.css'
+import './community.css'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import Link from 'next/link'
@@ -6,6 +8,7 @@ import Script from 'next/script'
 import { Inter } from 'next/font/google'
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/ThemeProvider'
+import { AppearanceProvider } from '@/components/AppearanceProvider'
 import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
@@ -96,17 +99,19 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider>
           <I18nProvider>
-            <AuthProvider>
-              <GtmClient />
-              <InitialLoader />
-              <RankUpModal />
-              {children}
-              <div className="hidden sm:block">
-                <FeedbackWidget />
-              </div>
-              <ConnectionDebug />
-              <OfflineToast />
-            </AuthProvider>
+            <AppearanceProvider>
+              <AuthProvider>
+                <GtmClient />
+                <InitialLoader />
+                <RankUpModal />
+                {children}
+                <div className="hidden sm:block">
+                  <FeedbackWidget />
+                </div>
+                <ConnectionDebug />
+                <OfflineToast />
+              </AuthProvider>
+            </AppearanceProvider>
           </I18nProvider>
         </ThemeProvider>
       </body>

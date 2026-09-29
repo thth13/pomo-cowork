@@ -5,12 +5,14 @@ import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faClock, faFire, faChartColumn, faUserPlus, faXmark, faGear, faRightFromBracket, faTrash, faBan } from '@fortawesome/free-solid-svg-icons'
+import Link from 'next/link'
+import { ArrowLeft, Check, Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Sprout, Trash2, TrendingUp, UserPlus, Users, X } from 'lucide-react'
+import CommunityDialog from '@/components/CommunityDialog'
+import { useI18n } from '@/components/I18nProvider'
+import { communityCopy } from '@/lib/i18n/community'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
-import { useThemeStore } from '@/store/useThemeStore'
 import { Room, RoomMember, RoomPrivacy, RoomStats } from '@/types'
 import { getRoomGradientClass, ROOM_GRADIENT_OPTIONS, RoomGradientKey } from '@/lib/roomGradient'
 
@@ -28,91 +30,6 @@ interface MembersResponse {
   members: RoomMember[]
 }
 
-const RoomPageSkeleton = () => (
-  <div className="space-y-6 animate-pulse">
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-      {Array.from({ length: 3 }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 p-4"
-        >
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex-1">
-              <div className="h-3 w-24 bg-gray-200 dark:bg-slate-700 rounded" />
-              <div className="mt-2 h-8 w-32 bg-gray-200 dark:bg-slate-700 rounded" />
-            </div>
-            <div className="h-6 w-6 bg-gray-200 dark:bg-slate-700 rounded" />
-          </div>
-        </div>
-      ))}
-    </div>
-
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div>
-            <div className="h-4 w-28 bg-gray-200 dark:bg-slate-700 rounded" />
-            <div className="mt-2 h-3 w-16 bg-gray-200 dark:bg-slate-700 rounded" />
-          </div>
-        </div>
-        <div className="mb-3 h-10 w-full bg-gray-200 dark:bg-slate-700 rounded-lg" />
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 px-3 py-2"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700" />
-                <div className="min-w-0">
-                  <div className="h-4 w-28 bg-gray-200 dark:bg-slate-700 rounded" />
-                  <div className="mt-2 h-3 w-16 bg-gray-200 dark:bg-slate-700 rounded" />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div>
-            <div className="h-4 w-24 bg-gray-200 dark:bg-slate-700 rounded" />
-            <div className="mt-2 h-3 w-40 bg-gray-200 dark:bg-slate-700 rounded" />
-          </div>
-        </div>
-        <div className="space-y-2">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 px-3 py-2"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700" />
-                <div className="min-w-0">
-                  <div className="h-4 w-28 bg-gray-200 dark:bg-slate-700 rounded" />
-                  <div className="mt-2 h-3 w-32 bg-gray-200 dark:bg-slate-700 rounded" />
-                </div>
-              </div>
-              <div className="h-4 w-10 bg-gray-200 dark:bg-slate-700 rounded" />
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-
-    <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-      <div className="flex items-center justify-between gap-3 mb-3">
-        <div>
-          <div className="h-4 w-28 bg-gray-200 dark:bg-slate-700 rounded" />
-          <div className="mt-2 h-3 w-44 bg-gray-200 dark:bg-slate-700 rounded" />
-        </div>
-      </div>
-      <div className="h-56 w-full bg-gray-100 dark:bg-slate-700/40 rounded-lg" />
-    </div>
-  </div>
-)
-
 const formatMinutes = (minutes: number) => {
   const total = Math.max(0, Math.floor(minutes))
   const hours = Math.floor(total / 60)
@@ -128,43 +45,20 @@ interface UserAvatarProps {
   size: 32 | 40
 }
 
-const UserAvatar = ({ avatarUrl, username, size }: UserAvatarProps) => {
-  const sizeClass = size === 32 ? 'h-8 w-8' : 'h-10 w-10'
-  const textClass = size === 32 ? 'text-xs' : 'text-sm'
-  const initial = (username?.trim()?.charAt(0) || '?').toUpperCase()
-
-  if (avatarUrl) {
-    return (
-      <div className={`${sizeClass} rounded-full overflow-hidden bg-gray-200 dark:bg-slate-700 shrink-0`}>
-        <Image
-          src={avatarUrl}
-          alt={username}
-          width={size}
-          height={size}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
-      </div>
-    )
-  }
-
-  return (
-    <div
-      className={`${sizeClass} rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 ${textClass} font-semibold shrink-0`}
-    >
-      {initial}
-    </div>
-  )
-}
+const UserAvatar = ({ avatarUrl, username, size }: UserAvatarProps) => avatarUrl
+  ? <Image src={avatarUrl} alt="" width={size} height={size} className="community-avatar" loading="lazy" />
+  : <span className="community-avatar" aria-hidden="true">{(username?.trim()?.charAt(0) || '?').toUpperCase()}</span>
 
 export default function RoomPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
+  const { language } = useI18n()
+  const copy = communityCopy[language]
+  const locale = language === 'es' ? 'es-ES' : 'en-US'
   const searchParams = useSearchParams()
 
   const { token: storeToken, user } = useAuthStore()
   const { setCurrentRoom } = useRoomStore()
-  const { theme } = useThemeStore()
 
   const roomId = params?.id
   const shouldJoinOnOpen = searchParams.get('join') === '1'
@@ -186,7 +80,10 @@ export default function RoomPage() {
   const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<string | null>(null)
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
-  const settingsModalShouldCloseRef = useRef(false)
+  const inviteInputRef = useRef<HTMLInputElement>(null)
+  const roomNameRef = useRef<HTMLInputElement>(null)
+  const [searchError, setSearchError] = useState(false)
+  const [isComposing, setIsComposing] = useState(false)
 
   const [userQuery, setUserQuery] = useState('')
   const [userResults, setUserResults] = useState<UserSearchItem[]>([])
@@ -219,7 +116,6 @@ export default function RoomPage() {
     }
   }, [])
 
-  const isDark = theme === 'dark'
   const isOwner = Boolean(user?.id && room?.ownerId && room.ownerId === user.id)
   const isMember = Boolean(user?.id && members.some((m) => m.user.id === user.id))
   const canLeaveRoom = Boolean(user?.id && room && (isOwner || isMember))
@@ -256,7 +152,7 @@ export default function RoomPage() {
 
           if (!joinRes.ok) {
             const data = (await joinRes.json().catch(() => null)) as { error?: string } | null
-            setError(data?.error ?? 'Failed to join room')
+            setError(data?.error ?? copy.joinError)
           }
         }
       }
@@ -268,7 +164,7 @@ export default function RoomPage() {
       ])
 
       if (!roomRes.ok) {
-        setError(roomRes.status === 404 ? 'Room not found' : 'Failed to load room')
+        setError(roomRes.status === 404 ? copy.roomLoadError : copy.roomLoadError)
         setLoading(false)
         return
       }
@@ -308,11 +204,11 @@ export default function RoomPage() {
       }
     } catch (e) {
       console.error('Failed to load room page:', e)
-      setError('Failed to load room')
+      setError(copy.roomLoadError)
     } finally {
       setLoading(false)
     }
-  }, [getToken, headers, roomId, router, shouldJoinOnOpen, user?.id])
+  }, [getToken, headers, roomId, router, shouldJoinOnOpen, user?.id, copy.joinError, copy.roomLoadError])
 
   useEffect(() => {
     loadAll()
@@ -331,12 +227,12 @@ export default function RoomPage() {
   }, [headers, roomId])
 
   const onJoinRoom = useCallback(async () => {
-    if (!roomId || !room) return
+    if (!roomId || !room || joining) return
 
     setError(null)
     const token = getToken()
     if (!token) {
-      setError('Login required to join a room')
+      setError(copy.loginRequired)
       return
     }
 
@@ -352,7 +248,7 @@ export default function RoomPage() {
 
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null
-        setError(data?.error ?? 'Failed to join room')
+        setError(data?.error ?? copy.joinError)
         return
       }
 
@@ -360,43 +256,39 @@ export default function RoomPage() {
       await refreshMembers()
     } catch (e) {
       console.error('Failed to join room:', e)
-      setError('Failed to join room')
+      setError(copy.joinError)
     } finally {
       setJoining(false)
     }
-  }, [getToken, refreshMembers, room, roomId, setCurrentRoom])
+  }, [getToken, refreshMembers, room, roomId, setCurrentRoom, joining, copy.joinError, copy.loginRequired])
 
   useEffect(() => {
-    let cancelled = false
-
-    const run = async () => {
-      const q = userQuery.trim()
-      if (q.length < 2) {
-        setUserResults([])
-        setUserDropdownSuppressed(false)
-        return
-      }
-
-      setUserLoading(true)
+    const q = userQuery.trim()
+    setUserResults([])
+    setSearchError(false)
+    if (q.length < 2 || isComposing || !isOwner) { setUserLoading(false); return }
+    const controller = new AbortController()
+    let active = true
+    setUserLoading(true)
+    const timeout = window.setTimeout(() => {
+      controller.abort()
+      if (active) { setUserLoading(false); setSearchError(true) }
+    }, 20000)
+    const debounce = window.setTimeout(async () => {
       try {
-        const res = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`)
-        if (!res.ok) return
-        const data = (await res.json()) as UserSearchResponse
-        if (cancelled) return
-        setUserResults(Array.isArray(data.users) ? data.users : [])
+        const response = await fetch(`/api/users/search?q=${encodeURIComponent(q)}`, { signal: controller.signal })
+        if (!response.ok) throw new Error('Search failed')
+        const data = await response.json() as UserSearchResponse
+        if (active) setUserResults(Array.isArray(data.users) ? data.users : [])
       } catch {
-        // ignore
+        if (active && !controller.signal.aborted) setSearchError(true)
       } finally {
-        if (!cancelled) setUserLoading(false)
+        window.clearTimeout(timeout)
+        if (active) setUserLoading(false)
       }
-    }
-
-    const t = setTimeout(run, 150)
-    return () => {
-      cancelled = true
-      clearTimeout(t)
-    }
-  }, [userQuery])
+    }, 300)
+    return () => { active = false; controller.abort(); window.clearTimeout(debounce); window.clearTimeout(timeout) }
+  }, [userQuery, isComposing, isOwner])
 
   const filteredUserResults = useMemo(() => {
     const existingUserIds = new Set<string>()
@@ -408,7 +300,7 @@ export default function RoomPage() {
   }, [members, room?.ownerId, userResults])
 
   const isUserDropdownOpen =
-    !userDropdownSuppressed && userQuery.trim().length >= 2 && (userLoading || filteredUserResults.length > 0)
+    isOwner && !isComposing && !userDropdownSuppressed && userQuery.trim().length >= 2
 
   useEffect(() => {
     if (!isUserDropdownOpen) return
@@ -430,7 +322,7 @@ export default function RoomPage() {
 
   const onAddUser = useCallback(
     async (username: string, userId: string) => {
-      if (!roomId) return
+      if (!roomId || addingUserId) return
 
       setAddingUserId(userId)
       setError(null)
@@ -447,25 +339,27 @@ export default function RoomPage() {
 
         if (!res.ok) {
           const data = (await res.json().catch(() => null)) as { error?: string } | null
-          setError(data?.error ?? 'Failed to send invite')
+          setError(data?.error ?? copy.inviteError)
           return
         }
 
         setUserQuery('')
         setUserResults([])
-        showInviteToast('Invitation sent')
+        showInviteToast(copy.inviteSent)
+      } catch {
+        setError(copy.searchError)
       } finally {
         setAddingUserId(null)
       }
     },
-    [getToken, roomId, showInviteToast]
+    [getToken, roomId, showInviteToast, addingUserId, copy.inviteSent, copy.searchError, copy.inviteError]
   )
 
   const onLeaveRoom = useCallback(async () => {
     if (!roomId) return
     const token = getToken()
     if (!token) {
-      setError('Unauthorized')
+      setError(copy.loginRequired)
       return
     }
 
@@ -480,25 +374,25 @@ export default function RoomPage() {
       })
 
       if (!res.ok) {
-        setError('Failed to leave room')
+        setError(copy.leaveError)
         return
       }
 
       setCurrentRoom(null)
       router.push('/rooms')
     } catch {
-      setError('Failed to leave room')
+      setError(copy.leaveError)
     } finally {
       setLeaving(false)
     }
-  }, [getToken, roomId, router, setCurrentRoom])
+  }, [getToken, roomId, router, setCurrentRoom, copy.loginRequired, copy.leaveError])
 
   const onRemoveMember = useCallback(
     async (memberId: string) => {
       if (!roomId) return
       const token = getToken()
       if (!token) {
-        setError('Unauthorized')
+        setError(copy.loginRequired)
         return
       }
 
@@ -512,33 +406,35 @@ export default function RoomPage() {
         })
 
         if (!res.ok) {
-          setError('Failed to remove participant')
+          setError(copy.removeError)
           return
         }
 
         setMembers((prev) => prev.filter((m) => m.id !== memberId))
+        return true
       } catch {
-        setError('Failed to remove participant')
+        setError(copy.removeError)
       } finally {
         setRemovingMemberId(null)
       }
     },
-    [getToken, roomId]
+    [getToken, roomId, copy.loginRequired, copy.removeError]
   )
 
   const onSaveRoomSettings = useCallback(async () => {
-    if (!roomId) return
+    if (!roomId || roomSaving) return
     setError(null)
 
     const token = getToken()
     if (!token) {
-      setError('Login required')
+      setError(copy.loginRequired)
       return
     }
 
     const name = roomSettings.name.trim()
     if (!name) {
-      setError('Room name is required')
+      setError(copy.nameRequired)
+      roomNameRef.current?.focus()
       return
     }
 
@@ -559,7 +455,7 @@ export default function RoomPage() {
 
       if (!res.ok) {
         const data = (await res.json().catch(() => null)) as { error?: string } | null
-        setError(data?.error ?? 'Failed to save room')
+        setError(data?.error ?? copy.saveError)
         return
       }
 
@@ -574,17 +470,17 @@ export default function RoomPage() {
       setIsRoomSettingsOpen(false)
     } catch (e) {
       console.error('Failed to save room settings:', e)
-      setError('Failed to save room')
+      setError(copy.saveError)
     } finally {
       setRoomSaving(false)
     }
-  }, [getToken, roomId, roomSettings.backgroundGradientKey, roomSettings.name, roomSettings.privacy, setCurrentRoom])
+  }, [getToken, roomId, roomSettings.backgroundGradientKey, roomSettings.name, roomSettings.privacy, setCurrentRoom, roomSaving, copy.loginRequired, copy.nameRequired, copy.saveError])
 
   const onDeleteRoom = useCallback(async () => {
     if (!roomId) return
     const token = getToken()
     if (!token) {
-      setError('Unauthorized')
+      setError(copy.loginRequired)
       return
     }
 
@@ -598,18 +494,18 @@ export default function RoomPage() {
       })
 
       if (!res.ok) {
-        setError('Failed to delete room')
+        setError(copy.deleteError)
         return
       }
 
       setCurrentRoom(null)
       router.push('/rooms')
     } catch {
-      setError('Failed to delete room')
+      setError(copy.deleteError)
     } finally {
       setDeleting(false)
     }
-  }, [getToken, roomId, router, setCurrentRoom])
+  }, [getToken, roomId, router, setCurrentRoom, copy.loginRequired, copy.deleteError])
 
   const roomGradientKeyForPreview = isRoomSettingsOpen
     ? roomSettings.backgroundGradientKey
@@ -622,38 +518,39 @@ export default function RoomPage() {
 
   const weeklyChartOptions: Highcharts.Options = useMemo(
     () => ({
-      chart: { type: 'column', backgroundColor: 'transparent' },
+      chart: { type: 'column', backgroundColor: 'transparent', height: 270, animation: false, style: { fontFamily: 'inherit' } },
       title: { text: '' },
       credits: { enabled: false },
       xAxis: {
         categories:
           stats?.weeklyActivity?.map((item) => {
-            const date = new Date(item.date)
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-            return days[date.getDay()]
+            return new Date(item.date.slice(0, 10) + 'T00:00:00').toLocaleDateString(locale, { weekday: 'short' })
           }) ?? [],
-        lineColor: isDark ? '#475569' : '#e5e7eb',
-        tickColor: isDark ? '#475569' : '#e5e7eb',
+        lineColor: 'var(--pixel-line)',
+        tickColor: 'var(--pixel-line)',
         labels: {
           rotation: 0,
           step: 1,
-          style: { color: isDark ? '#cbd5e1' : '#6b7280' },
+          style: { color: 'var(--pixel-muted)' },
         },
       },
       yAxis: {
         title: {
-          text: 'Hours',
-          style: { color: isDark ? '#cbd5e1' : '#6b7280' },
+          text: copy.hours,
+          style: { color: 'var(--pixel-muted)' },
         },
-        gridLineColor: isDark ? '#334155' : '#f3f4f6',
+        gridLineColor: 'var(--pixel-line)',
         labels: {
-          style: { color: isDark ? '#cbd5e1' : '#6b7280' },
+          style: { color: 'var(--pixel-muted)' },
         },
       },
       legend: { enabled: false },
+      tooltip: { backgroundColor: 'var(--pixel-paper)', borderColor: 'var(--pixel-line)', borderRadius: 2, style: { color: 'var(--pixel-ink)' } },
       plotOptions: {
+        series: { animation: false },
         column: {
-          borderRadius: 4,
+          borderRadius: 0,
+          borderWidth: 0,
           pointPadding: 0.1,
           groupPadding: 0.1,
         },
@@ -661,479 +558,91 @@ export default function RoomPage() {
       series: [
         {
           type: 'column',
-          name: 'Hours',
+          name: copy.hours,
           data: stats?.weeklyActivity?.map((s) => s.hours) ?? [],
-          color: '#3b82f6',
+          color: 'var(--pixel-growth)',
         },
       ],
     }),
-    [isDark, stats?.weeklyActivity]
+    [stats?.weeklyActivity, copy.hours, locale]
   )
 
   return (
-    <div
-      className={`min-h-screen ${
-        !loading && room
-          ? roomGradientClass ?? 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800'
-          : 'bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800'
-      }`}
-    >
-      <Navbar />
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-        <div className="flex items-start justify-between gap-4 mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-              {loading ? (
-                <span className="inline-block align-middle h-7 w-40 rounded bg-gray-200 dark:bg-slate-700 animate-pulse" />
-              ) : (
-                room?.name ?? ''
-              )}
-            </h1>
-            <p className="text-gray-600 dark:text-slate-300">Room page</p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {canJoinRoom && (
-              <button
-                type="button"
-                onClick={onJoinRoom}
-                disabled={joining}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium bg-gray-900 text-white hover:bg-gray-800 dark:bg-white dark:text-gray-900 dark:hover:bg-gray-200 transition-colors disabled:opacity-50"
-                title="Join room"
-                aria-label="Join room"
-              >
-                {joining ? (
-                  <div className="h-4 w-4 rounded-full border-2 border-gray-300 dark:border-slate-600 border-t-white dark:border-t-slate-900 animate-spin" />
-                ) : (
-                  <FontAwesomeIcon icon={faUserPlus} className="h-4 w-4" />
-                )}
-                <span className="hidden sm:inline">Join</span>
-              </button>
-            )}
-
-            {isOwner && (
-              <button
-                type="button"
-                onClick={() => setIsRoomSettingsOpen(true)}
-                className="p-2 rounded-lg bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                title="Settings"
-                aria-label="Room settings"
-              >
-                <FontAwesomeIcon icon={faGear} className="h-4 w-4" />
-              </button>
-            )}
-
-            {canLeaveRoom && (
-              <button
-                type="button"
-                onClick={onLeaveRoom}
-                disabled={leaving}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-50"
-                title="Leave room"
-                aria-label="Leave room"
-              >
-                {leaving ? (
-                  <div className="h-4 w-4 rounded-full border-2 border-red-200 border-t-white animate-spin" />
-                ) : (
-                  <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
-                )}
-                <span className="hidden sm:inline">Leave</span>
-              </button>
-            )}
-          </div>
-        </div>
-
-          {error && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-900/40 dark:bg-red-900/20 dark:text-red-200">
-              {error}
-            </div>
-          )}
-
-          {loading ? (
-            <RoomPageSkeleton />
-          ) : (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">Total focus time</div>
-                      <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
-                        {formatMinutes(stats?.totalFocusMinutes ?? 0)}
-                      </div>
-                    </div>
-                    <FontAwesomeIcon icon={faClock} className="h-6 w-6 text-gray-400 dark:text-slate-300" />
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">Total pomodoros</div>
-                      <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
-                        {stats?.totalPomodoros ?? 0}
-                      </div>
-                    </div>
-                    <FontAwesomeIcon icon={faFire} className="h-6 w-6 text-gray-400 dark:text-slate-300" />
-                  </div>
-                </div>
-
-                <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 p-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">Average daily time</div>
-                      <div className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
-                        {formatMinutes(stats?.avgDailyFocusMinutes ?? 0)}
-                      </div>
-                    </div>
-                    <FontAwesomeIcon icon={faChartColumn} className="h-6 w-6 text-gray-400 dark:text-slate-300" />
-                  </div>
-                </div>
+    <div className="community-page garden-page" lang={language} data-no-translate>
+      <Navbar compact />
+      <main className="community-layout">
+        <Link href="/rooms?list=1" className="community-link room-detail-breadcrumb"><ArrowLeft size={15} aria-hidden="true" />{copy.allRooms}</Link>
+        {error && !isRoomSettingsOpen && !isConfirmDeleteOpen && !confirmRemoveMemberId && <div className="community-error" role="alert">{error}</div>}
+        {loading ? <div className="community-panel community-state" role="status"><span className="community-spinner" aria-hidden="true" />{copy.loading}</div> : !room ? (
+          <div className="community-panel community-state"><DoorOpen aria-hidden="true" /><h1>{copy.roomLoadError}</h1><button type="button" className="community-button" onClick={() => void loadAll()}>{copy.retry}</button></div>
+        ) : <>
+          <header className={`room-detail-header ${roomGradientClass ?? ''}`}>
+            <div className="community-intro">
+              <div><p className="community-eyebrow"><DoorOpen size={15} aria-hidden="true" />{copy.room}</p><h1>{room.name}</h1>
+                <div className="community-actions mt-3"><span className="community-badge">{room.privacy === RoomPrivacy.PRIVATE ? <Lock size={12} aria-hidden="true" /> : <Globe2 size={12} aria-hidden="true" />}{room.privacy === RoomPrivacy.PRIVATE ? copy.private : copy.public}</span><span className="community-badge"><Users size={12} aria-hidden="true" />{members.length} {copy.participantPlural}</span>{isOwner && <span className="community-badge">{copy.owner}</span>}</div>
               </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-
-
-                <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-white">Participants</div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">{members.length} total</div>
-                    </div>
-                  </div>
-
-                  <div className="mb-3">
-                    <div ref={userSearchRef} className="relative">
-                      <input
-                        value={userQuery}
-                        onChange={(e) => {
-                          setUserDropdownSuppressed(false)
-                          setUserQuery(e.target.value)
-                        }}
-                        placeholder="Invite participant by username"
-                        className="w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
-                      />
-
-                      {isUserDropdownOpen && (
-                        <div className="absolute z-10 mt-2 w-full rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg overflow-hidden">
-                          {userLoading ? (
-                            <div className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400">Searching...</div>
-                          ) : filteredUserResults.length === 0 ? (
-                            <div className="px-3 py-2 text-sm text-gray-500 dark:text-slate-400">No users</div>
-                          ) : (
-                            <div className="max-h-64 overflow-auto">
-                              {filteredUserResults.map((u) => (
-                                <button
-                                  key={u.id}
-                                  type="button"
-                                  onClick={() => onAddUser(u.username, u.id)}
-                                  disabled={addingUserId === u.id}
-                                  className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-between gap-3"
-                                >
-                                  <div className="flex items-center gap-3 min-w-0">
-                                    <UserAvatar avatarUrl={u.avatarUrl} username={u.username} size={32} />
-                                    <div className="min-w-0">
-                                      <div className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                        {u.username}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  {addingUserId === u.id ? (
-                                    <div className="h-4 w-4 rounded-full border-2 border-gray-300 dark:border-slate-600 border-t-gray-600 dark:border-t-slate-200 animate-spin" />
-                                  ) : (
-                                    <FontAwesomeIcon
-                                      icon={faUserPlus}
-                                      className="h-4 w-4 text-gray-400 dark:text-slate-300"
-                                    />
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {members.length === 0 ? (
-                    <div className="text-sm text-gray-500 dark:text-slate-400">No participants yet</div>
-                  ) : (
-                    <div className="space-y-2">
-                      {members.map((member) => (
-                        <div
-                          key={member.id}
-                          onClick={() => router.push(`/user/${member.user.id}`)}
-                          className="w-full flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 px-3 py-2 cursor-pointer"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} />
-
-                            <div className="min-w-0">
-                              <div className="font-medium text-gray-900 dark:text-white truncate">
-                                {member.user.username}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-slate-400">{member.role}</div>
-                            </div>
-                          </div>
-
-                          {isOwner && user?.id && member.user.id !== user.id && member.role !== 'OWNER' && (
-                            <div className="relative" onClick={(e) => e.stopPropagation()}>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  if (removingMemberId) return
-                                  setConfirmRemoveMemberId((prev) => (prev === member.id ? null : member.id))
-                                }}
-                                disabled={removingMemberId === member.id}
-                                className="p-2 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors disabled:opacity-50"
-                                title="Remove participant"
-                              >
-                                <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
-                              </button>
-
-                              {confirmRemoveMemberId === member.id && (
-                                <div className="absolute right-10 top-1/2 -translate-y-1/2 z-10 rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg px-3 py-2">
-                                  <div className="text-xs font-medium text-gray-700 dark:text-slate-200 whitespace-nowrap">
-                                    Are you sure?
-                                  </div>
-                                  <div className="mt-2 flex items-center gap-2">
-                                    <button
-                                      type="button"
-                                      onClick={async () => {
-                                        setConfirmRemoveMemberId(null)
-                                        await onRemoveMember(member.id)
-                                      }}
-                                      className="px-2 py-1 rounded-lg text-xs font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors"
-                                    >
-                                      Yes
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => setConfirmRemoveMemberId(null)}
-                                      className="px-2 py-1 rounded-lg text-xs font-semibold bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                                    >
-                                      No
-                                    </button>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-                  <div className="flex items-center justify-between gap-3 mb-3">
-                    <div>
-                      <div className="font-semibold text-gray-900 dark:text-white">Top users</div>
-                      <div className="text-xs text-gray-500 dark:text-slate-400">By total worked hours</div>
-                    </div>
-                  </div>
-
-                  {stats?.topUsers && stats.topUsers.length > 0 ? (
-                    <div className="space-y-2">
-                      {stats.topUsers.map((u) => (
-                        <div
-                          key={u.id}
-                          className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/30 px-3 py-2"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <UserAvatar avatarUrl={u.avatarUrl} username={u.username} size={40} />
-                            <div className="min-w-0">
-                              <div className="font-medium text-gray-900 dark:text-white truncate">{u.username}</div>
-                              <div className="text-xs text-gray-500 dark:text-slate-400">Contribution: {u.contributionPercent}%</div>
-                            </div>
-                          </div>
-
-                          <div className="text-sm font-semibold text-gray-700 dark:text-slate-200 shrink-0">
-                            {u.hours}h
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-sm text-gray-500 dark:text-slate-400">No data yet</div>
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-4">
-                <div className="flex items-center justify-between gap-3 mb-3">
-                  <div>
-                    <div className="font-semibold text-gray-900 dark:text-white">Weekly activity</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400">Hours per day (last 7 days)</div>
-                  </div>
-                </div>
-
-                <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
+              <div className="community-actions">
+                {canJoinRoom && <button type="button" onClick={onJoinRoom} disabled={joining} aria-busy={joining} className="community-button community-button-primary"><UserPlus size={16} aria-hidden="true" />{copy.join}</button>}
+                {isOwner && <button type="button" onClick={() => { setError(null); setRoomSettings({ name: room.name, privacy: room.privacy, backgroundGradientKey: (room.backgroundGradientKey as RoomGradientKey | null) ?? null }); setIsRoomSettingsOpen(true) }} className="community-button"><Settings size={16} aria-hidden="true" />{copy.settings}</button>}
+                {canLeaveRoom && <button type="button" onClick={onLeaveRoom} disabled={leaving} aria-busy={leaving} className="community-button"><LogOut size={16} aria-hidden="true" />{copy.leave}</button>}
               </div>
             </div>
-          )}
+          </header>
+          {stats ? <section className="community-metrics" aria-label={copy.focusTime}>
+            <div className="community-metric"><span><Clock size={15} aria-hidden="true" />{copy.focusTime}</span><strong>{formatMinutes(stats.totalFocusMinutes)}</strong></div>
+            <div className="community-metric"><span><Flame size={15} aria-hidden="true" />{copy.pomodoros}</span><strong>{stats.totalPomodoros.toLocaleString(locale)}</strong></div>
+            <div className="community-metric"><span><TrendingUp size={15} aria-hidden="true" />{copy.average}</span><strong>{formatMinutes(stats.avgDailyFocusMinutes ?? 0)}</strong></div>
+          </section> : <p className="community-error" role="status">{copy.statsUnavailable}</p>}
+          <div className="community-columns">
+            <section className="community-panel">
+              <header className="community-panel-heading"><h2><Users size={18} aria-hidden="true" />{copy.participants}</h2><span className="community-badge">{members.length}</span></header>
+              {isOwner && <div ref={userSearchRef} className="community-search" onKeyDown={event => { if (event.key === 'Escape') { setUserDropdownSuppressed(true); inviteInputRef.current?.focus() } }}>
+                <label htmlFor="room-invite-search">{copy.invite}</label>
+                <input id="room-invite-search" ref={inviteInputRef} value={userQuery} onChange={event => { setUserDropdownSuppressed(false); setUserQuery(event.target.value) }} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={() => setIsComposing(false)} placeholder={copy.inviteHint} autoComplete="off" />
+                {userQuery && <button type="button" className="community-search-clear" aria-label={copy.clear} onClick={() => { setUserQuery(''); setUserResults([]); setUserDropdownSuppressed(false); inviteInputRef.current?.focus() }}><X size={16} aria-hidden="true" /></button>}
+                {isUserDropdownOpen && <div className="community-search-results" aria-label={copy.invite}>
+                  {userLoading ? <p role="status">{copy.searching}</p> : searchError ? <p role="status">{copy.searchError}</p> : filteredUserResults.length === 0 ? <p role="status">{copy.noUsers}</p> : filteredUserResults.map(person => <button key={person.id} type="button" disabled={Boolean(addingUserId)} aria-busy={addingUserId === person.id} onClick={() => void onAddUser(person.username, person.id)}><UserAvatar avatarUrl={person.avatarUrl} username={person.username} size={32} /><span>{person.username}</span><UserPlus size={15} aria-hidden="true" /></button>)}
+                </div>}
+              </div>}
+              {members.length === 0 ? <p className="community-muted">{copy.noParticipants}</p> : members.map(member => <div className="community-person" key={member.id}>
+                <Link href={`/user/${member.user.id}`} className="community-person-link"><UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} /><span className="community-person-copy"><strong>{member.user.username}</strong><small>{member.role === 'OWNER' ? copy.owner : copy.member}</small></span></Link>
+                {isOwner && member.user.id !== user?.id && member.role !== 'OWNER' && <button type="button" className="community-icon-button" disabled={Boolean(removingMemberId)} title={copy.remove} aria-label={`${copy.remove}: ${member.user.username}`} onClick={() => { setError(null); setConfirmRemoveMemberId(member.id) }}><X size={16} aria-hidden="true" /></button>}
+              </div>)}
+            </section>
+            <div className="community-stack">
+              <section className="community-panel">
+                <header className="community-panel-heading"><div><h2><Sprout size={18} aria-hidden="true" />{copy.topUsers}</h2><p>{copy.topHint}</p></div></header>
+                {stats?.topUsers?.length ? stats.topUsers.map(person => <div className="community-person" key={person.id}>
+                  <Link href={`/user/${person.id}`} className="community-person-link"><UserAvatar avatarUrl={person.avatarUrl} username={person.username} size={40} /><span className="community-person-copy"><strong>{person.username}</strong><small>{copy.contribution}: {person.contributionPercent}%</small><span className="room-contribution" aria-hidden="true"><span style={{ width: `${Math.max(0, Math.min(100, person.contributionPercent))}%` }} /></span></span></Link><span className="community-person-value">{formatMinutes(person.hours * 60)}</span>
+                </div>) : <p className="community-muted">{stats ? copy.noData : copy.statsUnavailable}</p>}
+              </section>
+              <section className="community-panel">
+                <header className="community-panel-heading"><div><h2>{copy.weekly}</h2><p>{copy.weekHint}</p></div></header>
+                {stats ? <div className="community-chart"><HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} /></div> : <p className="community-muted">{copy.statsUnavailable}</p>}
+              </section>
+            </div>
+          </div>
+        </>}
       </main>
-
-      {inviteToast && (
-        <div className="fixed inset-x-0 bottom-6 z-50 flex justify-center px-4">
-          <div className="rounded-xl bg-gray-900 text-white dark:bg-slate-900 px-4 py-3 shadow-lg">
-            <span className="text-sm font-semibold">{inviteToast}</span>
-          </div>
-        </div>
-      )}
-
-      {isConfirmDeleteOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm px-4">
-          <div
-            className="w-full max-w-sm rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-gray-200 dark:border-slate-700 p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Delete room?</h3>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
-                This action cannot be undone. All data will be lost.
-              </p>
-            </div>
-
-            <div className="flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsConfirmDeleteOpen(false)}
-                disabled={deleting}
-                className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={onDeleteRoom}
-                disabled={deleting}
-                className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
-              >
-                {deleting ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {isOwner && isRoomSettingsOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4"
-          onMouseDown={(e) => {
-            settingsModalShouldCloseRef.current = e.target === e.currentTarget
-          }}
-          onClick={(e) => {
-            if (!settingsModalShouldCloseRef.current || e.target !== e.currentTarget) {
-              settingsModalShouldCloseRef.current = false
-              return
-            }
-            settingsModalShouldCloseRef.current = false
-            setIsRoomSettingsOpen(false)
-          }}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-gray-200 dark:border-slate-700 p-6 space-y-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900 dark:text-white">Room settings</h3>
-                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">Name & privacy</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsRoomSettingsOpen(false)}
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-              >
-                Close
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <label className="block">
-                <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Name</span>
-                <input
-                  value={roomSettings.name}
-                  onChange={(e) => setRoomSettings((s) => ({ ...s, name: e.target.value }))}
-                  className="mt-1 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
-                />
-              </label>
-
-              <label className="block">
-                <span className="text-xs font-medium text-gray-600 dark:text-slate-300">Privacy</span>
-                <select
-                  value={roomSettings.privacy}
-                  onChange={(e) => setRoomSettings((s) => ({ ...s, privacy: e.target.value as RoomPrivacy }))}
-                  className="mt-1 w-full bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white"
-                >
-                  <option value={RoomPrivacy.PUBLIC}>Public</option>
-                  <option value={RoomPrivacy.PRIVATE}>Private</option>
-                </select>
-              </label>
-            </div>
-
-            <div>
-              <div className="text-xs font-medium text-gray-600 dark:text-slate-300">Background</div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {ROOM_GRADIENT_OPTIONS.map((option) => {
-                  const selected = roomSettings.backgroundGradientKey === option.key
-                  return (
-                    <button
-                      key={option.key}
-                      type="button"
-                      title={option.label}
-                      aria-label={option.label}
-                      onClick={() => setRoomSettings((s) => ({ ...s, backgroundGradientKey: option.key }))}
-                      className={`relative h-10 w-10 rounded-lg border transition-colors overflow-hidden ${
-                        selected
-                          ? 'border-red-300 dark:border-red-800 ring-2 ring-red-200 dark:ring-red-900/30'
-                          : 'border-gray-200 dark:border-slate-700 hover:opacity-95'
-                      } ${option.className}`}
-                    >
-                      {option.key === 'none' && (
-                        <span className="absolute inset-0 flex items-center justify-center">
-                          <FontAwesomeIcon icon={faBan} className="h-4 w-4 text-gray-500/90 dark:text-slate-200/90" />
-                        </span>
-                      )}
-                    </button>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-2">
-              <button
-                type="button"
-                onClick={() => setIsConfirmDeleteOpen(true)}
-                className="inline-flex items-center gap-2 px-3 py-2 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 dark:border-red-900/50 dark:text-red-300 dark:hover:bg-red-900/20 transition-colors"
-                title="Delete room"
-              >
-                <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
-                <span className="text-sm font-semibold">Delete</span>
-              </button>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setIsRoomSettingsOpen(false)}
-                  className="px-4 py-2 rounded-lg font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={onSaveRoomSettings}
-                  disabled={roomSaving}
-                  className="px-4 py-2 rounded-lg font-medium bg-red-500 text-white hover:bg-red-600 disabled:opacity-50 transition-colors"
-                >
-                  {roomSaving ? 'Saving...' : 'Save'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {inviteToast && <div className="community-toast" role="status">{inviteToast}</div>}
+      <CommunityDialog open={Boolean(confirmRemoveMemberId)} title={copy.removeTitle} description={copy.removeHint} busy={Boolean(removingMemberId)} onClose={() => setConfirmRemoveMemberId(null)}>
+        <p className="community-muted">{members.find(member => member.id === confirmRemoveMemberId)?.user.username}</p>
+        {error && <p className="community-error" role="alert">{error}</p>}
+        <div className="community-dialog-actions"><button type="button" className="community-button" disabled={Boolean(removingMemberId)} onClick={() => setConfirmRemoveMemberId(null)}>{copy.cancel}</button><button type="button" className="community-button community-button-danger" disabled={Boolean(removingMemberId)} onClick={async () => { if (confirmRemoveMemberId) { if (await onRemoveMember(confirmRemoveMemberId)) setConfirmRemoveMemberId(null) } }}>{copy.remove}</button></div>
+      </CommunityDialog>
+      <CommunityDialog open={isConfirmDeleteOpen} title={copy.deleteTitle} description={copy.deleteHint} busy={deleting} onClose={() => setIsConfirmDeleteOpen(false)}>
+        <p className="community-muted">{room?.name}</p>{error && <p className="community-error" role="alert">{error}</p>}
+        <div className="community-dialog-actions"><button type="button" className="community-button" disabled={deleting} onClick={() => setIsConfirmDeleteOpen(false)}>{copy.cancel}</button><button type="button" className="community-button community-button-danger" disabled={deleting} onClick={onDeleteRoom}>{deleting ? copy.deleting : copy.delete}</button></div>
+      </CommunityDialog>
+      <CommunityDialog open={isOwner && isRoomSettingsOpen} title={copy.settings} busy={roomSaving} onClose={() => setIsRoomSettingsOpen(false)}>
+        <form noValidate onSubmit={event => { event.preventDefault(); void onSaveRoomSettings() }}>
+          <label className="community-field"><span>{copy.name}</span><input ref={roomNameRef} value={roomSettings.name} aria-invalid={error === copy.nameRequired} aria-describedby={error ? "room-settings-error" : undefined} disabled={roomSaving} onChange={event => setRoomSettings(s => ({ ...s, name: event.target.value }))} /></label>
+          <fieldset className="community-privacy" disabled={roomSaving}><legend>{copy.privacy}</legend><div>{[RoomPrivacy.PUBLIC, RoomPrivacy.PRIVATE].map(privacy => <label key={privacy}><input type="radio" name="room-privacy" checked={roomSettings.privacy === privacy} onChange={() => setRoomSettings(s => ({ ...s, privacy }))} /><span>{privacy === RoomPrivacy.PUBLIC ? copy.public : copy.private}<small>{privacy === RoomPrivacy.PUBLIC ? copy.publicHint : copy.privateHint}</small></span></label>)}</div></fieldset>
+          <fieldset disabled={roomSaving}><legend className="community-muted">{copy.background}</legend><div className="room-background-options">{ROOM_GRADIENT_OPTIONS.map(option => <button key={option.key} type="button" className={option.className} title={option.label} aria-label={option.label} aria-pressed={roomSettings.backgroundGradientKey === option.key} onClick={() => setRoomSettings(s => ({ ...s, backgroundGradientKey: option.key }))}>{roomSettings.backgroundGradientKey === option.key && <Check size={18} aria-hidden="true" />}</button>)}</div></fieldset>
+          {error && <p id="room-settings-error" className="community-error mt-4" role="alert">{error}</p>}
+          <div className="community-dialog-actions"><button type="button" className="community-button community-button-danger" disabled={roomSaving} onClick={() => { setError(null); setIsRoomSettingsOpen(false); setIsConfirmDeleteOpen(true) }}><Trash2 size={15} aria-hidden="true" />{copy.delete}</button><button type="button" className="community-button" disabled={roomSaving} onClick={() => setIsRoomSettingsOpen(false)}>{copy.cancel}</button><button type="submit" className="community-button community-button-primary" disabled={roomSaving}>{roomSaving ? copy.saving : copy.save}</button></div>
+        </form>
+      </CommunityDialog>
     </div>
   )
 }
