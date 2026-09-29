@@ -1,4 +1,6 @@
 export interface SessionForStats {
+  type?: string
+  status?: string
   startedAt: Date | string
   createdAt?: Date | string
   endedAt?: Date | string | null
@@ -29,6 +31,18 @@ export const getSessionAttributionDate = (session: SessionForStats): Date => {
 export const getEffectiveMinutes = (session: SessionForStats): number => {
   const start = toDate(session.startedAt) ?? toDate(session.createdAt)
   const end = getSessionEnd(session)
+
+  if (session.type === 'TIME_TRACKING' && session.status === 'CANCELLED' && session.remainingSeconds === 0) {
+    return Math.max(0, Math.round(session.duration))
+  }
+
+  // Older stopped trackers stored elapsed duration alongside the remaining
+  // seconds of their 24-hour countdown. Those fields cannot be subtracted.
+  if (session.type === 'TIME_TRACKING' && session.status === 'CANCELLED' &&
+      typeof session.remainingSeconds === 'number' && session.remainingSeconds > 0 &&
+      Math.abs(session.duration * 60 + session.remainingSeconds - 24 * 60 * 60) <= 30) {
+    return Math.max(0, Math.round(session.duration))
+  }
 
   // Prefer stored remaining seconds (accurate for manual stops and pauses).
   if (typeof session.remainingSeconds === 'number' && Number.isFinite(session.remainingSeconds)) {

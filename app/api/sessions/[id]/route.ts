@@ -139,11 +139,11 @@ export async function PUT(
       updateData.type = type
     }
 
-    if (status === SessionStatus.COMPLETED) {
+    if (status === SessionStatus.COMPLETED || status === SessionStatus.CANCELLED) {
       const completionResult = await prisma.$transaction(async (tx) => {
         await tx.$queryRaw`
           SELECT 1::int AS lock_acquired
-          FROM pg_advisory_xact_lock(hashtext(${params.id}))
+          FROM pg_advisory_xact_lock(hashtext(${effectiveUserId}))
         `
 
         const session = await tx.pomodoroSession.findFirst({
@@ -155,6 +155,16 @@ export async function PUT(
 
         if (!session) {
           return null
+        }
+
+        if (status === SessionStatus.CANCELLED && (
+          session.type !== SessionType.TIME_TRACKING ||
+          (session.status !== SessionStatus.ACTIVE && session.status !== SessionStatus.PAUSED)
+        )) {
+          return {
+            session: await tx.pomodoroSession.update({ where: { id: session.id }, data: updateData }),
+            progression: null,
+          }
         }
 
         const user = await tx.user.findUnique({
@@ -204,17 +214,23 @@ export async function PUT(
         }
 
         const progressionDate = new Date()
+        const isTrackingStop = status === SessionStatus.CANCELLED
+        // The tracker is a countdown internally; persist elapsed minutes at its end.
+        const trackedMinutes = isTrackingStop
+          ? Math.max(0, Math.round((session.duration * 60 - (updateData.remainingSeconds ?? session.remainingSeconds ?? session.duration * 60)) / 60))
+          : session.duration
         const completionUpdateData = {
           ...updateData,
-          completedAt: updateData.completedAt ?? progressionDate,
+          completedAt: isTrackingStop ? null : updateData.completedAt ?? progressionDate,
           endedAt: updateData.endedAt ?? progressionDate,
           pausedAt: null,
           remainingSeconds: 0,
+          ...(isTrackingStop ? { duration: trackedMinutes } : {}),
         }
         const earnsExperience =
           session.type === SessionType.WORK ||
           session.type === SessionType.TIME_TRACKING
-        const extendsStreak = session.type === SessionType.WORK
+        const extendsStreak = earnsExperience && trackedMinutes > 0
         const nextStreak = extendsStreak
           ? getNextStreak(
               user.currentStreak,
@@ -224,7 +240,7 @@ export async function PUT(
           : user.currentStreak
         const experienceAwarded = earnsExperience
           ? calculateExperienceReward(
-              session.duration,
+              trackedMinutes,
               extendsStreak ? nextStreak : 1
             )
           : 0
@@ -289,7 +305,7 @@ export async function PUT(
         })
       }
 
-      const rankUp = completionResult.progression.rankUp
+      const rankUp = completionResult.progression?.rankUp
       if (rankUp?.shouldNotify) {
         try {
           const title = `New rank: ${rankUp.rankName}`

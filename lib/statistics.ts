@@ -100,15 +100,16 @@ export function buildStatistics(sessions: StatisticsSession[], experience: numbe
       continue
     }
     if (session.type !== 'WORK' && session.type !== 'TIME_TRACKING') continue
+    const completed = session.status === 'COMPLETED' || session.type === 'TIME_TRACKING'
     const key = dateKey(date)
     const day = daily.get(key) ?? emptyDay(key)
     day.minutes += minutes
     day.sessions++
-    day.completed += Number(session.status === 'COMPLETED')
+    day.completed += Number(completed)
     daily.set(key, day)
     totalMinutes += minutes
     totalSessions++
-    completedSessions += Number(session.status === 'COMPLETED')
+    completedSessions += Number(completed)
     const hour = Math.floor(minuteOfDay(start) / 60)
     hours[hour] += minutes
     periods[hour < 6 ? 3 : hour < 12 ? 0 : hour < 18 ? 1 : 2] += minutes

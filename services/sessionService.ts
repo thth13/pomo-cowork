@@ -23,6 +23,48 @@ const buildHeaders = (token?: string | null) => {
   return headers
 }
 
+interface SessionUpdateResult {
+  progression?: {
+    experience: number
+    currentStreak: number
+    longestStreak: number
+    rankUp?: {
+      previousRank: string
+      rank: string
+      rankName: string
+      experience: number
+      shouldNotify: boolean
+    } | null
+  } | null
+}
+
+const applySessionProgression = (result: SessionUpdateResult) => {
+  if (result.progression) {
+    useAuthStore.setState((state) => ({
+      user: state.user
+        ? {
+            ...state.user,
+            experience: result.progression?.experience,
+            currentStreak: result.progression?.currentStreak,
+            longestStreak: result.progression?.longestStreak,
+          }
+        : null,
+    }))
+
+    if (result.progression.rankUp && typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('rank-up', {
+        detail: result.progression.rankUp,
+      }))
+    }
+  }
+
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('session-completed'))
+  }
+
+  return result
+}
+
 export const sessionService = {
   async create(data: SessionData): Promise<PomodoroSession> {
     const token = useAuthStore.getState().token
@@ -81,6 +123,12 @@ export const sessionService = {
     if (!response.ok) {
       throw new Error(`Failed to update session ${id}, status ${response.status}`)
     }
+
+    const result = await response.json()
+    if (data.status === 'COMPLETED' || data.status === 'CANCELLED') {
+      return applySessionProgression(result)
+    }
+    return result
   },
 
   async complete(id: string) {
@@ -112,44 +160,6 @@ export const sessionService = {
       throw new Error(`Failed to complete session ${id}, status ${response.status}`)
     }
 
-    const result = await response.json() as {
-      progression?: {
-        experience: number
-        currentStreak: number
-        longestStreak: number
-        rankUp?: {
-          previousRank: string
-          rank: string
-          rankName: string
-          experience: number
-          shouldNotify: boolean
-        } | null
-      }
-    }
-
-    if (result.progression) {
-      useAuthStore.setState((state) => ({
-        user: state.user
-          ? {
-              ...state.user,
-              experience: result.progression?.experience,
-              currentStreak: result.progression?.currentStreak,
-              longestStreak: result.progression?.longestStreak,
-            }
-          : null,
-      }))
-
-      if (result.progression.rankUp && typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('rank-up', {
-          detail: result.progression.rankUp,
-        }))
-      }
-    }
-
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('session-completed'))
-    }
-
-    return result
+    return applySessionProgression(await response.json())
   },
 }
