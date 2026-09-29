@@ -42,8 +42,8 @@ license, retrieval date, length, size and processing gain. Keep it with these fi
 - Static gain targets -24 dBFS RMS, constrained by a -6 dBFS peak ceiling. This
   keeps headroom for mixing; levels can still be adjusted with individual sliders.
 - Encoded with FFmpeg/libmp3lame as 128 kbps stereo MP3 at 44.1 kHz with Xing metadata.
-  The encoder's gapless metadata is retained; exact loop-gap behavior still depends
-  on the browser's HTMLAudioElement implementation.
+  The encoder's gapless metadata is retained. Playback decodes files into Web Audio
+  buffers instead of restarting an HTMLAudioElement at each boundary.
 - All eight final files were fully decoded with FFmpeg `-xerror` successfully.
   Browser playback and subjective listening were not tested in this session.
 
@@ -58,4 +58,23 @@ license and hashes. Avoid recordings containing music without separate permissio
 
 Preferences remain browser-local (`pomo:ambient:v1`). Reload restores selection and
 levels without autoplay; Play saved mix resumes enabled tracks. Closing the window
-keeps playback going; leaving the workspace disposes its audio elements.
+keeps playback going; leaving the workspace disposes its audio graph and buffer cache.
+
+## Gapless playback
+
+`lib/ambientAudio.ts` decodes each requested track once. It trims 50ms from both
+edges to avoid codec edge artifacts, then creates a two-second equal-power wrap
+crossfade in PCM. The output ends at the source sample immediately preceding its
+first sample, preserving continuity at the loop boundary. This shortens each runtime
+loop by 2.1 seconds; the file lengths and hashes above remain unchanged.
+
+AudioBufferSourceNode loops the prepared buffer on the audio clock, with no media
+restart, network request, JS timer or ended-event scheduling at the seam. Native
+GainNode automation fades in and smooths volume changes. Sources share a lazily
+created AudioContext; source buffers are cached until workspace unmount.
+
+Verification: all eight decoded files passed a numerical check that the loop
+boundary joins adjacent source samples; mocked lifecycle checks covered rapid
+off/on toggling, duplicate-play suppression, cache reuse and disposal. Browser
+listening remains to be verified; repeating events in a short recording may still
+be recognizable even when there is no playback gap.

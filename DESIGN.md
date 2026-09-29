@@ -335,6 +335,13 @@ wash remains; no extra full-screen dark layer is added. Layout, dimensions, spac
 fonts and behavior are shared with normal mode. The presence rail has 24px vertical padding in both modes so its heading clears the
 panel edge; switching scenery does not resize the controls.
 
+All dock windows (chat, history, tasks, habits, progress, sounds and help) share
+that glass shell while scenery is active, including when opened from the mobile menu.
+Local pixel-token aliases and neutral utility adapters in `app/appearance.css` keep
+headings, fields, cards and scrollbars legible in either theme. Bodies stay transparent;
+controls use dark insets, and the sticky sound footer uses the scene popover surface.
+Window geometry, dragging, resizing and focus behavior retain their shared owners.
+
 The task selector uses a darker translucent inset; its portalled popover explicitly
 carries `data-background-mode` from the appearance store and uses a nearly opaque
 dark surface. The separate mini window retains its ordinary theme. Active tabs and filled progress segments use the semantic timer mode accent; inactive

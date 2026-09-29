@@ -172,7 +172,7 @@
   --scene-popover: rgb(20 25 23 / 96%);
 }
 /* The local scrim supplies contrast even over white imagery; no global dark wash. */
-:is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.focus-station, .working-sidebar, .seo-timer, .seo-social, .workspace-dock, .workspace-navigation-control) {
+:is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.focus-station, .working-sidebar, .seo-timer, .seo-social, .workspace-dock, .workspace-navigation-control, .workspace-window) {
   color: var(--scene-primary);
   background: var(--scene-panel);
   border-color: var(--scene-border);
@@ -181,6 +181,44 @@
   -webkit-backdrop-filter: blur(18px) saturate(110%);
   backdrop-filter: blur(18px) saturate(110%);
 }
+/* Dock windows reuse the same glass shell in both themes. Keep the token scope local. */
+.pomodoro-home:has(.workspace-background) .workspace-window {
+  --pixel-paper: var(--scene-task);
+  --pixel-page: var(--scene-task);
+  --pixel-screen: var(--scene-hover);
+  --pixel-ink: var(--scene-primary);
+  --pixel-muted: var(--scene-secondary);
+  --pixel-line: var(--scene-border);
+  --pixel-shadow: var(--scene-selected);
+  --pixel-accent: var(--scene-accent);
+  --pixel-tomato-soft: var(--scene-selected);
+  --pixel-tomato-ink: var(--scene-accent);
+  --pixel-growth: var(--timer-short-break-on-dark);
+  --pixel-scroll-track: var(--scene-task);
+  --pixel-scroll-thumb: var(--scene-border);
+  --pixel-scroll-hover: var(--scene-secondary);
+  --pixel-scroll-active: var(--scene-primary);
+  color-scheme: dark;
+}
+.pomodoro-home:has(.workspace-background) .workspace-window-heading { background: var(--scene-hover); }
+.pomodoro-home:has(.workspace-background) .workspace-window-handle:is(:hover, :focus-visible),
+.pomodoro-home:has(.workspace-background) .workspace-window-close:hover { background: var(--scene-selected); }
+/* Legacy panel utilities need the same local roles as token-based sounds, habits and help. */
+.pomodoro-home:has(.workspace-background) .workspace-window :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100) { background-color: var(--scene-task); }
+.pomodoro-home:has(.workspace-background) .workspace-window :is(.bg-gray-200, .bg-gray-300, .bg-slate-200, .bg-slate-300) { background-color: var(--scene-selected); }
+.pomodoro-home:has(.workspace-background) .workspace-window .workspace-window-content > div { background: transparent; }
+.pomodoro-home:has(.workspace-background) .workspace-window :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900) { color: var(--scene-primary); }
+.pomodoro-home:has(.workspace-background) .workspace-window :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600) { color: var(--scene-secondary); }
+.pomodoro-home:has(.workspace-background) .workspace-window :is(.border-gray-200, .border-gray-300, .border-slate-200, .border-slate-300) { border-color: var(--scene-border); }
+.pomodoro-home:has(.workspace-background) .workspace-window :is(input, textarea)::placeholder { color: var(--scene-secondary); }
+.pomodoro-home:has(.workspace-background) .workspace-window :is(.hover\:bg-gray-50, .hover\:bg-gray-100, .hover\:bg-slate-50, .hover\:bg-slate-100):hover { background-color: var(--scene-hover); }
+.pomodoro-home:has(.workspace-background) .workspace-window :is(.hover\:text-red-500, .hover\:text-primary-600):hover { color: var(--scene-accent); }
+.pomodoro-home:has(.workspace-background) .workspace-window .focus-sounds-footer { background: var(--scene-popover); }
+.pomodoro-home:has(.workspace-background) .workspace-window .habit-check[aria-pressed="true"] { color: var(--scene-popover); }
+.pomodoro-home:has(.workspace-background) .workspace-window .chat-messages { scrollbar-color: var(--pixel-scroll-thumb) var(--pixel-scroll-track); scrollbar-width: thin; }
+.pomodoro-home:has(.workspace-background) .workspace-window .chat-messages::-webkit-scrollbar-track { background: var(--pixel-scroll-track); }
+.pomodoro-home:has(.workspace-background) .workspace-window .chat-messages::-webkit-scrollbar-thumb { background: var(--pixel-scroll-thumb); }
+
 /* Navigation shares the scene palette without changing opaque dialogs elsewhere. */
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.workspace-dock, .workspace-navigation) {
   --pixel-paper: var(--scene-popover);
@@ -260,7 +298,7 @@
     --scene-selected: Canvas; --scene-shadow: none; --scene-accent: Highlight;
     --scene-task: Canvas; --scene-task-hover: Canvas; --scene-popover: Canvas;
   }
-  :is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.focus-station, .working-sidebar, .seo-timer, .seo-social, .current-task-trigger, .workspace-dock, .workspace-navigation-control), .task-popover[data-background-mode] {
+  :is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.focus-station, .working-sidebar, .seo-timer, .seo-social, .current-task-trigger, .workspace-dock, .workspace-navigation-control, .workspace-window), .task-popover[data-background-mode] {
     -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; outline: 1px solid CanvasText;
   }
   :is(.pomodoro-home, .seo-shell):has(.workspace-background) [data-timer-panel] .pixel-timer-track span { background: Canvas; outline: 1px solid GrayText; }

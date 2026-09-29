@@ -335,10 +335,14 @@ existing save callback finishes. No persistence, session or entitlement rules ch
 ## Ambient audio
 
 `useAmbientSounds` is owned once by HomeWorkspace, independent of timer state and
-panel visibility. Each activated track owns one lazy HTMLAudioElement with looping,
-independent volume and a 250ms fade-in; stopping pauses immediately. Generation
-checks ignore superseded play promises. Each sound key toggles independently; closing the
-panel preserves playback; workspace unmount releases elements and pending fades.
+panel visibility. AmbientAudio owns one lazy AudioContext, a cached decoded buffer per requested
+track and one looping AudioBufferSourceNode per playing track. Decoded PCM gets a
+two-second wrap crossfade after trimming 50ms from each edge; looping runs on the
+audio clock without JavaScript timers. GainNodes provide independent volume and a
+250ms fade-in; stopping pauses immediately. Generation
+checks ignore superseded fetch/decode/resume results. Each sound key toggles independently; closing the
+panel preserves playback; workspace unmount aborts pending fetches, disconnects nodes, clears buffers and closes
+the AudioContext. OS/browser suspension stops sources and exposes explicit resume.
 Browser-local preferences restore validated selections and levels without autoplay.
 Play saved mix is the explicit resume gesture. Source/playback failures are inline
 per-track errors with Retry and never stop other tracks. No files preload until
