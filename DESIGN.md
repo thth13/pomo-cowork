@@ -37,8 +37,8 @@ requested a site-wide pixel redesign and a work-fed tamagotchi inspired by the s
 cream sprout with a leaf satchel. This is the approved new visual identity.
 
 The homepage signature is a large, unboxed pixel timer on a continuous quiet surface.
-The background uses a faint 32px grid with soft sage and tomato washes at the edges;
-a page-colored central wash keeps the timer readable. All layers derive from existing
+The default background uses a faint 32px grid with soft sage and tomato washes at the edges;
+a page-colored central wash keeps the timer readable. All default layers derive from existing
 theme tokens, remain static, and disappear in forced-colors mode.
 The pocket garden is temporarily commented out at the user’s request. Keep the surrounding
 product calm and readable; avoid arcade neon, glossy gradients, round timer rings,
@@ -271,3 +271,69 @@ tools, using shared labels from `lib/seoRoutes.ts`. Links have 44px minimum heig
 theme-derived hover/pressed states and visible keyboard focus. Related tools reuse
 those labels, with intent-specific destinations. `app/sitemap.ts` generates the public
 `/sitemap.xml` from the same tool registry, public site pages and published blog posts.
+
+## Daily habits
+
+`/habits` is a document-scrolling personal tracker with the compact Navbar. The home
+workspace adds Habits to its left dock and mobile tool menu, opening the existing
+non-modal WorkspaceWindow with today's checklist. Both surfaces use `Habits` and
+`useHabits`; their shared styles live under `.habits` in `app/globals.css` and reuse
+existing pixel tokens. The signature is a seven-day check grid with a quiet daily
+progress strip, readable Inter habit names and a restrained pixel page heading.
+History owns horizontal overflow on narrow screens; the page keeps natural scrolling.
+The full page owns creation, rename, reversible archive/restore and week navigation.
+English/Spanish copy follows I18nProvider via `lib/i18n/habits.ts`.
+
+## Focus statistics dashboard
+
+`/statistics` is an additional personal route; `/stats` and its existing API stay intact.
+Navbar links to both. The new page uses the compact menu and natural document scrolling,
+with the same cream/sage surfaces, tomato accents, 3px geometry and shared theme tokens.
+Inter tabular numerals carry the large weekly total; pixel type is limited to eyebrows.
+The signature visualization is a soft, data-derived weekly mountain, supported by a
+contribution map and a quiet task galaxy. Circles encode task time; they are chart marks,
+not a new card or control shape. No fonts, chart packages or theme tokens are added.
+`app/statistics/statistics.css` owns this route's composition and responsive rules.
+On narrow screens panels stack, the galaxy becomes a full-name distribution list, and
+the heatmap and timeline own horizontal overflow. The score gauge uses discrete marks;
+existing timer rings remain unchanged. Motion respects reduced-motion preferences.
+English/Spanish copy belongs to `lib/i18n/statistics.ts`; the DOM translator is excluded.
+
+## Personal timer appearance
+
+The timer's Appearance button opens a native modal dialog with a compact scenery
+gallery and five digit previews. The default remains Pocket Garden and pixel digits.
+Three generated aesthetic landscapes and three locally hosted Mixkit videos provide
+optional scenery; `public/backgrounds/README.md` records sources and generation prompts.
+`lib/appearance.ts` owns the catalog; `app/appearance.css` owns its shared presentation.
+Scenery appears on home and the search timer pages. Existing room backgrounds keep
+their own owner. Personal choice is shared per browser, independent of the account.
+
+Chosen scenery fills the viewport beneath the page. Theme-derived, nearly opaque
+surfaces behind the timer, online rail and editorial text preserve reading contrast.
+The gallery uses native radio inputs, visible selection checks and keyboard focus;
+it scrolls within a bounded dialog while the header and Done action remain reachable.
+English/Spanish text follows I18nProvider via `lib/i18n/appearance.ts`.
+
+`data-timer-font` maps pixel, system sans, Georgia, Courier New and Trebuchet MS to
+`--timer-face` in `app/appearance.css`, with local fallbacks. Only timer numerals change,
+including the native mini window; existing size/line-height remains stable. UI and
+body typography retain their previous owners. No extra font request is introduced.
+Video is muted and loops, with a persistent pause control. Reduced-motion users get
+the poster without a video request; hidden tabs pause playback. Forced colors hides
+scenery and retains system surfaces. No new palette or global theme change is needed.
+
+## Profiles and rooms
+
+`/user/[id]`, `/rooms` and `/rooms/[id]` share the garden background, compact Navbar,
+cream/sage surfaces and existing pixel tokens. `app/community.css` owns their scoped
+composition: restrained pixel headings, readable Inter content, square avatars,
+compact metric strips and offset panel shadows. Room-owned gradients remain available
+inside the room header. Personal timer scenery retains its existing scope.
+
+The directory separates the global desk from the room grid. Room detail puts members
+beside contribution and weekly activity panels; profiles put the activity map and wall
+beside recent sessions. Panels stack on phones, with horizontal overflow confined to
+the yearly map. Chart colors follow theme tokens and avoid entrance animation.
+English/Spanish copy belongs to `lib/i18n/community.ts`, excluding these surfaces from
+DOM translation. `/profile` redirects authenticated users to their real public profile.

@@ -38,6 +38,7 @@ model User {
   sessions PomodoroSession[]
   settings UserSettings?
   tasks    Task[]
+  habits   Habit[]
 
   ownedRooms      Room[]       @relation("RoomOwner")
   roomMemberships RoomMember[]
@@ -236,6 +237,29 @@ model Task {
 
   @@index([userId, completed, createdAt])
   @@map("tasks")
+}
+
+model Habit {
+  id          String @id @default(cuid())
+  userId      String
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String @db.VarChar(120)
+  startDate   String @db.VarChar(10)
+  archived    Boolean @default(false)
+  createdAt   DateTime @default(now())
+  completions HabitCompletion[]
+
+  @@index([userId, createdAt])
+  @@map("habits")
+}
+
+model HabitCompletion {
+  habitId String
+  date    String @db.VarChar(10)
+  habit   Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@id([habitId, date])
+  @@map("habit_completions")
 }
 
 model PomodoroSession {

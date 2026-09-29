@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import HomeWorkspace from '@/components/HomeWorkspace'
+import WorkspaceBackground from '@/components/WorkspaceBackground'
 import PomodoroOverview from '@/components/PomodoroOverview'
 import { HOME_TITLE, HOME_DESCRIPTION } from '@/lib/homeSeo'
 
@@ -32,6 +33,7 @@ export const metadata: Metadata = {
 export default function HomePage() {
   return (
     <main className="pomodoro-home garden-page">
+      <WorkspaceBackground />
       <HomeWorkspace overview={<PomodoroOverview />} />
     </main>
   )

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useI18n } from '@/components/I18nProvider'
+import { communityCopy } from '@/lib/i18n/community'
 
 interface ActiveSession {
   id: string
@@ -16,17 +18,10 @@ interface ActiveSessionTimerProps {
   isUserWorking: boolean
 }
 
-const getSessionTypeLabel = (type: string) => {
-  switch (type) {
-    case 'WORK': return 'Work'
-    case 'SHORT_BREAK': return 'Short Break'
-    case 'LONG_BREAK': return 'Long Break'
-    case 'TIME_TRACKING': return 'Time Tracking'
-    default: return type
-  }
-}
-
 export default function ActiveSessionTimer({ activeSession, isUserOnline, isUserWorking }: ActiveSessionTimerProps) {
+  const { language } = useI18n()
+  const copy = communityCopy[language]
+  const typeLabel = activeSession?.type === 'SHORT_BREAK' ? copy.shortBreak : activeSession?.type === 'LONG_BREAK' ? copy.longBreak : activeSession?.type === 'TIME_TRACKING' ? copy.tracking : copy.work
   const [timeRemaining, setTimeRemaining] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
 
@@ -47,7 +42,7 @@ export default function ActiveSessionTimer({ activeSession, isUserOnline, isUser
       const mins = Math.floor(remaining / 60)
       const secs = remaining % 60
       
-      const progressPercent = Math.max(0, Math.min(100, (elapsed / totalDuration) * 100))
+      const progressPercent = totalDuration > 0 ? Math.max(0, Math.min(100, (elapsed / totalDuration) * 100)) : 0
       setProgress(progressPercent)
       
       return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
@@ -63,37 +58,13 @@ export default function ActiveSessionTimer({ activeSession, isUserOnline, isUser
   }, [activeSession])
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 w-full lg:w-auto lg:min-w-[280px] lg:max-w-[280px]">
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-2">
-          <div className={`w-2 h-2 ${isUserOnline ? 'bg-green-400' : 'bg-gray-400'} rounded-full ${isUserOnline ? 'pulse-dot' : ''}`}></div>
-          <span className={`text-sm font-medium ${isUserOnline ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-slate-400'}`}>
-            {isUserOnline ? 'Online' : 'Offline'}
-          </span>
-        </div>
-        <span className="text-xs text-gray-500 dark:text-slate-400">
-          {isUserWorking ? 'Currently Working' : 'Not Working'}
-        </span>
-      </div>
-      {isUserWorking && activeSession ? (
-        <div className="space-y-2">
-          <div className="text-sm font-medium text-gray-900 dark:text-white">{activeSession.task}</div>
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-gray-500 dark:text-slate-400">{getSessionTypeLabel(activeSession.type)}</span>
-            <span className="font-bold text-red-600 dark:text-red-400 text-lg">{timeRemaining}</span>
-          </div>
-          <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-1.5">
-            <div 
-              className="bg-red-500 h-1.5 rounded-full transition-all" 
-              style={{ width: `${progress}%` }}
-            ></div>
-          </div>
-        </div>
-      ) : (
-        <div className="text-center py-2 text-gray-500 dark:text-slate-400 text-sm">
-          Not currently working
-        </div>
-      )}
-    </div>
+    <section className="profile-live" aria-label={copy.working}>
+      <header className="profile-live-heading"><span><span className="profile-live-dot" data-online={isUserOnline} aria-hidden="true" />{isUserOnline ? copy.online : copy.offline}</span>{isUserWorking && <span>{typeLabel}</span>}</header>
+      {isUserWorking && activeSession ? <>
+        <p className="profile-live-task">{activeSession.task || typeLabel}</p>
+        <div className="profile-live-time"><span>{copy.working}</span><strong role="timer" aria-live="off">{timeRemaining ?? '—:—'}</strong></div>
+        <progress value={progress} max={100} aria-label={typeLabel} />
+      </> : <p className="profile-live-empty">{copy.notWorking}</p>}
+    </section>
   )
 }

@@ -10,6 +10,7 @@ import { TaskPicker } from '@/components/TaskPicker'
 import { useTaskMenu } from '@/hooks/useTaskMenu'
 import { SessionType } from '@/types'
 import { TaskOption } from '@/types/task'
+import { useAppearanceStore } from '@/store/useAppearanceStore'
 
 interface TimerPictureInPictureProps {
   controller: ReturnType<typeof useDocumentPictureInPicture>
@@ -37,6 +38,7 @@ export function TimerPictureInPicture({
   isTimeTracking,
 }: TimerPictureInPictureProps) {
   const { t, language } = useI18n()
+  const timerFont = useAppearanceStore(state => state.timerFont)
   const { pipWindow, isSupported, isOpening, error, open, close, clearError } = controller
   const triggerRef = useRef<HTMLButtonElement>(null)
   const wasOpen = useRef(false)
@@ -115,7 +117,7 @@ export function TimerPictureInPicture({
             </span>
           </header>
           <div className="mini-timer-display">
-            <div className={`mini-timer-digits${formattedTime.length > 5 ? ' mini-timer-digits-long' : ''}`} role="timer" aria-label={sessionLabel} aria-live="off">
+            <div className={`mini-timer-digits${formattedTime.length > 5 ? ' mini-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={sessionLabel} aria-live="off">
               {formattedTime}
             </div>
             <TaskPicker

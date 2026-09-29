@@ -2,6 +2,8 @@
 
 import { memo } from 'react'
 import dynamic from 'next/dynamic'
+import { useI18n } from '@/components/I18nProvider'
+import { communityCopy } from '@/lib/i18n/community'
 
 const HighchartsReact = dynamic(() => import('highcharts-react-official'), { ssr: false })
 
@@ -17,9 +19,11 @@ const WeeklyActivityChart = memo(function WeeklyActivityChart({
   Highcharts, 
   weeklyData, 
   weeklyCategories, 
-  isDark,
   weeklyActivity 
 }: WeeklyActivityChartProps) {
+  const { language } = useI18n()
+  const copy = communityCopy[language]
+  const locale = language === 'es' ? 'es-ES' : 'en-US'
   if (!Highcharts) return null
 
   const formatDuration = (minutes: number) => {
@@ -32,7 +36,9 @@ const WeeklyActivityChart = memo(function WeeklyActivityChart({
     chart: {
       type: 'column',
       backgroundColor: 'transparent',
-      height: 320,
+      height: 270,
+      animation: false,
+      style: { fontFamily: 'inherit' },
     },
     title: {
       text: undefined,
@@ -41,55 +47,61 @@ const WeeklyActivityChart = memo(function WeeklyActivityChart({
       enabled: false,
     },
     xAxis: {
-      categories: weeklyCategories.length > 0 ? weeklyCategories : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-      lineColor: isDark ? '#475569' : '#e5e7eb',
-      tickColor: isDark ? '#475569' : '#e5e7eb',
+      categories: weeklyCategories.length > 0 ? weeklyCategories : Array.from({ length: 7 }, (_, index) => new Date(2024, 0, 8 + index).toLocaleDateString(locale, { weekday: 'short' })),
+      lineColor: 'var(--pixel-line)',
+      tickColor: 'var(--pixel-line)',
       lineWidth: 0,
       tickWidth: 0,
       labels: {
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+        style: { color: 'var(--pixel-muted)' }
       }
     },
     yAxis: {
       title: {
-        text: 'Hours',
+        text: copy.hours,
       },
       gridLineWidth: 1,
-      gridLineColor: isDark ? '#334155' : '#f3f4f6',
+      gridLineColor: 'var(--pixel-line)',
       labels: {
         formatter: function(this: Highcharts.AxisLabelsFormatterContextObject) {
           return formatDuration((this.value as number) * 60)
         },
-        style: { color: isDark ? '#cbd5e1' : '#6b7280' }
+        style: { color: 'var(--pixel-muted)' }
       }
     },
     legend: {
       enabled: false,
     },
     plotOptions: {
+      series: { animation: false },
       column: {
-        borderRadius: 4,
+        borderRadius: 0,
+        borderWidth: 0,
         pointPadding: 0.2,
         groupPadding: 0.1,
-        color: '#3b82f6',
+        color: 'var(--pixel-growth)',
       }
     },
     tooltip: {
+      backgroundColor: 'var(--pixel-paper)',
+      borderColor: 'var(--pixel-line)',
+      borderRadius: 2,
+      style: { color: 'var(--pixel-ink)' },
       formatter: function(this: any) {
         const index = this.point?.index ?? 0
         const entry = weeklyActivity?.[index]
         if (!entry) {
-          return `<b>${this.x}</b><br/>${formatDuration((this.y || 0) * 60)} hours`
+          return `<b>${this.x}</b><br/>${formatDuration((this.y || 0) * 60)} ${copy.hours}`
         }
         const [year, month, day] = entry.date.split('-').map(Number)
         const date = new Date(year, month - 1, day)
-        const label = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
-        return `<b>${label}</b><br/>${formatDuration(entry.minutes)} hours`
+        const label = date.toLocaleDateString(locale, { weekday: 'short', month: 'short', day: 'numeric' })
+        return `<b>${label}</b><br/>${formatDuration(entry.minutes)} ${copy.hours}`
       }
     },
     series: [{
       type: 'column',
-      name: 'Hours',
+      name: copy.hours,
       data: weeklyData,
     }]
   }

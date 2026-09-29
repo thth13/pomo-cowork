@@ -24,6 +24,7 @@
 | Companion feedback | PocketGarden | Local, stable role=status region; no overlay or focus stealing |
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
+| Timer appearance | AppearanceSettings, WorkspaceBackground, useAppearanceStore | Native modal and radio choices; immediate local persistence; shared timer digit style and optional image/video scenery |
 | Locale | I18nProvider | English and Spanish, including new companion copy |
 | Homepage navigation | Navbar compact variant | Shared navigation disclosure; outside click and Escape dismiss; Escape restores trigger focus; guests retain navigation and login |
 | Workspace dock tooltips | HomeWorkspace / app/globals.css | Localized panel labels appear to the right on pointer hover or keyboard focus, remain hoverable, and dismiss on Escape, blur, pointer exit or activation; mobile menu keeps visible labels |
@@ -176,3 +177,114 @@ copy. Timer readiness waits for authentication, while disconnected live activity
 an explicit unavailable/reconnecting state and the existing socket manages recovery.
 Only static inspection and lint/audit are performed; browser, build, and typecheck
 verification remain excluded by the user's instructions.
+
+## Daily habits
+
+The requested habits feature is owned by `app/api/habits` and the Habit / HabitCompletion
+models in `prisma/schema.prisma`. `resolveTaskUserId` preserves the existing task
+identity contract for authenticated and anonymous users. Reads and mutations are
+owner-scoped; upgrading the same anonymous user preserves their habits. Logging into
+an existing account follows existing task behavior, without merging guest data.
+
+| Capability | Canonical owner | Behavior |
+| --- | --- | --- |
+| Habit CRUD and feedback | components/Habits.tsx, hooks/useHabits.ts | Shared checklist, pending locks, inline errors, stable live status, retry |
+| Habit name form | HabitNameForm in components/Habits.tsx | Labeled native text input, explicit validation, retain failed submissions |
+| Habit history dates | lib/habits.ts, Habits | Local calendar date keys, seven-day button grid, native table, no date picker |
+| Quick access | HomeWorkspace, WorkspaceWindow, Navbar | Existing dock/disclosure and non-modal window behavior |
+| Theme and scrollbars | app/globals.css | Existing runtime tokens, global scrollbar baseline |
+
+Every habit is daily. One date-only completion per habit can be set or undone;
+repeated writes of the same desired state are idempotent. Creation uses a client
+operation ID to prevent duplicates when retrying an uncertain request. The browser's
+local calendar owns today, refreshing after midnight and on focus. Future dates and
+dates before creation are disabled. Current streak includes yesterday when today
+has not yet been completed. Archival preserves all history; Restore is available in
+the archive section. No permanent delete is introduced.
+
+SWR owns identity-separated caching and focus/minute refresh. Pending writes preserve
+controls and show errors without claiming success. Changing identity hides the prior
+account's list. History renders all personal habits in week-sized columns; horizontal
+scrolling belongs to the table wrapper. Empty, loading, failure and success states are
+shared between the full page and workspace panel. The personal route is not indexed.
+
+Verification is static only per user instructions. Targeted ESLint and Prisma client
+generation are allowed; running the application, builds and tsc are excluded. The
+schema migration must be deployed before the new API is used.
+
+## Additional statistics route
+
+`/statistics` preserves `/stats`; its read-only `/api/statistics` uses the same bearer
+identity and owner-scoped PomodoroSession records. Existing `/stats` Pro behavior is
+preserved: the weekly overview is available to authenticated users, while detailed
+analytics require active Pro access, checked on the new endpoint. Navbar, AuthModal,
+I18nProvider, global scrollbar tokens, and `lib/ranks.ts` remain canonical owners.
+There are no writes, schema migrations, new billing rules, or fabricated user records.
+
+`lib/statistics.ts` aggregates positive effective minutes using `lib/sessionStats.ts`,
+including manual stops and time tracking. Completion counts include only COMPLETED
+focus sessions. The browser's IANA timezone determines calendar attribution; weeks
+begin Monday and current-week totals compare with the full previous week, labeled as
+in progress. Days use the established end-date attribution. Time-of-day distributions
+weight session start hours by effective minutes, since pause intervals are not stored.
+Timeline blocks represent recorded start/end windows, including pauses, and say so.
+Break averages are nullable and use actual break sessions. Projects are explicitly
+grouped by task name; the top five plus Other preserve the complete distribution.
+The score is a disclosed 60-point active-day + 40-point completion-rate habit indicator;
+XP and rank use the existing persisted experience, without introducing separate levels.
+
+The map has 3/6/12-month view controls, one keyboard tab stop with arrow/Home/End
+navigation, and persistent selected-day details. Timeline and task selections expose
+the same details to keyboard and touch users as their hover titles. SWR isolates data
+by token/user/timezone, refreshes on focus/minute, and bounds requests to 20 seconds.
+Authentication failure hides data and provides sign-in; loading, empty, error/retry,
+stale-refresh and Pro states are explicit. New-user empty states return to the timer.
+Only static review, targeted lint and design audits are run under the user's instructions.
+
+## Timer appearance
+
+AppearanceSettings follows the native modal pattern of GuestSignupModal: focus is
+contained, the page is inert, Escape/close/Done dismiss, and focus returns to its
+trigger. Changes apply immediately; the footer explicitly says they save automatically.
+Reset restores the default background, pixel face and video playback preference.
+Native radio groups own arrow-key choice; there is no authored select popup.
+
+AppearanceProvider restores validated catalog IDs after hydration. The versioned
+`pomo:appearance:v1` localStorage record contains only background, font and pause state.
+Storage failures keep choices in memory and show an inline notice. Storage events
+sync tabs, using the browser's last write; settings do not change timer/session state.
+No account, database, room-membership or billing change is involved.
+
+WorkspaceBackground is mounted by the home and search timer shells. Only the chosen
+full-size scene loads; the settings gallery uses still thumbnails, never preview videos.
+Videos loop muted, pause with document visibility, and use a static poster with reduced
+motion. Playback remains explicitly pausable outside the dialog. Media errors and
+autoplay rejection have localized feedback and retry; a 20-second loading timeout
+prevents indefinite pending feedback. Posters/page colors remain readable fallbacks.
+Source links lead to the corresponding Mixkit item. Asset provenance lives in
+`public/backgrounds/README.md`. TimerPictureInPicture observes the same digit choice.
+
+Verification remains static: no application launch, test build or tsc, per user request.
+
+## Community profiles and rooms
+
+Room creation/settings and destructive confirmations use `CommunityDialog`, a native
+modal with contained focus, Escape/close dismissal and focus restoration. Pending
+mutations disable duplicate submission and dismissal. Privacy uses native radio
+groups; required room names receive inline feedback and focus. Existing APIs, Pro
+gates, membership behavior and server-owned permissions remain authoritative.
+
+Room and member destinations are native links. Owner-only invitation search debounces
+input, handles composition, cancels obsolete requests and exposes loading, empty and
+error states. Member and wall-message deletion controls remain visible for touch and
+keyboard users. Failed deletion keeps its confirmation open with feedback.
+
+Profiles use cancellable, bounded initial reads and explicit loading/error/retry
+states. Missing statistics are unavailable rather than fabricated zero totals. The
+yearly map has one tab stop, arrow/Home/End navigation and persistent selected-day
+details. Wall posting preserves its draft on failure and provides a visible character
+count. `/profile` resolves to `/user/[id]` after authentication; guests can sign in.
+
+Shared owners remain Navbar, AuthModal, PaywallModal and the theme tokens. Validation
+for this redesign is source review, targeted ESLint, CSS parsing and static design
+audits; browser layout and runtime flows require the user's own application testing.
