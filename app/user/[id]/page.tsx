@@ -7,6 +7,7 @@ import Highcharts from 'highcharts'
 import CommunityDialog from '@/components/CommunityDialog'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
+import { ranksCopy } from '@/lib/i18n/ranks'
 import { getRank } from '@/lib/ranks'
 import { enUS, es } from 'date-fns/locale'
 import Image from 'next/image'
@@ -541,6 +542,7 @@ export default function UserProfilePage() {
                 {copy.rank}: {t.todayContribution.ranks[rank.id]}
               </span>
               <span className="community-badge tabular-nums">{experience.toLocaleString(locale)} EXP</span>
+              <Link href="/ranks" className="community-link">{ranksCopy[language].link}</Link>
             </div>
             {profile.user.description && <p className="profile-bio">{profile.user.description}</p>}
             <div className="profile-meta"><span><Calendar size={13} aria-hidden="true" />{copy.joined} {formatDate(profile.user.createdAt)}</span><span><Eye size={13} aria-hidden="true" />{(profile.user.profileViews ?? 0).toLocaleString(locale)} {copy.views}</span></div>

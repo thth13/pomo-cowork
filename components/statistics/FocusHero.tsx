@@ -1,11 +1,13 @@
 'use client'
 
 import { Flame, Sprout, ArrowUpRight } from 'lucide-react'
+import Link from 'next/link'
+import { ranksCopy } from '@/lib/i18n/ranks'
 import type { StatisticsData } from '@/lib/statistics'
 import { Change, useStatisticsCopy } from './shared'
 
 export default function FocusHero({ data }: { data: StatisticsData }) {
-  const { copy, number, date } = useStatisticsCopy()
+  const { copy, language, number, date } = useStatisticsCopy()
   const { thisWeek, lastWeek, currentStreak, rank } = data.summary
   const hours = Math.floor(thisWeek.minutes / 60)
   const minutes = thisWeek.minutes % 60
@@ -18,7 +20,7 @@ export default function FocusHero({ data }: { data: StatisticsData }) {
     </div>
     <div className="insight-hero-progress">
       <div className="insight-streak"><Flame size={23} aria-hidden="true" /><strong>{number(currentStreak)}</strong><span>{copy.streak}</span></div>
-      <div className="insight-rank-heading"><Sprout size={30} strokeWidth={1.5} aria-hidden="true" /><div><span className="insight-label">{copy.rank}</span><h2>{copy.ranks[rank.rank.id]}</h2></div><ArrowUpRight size={22} aria-hidden="true" /></div>
+      <Link href="/ranks" className="insight-rank-heading insight-rank-link" aria-label={`${copy.ranks[rank.rank.id]} · ${ranksCopy[language].link}`}><Sprout size={30} strokeWidth={1.5} aria-hidden="true" /><div><span className="insight-label">{copy.rank}</span><h2>{copy.ranks[rank.rank.id]}</h2></div><ArrowUpRight size={22} aria-hidden="true" /></Link>
       <div className="insight-rank-values"><strong>{number(rank.current)} <span>/ {number(rank.required)} XP</span></strong><span>{rank.percent}%</span></div>
       <progress className="insight-progress" max={100} value={rank.percent} aria-label={copy.rank} />
       <p className="insight-label">{rank.nextRank ? `${copy.nextRank} · ${copy.ranks[rank.nextRank.id]}` : copy.highestRank}</p>

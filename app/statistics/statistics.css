@@ -6,7 +6,7 @@
 .insights button:focus-visible, .insights a:focus-visible, .insights summary:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 4px; }
 .insights button:disabled { opacity: .55; cursor: wait; }
 .insights button:active:not(:disabled), .insights a:active { filter: brightness(.93); }
-.insight-topline { display: flex; justify-content: space-between; gap: 16px; margin-bottom: 28px; }
+.insight-topline { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; margin-bottom: 28px; }
 .insight-text-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; color: var(--pixel-muted); font-size: 12px; transition: color .15s; }
 .insight-text-link:hover { color: var(--pixel-tomato-ink); text-decoration: underline; text-underline-offset: 4px; }
 .insight-intro { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 34px; }
@@ -34,6 +34,7 @@
 .insight-rank-heading > svg { color: var(--pixel-growth); flex-shrink: 0; }
 .insight-rank-heading > svg:last-child { margin-left: auto; width: 17px; }
 .insight-rank-heading h2 { font-size: 21px; line-height: 1.5; font-weight: 600; letter-spacing: -.035em; }
+.insight-rank-link:hover h2 { color: var(--pixel-tomato-ink); text-decoration: underline; text-underline-offset: 4px; }
 .insight-label { display: block; color: var(--pixel-muted); font-size: 11px; line-height: 1.6; }
 .insight-rank-values { display: flex; justify-content: space-between; gap: 12px; margin: 18px 0 9px; font-size: 11px; }
 .insight-rank-values strong { font-weight: 600; }

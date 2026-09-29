@@ -1,0 +1,41 @@
+.ranks-page { min-height: 100dvh; }
+.ranks-guide { width: min(1040px, calc(100% - 64px)); margin: 0 auto; padding: 92px 0 56px; color: var(--pixel-ink); }
+.ranks-nav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 24px; margin-bottom: 28px; }
+.ranks-link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 13px; color: var(--pixel-muted); cursor: pointer; }
+.ranks-link:hover { color: var(--pixel-tomato-ink); text-decoration: underline; text-underline-offset: 4px; }
+.ranks-link:active { color: var(--pixel-ink); }
+.ranks-link:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 4px; }
+.ranks-eyebrow { font-family: var(--font-pixel); font-size: 10px; line-height: 1.9; color: var(--pixel-muted); }
+.ranks-intro { max-width: 680px; margin-bottom: 36px; }
+.ranks-intro h1 { margin: 16px 0; font-size: clamp(28px, 4vw, 44px); font-weight: 600; line-height: 1.2; letter-spacing: -.045em; }
+.ranks-intro > p:last-child { color: var(--pixel-muted); font-size: 16px; line-height: 1.8; }
+.ranks-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; gap: 40px; }
+.ranks-guide h2 { font-size: 20px; line-height: 1.4; font-weight: 600; }
+.ranks-ladder { overflow: hidden; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); box-shadow: 4px 4px 0 var(--pixel-shadow); }
+.ranks-ladder-heading { padding: 24px; background: var(--pixel-screen); }
+.ranks-ladder-heading p { margin-top: 8px; color: var(--pixel-muted); font-size: 13px; line-height: 1.6; }
+.ranks-ladder table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.ranks-ladder th, .ranks-ladder td { padding: 16px 24px; text-align: left; border-bottom: 1px solid var(--pixel-line); }
+.ranks-ladder thead th { font-size: 12px; color: var(--pixel-muted); font-weight: 500; }
+.ranks-ladder tbody th { font-weight: 600; }
+.ranks-ladder th:last-child, .ranks-ladder td { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ranks-ladder td span { color: var(--pixel-muted); font-size: 11px; }
+.ranks-name { display: flex; align-items: center; gap: 12px; overflow-wrap: anywhere; }
+.ranks-swatch { width: 14px; height: 24px; flex: 0 0 auto; border-radius: 2px; }
+.ranks-table-note { padding: 20px 24px; color: var(--pixel-muted); font-size: 12px; line-height: 1.7; }
+.ranks-rules { display: grid; gap: 28px; }
+.ranks-rules p { margin-top: 12px; font-size: 14px; line-height: 1.8; }
+.ranks-rules .ranks-detail { color: var(--pixel-muted); font-size: 12px; }
+.ranks-example { padding: 20px; background: var(--pixel-screen); border: 1px solid var(--pixel-line); border-radius: 3px; }
+.ranks-example h3 { margin-bottom: 16px; font-size: 14px; font-weight: 600; }
+.ranks-example dl { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.ranks-example dt { font-size: 12px; color: var(--pixel-muted); }
+.ranks-example dd strong { display: block; margin: 6px 0; font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.ranks-example dd span { display: block; color: var(--pixel-muted); font-size: 11px; line-height: 1.5; }
+@media (max-width: 760px) {
+  .ranks-guide { width: calc(100% - 32px); padding-top: 84px; }
+  .ranks-layout { grid-template-columns: minmax(0, 1fr); gap: 32px; }
+  .ranks-ladder th, .ranks-ladder td { padding: 14px 16px; }
+  .ranks-example dl { gap: 10px; }
+  .ranks-example dd strong { font-size: 18px; }
+}
