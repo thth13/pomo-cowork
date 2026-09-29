@@ -1,11 +1,13 @@
+const BLOB_BASE_URL = process.env.NEXT_PUBLIC_BLOB_BASE_URL
+
 export const BACKGROUNDS = [
   { id: 'default', kind: 'default' },
-  { id: 'rainy-window', kind: 'image', src: '/backgrounds/images/rainy-window.webp', preview: '/backgrounds/images/rainy-window-thumb.webp' },
-  { id: 'misty-lake', kind: 'image', src: '/backgrounds/images/misty-lake.webp', preview: '/backgrounds/images/misty-lake-thumb.webp' },
-  { id: 'sunset-coast', kind: 'image', src: '/backgrounds/images/sunset-coast.webp', preview: '/backgrounds/images/sunset-coast-thumb.webp' },
-  { id: 'forest-rain', kind: 'video', src: '/backgrounds/videos/forest-rain.mp4', preview: '/backgrounds/posters/forest-rain.jpg', source: 'https://mixkit.co/free-stock-video/raining-in-a-cloud-forest-full-of-tall-trees-22728/' },
-  { id: 'forest-stream', kind: 'video', src: '/backgrounds/videos/forest-stream.mp4', preview: '/backgrounds/posters/forest-stream.jpg', source: 'https://mixkit.co/free-stock-video/forest-stream-in-the-sunlight-529/' },
-  { id: 'ocean-sunset', kind: 'video', src: '/backgrounds/videos/ocean-sunset.mp4', preview: '/backgrounds/posters/ocean-sunset.jpg', source: 'https://mixkit.co/free-stock-video/stunning-sunset-seen-from-the-sea-4119/' },
+  { id: 'rainy-window', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/rainy-window.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/rainy-window-thumb.webp` },
+  { id: 'misty-lake', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/misty-lake.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/misty-lake-thumb.webp` },
+  { id: 'sunset-coast', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/sunset-coast.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/sunset-coast-thumb.webp` },
+  { id: 'forest-rain', kind: 'video', src: `${BLOB_BASE_URL}/backgrounds/videos/forest-rain.mp4`, preview: `${BLOB_BASE_URL}/backgrounds/posters/forest-rain.jpg`, source: 'https://mixkit.co/free-stock-video/raining-in-a-cloud-forest-full-of-tall-trees-22728/' },
+  { id: 'forest-stream', kind: 'video', src: `${BLOB_BASE_URL}/backgrounds/videos/forest-stream.mp4`, preview: `${BLOB_BASE_URL}/backgrounds/posters/forest-stream.jpg`, source: 'https://mixkit.co/free-stock-video/forest-stream-in-the-sunlight-529/' },
+  { id: 'ocean-sunset', kind: 'video', src: `${BLOB_BASE_URL}/backgrounds/videos/ocean-sunset.mp4`, preview: `${BLOB_BASE_URL}/backgrounds/posters/ocean-sunset.jpg`, source: 'https://mixkit.co/free-stock-video/stunning-sunset-seen-from-the-sea-4119/' },
 ] as const
 
 export const TIMER_FONTS = ['pixel', 'sans', 'serif', 'mono', 'rounded'] as const

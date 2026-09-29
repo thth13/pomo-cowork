@@ -85,6 +85,7 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => {
 
       set({ pendingBackgroundId: backgroundId })
       const image = new Image()
+      image.crossOrigin = 'anonymous'
       let cancelled = false
       const cleanup = () => {
         cancelled = true

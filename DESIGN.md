@@ -314,7 +314,7 @@ The timer's icon-only Appearance button sits at the top beside Settings, with a 
 accessible name and tooltip. On narrow screens the status sits below the icon row.
 It opens a native modal dialog with a compact scenery
 gallery and five digit previews. The default remains Pocket Garden and pixel digits.
-Three generated aesthetic landscapes and three locally hosted Mixkit videos provide
+Three generated aesthetic landscapes and three Vercel Blob-hosted Mixkit videos provide
 optional scenery; `public/backgrounds/README.md` records sources and generation prompts.
 `lib/appearance.ts` owns the catalog; `app/appearance.css` owns its shared presentation.
 Scenery appears on home and the search timer pages. Existing room backgrounds keep

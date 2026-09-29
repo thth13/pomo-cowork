@@ -101,10 +101,11 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
     <>
       <div className="workspace-background" aria-hidden="true">
         {!posterFailed && (
-          // Local, already optimized assets; the fallback must also work before video playback.
+          // Optimized Blob assets; CORS allows contrast sampling through canvas.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             ref={imageRef}
+            crossOrigin="anonymous"
             src={scene.kind === 'video' ? scene.preview : scene.src}
             alt=""
             className="workspace-background-media"
