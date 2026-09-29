@@ -16,7 +16,7 @@ import InitialLoader from '@/components/InitialLoader'
 import FeedbackWidget from '@/components/FeedbackWidget'
 import GtmClient from '@/components/GtmClient'
 import { I18nProvider } from '@/components/I18nProvider'
-import RankUpModal from '@/components/RankUpModal'
+import RankUpToast from '@/components/RankUpToast'
 
 config.autoAddCss = false
 
@@ -103,7 +103,7 @@ export default function RootLayout({
               <AuthProvider>
                 <GtmClient />
                 <InitialLoader />
-                <RankUpModal />
+                <RankUpToast />
                 {children}
                 <div className="hidden sm:block">
                   <FeedbackWidget />

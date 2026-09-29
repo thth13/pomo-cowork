@@ -361,3 +361,12 @@ visible in loading/error states. Profile content starts below it with 32px spaci
 Leaderboard rows include a localized rank name and colored marker based on lifetime XP.
 The table owns horizontal overflow on narrow screens. The profile rank badge links to
 `/ranks`, with a localized tooltip and keyboard focus; no separate guide text is shown.
+
+## Rank notifications
+
+Rank upgrades use NotificationToast's shared `rank-up` variant, mounted globally by
+RankUpToast. The paper card drops into the top-right corner beneath menu clearance,
+with a rank-colored edge and shield-shaped trophy, pixel rank name and Inter details.
+`app/globals.css` owns `.notification-corner` / `.rank-toast-*`, reusing pixel theme
+tokens and `lib/ranks.ts` accent colors. It overlays without shifting or blocking the
+workspace, fits phone safe areas, and respects reduced motion and forced colors.

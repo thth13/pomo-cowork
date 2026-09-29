@@ -1,5 +1,7 @@
 export const ranksCopy = {
   en: {
+    unlocked: 'New rank unlocked!',
+    keepGoing: 'Keep growing, one session at a time.',
     link: 'How ranks work',
     title: 'Every session adds up.',
     eyebrow: 'Ranks & experience',
@@ -25,6 +27,8 @@ export const ranksCopy = {
     note: 'These are cumulative thresholds, not extra XP required after the previous rank.',
   },
   es: {
+    unlocked: '¡Nuevo rango desbloqueado!',
+    keepGoing: 'Sigue creciendo, sesión a sesión.',
     link: 'Cómo funcionan los rangos',
     title: 'Cada sesión cuenta.',
     eyebrow: 'Rangos y experiencia',

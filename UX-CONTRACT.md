@@ -294,3 +294,16 @@ count. `/profile` resolves to `/user/[id]` after authentication; guests can sign
 Shared owners remain Navbar, AuthModal, PaywallModal and the theme tokens. Validation
 for this redesign is source review, targeted ESLint, CSS parsing and static design
 audits; browser layout and runtime flows require the user's own application testing.
+
+## Rank-up feedback
+
+`components/NotificationToast.tsx` owns toast presentation and dismissal; its `rank-up`
+variant occupies the top-right corner. `components/RankUpToast.tsx` listens to the
+existing sessionService `rank-up` event, queues distinct rank increases and suppresses
+repeat ranks for the current account during this mount. Account changes clear the queue.
+The authoritative XP/rank calculation remains the session API and `lib/ranks.ts`.
+Cards dismiss after eight uninterrupted seconds, restarting the timer after hover,
+keyboard focus or a hidden tab. Close and focused Escape dismiss manually; no focus
+is stolen and the workspace remains interactive. A stable polite live region announces
+the achievement. English/Spanish copy and rank names follow I18nProvider. Earned rank
+remains available in the existing progress/profile views after the toast disappears.
