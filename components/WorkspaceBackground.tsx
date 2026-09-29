@@ -7,6 +7,7 @@ import { appearanceCopy } from '@/lib/i18n/appearance'
 import { useI18n } from '@/components/I18nProvider'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
+import { useSceneryContrast } from '@/hooks/useSceneryContrast'
 
 type Scene = Exclude<(typeof BACKGROUNDS)[number], { kind: 'default' }>
 
@@ -15,6 +16,7 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
   const copy = appearanceCopy[language]
   const videoRef = useRef<HTMLVideoElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
+  useSceneryContrast(imageRef, scene.id)
   const videoPaused = useAppearanceStore(state => state.videoPaused)
   const setVideoPaused = useAppearanceStore(state => state.setVideoPaused)
   const setMediaStatus = useAppearanceStore(state => state.setMediaStatus)

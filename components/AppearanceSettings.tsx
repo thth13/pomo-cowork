@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
-import { Check, Film, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
+import { Check, Film, Loader2, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
 import { BACKGROUNDS, PLAY_BACKGROUND_EVENT, TIMER_FONTS } from '@/lib/appearance'
 import { appearanceCopy } from '@/lib/i18n/appearance'
 import { useI18n } from '@/components/I18nProvider'
@@ -22,6 +22,8 @@ export default function AppearanceSettings() {
   const state = useAppearanceStore()
   const reducedMotion = useReducedMotionPreference()
   const selected = BACKGROUNDS.find(background => background.id === state.backgroundId) ?? BACKGROUNDS[0]
+  const mediaStatus = state.pendingBackgroundId ? 'loading' : state.failedBackgroundId ? 'error' : state.mediaStatus
+  const loadingBackgroundId = state.pendingBackgroundId ?? (state.mediaStatus === 'loading' ? state.backgroundId : null)
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -37,7 +39,7 @@ export default function AppearanceSettings() {
   return (
     <>
       <button ref={triggerRef} type="button" className="timer-appearance-trigger" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label={copy.trigger} title={copy.trigger} data-no-translate>
-        <Palette size={17} aria-hidden="true" /><span>{copy.trigger}</span>
+        <Palette size={18} aria-hidden="true" />
       </button>
       {open && (
         <dialog
@@ -67,23 +69,27 @@ export default function AppearanceSettings() {
               <div className="appearance-scenes">
                 {BACKGROUNDS.map(background => (
                   <label key={background.id} className="appearance-choice">
-                    <input type="radio" name={radioName} value={background.id} checked={state.backgroundId === background.id} onChange={() => state.setBackground(background.id)} />
+                    <input type="radio" name={radioName} value={background.id} checked={(state.pendingBackgroundId ?? state.backgroundId) === background.id} aria-busy={loadingBackgroundId === background.id} onChange={() => state.setBackground(background.id)} />
                     <span className="appearance-scene-preview">
                       {background.kind === 'default' ? <span className="appearance-default-preview garden-page"><span aria-hidden="true">25:00</span></span> : (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={background.preview} alt="" width={320} height={180} loading="lazy" />
                       )}
                       {background.kind === 'video' && <span className="appearance-video-badge"><Film size={12} aria-hidden="true" /><span className="sr-only">{copy.videos}</span></span>}
-                      {state.backgroundId === background.id && <span className="appearance-selected"><Check size={13} aria-hidden="true" /><span className="sr-only">{copy.selected}</span></span>}
+                      {background.kind !== 'default' && state.backgroundId === background.id && <span className="appearance-selected"><Check size={13} aria-hidden="true" /><span className="sr-only">{copy.selected}</span></span>}
+                      {loadingBackgroundId === background.id && <span className="appearance-scene-loading"><Loader2 size={24} aria-hidden="true" /><span className="sr-only">{copy.loading}</span></span>}
                     </span>
-                    <span className="appearance-choice-label">{copy.names[background.id]}</span>
+                    <span className="appearance-choice-label">
+                      {copy.names[background.id]}
+                      {background.kind === 'default' && state.backgroundId === background.id && <span className="appearance-selected"><Check size={13} aria-hidden="true" /><span className="sr-only">{copy.selected}</span></span>}
+                    </span>
                   </label>
                 ))}
               </div>
               <div className="appearance-media-feedback" role="status" aria-live="polite">
-                {state.mediaStatus === 'loading' && copy.loading}
-                {state.mediaStatus === 'error' && <><span>{copy.error}</span><button type="button" onClick={state.retryMedia}>{copy.retry}</button></>}
-                {state.mediaStatus === 'blocked' && copy.blocked}
+                {mediaStatus === 'loading' && <span className="sr-only">{copy.loading}</span>}
+                {mediaStatus === 'error' && <><span>{state.failedBackgroundId && `${copy.names[state.failedBackgroundId]}: `}{copy.error}</span><button type="button" onClick={state.retryMedia}>{copy.retry}</button></>}
+                {mediaStatus === 'blocked' && copy.blocked}
               </div>
               {selected.kind === 'video' && (
                 <div className="appearance-video-options">

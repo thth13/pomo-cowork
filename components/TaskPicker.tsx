@@ -119,7 +119,7 @@ export const TaskPicker = memo(function TaskPicker({
           aria-expanded={isOpen && !isDisabled}
           aria-controls={`${pickerId}-options`}
           aria-label={`${t.timer.currentTask}: ${selectedTask ? selectedTask.title : t.timer.selectTask}`}
-          className={`${variant === 'mini-timer' ? 'mini-timer-task-trigger ' : ''}flex min-h-10 w-full items-center justify-center gap-2 rounded-sm px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:underline focus-visible:underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white`}
+          className={`${variant === 'mini-timer' ? 'mini-timer-task-trigger ' : 'scenery-task-trigger '}flex min-h-10 w-full items-center justify-center gap-2 rounded-sm px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus:outline-none focus-visible:underline focus-visible:underline-offset-4 disabled:cursor-not-allowed disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white`}
         >
           {variant !== 'mini-timer' && <span className="shrink-0 text-xs text-gray-500 dark:text-slate-400">{t.timer.currentTask}:</span>}
           <span className="min-w-0 truncate" title={selectedTask?.title}>

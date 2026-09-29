@@ -24,7 +24,7 @@
 | Companion feedback | PocketGarden | Local, stable role=status region; no overlay or focus stealing |
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
-| Timer appearance | AppearanceSettings, WorkspaceBackground, useAppearanceStore | Native modal and radio choices; immediate local persistence; shared timer digit style and optional image/video scenery |
+| Timer appearance | AppearanceSettings, WorkspaceBackground, useAppearanceStore | Native modal and radio choices; images apply and persist after loading; shared timer digit style and optional image/video scenery |
 | Locale | I18nProvider | English and Spanish, including new companion copy |
 | Homepage navigation | Navbar compact variant | Shared navigation disclosure; outside click and Escape dismiss; Escape restores trigger focus; guests retain navigation and login |
 | Workspace dock tooltips | HomeWorkspace / app/globals.css | Localized panel labels appear to the right on pointer hover or keyboard focus, remain hoverable, and dismiss on Escape, blur, pointer exit or activation; mobile menu keeps visible labels |
@@ -245,7 +245,11 @@ Only static review, targeted lint and design audits are run under the user's ins
 
 AppearanceSettings follows the native modal pattern of GuestSignupModal: focus is
 contained, the page is inert, Escape/close/Done dismiss, and focus returns to its
-trigger. Changes apply immediately; the footer explicitly says they save automatically.
+trigger. Image choices load and decode the full-size asset before applying and saving.
+The pending gallery tile shows a spinner while the previous background stays visible.
+Only the latest choice may apply; reset and cross-tab restore cancel pending choices.
+Failures preserve the previous background and offer a localized retry after a bounded
+20-second wait. Other appearance changes apply immediately; the footer says they save automatically.
 Reset restores the default background, pixel face and video playback preference.
 Native radio groups own arrow-key choice; there is no authored select popup.
 

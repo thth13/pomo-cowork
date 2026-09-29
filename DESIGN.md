@@ -301,7 +301,9 @@ English/Spanish copy belongs to `lib/i18n/statistics.ts`; the DOM translator is 
 
 ## Personal timer appearance
 
-The timer's Appearance button opens a native modal dialog with a compact scenery
+The timer's icon-only Appearance button sits at the top beside Settings, with a localized
+accessible name and tooltip. On narrow screens the status sits below the icon row.
+It opens a native modal dialog with a compact scenery
 gallery and five digit previews. The default remains Pocket Garden and pixel digits.
 Three generated aesthetic landscapes and three locally hosted Mixkit videos provide
 optional scenery; `public/backgrounds/README.md` records sources and generation prompts.
@@ -309,8 +311,20 @@ optional scenery; `public/backgrounds/README.md` records sources and generation 
 Scenery appears on home and the search timer pages. Existing room backgrounds keep
 their own owner. Personal choice is shared per browser, independent of the account.
 
-Chosen scenery fills the viewport beneath the page. Theme-derived, nearly opaque
-surfaces behind the timer, online rail and editorial text preserve reading contrast.
+Chosen scenery fills the viewport beneath the page. At the user's request, surfaces
+behind the timer, online rail and editorial text use a barely tinted glass treatment:
+12% page color with 6px backdrop blur; timer and rail borders use 25% line color.
+`app/appearance.css` derives these from existing theme tokens in both themes.
+The left workspace dock shares the same glass tint and blur without its hard shadow.
+`useSceneryContrast` samples the image crop beneath each glass surface and chooses
+white or near-black (`#101914`) foregrounds using relative luminance, accounting for
+the wash and tint. Video uses its poster for stable color rather than changing per frame.
+`app/appearance.css` owns `--scenery-ink` and `--scenery-shadow`; a subtle contrasting
+text shadow helps over image details. These roles affect exposed glass text/icons only;
+opaque controls, tooltips and dialogs retain theme colors. Sampling updates after image
+load, viewport/layout changes, scrolling and theme changes. Forced colors restores
+opaque system surfaces and CanvasText without blur or text shadow. Contrast over each
+scene and moving video still requires manual visual verification.
 The gallery uses native radio inputs, visible selection checks and keyboard focus;
 it scrolls within a bounded dialog while the header and Done action remain reachable.
 English/Spanish text follows I18nProvider via `lib/i18n/appearance.ts`.
