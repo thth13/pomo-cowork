@@ -376,7 +376,7 @@ English/Spanish text follows I18nProvider via `lib/i18n/appearance.ts`.
 `--timer-face` in `app/appearance.css`, with local fallbacks. Only timer numerals change,
 including the native mini window; existing size/line-height remains stable. UI and
 body typography retain their previous owners. No extra font request is introduced.
-Video is muted and loops, with a persistent pause control. Reduced-motion users get
+Video is muted and loops, with playback controls in appearance settings only. Reduced-motion users get
 the poster without a video request; hidden tabs pause playback. Forced colors hides
 scenery and retains system surfaces. No new palette or global theme change is needed.
 

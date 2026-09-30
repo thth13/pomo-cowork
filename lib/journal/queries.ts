@@ -1,7 +1,8 @@
 import 'server-only'
+import { cache } from 'react'
 import { prisma } from '@/lib/db'
 import { publicAuthor, publicPost, pageNumber } from './server'
-import { focusStats, focusDays, focusStreak } from './stats'
+import { focusStats, profileFocusStatistics, projectFocusStats } from './stats'
 export const postInclude = ({
   author: {
     select: publicAuthor
@@ -22,7 +23,7 @@ export const postInclude = ({
     }
   }
 } as const)
-export async function profileByUsername(username: string) {
+export const profileByUsername = cache(async (username: string) => {
   return prisma.user.findFirst({
     where: {
       username: {
@@ -49,11 +50,11 @@ export async function profileByUsername(username: string) {
       }
     }
   })
-}
+})
 export async function profileData(username: string, tab: string, page: number) {
   const user = await profileByUsername(username)
   if (!user) return null
-  const [stats, days, projects, projectCount, pinned, posts, activity, streak] = await Promise.all([focusStats(user.id), focusDays(user.id), prisma.project.findMany({
+  const [focus, projects, projectCount, pinned, posts, activity] = await Promise.all([profileFocusStatistics(user.id), prisma.project.findMany({
     where: {
       userId: user.id,
       visibility: 'PUBLIC'
@@ -140,24 +141,29 @@ export async function profileData(username: string, tab: string, page: number) {
     }],
     skip: (page - 1) * 20,
     take: 21
-  }) : [], focusStreak(user.id)])
-  const enriched = await Promise.all(projects.slice(0, 12).map(async project => ({
+  }) : []])
+  const visibleProjects = projects.slice(0, 12)
+  const projectStats = await projectFocusStats(user.id, [
+    ...visibleProjects.map(project => project.id),
+    ...(pinned ? [pinned.id] : []),
+  ])
+  const enriched = visibleProjects.map(project => ({
     ...project,
-    stats: await focusStats(user.id, project.id)
-  })))
+    stats: projectStats.get(project.id) ?? { seconds: 0, sessions: 0 }
+  }))
   return {
     user,
-    stats,
-    days,
+    stats: focus.stats,
+    days: focus.days,
     projects: enriched,
     projectCount,
     pinned: pinned ? {
       ...pinned,
-      stats: await focusStats(user.id, pinned.id)
+      stats: projectStats.get(pinned.id) ?? { seconds: 0, sessions: 0 }
     } : null,
     posts: posts.slice(0, 12),
     activity: activity.slice(0, 20),
-    streak,
+    streak: focus.streak,
     hasMore: tab === 'updates' ? posts.length > 12 : tab === 'activity' ? activity.length > 20 : projects.length > 12
   }
 }

@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { profileData, profileByUsername, pageNumber } from '@/lib/journal/queries'
 import { journalMetadata } from '@/lib/journal/metadata'
+import { usernameFromHandle } from '@/lib/journal/handles'
 import { profileHref, Project, Post, duration } from '@/lib/journal/types'
 import { json } from '@/lib/journal/server'
 import ProfileAchievements from '@/components/achievements/ProfileAchievements'
@@ -23,12 +24,13 @@ type Props = {
 export async function generateMetadata({
   params
 }: Props) {
-  if (!params.handle.startsWith('@')) return {
+  const username = usernameFromHandle(params.handle)
+  if (!username) return {
     robots: {
       index: false
     }
   }
-  const user = await profileByUsername(params.handle.slice(1))
+  const user = await profileByUsername(username)
   if (!user) return {
     robots: {
       index: false
@@ -41,10 +43,11 @@ export default async function ProfilePage({
   params,
   searchParams
 }: Props) {
-  if (!params.handle.startsWith('@')) notFound()
+  const username = usernameFromHandle(params.handle)
+  if (!username) notFound()
   const tab = ['projects', 'updates', 'activity', 'achievements'].includes(searchParams.tab || '') ? searchParams.tab! : 'projects',
     page = pageNumber(searchParams.page)
-  const data = await profileData(params.handle.slice(1), tab, page)
+  const data = await profileData(username, tab, page)
   if (!data) notFound()
   const {
       user,

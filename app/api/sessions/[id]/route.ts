@@ -279,7 +279,7 @@ export async function PUT(
           }),
         ])
 
-        if (status === SessionStatus.COMPLETED && earnsExperience && !user.isAnonymous) {
+        if ((status === SessionStatus.COMPLETED || isTrackingStop) && extendsStreak && !user.isAnonymous) {
           await recordFocusAchievements(tx, effectiveUserId)
         }
 

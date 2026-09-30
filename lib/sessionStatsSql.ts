@@ -10,9 +10,19 @@ export const getEffectiveSessionMinutesSql = (tableAlias: string) => {
   const endedAt = sessionColumn(tableAlias, 'endedAt')
   const completedAt = sessionColumn(tableAlias, 'completedAt')
   const pausedAt = sessionColumn(tableAlias, 'pausedAt')
+  const type = sessionColumn(tableAlias, 'type')
+  const status = sessionColumn(tableAlias, 'status')
 
   return Prisma.sql`
     CASE
+      -- Stopped trackers store elapsed duration. Legacy rows also retain the
+      -- remaining seconds of the original 24-hour countdown (see getEffectiveMinutes).
+      WHEN ${type} = 'TIME_TRACKING' AND ${status} = 'CANCELLED'
+        AND (${remainingSeconds} = 0 OR (
+          ${remainingSeconds} > 0
+          AND ABS(${duration} * 60 + ${remainingSeconds} - 86400) <= 30
+        ))
+      THEN GREATEST(0, ${duration})
       WHEN ${remainingSeconds} IS NOT NULL
         AND ${remainingSeconds} >= 0
         AND ${remainingSeconds} <= ${duration} * 60

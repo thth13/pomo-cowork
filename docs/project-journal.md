@@ -40,9 +40,19 @@ slug changes its public URL; no alias system is introduced in this MVP.
 ## Data and privacy contract
 
 - Reuse User and PomodoroSession. No parallel authentication or focus counters.
-- Only `COMPLETED` `WORK`/`TIME_TRACKING` sessions count; use the existing effective
-  minutes expression and session-end attribution. Cancelled, active, paused, and break
-  sessions do not count. Stopped trackers stored as CANCELLED are excluded deliberately.
+- Count `COMPLETED` `WORK`/`TIME_TRACKING` sessions and stopped `TIME_TRACKING`
+  sessions stored as `CANCELLED` with an `endedAt` timestamp. Use effective minutes
+  (including legacy tracker elapsed-duration records) and session-end attribution.
+  Zero-time entries, cancelled WORK sessions, active/paused sessions, and breaks do
+  not count for project totals and new post snapshots; existing post snapshots
+  remain historical.
+- Public profile totals, heatmap, and streak use `buildStatistics`, the same
+  calculation as `/api/statistics`: both COMPLETED and CANCELLED WORK/TIME_TRACKING
+  entries contribute positive effective minutes, including manually stopped Pomodoros.
+  Future-dated entries are excluded. Public calendar days use UTC; the private
+  dashboard uses the viewer's timezone, so daily grouping/streaks can differ near
+  midnight, while lifetime focus minutes use identical rules. Only aggregates are
+  exposed; task names and private project details are not loaded for this calculation.
 - Lifetime statistics and heatmap include all completed focus time as an aggregate;
   private project identities and session task details are not published in the journal.
 - Public project lookup requires PUBLIC. Public updates require PUBLIC, publishedAt,
@@ -68,7 +78,7 @@ slug changes its public URL; no alias system is introduced in this MVP.
   timestamp. Weekly Wrapped is a minimal new summary, not an automatic publication.
 - Activity records project creation/completion, published milestones, and deduplicated
   significant focus/session/streak thresholds. No event is created per ordinary session.
-  Threshold detection begins on the first completed focus session after deployment;
+  Threshold detection runs on focus completion and nonzero tracker stops;
   historical crossing dates are not invented or backfilled.
 - Follow and Support use unique composite constraints and idempotent PUT/DELETE.
   Project/post creation has a client-generated request id, reused for uncertain retries.
@@ -85,8 +95,10 @@ an incognito browser:
    profile fields; upload an avatar. Visit the canonical public profile signed out.
 2. Create public and private projects; pin one, then another; confirm only one is current.
    Edit dates/status/links; reject invalid URLs and dates. Paginate past 20 projects.
-3. Select a project, finish a work timer, and inspect project/profile totals. A short
-   break, reset, unfinished timer, and cancelled tracker must not increase them.
+3. Select a project, finish a work timer and stop a Time Track session (including after
+   a pause), and inspect project/profile totals, heatmap, streak, and new post stats.
+   Both focus modes count. Breaks, cancelled WORK, unfinished timers, and zero-time
+   tracker stops must not increase them; legacy stopped trackers count elapsed time.
    Restore a paused session and confirm its original association survives.
 4. Publish an update, custom/preset milestone, and weekly update. Edit titles without
    changing post URLs. Check Markdown, images, snapshot dates, and focus-stat visibility.

@@ -4,6 +4,7 @@ import { prisma } from '@/lib/db'
 import { publicPost, json } from '@/lib/journal/server'
 import { postInclude } from '@/lib/journal/queries'
 import { journalMetadata } from '@/lib/journal/metadata'
+import { usernameFromHandle } from '@/lib/journal/handles'
 import { Post, profileHref } from '@/lib/journal/types'
 import { UpdateCard } from '@/components/journal/Cards'
 export const dynamic = 'force-dynamic'
@@ -14,13 +15,14 @@ type Props = {
   };
 };
 async function load(params: Props['params']) {
-  if (!params.handle.startsWith('@')) return null
+  const username = usernameFromHandle(params.handle)
+  if (!username) return null
   return prisma.journalPost.findFirst({
     where: {
       slug: params.slug,
       author: {
         username: {
-          equals: params.handle.slice(1),
+          equals: username,
           mode: 'insensitive'
         },
         isAnonymous: false

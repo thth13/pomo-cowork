@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { publicProjectData, pageNumber } from '@/lib/journal/queries'
 import { journalMetadata } from '@/lib/journal/metadata'
+import { usernameFromHandle } from '@/lib/journal/handles'
 import { profileHref, Post } from '@/lib/journal/types'
 import { json } from '@/lib/journal/server'
 import { FocusStats, UpdateCard } from '@/components/journal/Cards'
@@ -22,7 +23,8 @@ type Props = {
 export async function generateMetadata({
   params
 }: Props) {
-  const data = params.handle.startsWith('@') ? await publicProjectData(params.handle.slice(1), params.slug) : null
+  const username = usernameFromHandle(params.handle)
+  const data = username ? await publicProjectData(username, params.slug) : null
   return data ? journalMetadata(`${data.project.name} by ${data.user.displayName || data.user.username} — Project Journal`, data.project.description || `Follow the focused work behind ${data.project.name}.`, `${profileHref(data.user.username)}/projects/${data.project.slug}`, 'website') : {
     robots: {
       index: false
@@ -33,9 +35,10 @@ export default async function ProjectPage({
   params,
   searchParams
 }: Props) {
-  if (!params.handle.startsWith('@')) notFound()
+  const username = usernameFromHandle(params.handle)
+  if (!username) notFound()
   const page = pageNumber(searchParams.page),
-    data = await publicProjectData(params.handle.slice(1), params.slug, page)
+    data = await publicProjectData(username, params.slug, page)
   if (!data) notFound()
   const {
       user,

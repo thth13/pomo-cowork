@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useId, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { profileHref } from '@/lib/journal/types'
 import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
@@ -350,7 +349,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             >
               {isAuthenticated && user ? (
                 <Link
-                  href={profileHref(user.username)}
+                  href={`/user/${encodeURIComponent(user.id)}`}
                   className="workspace-account-trigger"
                   aria-label={`${t.nav.profile}: ${user.username}`}
                   aria-describedby={isAccountPreviewOpen ? accountPreviewId : undefined}
@@ -535,7 +534,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                       </div>
                       <div className="py-2">
                         <Link
-                          href={profileHref(user.username)}
+                          href={`/user/${encodeURIComponent(user.id)}`}
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
                         >
@@ -728,10 +727,10 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             <div className="workspace-menu-settings">
               {isAuthenticated && user && <>
               <Link
-                href={profileHref(user.username)}
+                href={`/user/${encodeURIComponent(user.id)}`}
                 onClick={handleMobileLinkClick}
                 className="workspace-menu-item"
-                aria-current={pathname === profileHref(user.username) ? 'page' : undefined}
+                aria-current={pathname === `/user/${encodeURIComponent(user.id)}` ? 'page' : undefined}
               >
                 <User size={16} aria-hidden="true" />
                 <span className="workspace-menu-label">{t.nav.profile}</span>

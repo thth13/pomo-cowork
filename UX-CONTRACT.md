@@ -264,7 +264,7 @@ No account, database, room-membership or billing change is involved.
 WorkspaceBackground is mounted by the home and search timer shells. Only the chosen
 full-size scene loads; the settings gallery uses still thumbnails, never preview videos.
 Videos loop muted, pause with document visibility, and use a static poster with reduced
-motion. Playback remains explicitly pausable outside the dialog. Media errors and
+motion. Playback controls are available in the appearance dialog only; no playback button overlays the workspace. Media errors and
 autoplay rejection have localized feedback and retry; a 20-second loading timeout
 prevents indefinite pending feedback. Posters/page colors remain readable fallbacks.
 Source links lead to the corresponding Mixkit item. Asset provenance lives in

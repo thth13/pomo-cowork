@@ -2,18 +2,60 @@ import 'server-only'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { getEffectiveSessionMinutesSql } from '@/lib/sessionStatsSql'
+import { buildStatistics } from '@/lib/statistics'
 export type FocusStats = {
   seconds: number;
   sessions: number;
 };
+export async function profileFocusStatistics(userId: string) {
+  const sessions = await prisma.pomodoroSession.findMany({
+    where: {
+      userId,
+      status: { in: ['COMPLETED', 'CANCELLED'] },
+      type: { in: ['WORK', 'TIME_TRACKING'] },
+    },
+    select: {
+      id: true,
+      type: true,
+      status: true,
+      duration: true,
+      startedAt: true,
+      endedAt: true,
+      completedAt: true,
+      pausedAt: true,
+      remainingSeconds: true,
+    },
+    orderBy: { startedAt: 'asc' },
+  })
+  // Use the dashboard's calculation, but expose only aggregates. Public calendar
+  // days remain UTC; task names and private project details are not loaded.
+  const statistics = buildStatistics(sessions.map(session => ({ ...session, task: '' })), 0, 'UTC')
+  return {
+    stats: {
+      seconds: statistics.summary.totalMinutes * 60,
+      sessions: statistics.summary.totalSessions,
+    },
+    days: (statistics.details?.days ?? []).map(day => ({
+      date: day.date,
+      seconds: day.minutes * 60,
+      sessions: day.sessions,
+    })),
+    streak: statistics.summary.currentStreak,
+  }
+}
 export function weekStart(now = new Date()) {
   const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
   start.setUTCDate(start.getUTCDate() - (start.getUTCDay() + 6) % 7)
   return start
 }
 function scope(userId: string, projectId?: string, from?: Date, to?: Date) {
-  return Prisma.sql`"s"."userId" = ${userId} AND "s"."status" = 'COMPLETED'
+  return Prisma.sql`"s"."userId" = ${userId}
+    AND ("s"."status" = 'COMPLETED' OR (
+      "s"."type" = 'TIME_TRACKING' AND "s"."status" = 'CANCELLED'
+      AND "s"."endedAt" IS NOT NULL
+    ))
     AND "s"."type" IN ('WORK', 'TIME_TRACKING')
+    AND ${getEffectiveSessionMinutesSql('s')} > 0
     ${projectId ? Prisma.sql`AND "s"."projectId" = ${projectId}` : Prisma.empty}
     ${from ? Prisma.sql`AND COALESCE("s"."completedAt", "s"."endedAt", "s"."startedAt") >= ${from}` : Prisma.empty}
     ${to ? Prisma.sql`AND COALESCE("s"."completedAt", "s"."endedAt", "s"."startedAt") <= ${to}` : Prisma.empty}`
@@ -23,6 +65,19 @@ export async function focusStats(userId: string, projectId?: string, from?: Date
     COALESCE(SUM(${getEffectiveSessionMinutesSql('s')} * 60), 0)::float8 AS seconds,
     COUNT(*)::int AS sessions FROM "pomodoro_sessions" "s" WHERE ${scope(userId, projectId, from, to)}`)
   return result
+}
+export async function projectFocusStats(userId: string, projectIds: string[]) {
+  const ids = [...new Set(projectIds)]
+  if (!ids.length) return new Map<string, FocusStats>()
+  const rows = await prisma.$queryRaw<(FocusStats & { projectId: string })[]>(Prisma.sql`
+    SELECT "s"."projectId",
+      COALESCE(SUM(${getEffectiveSessionMinutesSql('s')} * 60), 0)::float8 AS seconds,
+      COUNT(*)::int AS sessions
+    FROM "pomodoro_sessions" "s"
+    WHERE ${scope(userId)} AND "s"."projectId" IN (${Prisma.join(ids)})
+    GROUP BY "s"."projectId"
+  `)
+  return new Map(rows.map(({ projectId, seconds, sessions }) => [projectId, { seconds, sessions }]))
 }
 export async function focusDays(userId: string) {
   const today = new Date()

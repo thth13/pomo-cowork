@@ -40,9 +40,6 @@
 .seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer) {
   padding-inline: 24px;
 }
-.background-playback { position: fixed; z-index: 15; bottom: max(18px, env(safe-area-inset-bottom)); left: max(20px, env(safe-area-inset-left)); display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 12px; background: var(--pixel-paper); color: var(--pixel-ink); border: 1px solid var(--pixel-line); border-radius: 3px; font-size: 12px; }
-.background-playback:hover { background: var(--pixel-screen); }
-.background-playback:active { background: var(--pixel-shadow); }
 
 /* All digit faces share the existing line box, so changing faces cannot move controls. */
 [data-timer-font="pixel"] { --timer-face: var(--font-pixel); }
@@ -130,7 +127,6 @@
 .appearance-done:active { transform: translateY(1px); }
 
 @media (max-width: 719px) {
-  .background-playback { bottom: max(12px, env(safe-area-inset-bottom)); left: max(12px, env(safe-area-inset-left)); }
 }
 @media (max-width: 479px) {
   .appearance-header, .appearance-body, .appearance-footer { padding-inline: 16px; }
@@ -146,7 +142,7 @@
 }
 @media (forced-colors: active) {
   [data-scenery-text] { --scenery-ink: CanvasText; --scenery-shadow: none; }
-  .workspace-background, .background-playback { display: none; }
+  .workspace-background { display: none; }
   .pomodoro-home:has(.workspace-background) .focus-station,
   .pomodoro-home:has(.workspace-background) .working-sidebar,
   .pomodoro-home:has(.workspace-background) .workspace-dock,

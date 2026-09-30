@@ -18,8 +18,8 @@ export default function ProfilePage() {
   const [authOpen, setAuthOpen] = useState(false)
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user?.id) router.replace(`/@${encodeURIComponent(user.username)}`)
-  }, [isLoading, isAuthenticated, user?.id, user?.username, router])
+    if (!isLoading && isAuthenticated && user?.id) router.replace(`/user/${encodeURIComponent(user.id)}`)
+  }, [isLoading, isAuthenticated, user?.id, router])
 
   return <div className="community-page garden-page" lang={language} data-no-translate>
     <Navbar compact />

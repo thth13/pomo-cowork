@@ -1,10 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Pause, Play } from 'lucide-react'
 import { BACKGROUNDS, PLAY_BACKGROUND_EVENT } from '@/lib/appearance'
-import { appearanceCopy } from '@/lib/i18n/appearance'
-import { useI18n } from '@/components/I18nProvider'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
 import { useSceneryContrast } from '@/hooks/useSceneryContrast'
@@ -12,8 +9,6 @@ import { useSceneryContrast } from '@/hooks/useSceneryContrast'
 type Scene = Exclude<(typeof BACKGROUNDS)[number], { kind: 'default' }>
 
 function BackgroundMedia({ scene }: { scene: Scene }) {
-  const { language } = useI18n()
-  const copy = appearanceCopy[language]
   const videoRef = useRef<HTMLVideoElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
   useSceneryContrast(imageRef, scene.id)
@@ -23,8 +18,6 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
   const reducedMotion = useReducedMotionPreference()
   const [visible, setVisible] = useState(false)
   const [failed, setFailed] = useState(false)
-  const [blocked, setBlocked] = useState(false)
-  const [playing, setPlaying] = useState(false)
   const [posterFailed, setPosterFailed] = useState(false)
   const shouldPlay = scene.kind === 'video' && !videoPaused && !reducedMotion && visible && !failed
 
@@ -65,7 +58,6 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
     if (shouldPlay) {
       video.play().catch(error => {
         if (cancelled || error?.name === 'AbortError') return
-        setBlocked(true)
         setMediaStatus(scene.id, 'blocked')
       })
     } else {
@@ -80,13 +72,11 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
   const retryPlayback = useCallback(() => {
     if (reducedMotion || failed) return
     setVideoPaused(false)
-    setBlocked(false)
     const video = videoRef.current
     if (!video) return
     // Call play directly during the gesture for browsers that block autoplay.
     video.play().catch(() => {
       if (!video.isConnected) return
-      setBlocked(true)
       setMediaStatus(scene.id, 'blocked')
     })
   }, [reducedMotion, failed, setVideoPaused, setMediaStatus, scene.id])
@@ -98,66 +88,47 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
   }, [retryPlayback])
 
   return (
-    <>
-      <div className="workspace-background" aria-hidden="true">
-        {!posterFailed && (
-          // Optimized Blob assets; CORS allows contrast sampling through canvas.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            ref={imageRef}
-            crossOrigin="anonymous"
-            src={scene.kind === 'video' ? scene.preview : scene.src}
-            alt=""
-            className="workspace-background-media"
-            onLoad={() => { if (scene.kind === 'image') setMediaStatus(scene.id, 'ready') }}
-            onError={() => {
-              setPosterFailed(true)
-              if (scene.kind === 'image' || !shouldPlay) setMediaStatus(scene.id, 'error')
-            }}
-          />
-        )}
-        {scene.kind === 'video' && !failed && !reducedMotion && (
-          <video
-            ref={videoRef}
-            src={scene.src}
-            poster={posterFailed ? undefined : scene.preview}
-            className="workspace-background-media"
-            muted
-            loop
-            playsInline
-            preload={shouldPlay ? 'auto' : 'none'}
-            tabIndex={-1}
-            disablePictureInPicture
-            disableRemotePlayback
-            onPlaying={() => {
-              setPlaying(true)
-              setBlocked(false)
-              setMediaStatus(scene.id, 'ready')
-            }}
-            onPause={() => setPlaying(false)}
-            onError={() => {
-              setFailed(true)
-              setPlaying(false)
-              setMediaStatus(scene.id, 'error')
-            }}
-          />
-        )}
-        <div className="workspace-background-wash" />
-      </div>
-      {scene.kind === 'video' && !reducedMotion && !failed && (
-        <button
-          type="button"
-          className="background-playback"
-          onClick={playing && !blocked ? () => setVideoPaused(true) : retryPlayback}
-          aria-label={playing && !blocked ? copy.pause : copy.play}
-          title={playing && !blocked ? copy.pause : copy.play}
-          data-no-translate
-        >
-          {playing && !blocked ? <Pause size={15} aria-hidden="true" /> : <Play size={15} aria-hidden="true" />}
-          <span>{playing && !blocked ? copy.pause : copy.play}</span>
-        </button>
+    <div className="workspace-background" aria-hidden="true">
+      {!posterFailed && (
+        // Optimized Blob assets; CORS allows contrast sampling through canvas.
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          ref={imageRef}
+          crossOrigin="anonymous"
+          src={scene.kind === 'video' ? scene.preview : scene.src}
+          alt=""
+          className="workspace-background-media"
+          onLoad={() => { if (scene.kind === 'image') setMediaStatus(scene.id, 'ready') }}
+          onError={() => {
+            setPosterFailed(true)
+            if (scene.kind === 'image' || !shouldPlay) setMediaStatus(scene.id, 'error')
+          }}
+        />
       )}
-    </>
+      {scene.kind === 'video' && !failed && !reducedMotion && (
+        <video
+          ref={videoRef}
+          src={scene.src}
+          poster={posterFailed ? undefined : scene.preview}
+          className="workspace-background-media"
+          muted
+          loop
+          playsInline
+          preload={shouldPlay ? 'auto' : 'none'}
+          tabIndex={-1}
+          disablePictureInPicture
+          disableRemotePlayback
+          onPlaying={() => {
+            setMediaStatus(scene.id, 'ready')
+          }}
+          onError={() => {
+            setFailed(true)
+            setMediaStatus(scene.id, 'error')
+          }}
+        />
+      )}
+      <div className="workspace-background-wash" />
+    </div>
   )
 }
 
