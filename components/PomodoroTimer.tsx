@@ -1366,7 +1366,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         sessionType={activeSessionType}
         onSessionTypeChange={handleSessionTypeChange}
       >
-        <ProjectPicker />
+        {/* <ProjectPicker /> */}
         <TaskPicker
           sessionType={activeSessionType}
           isDisabled={isTaskPickerDisabled}
