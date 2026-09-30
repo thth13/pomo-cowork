@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
+import { recordLeaderboardRanks } from '@/lib/achievements/leaderboard'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { getEffectiveSessionMinutesSql } from '@/lib/sessionStatsSql'
 
@@ -212,6 +213,18 @@ export async function GET(request: NextRequest) {
       ...user,
       rank: index + 1
     }))
+
+    // Persist actually observed weekly positions, separately from final winners.
+    if (period === 'week' && offset === 0) {
+      try {
+        await prisma.$transaction(async tx => {
+          await tx.$queryRaw`SELECT 1::int FROM pg_advisory_xact_lock(hashtext('achievement-leaderboard'))`
+          await recordLeaderboardRanks(tx, usersWithStats)
+        }, { timeout: 30000 })
+      } catch (error) {
+        console.error('Unable to record leaderboard achievements:', error)
+      }
+    }
 
     // Топ 10 пользователей
     const topUsers = leaderboard.slice(0, 10)

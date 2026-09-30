@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Highcharts from 'highcharts'
 import CommunityDialog from '@/components/CommunityDialog'
+import ProfileAchievements from '@/components/achievements/ProfileAchievements'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
 import { ranksCopy } from '@/lib/i18n/ranks'
@@ -554,6 +555,8 @@ export default function UserProfilePage() {
           <div className="community-metric"><span><Calendar size={14} aria-hidden="true" />{copy.streak}</span><strong>{(userStats.currentStreak || 0).toLocaleString(locale)}</strong></div>
           <div className="community-metric"><span><TrendingUp size={14} aria-hidden="true" />{copy.perDay}</span><strong>{avgPomodorosDisplay}</strong></div>
         </section> : <p className="community-error" role="status">{copy.statsUnavailable}</p>}
+
+        <ProfileAchievements userId={profile.user.id} />
 
         <div className="profile-columns">
           <div className="community-stack">

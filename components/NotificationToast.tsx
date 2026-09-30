@@ -17,6 +17,7 @@ interface NotificationToastProps {
   description?: string
   icon?: ReactNode
   accent?: string
+  action?: ReactNode
 }
 
 export default function NotificationToast({ 
@@ -31,6 +32,7 @@ export default function NotificationToast({
   description,
   icon,
   accent,
+  action,
 }: NotificationToastProps) {
   const { t } = useI18n()
   const reducedMotion = useReducedMotion()
@@ -101,6 +103,7 @@ export default function NotificationToast({
                 <p className="rank-toast-eyebrow">{title}</p>
                 <p className="rank-toast-name">{message}</p>
                 <p className="rank-toast-description">{description}</p>
+                {action && <div className="mt-2 text-xs underline underline-offset-4">{action}</div>}
               </div>
               <button type="button" className="rank-toast-close" onClick={onClose} aria-label={t.common.close}>
                 <X size={16} aria-hidden="true" />
