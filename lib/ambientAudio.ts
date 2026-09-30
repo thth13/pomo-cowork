@@ -49,9 +49,9 @@ export class AmbientAudio {
       context.onstatechange = () => {
         if (this.disposed || context.state === 'running') return
         // OS/browser interruptions leave the saved mix available to resume explicitly.
-        for (const [id, track] of this.tracks) {
+        this.tracks.forEach((track, id) => {
           if (track.source) this.stop(id)
-        }
+        })
       }
     }
     return this.context
@@ -139,20 +139,20 @@ export class AmbientAudio {
   updateVolumes() {
     const context = this.context
     if (!context || this.disposed) return
-    for (const [id, track] of this.tracks) {
-      if (!track.gain) continue
+    this.tracks.forEach((track, id) => {
+      if (!track.gain) return
       const gain = track.gain.gain
       gain.cancelScheduledValues(context.currentTime)
       gain.setTargetAtTime(this.volume(id), context.currentTime, 0.025)
-    }
+    })
   }
 
   dispose() {
     this.disposed = true
-    for (const [id, track] of this.tracks) {
+    this.tracks.forEach((track, id) => {
       this.stop(id)
       track.request?.abort()
-    }
+    })
     this.tracks.clear()
     if (this.context) {
       this.context.onstatechange = null
