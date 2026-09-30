@@ -67,7 +67,7 @@ export async function focusStats(userId: string, projectId?: string, from?: Date
   return result
 }
 export async function projectFocusStats(userId: string, projectIds: string[]) {
-  const ids = [...new Set(projectIds)]
+  const ids = Array.from(new Set(projectIds))
   if (!ids.length) return new Map<string, FocusStats>()
   const rows = await prisma.$queryRaw<(FocusStats & { projectId: string })[]>(Prisma.sql`
     SELECT "s"."projectId",
