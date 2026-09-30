@@ -5,7 +5,7 @@ import { buildAchievementStatistics, type AchievementEvent } from './engine'
 
 type DB = Prisma.TransactionClient
 interface State { timezone: string; version: number; evaluatedVersion: number; metrics: AchievementMetrics; evaluatedAt: Date | null }
-interface Unlock { achievementId: string; unlockedAt: Date; featuredOrder: number | null }
+interface Unlock { achievementId: string; unlockedAt: Date }
 export async function awardAchievements(db: DB, userId: string, metrics: AchievementMetrics, metadata: Record<string, string> = {}) {
   const earned = ENABLED_ACHIEVEMENTS.filter(d => isEarned(d, metrics))
   if (!earned.length) return
@@ -57,7 +57,7 @@ export async function evaluateAchievements(userId: string, timezone?: string, fo
 
 export async function getAchievementProfile(userId: string, owner: boolean): Promise<AchievementProfile> {
   const [unlocks, states, population] = await Promise.all([
-    prisma.$queryRaw<Unlock[]>`SELECT "achievementId", "unlockedAt", "featuredOrder" FROM "user_achievements" WHERE "userId" = ${userId}`,
+    prisma.$queryRaw<Unlock[]>`SELECT "achievementId", "unlockedAt" FROM "user_achievements" WHERE "userId" = ${userId}`,
     prisma.$queryRaw<State[]>`SELECT * FROM "achievement_state" WHERE "userId" = ${userId}`,
     prisma.$queryRaw<{ achievementId: string; percentage: number }[]>`
       SELECT "achievementId", ROUND(100.0 * "unlockedCount" / NULLIF("eligibleCount", 0), 1)::float AS percentage
@@ -79,7 +79,7 @@ export async function getAchievementProfile(userId: string, owner: boolean): Pro
         secret: !!d.secret, threshold: hidden ? null : d.threshold, unit: hidden ? 'count' : d.unit,
         // Private task/project totals and locked progress never leave owner APIs.
         progress: !owner || d.secret ? null : (state?.metrics[d.metric] ?? 0),
-        unlockedAt: unlock?.unlockedAt.toISOString() ?? null, featuredOrder: unlock?.featuredOrder ?? null,
+        unlockedAt: unlock?.unlockedAt.toISOString() ?? null,
         percentage: hidden ? null : population.find(p => p.achievementId === d.id)?.percentage ?? null,
       }
     }),

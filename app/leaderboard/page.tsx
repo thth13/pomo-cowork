@@ -3,10 +3,11 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowLeft, ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import { es } from 'react-day-picker/locale'
 import Navbar from '@/components/Navbar'
+import BackToTimer from '@/components/BackToTimer'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
 import { leaderboardCopy } from '@/lib/i18n/leaderboard'
@@ -159,10 +160,9 @@ export default function LeaderboardPage() {
         <main className="lb-layout">
           <header className="lb-intro">
             <div>
-              <p className="lb-eyebrow"><Sprout size={16} aria-hidden="true" />{copy.eyebrow}</p>
               <h1>{t.leaderboard.title}</h1>
             </div>
-            <Link href="/" className="lb-button"><ArrowLeft size={16} aria-hidden="true" />{copy.backToTimer}</Link>
+            <BackToTimer className="lb-button" />
           </header>
 
           <section className="pixel-panel lb-controls" aria-label={t.leaderboard.customRange}>

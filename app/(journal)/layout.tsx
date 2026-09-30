@@ -1,4 +1,4 @@
-import JournalNav from '@/components/journal/JournalNav'
+import JournalNav, { JournalBackToTimer } from '@/components/journal/JournalNav'
 import './journal.css'
 export default function JournalLayout({
   children
@@ -8,6 +8,6 @@ export default function JournalLayout({
   return <div className="journal-shell" data-i18n-ignore>
     <a href="#journal-main" className="journal-skip">Skip to content</a>
     <JournalNav />
-    <main id="journal-main" className="journal-main">{children}</main>
+    <main id="journal-main" className="journal-main"><JournalBackToTimer />{children}</main>
   </div>
 }

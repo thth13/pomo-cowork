@@ -97,22 +97,6 @@ interface WallMessage {
   }
 }
 
-function ProfilePageHeader() {
-  const { language } = useI18n()
-
-  return (
-    <div className="profile-sitebar">
-      <div className="profile-sitebar-inner">
-        <Link href="/" className="profile-sitebar-brand">Pomo Cowork</Link>
-        <div className="profile-sitebar-actions">
-          <Link href="/" className="community-link"><ArrowLeft size={15} aria-hidden="true" />{communityCopy[language].back}</Link>
-          <Navbar compact />
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export default function UserProfilePage() {
   const params = useParams()
   const router = useRouter()
@@ -519,7 +503,8 @@ export default function UserProfilePage() {
   const rank = getRank(experience)
 
   if (loading || error || !profile) {
-    return <div className="community-page garden-page profile-page" lang={language} data-no-translate><ProfilePageHeader /><main className="community-layout">
+    return <div className="community-page garden-page profile-page" lang={language} data-no-translate><Navbar compact /><main className="community-layout">
+        <div className="mb-6 flex justify-end"><Link href="/" className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</Link></div>
       <div className="community-panel community-state" role={loading ? 'status' : undefined}>
         {loading ? <><span className="community-spinner" aria-hidden="true" />{copy.loading}</> : <><Sprout aria-hidden="true" /><h1>{copy.userNotFound}</h1><p>{error}</p><button type="button" className="community-button" onClick={() => setRetry(value => value + 1)}>{copy.retry}</button></>}
       </div>
@@ -528,8 +513,9 @@ export default function UserProfilePage() {
 
   return (
     <div className="community-page garden-page profile-page" lang={language} data-no-translate>
-      <ProfilePageHeader />
+      <Navbar compact />
       <main className="community-layout">
+        <div className="mb-6 flex justify-end"><Link href="/" className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</Link></div>
         <header className="profile-header">
           {profile.user.avatarUrl ? <Image src={profile.user.avatarUrl} alt="" width={88} height={88} className="community-avatar profile-avatar" /> : <span className="community-avatar profile-avatar" aria-hidden="true">{profile.user.username.charAt(0).toUpperCase()}</span>}
           <div className="profile-identity">

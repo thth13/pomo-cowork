@@ -3,7 +3,7 @@
 Implements the user-provided Achievements System brief with 68 enabled definitions
 in both public profile routes (`/@username` and `/user/:id`),
 in eleven categories, five rarity tiers, secret badges, progress, profile details,
-three ordered featured slots and grouped unlock notifications. A 69th definition,
+latest-unlock previews and grouped unlock notifications. A 69th definition,
 One Thing at a Time, is deliberately disabled: sessions have task text, not a
 stable task ID. Enable it only after durable task/session identity is available.
 
@@ -78,13 +78,12 @@ capture events and increment a dirty revision in the existing transaction. Sync
 (authenticated, visible tabs every 45 seconds and after completion/focus) or cron
 drains changes. A failed evaluation leaves the revision dirty; updates racing an
 evaluation remain dirty for the next pass. Advisory locks serialize each account's
-evaluation/featured writes; composite primary keys prevent duplicate awards.
+evaluation writes; composite primary keys prevent duplicate awards.
 Statistics use one history read and one event read per dirty account, not one
 aggregation per achievement. The historical script batches accounts.
 
 - GET `/api/achievements/:userId`: registered public profile; progress owner-only.
 - POST `/api/achievements/sync`: authenticated own timezone, evaluation and pending IDs.
-- PUT `/api/achievements/featured`: own unlocked IDs, unique, ordered, maximum three.
 - POST `/api/achievements/notifications`: atomic own pending notification claim,
   postponed if any focus timer is still active/paused on the server.
 - POST `/api/cron/achievements`: timing-safe deployment secret check.
@@ -102,8 +101,8 @@ pending claims when the request did not commit; profile browsing is the durable 
   room session. Confirm only eligible records count; inspect new event rows.
 - Open a second focusing account; complete work, then repeat with paused/overdue peers.
 - Open own/public profile, switch English/Spanish and light/dark themes, filter,
-  inspect secret/unlocked details, feature three, reorder/remove, test fourth-slot
-  prevention, failed saves and two concurrent tabs.
+  inspect secret/unlocked details, the three latest unlocked previews, and the
+  unlocked/full-catalog filters. Verify live unlock updates across two tabs.
 - Verify loading/retry, 360px layout, keyboard modal focus/Escape/restoration and
   screen-reader names. Public JSON must not contain metadata, peer IDs or progress.
 - Unlock several awards while focusing: no interruption; one summary after focus

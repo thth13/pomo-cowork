@@ -35,11 +35,11 @@ export const metadata: Metadata = {
   description: 'Pomodoro Timer is a collaborative pomodoro coworking app that keeps your focus and team in sync.',
   icons: {
     icon: [
-      { url: '/icons/favicon-16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/icons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon-16.png?v=2', sizes: '16x16', type: 'image/png' },
+      { url: '/icons/favicon-32.png?v=2', sizes: '32x32', type: 'image/png' },
     ],
-    apple: { url: '/icons/favicon-192.png', sizes: '192x192', type: 'image/png' },
-    shortcut: '/favicon.ico',
+    apple: { url: '/icons/favicon-192.png?v=2', sizes: '192x192', type: 'image/png' },
+    shortcut: '/icons/favicon-32.png?v=2',
   },
   manifest: '/site.webmanifest',
   openGraph: {

@@ -86,7 +86,12 @@ a sage header, pixel Menu caption, compact Inter navigation, consistent outline 
 fine section dividers and a soft tomato inset marker for the current page. ThemeToggle's
 menu variant uses a square sun/moon switch on the same tokens. Desktop account details
 live in the avatar preview; narrow and no-hover layouts also show them in the menu. It reuses Navbar navigation, account actions, notifications, online status and
-theme controls; guests can navigate and sign in. The leaderboard and statistics reuse this compact menu; other routes retain their header.
+theme controls; guests can navigate and sign in. The leaderboard, statistics, user profiles,
+public @profiles, project list, project create/edit and public project pages reuse this
+compact menu; other routes retain their header. Journal pages with compact navigation
+reserve 84px plus the top safe-area inset above their content, matching leaderboard.
+These journal routes and leaderboard share `BackToTimer`, an outlined arrow link
+to `/` with English/Spanish labels; journal places it above the page content on the right.
 At widths up to 719px, this same menu moves to the top left and includes the five
 workspace tools with icons and localized labels. The desktop dock is hidden, and
 the timer uses the full available width with safe-area padding. Selecting a tool
@@ -395,11 +400,9 @@ the yearly map. Chart colors follow theme tokens and avoid entrance animation.
 English/Spanish copy belongs to `lib/i18n/community.ts`, excluding these surfaces from
 DOM translation. `/profile` redirects authenticated users to their real public profile.
 
-The public profile has a minimal paper header with the Pomo Cowork home link,
-back-to-timer link and shared compact Navbar menu. The menu sits in the header's
-normal flow with an anchored overlay; the header wraps on narrow screens and stays
-visible in loading/error states. Profile content starts below it with 32px spacing
-(24px on phones), without the floating menu's previous top clearance.
+The public profile shares the leaderboard's floating compact Navbar, including
+loading/error states. Its content reserves 84px plus the top safe area, reduced to
+80px at widths up to 800px. Shared Navbar styles own menu positioning and overlays.
 
 Leaderboard rows include a localized rank name and colored marker based on lifetime XP.
 The table owns horizontal overflow on narrow screens. The profile rank badge links to
@@ -523,10 +526,19 @@ deployment and manual verification. No runtime visual verification has been perf
 ## Profile achievements
 
 Achievements extend the journal profile with compact Inter cards, existing paper/sage
-surfaces and 3px corners. The signature is three user-selected badges above a finite
-catalog. Rarity uses existing muted/growth/tomato/ink roles, explicit text labels,
+surfaces and 3px corners. The default profile preview shows the three latest unlocked
+achievements as compact icon/name buttons, without descriptions, status or dates.
+An empty collection shows a short message, never locked preview substitutes.
+Expanding opens all unlocked achievements newest first; the full catalog remains
+available through an explicit status filter. Achievements are ordered automatically;
+manual featuring is not supported. Rarity uses existing muted/growth/tomato/ink roles, explicit text labels,
 and restrained single/double borders for legendary/mythic awards; no new palette.
 `app/achievements.css` owns the composition and `AchievementBadge` owns icons.
 `CommunityDialog`'s achievement variant owns details and focus restoration;
 `NotificationToast` owns deferred, grouped unlock feedback and its profile link.
 English/Spanish labels, names and conditions follow I18nProvider.
+Unlocked cards keep paper surfaces, rarity-colored edges and a solid check/status label.
+Locked cards use darker neutral surfaces, dashed borders, subdued monochrome badges
+and an explicit lock/status label. Text stays opaque and readable; progress is neutral.
+Both states remain interactive, including secret and public-profile cards without progress.
+Status labels also appear in details and do not rely on color alone.

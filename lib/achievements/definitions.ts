@@ -122,7 +122,6 @@ export interface AchievementView {
   unit: AchievementDefinition['unit']
   progress: number | null
   unlockedAt: string | null
-  featuredOrder: number | null
   percentage: number | null
 }
 export interface AchievementProfile { items: AchievementView[]; evaluatedAt: string | null }

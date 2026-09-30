@@ -503,7 +503,6 @@ html:has(.workspace-page), body:has(.workspace-page) { height: 100%; overflow: h
 @media (max-width: 719px) {
   .workspace-navigation { top: calc(12px + env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); right: auto; }
   .workspace-navigation-panel, .workspace-account-preview { left: 0; right: auto; }
-  .profile-sitebar :is(.workspace-navigation-panel, .workspace-account-preview) { left: auto; right: 0; }
   .workspace-navigation-panel { width: min(320px, calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right))); }
   .workspace-mobile-actions { display: grid; gap: 4px; padding-bottom: 8px; border-bottom: 1px solid var(--pixel-line); }
   .workspace-mobile-actions button { display: flex; align-items: center; gap: 12px; min-height: 44px; width: 100%; padding: 10px 12px; text-align: left; font-size: 14px; border-radius: 2px; cursor: pointer; }
