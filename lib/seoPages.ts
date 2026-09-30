@@ -11,6 +11,7 @@ export interface SeoPage {
   intro: string
   cta: string
   social: boolean
+  appearance?: 'aesthetic'
   defaults: { workDuration: number; shortBreak: number; longBreak: number; longBreakAfter: number }
   timerNote: string
   socialHeading: string
@@ -36,6 +37,52 @@ export interface SeoPage {
 export const seoPages: Record<SeoSlug, SeoPage> = {
   ...additionalSeoPages,
   ...examSeoPages,
+  'aesthetic-timer': {
+    keyword: 'Aesthetic timer',
+    secondaryKeywords: ['aesthetic Pomodoro timer', 'minimalist timer', 'aesthetic study timer', 'cozy focus timer'],
+    title: 'Aesthetic Timer — Minimalist Pomodoro & Calm Background | Pomo Cowork',
+    description: 'Settle into a 25-minute focus session with a calm landscape background and a minimalist Pomodoro timer. Adjust your breaks and study at your own pace.',
+    heading: 'Aesthetic timer for a quieter study space',
+    intro: 'A soft landscape, a clear countdown, and one thing to work on. Make a little room for your next 25 minutes.',
+    cta: 'Settle in and focus',
+    social: false,
+    appearance: 'aesthetic',
+    defaults: { workDuration: 25, shortBreak: 5, longBreak: 15, longBreakAfter: 4 },
+    timerNote: 'Start with 25 minutes of focus, a five-minute break, and a 15-minute long break after four rounds.',
+    socialHeading: 'Company when you want it',
+    socialCopy: 'Keep the countdown in view above, or check in with other people working on their own tasks here. Everyone keeps their own pace.',
+    explanationHeading: 'What is an aesthetic timer?',
+    explanation: [
+      'An aesthetic timer pairs a useful countdown with a space you enjoy looking at. Here, soft landscape shapes sit behind a centered timer, with the main controls close to the digits. The background stays still, so you can leave the page beside your notes without a moving scene competing for attention.',
+      'The timer follows a familiar Pomodoro rhythm: 25 minutes for one task, a five-minute pause, and a longer break after four focus sessions. You can change those intervals in timer settings. A pleasing workspace is a starting point; choosing a specific task and making room for breaks gives the session its structure.',
+      'Use this page for reading, revision, writing, or a small piece of everyday work. Choose the light or dark theme from the header to suit your surroundings. The timer stays at the center of the page, while live company and study advice sit further down, ready when you want them.',
+    ],
+    stepsHeading: 'Make the space your own',
+    steps: ['Choose the light or dark theme that feels comfortable in your room.', 'Pick one task and keep the materials you need nearby.', 'Use the 25-minute starting interval or adjust timer settings, then press Start.', 'When the interval ends, leave yourself a next step and take a break away from the screen.'],
+    benefits: [
+      { title: 'A calm backdrop', text: 'Soft, static landscape shapes frame the countdown without adding motion to your study space.' },
+      { title: 'A clear place to start', text: 'A centered timer keeps the current interval and its controls together, with live sessions below.' },
+      { title: 'Your own rhythm', text: 'Adjust focus and break durations to fit the chapter, draft, or practice session in front of you.' },
+    ],
+    audienceHeading: 'For a desk you want to return to',
+    audience: [
+      { title: 'Students', text: 'Keep a quiet countdown beside your textbook or notes while you work through one topic.' },
+      { title: 'Writers and makers', text: 'Give a sketch, outline, or first draft a defined interval without filling the screen with extra panels.' },
+      { title: 'Everyday focus', text: 'Create a small work ritual: prepare your desk, choose a task, and start one round.' },
+    ],
+    advantageHeading: 'A quiet timer with room for company',
+    advantage: 'Start with the minimal timer here, then explore the shared workspace when you want tasks, recorded sessions, or live coworkers. Study rooms give a group a place to meet. You can use the timer as a guest; account and room features follow the options shown in the app.',
+    faq: [
+      { question: 'Can I use this aesthetic timer for studying?', answer: 'Yes. Pick a specific activity, such as reading a section and writing a short summary, then start the countdown. The default 25-minute interval is a starting point, and you can adjust it in timer settings before beginning.' },
+      { question: 'Does the aesthetic timer include Pomodoro breaks?', answer: 'Yes. It starts with 25 minutes of focus, five-minute short breaks, and a 15-minute long break after four focus sessions. Focus and break controls use the same timer as the main Pomo Cowork workspace.' },
+      { question: 'Is the background animated?', answer: 'The landscape behind this timer is static. It uses soft shapes and the current theme colors, keeping the digits readable without adding movement. You can switch between light and dark themes using the control in the header.' },
+      { question: 'Can I pause or reset the timer?', answer: 'Yes. Pause lets you resume the same session after an interruption. Reset stops the current countdown so you can begin again. Visiting this page with an existing active or paused session preserves its timing.' },
+      { question: 'Do I need an account to start?', answer: 'You can start the timer as a guest. If you want account features such as saved session history, use the sign-in options in the main workspace. There is no need to create a room for an individual focus session.' },
+    ],
+    related: ['pomodoro-timer', 'study-timer', 'focus-timer', '25-5-pomodoro', 'study-with-me'],
+    finalHeading: 'A little space for your next task',
+    finalCopy: 'Set your materials nearby, choose one starting point, and let the countdown mark the time.',
+  },
   'pomodoro-timer': {
     keyword: 'Pomodoro timer',
     secondaryKeywords: ['25 minute timer', 'Pomodoro technique', 'Pomodoro breaks', 'work and break timer'],
@@ -167,7 +214,7 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
       { question: 'Can I use a focus timer for coding?', answer: 'Yes. Pick a bounded activity such as reproducing a bug, writing one function, or reviewing a specific change. Keep a note of the current hypothesis or next step before a break. That note is particularly useful when returning to work that has several pieces of context.' },
       { question: 'Does this timer block distracting websites?', answer: 'No. The countdown gives your work a time boundary, but it does not block websites or control other applications. Close distracting tabs or use your own device controls if needed. Pomo Cowork adds live presence and session tracking rather than enforcing which tools you can open.' },
     ],
-    related: ['45-minute-timer', '50-minute-timer', 'pomodoro-timer', 'online-pomodoro-timer', 'study-with-me', 'online-study-room'],
+    related: ['45-minute-timer', '50-minute-timer', 'pomodoro-timer', 'online-pomodoro-timer', 'study-with-me', 'online-study-room', 'aesthetic-timer'],
     finalHeading: 'Make room for the next piece of work',
     finalCopy: 'Pick a useful outcome and begin your protected focus block.',
   },

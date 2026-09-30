@@ -37,7 +37,7 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
   const page = seoPages[slug]
   const url = `${siteUrl}/${slug}`
   return (
-    <main id="seo-content" className="seo-content">
+    <main id="seo-content" className={`seo-content${page.appearance === 'aesthetic' ? ' seo-content-aesthetic' : ''}`}>
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@graph': [
@@ -71,7 +71,7 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
           {page.social && <Link className="seo-text-link" href="/rooms">Find a room for your group</Link>}
         </div>
       </header>
-      <SeoWorkspace key={slug} title={page.title} defaults={page.defaults} timerNote={page.timerNote} social={page.social} socialHeading={page.socialHeading} socialCopy={page.socialCopy} />
+      <SeoWorkspace key={slug} title={page.title} defaults={page.defaults} timerNote={page.timerNote} social={page.social} socialHeading={page.socialHeading} socialCopy={page.socialCopy} appearance={page.appearance} />
       <div className="seo-guide">
         <section className="seo-explanation" aria-labelledby="explanation-heading">
           <h2 id="explanation-heading">{page.explanationHeading}</h2>

@@ -10,9 +10,9 @@ import { useI18n } from '@/components/I18nProvider'
 import { registerServiceWorker } from '@/lib/serviceWorker'
 import type { SeoPage } from '@/lib/seoPages'
 
-type Props = Pick<SeoPage, 'title' | 'defaults' | 'timerNote' | 'social' | 'socialHeading' | 'socialCopy'>
+type Props = Pick<SeoPage, 'title' | 'defaults' | 'timerNote' | 'social' | 'socialHeading' | 'socialCopy' | 'appearance'>
 
-export default function SeoWorkspace({ title, defaults, timerNote, social, socialHeading, socialCopy }: Props) {
+export default function SeoWorkspace({ title, defaults, timerNote, social, socialHeading, socialCopy, appearance }: Props) {
   const [mounted, setMounted] = useState(false)
   const isLoading = useAuthStore((state) => state.isLoading)
   const isConnected = useConnectionStore((state) => state.isConnected)
@@ -24,7 +24,7 @@ export default function SeoWorkspace({ title, defaults, timerNote, social, socia
   }, [])
 
   return (
-    <div className={`seo-workspace${social ? ' seo-workspace-social' : ''}`}>
+    <div className={`seo-workspace${social ? ' seo-workspace-social' : ''}${appearance === 'aesthetic' ? ' seo-workspace-aesthetic' : ''}`}>
       <section className="seo-timer" id="focus-timer" aria-labelledby="timer-heading" tabIndex={-1}>
         <h2 id="timer-heading">Your next focus session</h2>
         <div className="seo-timer-live" lang={language}>
