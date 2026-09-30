@@ -33,6 +33,7 @@ model User {
   updatedAt            DateTime  @updatedAt
   lastSeenAt           DateTime?
 
+  weeklyWrapped WeeklyWrapped[]
   projects Project[]
   journalPosts JournalPost[]
   followers Follow[] @relation("Following")
@@ -530,4 +531,18 @@ model JournalImage {
 
   @@index([userId, createdAt])
   @@map("journal_images")
+}
+
+// Immutable first-generated recap; account-scoped auto-display claim.
+model WeeklyWrapped {
+  userId String
+  weekStart String @db.VarChar(10)
+  timezone String
+  snapshot Json
+  viewedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, weekStart])
+  @@map("weekly_wrapped")
 }

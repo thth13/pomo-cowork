@@ -3,6 +3,8 @@ import './appearance.css'
 import './community.css'
 import './ambient-sounds.css'
 import './journal-picker.css'
+import './wrapped.css'
+import WrappedProvider from '@/components/wrapped/WrappedProvider'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import Link from 'next/link'
@@ -108,7 +110,7 @@ export default function RootLayout({
                 <InitialLoader />
                 <RankUpToast />
               <JournalToast />
-                {children}
+                <WrappedProvider>{children}</WrappedProvider>
                 <div className="hidden sm:block">
                   <FeedbackWidget />
                 </div>

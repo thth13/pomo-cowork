@@ -500,3 +500,22 @@ privacy predicates, completed-session definition, deployment procedure, and manu
 acceptance cases. Existing identity/session data is reused; the migration has not been
 applied to a live database. Database validation/client generation and static lint are
 allowed; the user's prohibition on builds, running the app, and tsc remains in force.
+
+## Weekly Wrapped
+
+Weekly Wrapped is a short private story, mounted by WrappedProvider and reopened from
+Weekly Recaps in both statistics screens. CommunityDialog owns native modal focus,
+Escape and focus restoration; its weekly-wrapped variant owns the large paper frame.
+`app/wrapped.css` uses existing pixel surface, ink, sage, tomato, border and font tokens.
+Inter carries short narrative headings; pixel numerals are the hero. Seven daily blocks
+form the signature, showing actual activity rather than invented celebration metrics.
+Mobile uses the full viewport and natural modal scrolling; desktop caps at 900px.
+Arrow keys, touch swipes and labeled buttons navigate without automatic advancement.
+Progress remains clickable; motion and counters respect reduced-motion preferences.
+
+English/Spanish copy belongs to `lib/i18n/wrapped.ts`. Async failures retain explicit
+retry/download/copy alternatives. The final 1080×1350 canvas uses the documented light
+paper palette regardless of app theme, shares only aggregate metrics, and includes no
+user identity, task names or project names. Native sharing requires a user click.
+`docs/weekly-wrapped.md` defines completion attribution, snapshots, cohort eligibility,
+deployment and manual verification. No runtime visual verification has been performed.

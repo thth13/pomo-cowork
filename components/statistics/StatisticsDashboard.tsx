@@ -7,6 +7,7 @@ import AuthModal from '@/components/AuthModal'
 import { useStatistics } from '@/hooks/useStatistics'
 import { ranksCopy } from '@/lib/i18n/ranks'
 import FocusHero from './FocusHero'
+import WeeklyRecaps from '@/components/wrapped/WeeklyRecaps'
 import FocusHeatmap from './FocusHeatmap'
 import FocusDNA, { FocusScore } from './FocusDNA'
 import FocusMountain from './FocusMountain'
@@ -27,6 +28,7 @@ export default function StatisticsDashboard() {
   return <main className="insights" lang={language} data-i18n-ignore>
     <div className="insight-topline"><Link href="/" className="insight-text-link"><ArrowLeft size={15} aria-hidden="true" />{copy.timer}</Link><Link href="/ranks" className="insight-text-link">{ranksCopy[language].link}<ArrowUpRight size={15} aria-hidden="true" /></Link><Link href="/stats" className="insight-text-link">{copy.classic}<ArrowUpRight size={15} aria-hidden="true" /></Link></div>
     <header className="insight-intro"><div><p className="insight-eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p>{copy.subtitle}</p></div><span className="insight-intro-mark" aria-hidden="true"><Sprout size={34} strokeWidth={1.25} /></span></header>
+    <WeeklyRecaps />
     {loading ? <div className="insight-state" role="status"><span className="insight-loader" /><p>{copy.loading}</p></div>
       : !signedIn || expired ? <div className="insight-state"><Sprout size={42} strokeWidth={1.3} aria-hidden="true" /><h2>{expired ? copy.expired : copy.signInTitle}</h2><p>{copy.signInBody}</p><button type="button" className="insight-button insight-button-primary" onClick={() => setShowAuth(true)}>{copy.signIn}<ArrowUpRight size={16} aria-hidden="true" /></button></div>
       : error && !data ? <div className="insight-state" role="alert"><h2>{copy.error}</h2><p>{copy.errorBody}</p><button type="button" className="insight-button" onClick={retry}>{copy.retry}<RefreshCw size={16} aria-hidden="true" /></button></div>
