@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ArrowUpRight } from 'lucide-react'
+import { ArrowUpRight, Sparkles } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import { useAuthStore } from '@/store/useAuthStore'
 import { wrappedCopy } from '@/lib/i18n/wrapped'
@@ -19,6 +19,19 @@ export default function WeeklyRecaps() {
   const max = previousMonday(Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC')
   const { history, loading, error, openWeek } = context
   return <section className="weekly-recaps" data-no-translate lang={language} aria-busy={loading}>
+    <div className="weekly-recaps-hero">
+      <div>
+        <h3>{copy.title}</h3>
+        <p>{copy.ready}</p>
+      </div>
+      <button type="button" className="weekly-recaps-primary" disabled={loading} onClick={() => { void openWeek() }}>
+        <Sparkles size={16} aria-hidden="true" />
+        {copy.show}
+      </button>
+    </div>
+    <div className="weekly-recaps-status" role="status">
+      {loading ? copy.loading : error ? <>{copy.error} <button type="button" onClick={() => { context.refresh() }}>{copy.retry}</button></> : ''}
+    </div>
     <details><summary>{copy.recaps}<ArrowUpRight size={16} aria-hidden="true" /></summary>
       <div className="weekly-recaps-body">
         {history.length > 0 ? <ul aria-label={copy.saved}>{history.map(item => <li key={item.weekStart}><button type="button" disabled={loading} onClick={() => { void openWeek(item.weekStart) }}>{weekLabel(item, language)}<span>{item.weekStart.slice(0, 4)}</span><ArrowUpRight size={14} /></button></li>)}</ul> : <p>{copy.empty}</p>}
@@ -28,7 +41,6 @@ export default function WeeklyRecaps() {
           const offset = (new Date(`${date}T12:00:00Z`).getUTCDay() + 6) % 7
           void openWeek(shiftDate(date, -offset))
         }}><label>{copy.older}<input type="date" value={date} min="2020-01-06" max={shiftDate(max, 6)} required onChange={event => setDate(event.target.value)} /></label><button type="submit" disabled={loading || !date}>{copy.open}</button></form>
-        <div role="status">{loading ? copy.loading : error ? <>{copy.error} <button type="button" onClick={() => { context.refresh() }}>{copy.retry}</button></> : ''}</div>
       </div>
     </details>
   </section>

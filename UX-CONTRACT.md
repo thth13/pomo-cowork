@@ -20,6 +20,7 @@
 | Scrollbar | app/globals.css | Global visible baseline, theme tokens and forced-color fallback |
 | Notifications | useNotifications / NotificationToast | Existing global session feedback |
 | Progress / rank | TodayContribution / lib/ranks.ts / useAuthStore | Dock opens existing progress panel; localized current XP rank is available in its accessible name and tooltip |
+| Weekly Wrapped access | WrappedProvider / WeeklyRecaps / WorkspaceWindow | Dock and mobile menu open the existing recap panel; Show me opens the latest recap through the provider, and saved weeks reuse the same modal story |
 | Presence surface | ActiveSessions | Homepage uses a permanent right-side rail with flat coworker rows; stacks below the centered timer on narrow screens; room screens retain panel variant |
 | Companion feedback | PocketGarden | Local, stable role=status region; no overlay or focus stealing |
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
@@ -87,12 +88,12 @@ explains the progress will not survive closing the page.
 ## Verification
 
 Below 720px, Navbar's compact disclosure moves to the top left and owns access to
-all five workspace tools; HomeWorkspace supplies the same actions as the desktop dock.
+all workspace tools; HomeWorkspace supplies the same actions as the desktop dock.
 Tool selection dismisses the menu and focuses the window. Closing from inside a
 mobile window restores focus to the menu trigger. WorkspaceWindow uses full-width,
 bounded panels on mobile; saved desktop geometry does not constrain their layout.
 
-Homepage chat, history, tasks and progress open through WorkspaceWindow from an icon-only left dock with separators. Multiple windows can remain open;
+Homepage chat, history, tasks, habits, progress, weekly wrapped, sounds and help open through WorkspaceWindow from an icon-only left dock with separators. Multiple windows can remain open;
 the background stays interactive. Closing from inside restores focus to the opener.
 The shared footer and retired free-month promotion are no longer mounted in the shared layout.
 The homepage occupies one viewport without document scroll; lists and windows own

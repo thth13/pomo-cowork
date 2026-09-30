@@ -92,7 +92,7 @@ compact menu; other routes retain their header. Journal pages with compact navig
 reserve 84px plus the top safe-area inset above their content, matching leaderboard.
 These journal routes and leaderboard share `BackToTimer`, an outlined arrow link
 to `/` with English/Spanish labels; journal places it above the page content on the right.
-At widths up to 719px, this same menu moves to the top left and includes the five
+At widths up to 719px, this same menu moves to the top left and includes the
 workspace tools with icons and localized labels. The desktop dock is hidden, and
 the timer uses the full available width with safe-area padding. Selecting a tool
 closes the menu and focuses its window; closing the window restores menu-trigger focus.
@@ -127,8 +127,8 @@ inside the shared window, with no click-dependent content loading.
 Its content uses Inter and existing tokens and is excluded
 from automatic DOM translation. The trigger and window controls follow the active locale. A compact inline Current task picker sits directly
 below Start/session actions and above the session-type controls.
-Chat, history, tasks and Your Progress open from a fixed vertical dock at the left.
-Its five icon-only buttons have fine separators, localized accessible names and styled
+Chat, history, tasks, Habits, Your Progress, Weekly Wrapped and Focus Sounds open from a fixed vertical dock at the left.
+Its icon-only buttons have fine separators, localized accessible names and styled
 tooltips to the right on hover or keyboard focus, dismissed on Escape, blur, pointer exit
 or activation. Tooltips use existing pixel tokens and stay above workspace windows;
 the progress tooltip includes the current experience rank. Above 719px the homepage has no document scrolling; mobile uses document scrolling through the timer and full session list. There is no inline introductory text. The timer
@@ -351,7 +351,7 @@ wash remains; no extra full-screen dark layer is added. Layout, dimensions, spac
 fonts and behavior are shared with normal mode. The presence rail has 24px vertical padding in both modes so its heading clears the
 panel edge; switching scenery does not resize the controls.
 
-All dock windows (chat, history, tasks, habits, progress, sounds and help) share
+All dock windows (chat, history, tasks, habits, progress, weekly wrapped, sounds and help) share
 that glass shell while scenery is active, including when opened from the mobile menu.
 Local pixel-token aliases and neutral utility adapters in `app/appearance.css` keep
 headings, fields, cards and scrollbars legible in either theme. Bodies stay transparent;
@@ -507,7 +507,9 @@ allowed; the user's prohibition on builds, running the app, and tsc remains in f
 ## Weekly Wrapped
 
 Weekly Wrapped is a short private story, mounted by WrappedProvider and reopened from
-Weekly Recaps in both statistics screens. CommunityDialog owns native modal focus,
+Weekly Recaps in both statistics screens and the home workspace dock/menu. The home
+entry opens the shared WorkspaceWindow with a primary Show me action and saved recaps.
+CommunityDialog owns native modal focus,
 Escape and focus restoration; its weekly-wrapped variant owns the large paper frame.
 `app/wrapped.css` uses existing pixel surface, ink, sage, tomato, border and font tokens.
 Inter carries short narrative headings; pixel numerals are the hero. Seven daily blocks

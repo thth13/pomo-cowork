@@ -51,6 +51,13 @@
 .wrapped-confetti i { position: absolute; width: 7px; height: 7px; background: var(--pixel-growth); left: calc(6% + var(--i) * 12%); top: 0; animation: wrapped-confetti 1.8s ease-out both; animation-delay: calc(var(--i) * 40ms); }
 .wrapped-confetti i:nth-child(2n) { background: var(--pixel-accent); }
 .weekly-recaps { margin: 20px 0 28px; color: var(--pixel-ink); background: var(--pixel-paper); border: 1px solid var(--pixel-line); border-radius: 3px; }
+.weekly-recaps-hero { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 20px; border-bottom: 1px solid var(--pixel-line); background: var(--pixel-screen); }
+.weekly-recaps-hero h3 { margin: 0 0 6px; font-size: 16px; font-weight: 700; line-height: 1.3; overflow-wrap: anywhere; }
+.weekly-recaps-hero p { margin: 0; font-size: 12px; line-height: 1.6; color: var(--pixel-muted); overflow-wrap: anywhere; }
+.weekly-recaps button.weekly-recaps-primary { flex: 0 0 auto; background: var(--pixel-tomato); border-color: var(--pixel-tomato); color: #fff; }
+.weekly-recaps button.weekly-recaps-primary:hover:not(:disabled), .weekly-recaps button.weekly-recaps-primary:active:not(:disabled) { background: var(--pixel-tomato-hover); border-color: var(--pixel-tomato-hover); }
+.weekly-recaps-status { min-height: 24px; padding: 10px 20px 0; color: var(--pixel-muted); font-size: 12px; line-height: 1.5; }
+.weekly-recaps-status:empty { padding-top: 0; }
 .weekly-recaps summary { cursor: pointer; padding: 16px 20px; font-size: 14px; font-weight: 600; }
 .weekly-recaps summary svg { float: right; }
 .weekly-recaps-body { border-top: 1px solid var(--pixel-line); padding: 18px 20px; font-size: 13px; }
@@ -72,6 +79,8 @@
   .wrapped-meta > span:first-child { font-size: 7px; }
   .wrapped-final { padding: 24px 0 12px; }
   .wrapped-share small { max-width: 250px; }
+  .weekly-recaps-hero { align-items: stretch; flex-direction: column; }
+  .weekly-recaps button.weekly-recaps-primary { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) { .wrapped-story::before, .wrapped-slide, .wrapped-confetti i { animation: none; } .wrapped-confetti { display: none; } .wrapped-progress button::after { transition: none; } }
 @media (forced-colors: active) { .wrapped-story::before, .wrapped-confetti { display: none; } .wrapped-progress button::after, .wrapped-streak span[data-active="true"], .wrapped-week span[data-best="true"] { background: Highlight; forced-color-adjust: none; } }
