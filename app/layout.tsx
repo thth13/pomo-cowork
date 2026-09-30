@@ -4,6 +4,7 @@ import './community.css'
 import './ambient-sounds.css'
 import './journal-picker.css'
 import './wrapped.css'
+import './achievements.css'
 import WrappedProvider from '@/components/wrapped/WrappedProvider'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
@@ -21,6 +22,7 @@ import FeedbackWidget from '@/components/FeedbackWidget'
 import GtmClient from '@/components/GtmClient'
 import { I18nProvider } from '@/components/I18nProvider'
 import RankUpToast from '@/components/RankUpToast'
+import AchievementNotifications from '@/components/achievements/AchievementNotifications'
 import JournalToast from '@/components/journal/JournalToast'
 
 config.autoAddCss = false
@@ -109,6 +111,7 @@ export default function RootLayout({
                 <GtmClient />
                 <InitialLoader />
                 <RankUpToast />
+                <AchievementNotifications />
               <JournalToast />
                 <WrappedProvider>{children}</WrappedProvider>
                 <div className="hidden sm:block">

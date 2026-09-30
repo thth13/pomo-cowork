@@ -33,6 +33,10 @@ model User {
   updatedAt            DateTime  @updatedAt
   lastSeenAt           DateTime?
 
+  achievements UserAchievement[]
+  achievementState AchievementState?
+  achievementEvents AchievementEvent[]
+
   weeklyWrapped WeeklyWrapped[]
   projects Project[]
   journalPosts JournalPost[]
@@ -303,6 +307,7 @@ model PomodoroSession {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([userId, type, status, completedAt], map: "pomodoro_sessions_achievement_history_idx")
   @@index([projectId, status, completedAt])
   @@index([roomId])
   @@index([status, startedAt])
@@ -545,4 +550,57 @@ model WeeklyWrapped {
 
   @@id([userId, weekStart])
   @@map("weekly_wrapped")
+}
+
+model UserAchievement {
+  userId String
+  achievementId String
+  unlockedAt DateTime @default(now())
+  notifiedAt DateTime?
+  featuredOrder Int?
+  metadata Json?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, achievementId])
+  @@unique([userId, featuredOrder])
+  @@index([achievementId])
+  @@index([userId, notifiedAt])
+  @@map("user_achievements")
+}
+
+model AchievementState {
+  userId String @id
+  timezone String @default("UTC")
+  version Int @default(1)
+  evaluatedVersion Int @default(0)
+  metrics Json @default("{}")
+  evaluatedAt DateTime?
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@map("achievement_state")
+}
+
+model AchievementEvent {
+  userId String
+  key String
+  kind String
+  data Json @default("{}")
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@id([userId, key])
+  @@index([userId, createdAt])
+  @@map("achievement_events")
+}
+
+model AchievementJob {
+  key String @id
+  updatedAt DateTime @default(now())
+  @@map("achievement_jobs")
+}
+
+model AchievementPopulation {
+  achievementId String @id
+  unlockedCount Int
+  eligibleCount Int
+  updatedAt DateTime @default(now())
+  @@map("achievement_population")
 }

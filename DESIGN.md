@@ -519,3 +519,14 @@ paper palette regardless of app theme, shares only aggregate metrics, and includ
 user identity, task names or project names. Native sharing requires a user click.
 `docs/weekly-wrapped.md` defines completion attribution, snapshots, cohort eligibility,
 deployment and manual verification. No runtime visual verification has been performed.
+
+## Profile achievements
+
+Achievements extend the journal profile with compact Inter cards, existing paper/sage
+surfaces and 3px corners. The signature is three user-selected badges above a finite
+catalog. Rarity uses existing muted/growth/tomato/ink roles, explicit text labels,
+and restrained single/double borders for legendary/mythic awards; no new palette.
+`app/achievements.css` owns the composition and `AchievementBadge` owns icons.
+`CommunityDialog`'s achievement variant owns details and focus restoration;
+`NotificationToast` owns deferred, grouped unlock feedback and its profile link.
+English/Spanish labels, names and conditions follow I18nProvider.

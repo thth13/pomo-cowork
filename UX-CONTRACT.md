@@ -388,3 +388,23 @@ Zero activity does not open automatically. Atomic viewing claims occur immediate
 opening; historical opening does not claim automatic viewing. Dismissal and Escape retain
 the server record. Export never includes project/task names. Loading and sharing failures
 have localized recovery; cancelled system share sheets produce no error.
+
+## Achievements
+
+Source: user-provided Achievements System brief; implementation rules and deployment
+are recorded in `docs/achievements.md`. `lib/achievements` owns definitions, progress,
+server evaluation and weekly jobs. Database triggers capture reliable new events.
+
+The public profile's Achievements tab and category filter persist in the URL. The
+finite catalog renders all matching definitions; no pagination or search is needed.
+Only the account owner receives locked progress and may feature/reorder up to three
+unlocked badges. Reordering has labeled buttons; saves stay in place, disable repeated
+mutations, and retain the previous selection with inline retryable errors on failure.
+Public responses omit project metadata, task totals, coworker IDs and secret conditions.
+
+CommunityDialog is the canonical details modal; it restores focus to the opener.
+NotificationToast groups unlocks and links to the profile. Server claims deduplicate
+across tabs; client/server focus state defers notifications during a focus session.
+Pending unlocks survive reloads. Loading, failed loading with retry, no-results,
+locked, secret, unlocked, saving and failed-saving states are represented explicitly.
+Runtime checks remain for the user: do not run builds, the app, tsc or tests.

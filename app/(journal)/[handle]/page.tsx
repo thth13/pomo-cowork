@@ -5,6 +5,7 @@ import { profileData, profileByUsername, pageNumber } from '@/lib/journal/querie
 import { journalMetadata } from '@/lib/journal/metadata'
 import { profileHref, Project, Post, duration } from '@/lib/journal/types'
 import { json } from '@/lib/journal/server'
+import ProfileAchievements from '@/components/achievements/ProfileAchievements'
 import FollowButton from '@/components/journal/FollowButton'
 import { ProjectCard, UpdateCard } from '@/components/journal/Cards'
 import FocusHeatmap from '@/components/journal/FocusHeatmap'
@@ -41,7 +42,7 @@ export default async function ProfilePage({
   searchParams
 }: Props) {
   if (!params.handle.startsWith('@')) notFound()
-  const tab = ['projects', 'updates', 'activity'].includes(searchParams.tab || '') ? searchParams.tab! : 'projects',
+  const tab = ['projects', 'updates', 'activity', 'achievements'].includes(searchParams.tab || '') ? searchParams.tab! : 'projects',
     page = pageNumber(searchParams.page)
   const data = await profileData(params.handle.slice(1), tab, page)
   if (!data) notFound()
@@ -107,8 +108,9 @@ export default async function ProfilePage({
       </div>
     </dl>
     <OwnerActions userId={user.id} />
-    {page === 1 && data.pinned && <ProjectCard project={((json(data.pinned) as unknown) as Project)} username={user.username} pinned latest={data.pinned.milestones[0]?.title} />}
-    <nav className="journal-tabs" aria-label="Profile sections">{['projects', 'updates', 'activity'].map(name => <Link key={name} href={`${base}?tab=${name}`} aria-current={tab === name ? 'page' : undefined}>{name[0].toUpperCase() + name.slice(1)}</Link>)}</nav>
+    <nav className="journal-tabs" aria-label="Profile sections">{['projects', 'updates', 'activity', 'achievements'].map(name => <Link key={name} href={`${base}?tab=${name}`} aria-current={tab === name ? 'page' : undefined}>{name[0].toUpperCase() + name.slice(1)}</Link>)}</nav>
+    <ProfileAchievements userId={user.id} />
+    {tab !== 'achievements' && page === 1 && data.pinned && <ProjectCard project={((json(data.pinned) as unknown) as Project)} username={user.username} pinned latest={data.pinned.milestones[0]?.title} />}
     {tab === 'projects' && <div className="journal-grid">{data.projects.map(project => <ProjectCard key={project.id} project={((json(project) as unknown) as Project)} username={user.username} />)}</div>}
     {tab === 'projects' && !data.projects.length && <div className="journal-empty">
       <h2>Start something worth focusing on.</h2>
@@ -139,9 +141,9 @@ export default async function ProfilePage({
         </ol>
       </section>
     </>}
-    <nav className="journal-pagination" aria-label="Pagination">
+    {tab !== 'achievements' && <nav className="journal-pagination" aria-label="Pagination">
       {page > 1 && <Link href={`${base}?tab=${tab}&page=${page - 1}`}>Previous</Link>}
       {data.hasMore && <Link href={`${base}?tab=${tab}&page=${page + 1}`}>Next</Link>}
-    </nav>
+    </nav>}
   </>
 }
