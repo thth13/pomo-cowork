@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const token = getTokenFromHeader(authHeader)
-    const { task, duration, type, anonymousId, startedAt, roomId } = await request.json()
+    const { task, duration, type, anonymousId, startedAt, roomId, projectId } = await request.json()
 
     if (
       typeof task !== 'string' ||
@@ -145,6 +145,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    let focusProjectId: string | null = null
+    if (projectId != null) {
+      const payload = token ? verifyToken(token) : null
+      if (typeof projectId !== 'string' || !payload || payload.userId !== userId) {
+        return NextResponse.json({ error: 'Invalid project' }, { status: 400 })
+      }
+      const project = await prisma.project.findFirst({ where: { id: projectId, userId }, select: { id: true } })
+      if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      if (type === SessionType.WORK || type === SessionType.TIME_TRACKING) focusProjectId = project.id
+    }
+
     const session = await prisma.$transaction(async (tx) => {
       // Serialize session creation per user, including concurrent browser tabs.
       await tx.$queryRaw`
@@ -168,6 +179,7 @@ export async function POST(request: NextRequest) {
       return tx.pomodoroSession.create({
         data: {
           userId,
+          projectId: focusProjectId,
           ...(normalizedRoomId ? { roomId: normalizedRoomId } : {}),
           task: task.trim(),
           duration,

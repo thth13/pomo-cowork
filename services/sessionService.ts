@@ -1,11 +1,13 @@
 import { PomodoroSession, SessionType } from '@/types'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useProjectSelection } from '@/store/useProjectSelection'
 
 export interface SessionData {
   task: string
   duration: number
   type: SessionType
+  projectId?: string | null
   roomId?: string | null
   anonymousId?: string
   startedAt?: string
@@ -75,6 +77,12 @@ export const sessionService = {
       task: data.task,
       duration: data.duration,
       type: data.type,
+    }
+
+    const selected = useProjectSelection.getState()
+    if (token && (data.type === SessionType.WORK || data.type === SessionType.TIME_TRACKING)) {
+      const userId = useAuthStore.getState().user?.id
+      body.projectId = data.projectId ?? (selected.userId === userId ? selected.projectId : null)
     }
 
     if (data.roomId) {

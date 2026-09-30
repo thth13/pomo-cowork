@@ -1,4 +1,6 @@
 import type { SeoSlug } from './seoRoutes'
+import { additionalSeoPages } from './seoAdditionalPages'
+import { examSeoPages } from './seoExamPages'
 
 export interface SeoPage {
   keyword: string
@@ -23,6 +25,7 @@ export interface SeoPage {
   advantageHeading: string
   advantage: string
   faq: { question: string; answer: string }[]
+  resources?: { label: string; url: string }[]
   related: SeoSlug[]
   finalHeading: string
   finalCopy: string
@@ -31,6 +34,8 @@ export interface SeoPage {
 // Keywords are editorial targets, not a meta-keywords tag. Each route has its
 // own intent, examples and answers; the shared component only owns presentation.
 export const seoPages: Record<SeoSlug, SeoPage> = {
+  ...additionalSeoPages,
+  ...examSeoPages,
   'pomodoro-timer': {
     keyword: 'Pomodoro timer',
     secondaryKeywords: ['25 minute timer', 'Pomodoro technique', 'Pomodoro breaks', 'work and break timer'],

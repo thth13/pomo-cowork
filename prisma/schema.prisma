@@ -14,6 +14,11 @@ model User {
   password             String
   avatarUrl            String?
   description          String?
+  displayName          String?
+  location             String?
+  websiteUrl           String?
+  githubUrl            String?
+  twitterUrl           String?
   isAnonymous          Boolean   @default(false)
   isPro                Boolean   @default(false)
   proExpiresAt         DateTime?
@@ -27,6 +32,15 @@ model User {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   lastSeenAt           DateTime?
+
+  projects Project[]
+  journalPosts JournalPost[]
+  followers Follow[] @relation("Following")
+  following Follow[] @relation("Followers")
+  postReactions PostReaction[]
+  journalComments JournalComment[]
+  activityEvents ActivityEvent[]
+  journalImages JournalImage[]
 
   // Settings
   workDuration   Int @default(25) // minutes
@@ -270,6 +284,9 @@ model PomodoroSession {
   roomId String?
   room   Room?   @relation(fields: [roomId], references: [id], onDelete: SetNull)
 
+  projectId String?
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
   task     String
   duration Int // in minutes
   type     String @default("WORK")
@@ -285,6 +302,7 @@ model PomodoroSession {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([projectId, status, completedAt])
   @@index([roomId])
   @@index([status, startedAt])
   @@index([userId, createdAt])
@@ -341,4 +359,175 @@ model UserWallMessage {
   @@index([profileUserId, createdAt])
   @@index([authorId, createdAt])
   @@map("user_wall_messages")
+}
+
+enum ProjectStatus {
+  PLANNING
+  BUILDING
+  PAUSED
+  COMPLETED
+  ARCHIVED
+}
+
+enum JournalVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum JournalPostType {
+  UPDATE
+  MILESTONE
+  WEEKLY_UPDATE
+}
+
+model Project {
+  id          String @id @default(cuid())
+  userId      String
+  user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String @db.VarChar(100)
+  slug        String @db.VarChar(80)
+  imageUrl    String?
+  description String @default("") @db.VarChar(280)
+  content     String @default("")
+  status      ProjectStatus @default(PLANNING)
+  visibility  JournalVisibility @default(PRIVATE)
+  websiteUrl  String?
+  githubUrl   String?
+  startedAt   DateTime @default(now())
+  completedAt DateTime?
+  pinned      Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sessions    PomodoroSession[]
+  posts       JournalPost[]
+  milestones  ProjectMilestone[]
+  activity    ActivityEvent[]
+
+  @@unique([userId, slug])
+  @@index([userId, visibility, createdAt])
+  @@map("projects")
+}
+
+model JournalPost {
+  id            String @id @default(cuid())
+  authorId      String
+  author        User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  projectId     String?
+  project       Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  slug          String @db.VarChar(120)
+  type          JournalPostType @default(UPDATE)
+  title         String? @db.VarChar(160)
+  content       String
+  images        String[] @default([])
+  important     Boolean @default(false)
+  visibility    JournalVisibility @default(PRIVATE)
+  showFocusStats Boolean @default(false)
+  focusedSecondsSnapshot Int?
+  sessionsSnapshot Int?
+  statsFrom     DateTime?
+  statsTo       DateTime?
+  publishedAt   DateTime?
+  editedAt      DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  milestone     ProjectMilestone?
+  reactions     PostReaction[]
+  comments      JournalComment[]
+  activity      ActivityEvent[]
+
+  @@unique([authorId, slug])
+  @@index([authorId, publishedAt, id])
+  @@index([projectId, publishedAt])
+  @@index([visibility, publishedAt, id])
+  @@map("journal_posts")
+}
+
+model ProjectMilestone {
+  id        String @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  postId    String @unique
+  post      JournalPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  title     String @db.VarChar(160)
+  description String @default("")
+  type      String @default("CUSTOM") @db.VarChar(40)
+  imageUrl  String?
+  achievedAt DateTime
+  focusedSecondsSnapshot Int
+  sessionsSnapshot Int
+  createdAt DateTime @default(now())
+
+  @@index([projectId, achievedAt])
+  @@map("project_milestones")
+}
+
+model Follow {
+  followerId String
+  followingId String
+  follower User @relation("Followers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([followerId, followingId])
+  @@index([followingId, createdAt])
+  @@map("follows")
+}
+
+model PostReaction {
+  userId String
+  postId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post JournalPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  type String @default("SUPPORT")
+  createdAt DateTime @default(now())
+
+  @@id([userId, postId])
+  @@index([postId])
+  @@map("post_reactions")
+}
+
+model JournalComment {
+  id String @id @default(cuid())
+  postId String
+  authorId String
+  post JournalPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author User @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  content String @db.VarChar(2000)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId, createdAt, id])
+  @@index([authorId])
+  @@map("journal_comments")
+}
+
+model ActivityEvent {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  projectId String?
+  project Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  postId String?
+  post JournalPost? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  key String
+  type String
+  value Int?
+  createdAt DateTime @default(now())
+
+  @@unique([userId, key])
+  @@index([userId, createdAt])
+  @@map("activity_events")
+}
+
+// Stored in the existing PostgreSQL database so private attachments are access-controlled.
+model JournalImage {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentType String
+  data Bytes
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@map("journal_images")
 }

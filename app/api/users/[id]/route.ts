@@ -76,7 +76,8 @@ export async function GET(
     const activeSession = await prisma.pomodoroSession.findFirst({
       where: {
         userId,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        OR: [{ projectId: null }, { project: { visibility: 'PUBLIC' } }],
       },
       select: {
         id: true,
@@ -91,6 +92,7 @@ export async function GET(
     const recentSessions = await prisma.pomodoroSession.findMany({
       where: {
         userId,
+        OR: [{ projectId: null }, { project: { visibility: 'PUBLIC' } }],
         createdAt: {
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
         }

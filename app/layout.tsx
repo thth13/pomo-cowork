@@ -2,6 +2,7 @@ import './globals.css'
 import './appearance.css'
 import './community.css'
 import './ambient-sounds.css'
+import './journal-picker.css'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import Link from 'next/link'
@@ -18,6 +19,7 @@ import FeedbackWidget from '@/components/FeedbackWidget'
 import GtmClient from '@/components/GtmClient'
 import { I18nProvider } from '@/components/I18nProvider'
 import RankUpToast from '@/components/RankUpToast'
+import JournalToast from '@/components/journal/JournalToast'
 
 config.autoAddCss = false
 
@@ -105,6 +107,7 @@ export default function RootLayout({
                 <GtmClient />
                 <InitialLoader />
                 <RankUpToast />
+              <JournalToast />
                 {children}
                 <div className="hidden sm:block">
                   <FeedbackWidget />

@@ -1,3 +1,4 @@
+import { validUsername } from '@/lib/journal/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
@@ -86,11 +87,11 @@ export async function PUT(request: NextRequest) {
       const updateData: any = {}
       
       if (data.username !== undefined) {
-        const normalizedUsername = normalizeUsername(data.username)
+        const normalizedUsername = typeof data.username === 'string' ? normalizeUsername(data.username) : ''
 
-        if (!normalizedUsername) {
+        if (!validUsername(normalizedUsername)) {
           return NextResponse.json(
-            { error: 'Username cannot be empty' },
+            { error: 'Use 3–30 lowercase letters, numbers, dashes or underscores; reserved names are not allowed.' },
             { status: 400 }
           )
         }

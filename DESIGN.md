@@ -256,9 +256,9 @@ restoration of the user's own timer remain separate database-backed workflows.
 
 ## Search landing pages
 
-The fourteen routes in `lib/seoRoutes.ts` use the document-scrolling `app/(tools)` shell.
-The English copy in `lib/seoPages.ts` is rendered on the server and excluded from
-DOM translation. Inter owns the readable headings and prose; the pixel face remains
+The routes in `lib/seoRoutes.ts` use the document-scrolling `app/(tools)` shell.
+The English copy in `lib/seoPages.ts`, `lib/seoAdditionalPages.ts`, and `lib/seoExamPages.ts`
+is rendered on the server and excluded from DOM translation. Inter owns the readable headings and prose; the pixel face remains
 reserved for the brand, small workspace labels, and the real timer digits.
 `app/(tools)/tools.css` owns layout and spacing, using existing `--pixel-*` colors
 and `--font-pixel`; no additional theme palette or font dependency is introduced.
@@ -273,7 +273,18 @@ unavailable, never represented by invented participants or a zero count.
 Presets apply once on entry to an idle timer: 15/5/15 for homework initiation,
 30/5/15 for the half-hour timer, 45/10/20 for the 45-minute timer,
 50/10/20 for focus, online study rooms and the 50-minute timer, 25/5/15 elsewhere. Active and paused
-sessions keep their timing. The existing settings modal remains the duration owner;
+sessions keep their timing. Additional presets use 60/10/20 and 90/15/30 (long break after two rounds),
+25/5/15 for 25/5, students, programmers, writers and remote work (after four),
+50/10/20 for 50/10, developers and freelancers (after three), 52/17/17 for the
+52/17 rule (after four), and a flexible 15/5/15 for ADHD (after four).
+Developer copy targets engineering delivery; programmer copy targets coding practice.
+Exam-preparation pages use 25/5/15 after four rounds by default, 30/5/15 after four
+for ACT/GRE, and 50/10/20 after three for A-level/MCAT/JEE. These are adjustable
+study intervals, never official section durations. Examples and FAQs distinguish
+learning and error review from full exam simulations. Optional resource links render
+below the explanation using the existing text-link style and point to official providers;
+board-specific resources are named explicitly rather than presented as universal.
+The existing settings modal remains the duration owner;
 subsequent visitor changes are not overwritten by page presets. Reset on these pages
 uses the shared stop/cancel operation; time tracking retains the Stop label.
 FAQ disclosures are native details/summary and their full answers render server-side.
@@ -281,7 +292,7 @@ Metadata, canonical URLs, WebApplication/FAQ JSON-LD and sitemap entries are sha
 in implementation, while search intent, examples, benefits, FAQs and related links
 are written separately for each route. No ranking or rich-result promise is made.
 
-About the timer includes a server-rendered Focus Tools navigation list for all fourteen
+About the timer includes a server-rendered Focus Tools navigation list for all registered
 tools, using shared labels from `lib/seoRoutes.ts`. Links have 44px minimum height,
 theme-derived hover/pressed states and visible keyboard focus. Related tools reuse
 those labels, with intent-specific destinations. `app/sitemap.ts` generates the public
@@ -459,3 +470,33 @@ one short, thin master-volume slider; individual sliders and Stop all are omitte
 shows a small count of playing tracks. `app/ambient-sounds.css` reuses pixel roles,
 Inter, existing window geometry and theme colors without introducing new tokens.
 English/Spanish copy lives in `lib/i18n/ambientSounds.ts`.
+
+## Project journal and public profiles
+
+`app/(journal)` owns a natural-scrolling, 1040px reading/work column. This extends the
+existing quiet paper-and-sage surfaces, Inter headings, 3px corners, fine borders,
+and tomato primary actions. The signature is the Currently building project beside
+honest completed-focus totals, followed by a restrained milestone timeline. It is not
+a second social-network visual identity. The timer remains the main workspace.
+`app/(journal)/journal.css` owns these compositions; all theme roles come from existing
+`--pixel-*` tokens. The small timer project selector uses `app/journal-picker.css`.
+
+Public profiles/projects/updates are server-rendered with canonical metadata and no
+persistent page cache. Profile tabs and all lists use URL pagination, not infinite
+scroll. Heatmap intensity uses completed minutes per UTC day, with keyboard/pointer
+labels and its own horizontal scroll region. MilestoneCard is reusable and contains
+project identity, optional real snapshot totals, and Pomo Cowork attribution.
+
+The profile, project and post editors share fields, inline errors, image controls,
+unsaved-change guard and explicit inline deletion confirmation. Native select and date
+popups intentionally retain operating-system ownership for these simple low-density
+forms; no custom popup geometry is required. Form language follows I18nProvider through
+useJournalText; user-authored content and the public reading shell retain their own
+text without DOM rewriting. Markdown is escaped React output with a narrow feature set.
+NotificationToast remains the feedback owner; JournalToast only bridges navigation.
+
+`docs/project-journal.md` records the user-authorized domain scope, server permissions,
+privacy predicates, completed-session definition, deployment procedure, and manual
+acceptance cases. Existing identity/session data is reused; the migration has not been
+applied to a live database. Database validation/client generation and static lint are
+allowed; the user's prohibition on builds, running the app, and tsc remains in force.

@@ -1,0 +1,29 @@
+.journal-picker {
+  max-width: 340px;
+  margin: 10px auto;
+  font-size: 12px;
+  color: var(--pixel-muted);
+}
+.journal-picker select {
+  max-width: 100%;
+  background: var(--pixel-paper);
+  color: var(--pixel-ink);
+  border: 1px solid var(--pixel-line);
+  padding: 5px;
+  cursor: pointer;
+}
+.journal-picker select:disabled {
+  cursor: default;
+  opacity: .65;
+}
+.journal-picker a {
+  text-decoration: underline;
+}
+.journal-picker button {
+  padding: 4px 8px;
+  cursor: pointer;
+}
+.journal-picker :focus-visible {
+  outline: 2px solid var(--pixel-accent);
+  outline-offset: 3px;
+}

@@ -3,6 +3,7 @@ export interface User {
   email: string
   username: string
   avatarUrl?: string
+  displayName?: string | null
   description?: string
   createdAt: string
   isAnonymous?: boolean
@@ -35,6 +36,7 @@ export interface PomodoroSession {
   userId: string
   user?: User
   roomId?: string | null
+  projectId?: string | null
   task: string
   duration: number
   type: SessionType

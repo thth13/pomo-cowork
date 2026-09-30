@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useId, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
+import { profileHref } from '@/lib/journal/types'
 import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
@@ -349,7 +350,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             >
               {isAuthenticated && user ? (
                 <Link
-                  href={`/user/${user.id}`}
+                  href={profileHref(user.username)}
                   className="workspace-account-trigger"
                   aria-label={`${t.nav.profile}: ${user.username}`}
                   aria-describedby={isAccountPreviewOpen ? accountPreviewId : undefined}
@@ -534,13 +535,16 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                       </div>
                       <div className="py-2">
                         <Link
-                          href={`/user/${user.id}`}
+                          href={profileHref(user.username)}
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
                         >
                           <span>{t.nav.profile}</span>
                           <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xs" />
                         </Link>
+                        <Link href="/projects" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Mis proyectos' : 'My projects'}</Link>
+                        <Link href="/feed" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Novedades' : 'Feed'}</Link>
+                        <Link href="/settings/profile" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Editar perfil' : 'Edit profile'}</Link>
                         <Link
                           href="/settings"
                           onClick={() => setIsMenuOpen(false)}
@@ -707,6 +711,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 { href: '/stats', label: t.nav.stats, icon: LineChart, active: pathname === '/stats' },
                 { href: '/statistics', label: statisticsCopy[language].navigation, icon: BarChart3, active: pathname === '/statistics' },
                 { href: '/habits', label: habitsCopy[language].title, icon: ListChecks, active: pathname === '/habits' },
+                { href: '/feed', label: language === 'es' ? 'Novedades' : 'Feed', icon: BookOpen, active: pathname === '/feed' },
                 { href: '/blog', label: 'Blog', icon: BookOpen, active: pathname.startsWith('/blog') },
               ].map(({ href, label, icon: Icon, active, beta }) => (
                 <Link key={href} href={href} onClick={handleMobileLinkClick}
@@ -723,14 +728,16 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             <div className="workspace-menu-settings">
               {isAuthenticated && user && <>
               <Link
-                href={`/user/${user.id}`}
+                href={profileHref(user.username)}
                 onClick={handleMobileLinkClick}
                 className="workspace-menu-item"
-                aria-current={pathname === `/user/${user.id}` ? 'page' : undefined}
+                aria-current={pathname === profileHref(user.username) ? 'page' : undefined}
               >
                 <User size={16} aria-hidden="true" />
                 <span className="workspace-menu-label">{t.nav.profile}</span>
               </Link>
+              <Link href="/projects" onClick={handleMobileLinkClick} className="workspace-menu-item"><BookOpen size={16} aria-hidden="true"/><span className="workspace-menu-label">{language === 'es' ? 'Mis proyectos' : 'My projects'}</span></Link>
+              <Link href="/settings/profile" onClick={handleMobileLinkClick} className="workspace-menu-item"><User size={16} aria-hidden="true"/><span className="workspace-menu-label">{language === 'es' ? 'Editar perfil' : 'Edit profile'}</span></Link>
               <Link
                 href="/settings"
                 onClick={handleMobileLinkClick}

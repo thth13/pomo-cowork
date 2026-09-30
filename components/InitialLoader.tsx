@@ -14,7 +14,7 @@ export default function InitialLoader() {
     setIsHydrated(true)
   }, [])
 
-  if (pathname === '/' || pathname === '/blog' || pathname.startsWith('/blog/') || isSeoPath(pathname) || !isHydrated || !isLoading) {
+  if (pathname === '/' || pathname.startsWith('/@') || pathname === '/blog' || pathname.startsWith('/blog/') || isSeoPath(pathname) || !isHydrated || !isLoading) {
     return null
   }
 

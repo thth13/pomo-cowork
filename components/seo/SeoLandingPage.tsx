@@ -76,6 +76,14 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
         <section className="seo-explanation" aria-labelledby="explanation-heading">
           <h2 id="explanation-heading">{page.explanationHeading}</h2>
           {page.explanation.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          {page.resources && (
+            <div>
+              <h3>Practice materials and exam instructions</h3>
+              {page.resources.map(({ label, url }) => (
+                <p key={url}><a className="seo-text-link" href={url}>{label} <span aria-hidden="true">↗</span></a></p>
+              ))}
+            </div>
+          )}
         </section>
         <section className="seo-steps" aria-labelledby="steps-heading">
           <h2 id="steps-heading">{page.stepsHeading}</h2>

@@ -350,3 +350,25 @@ requested. Master volume multiplies individual levels without changing them.
 WorkspaceWindow owns Escape, focus restoration, mobile placement and resizing;
 one native master-volume range and aria-pressed sound buttons own keyboard interaction. Runtime browser
 and playback verification is left to the user per repository instructions.
+
+## Project journal extension
+
+The user's project-journal specification is implemented by `docs/project-journal.md`,
+`prisma/schema.prisma`, and `lib/journal/*Api.ts`; this extension adds server schema and
+authorization rules beyond the earlier visual-only redesign.
+
+| Capability | Canonical owner | Source and behavior |
+| --- | --- | --- |
+| Journal permissions/privacy | lib/journal/server.ts and domain API modules | User specification §§17–19, 28; owner-only writes and public-project gates on every public read |
+| Focus attribution | PomodoroSession.projectId, sessionService, lib/journal/stats.ts | Completed WORK/TIME_TRACKING only, existing effective-minute expression, UTC day/week boundaries |
+| Journal forms | FormFields, useJournalMutation, UnsavedChangesGuard | Explicit labels and validation, preserve failed inputs, block double submission, safe cancel/delete |
+| Journal Select/Listbox | Native select | OS popup geometry intentionally accepted; simple named project/status/type choices, no authored appearance removal |
+| Journal Date | Native input[type=date] | OS picker accepted; ISO date values validated on server, UTC attribution |
+| Journal feedback | NotificationToast / JournalToast | Existing toast renderer; persistent inline error is also provided |
+| Journal images | /api/journal/images | Owner/private or currently published parent gates, no-store; see attachment lifecycle in docs/project-journal.md |
+| Public/owner collections | Profile tabs and JournalLists | URL page parameters, bounded requests, explicit previous/next, no infinite feed |
+
+Project create/edit returns to My projects. Private/draft post saves return to My updates;
+public publication opens its stable post URL. Profile saves open the new public profile.
+Deletion returns to the corresponding owning list; focus sessions survive project deletion.
+There is no auto-publication, automatic follower notification, or inferred moderation role.

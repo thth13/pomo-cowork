@@ -21,6 +21,7 @@ import { sessionService, SessionData } from '@/services/sessionService'
 import { taskService } from '@/services/taskService'
 import { useNotifications } from '@/hooks/useNotifications'
 import { TaskOption } from '@/types/task'
+import ProjectPicker from '@/components/journal/ProjectPicker'
 import { TaskPicker } from '@/components/TaskPicker'
 import { TimerControls } from '@/components/TimerControls'
 import { TimerPictureInPicture } from '@/components/TimerPictureInPicture'
@@ -545,6 +546,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
           currentSession: {
             ...state.currentSession,
             id: dbSession.id,
+            projectId: dbSession.projectId,
             startedAt: optimisticStartedAt,
           },
         }
@@ -810,6 +812,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
             currentSession: {
               ...state.currentSession,
               id: dbSession.id,
+              projectId: dbSession.projectId,
               startedAt: optimisticStartedAt,
             },
           }
@@ -1363,6 +1366,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         sessionType={activeSessionType}
         onSessionTypeChange={handleSessionTypeChange}
       >
+        <ProjectPicker />
         <TaskPicker
           sessionType={activeSessionType}
           isDisabled={isTaskPickerDisabled}

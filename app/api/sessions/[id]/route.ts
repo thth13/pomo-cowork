@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
+import { recordFocusAchievements } from '@/lib/journal/stats'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { resolveExistingOrAnonymousUserId } from '@/lib/anonymousServer'
@@ -277,6 +278,10 @@ export async function PUT(
             },
           }),
         ])
+
+        if (status === SessionStatus.COMPLETED && earnsExperience && !user.isAnonymous) {
+          await recordFocusAchievements(tx, effectiveUserId)
+        }
 
         return {
           session: updatedSession,

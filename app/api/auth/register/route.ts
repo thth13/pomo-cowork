@@ -1,3 +1,4 @@
+import { validUsername } from '@/lib/journal/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { hashPassword, generateToken } from '@/lib/auth'
@@ -24,9 +25,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!normalizedUsername) {
+    if (!validUsername(normalizedUsername)) {
       return NextResponse.json(
-        { error: 'Username cannot be empty' },
+        { error: 'Use 3–30 lowercase letters, numbers, dashes or underscores; reserved names are not allowed.' },
         { status: 400 }
       )
     }

@@ -27,6 +27,7 @@ export async function GET(
     // Вся фокус-активность пользователя: WORK + TIME_TRACKING (включая ручные остановки)
     const allFocusSessions = await prisma.pomodoroSession.findMany({
       where: {
+        OR: [{ projectId: null }, { project: { visibility: 'PUBLIC' } }],
         userId,
         status: { in: ['COMPLETED', 'CANCELLED'] },
         type: { in: ['WORK', 'TIME_TRACKING'] },
