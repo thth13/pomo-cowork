@@ -515,10 +515,17 @@ allowed; the user's prohibition on builds, running the app, and tsc remains in f
 
 Monthly Wrapped is a short private story, mounted by WrappedProvider and reopened from
 Monthly Recaps in both statistics screens. CommunityDialog owns native modal focus,
-Escape and focus restoration; its monthly-wrapped variant owns the large paper frame.
+Escape and focus restoration; its monthly-wrapped variant owns the large story frame.
 `app/wrapped.css` uses existing pixel surface, ink, sage, tomato, border and font tokens.
-Inter carries short narrative headings; pixel numerals are the hero. A month of daily bars and a seven-column streak grid
+Inter carries short narrative headings and large metric numerals; the pixel face marks compact captions and the slide count. A month of daily bars and a seven-column streak grid
 form the signature, showing actual activity rather than invented celebration metrics.
+The opening slide uses oversized Inter focus time, a faint calendar-month numeral,
+a small sprout seal, growth captions and the existing tomato action. Its surface,
+text and accents follow the active site theme, including photographic scenery.
+All slides use the same slim progress, month line, large Inter statistics, pixel
+step counter and tomato next action. Short slides share a minimum story height;
+long content may extend the frame. The visible dialog heading is omitted while
+the close action stays available.
 Mobile uses the full viewport and natural modal scrolling; desktop caps at 900px.
 Arrow keys, touch swipes and labeled buttons navigate without automatic advancement.
 Progress remains clickable; motion and counters respect reduced-motion preferences.
