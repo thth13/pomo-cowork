@@ -20,6 +20,7 @@ interface LeaderboardRow {
   username: string
   avatarUrl: string | null
   experience: number
+  isPro: boolean
   totalMinutes: number
   totalPomodoros: number
 }
@@ -165,6 +166,7 @@ export async function GET(request: NextRequest) {
         "u"."username",
         "u"."avatarUrl",
         "u"."experience",
+        ("u"."isPro" = true AND ("u"."proExpiresAt" IS NULL OR "u"."proExpiresAt" > NOW())) AS "isPro",
         COALESCE("stats"."totalMinutes", 0)::integer AS "totalMinutes",
         COALESCE("stats"."totalPomodoros", 0)::integer AS "totalPomodoros"
       FROM "users" AS "u"
@@ -193,6 +195,7 @@ export async function GET(request: NextRequest) {
         username: user.username,
         avatarUrl: user.avatarUrl,
         experience: user.experience,
+        isPro: user.isPro,
         totalHours,
         totalPomodoros: user.totalPomodoros,
         totalMinutes

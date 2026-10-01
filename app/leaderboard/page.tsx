@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Crown, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import { es } from 'react-day-picker/locale'
 import Navbar from '@/components/Navbar'
@@ -22,6 +22,7 @@ interface LeaderboardUser {
   username: string
   avatarUrl?: string
   experience: number
+  isPro: boolean
   totalPomodoros: number
   totalMinutes: number
   rank: number
@@ -69,6 +70,11 @@ function Avatar({ user, large = false }: { user: LeaderboardUser; large?: boolea
         : user.username.charAt(0).toUpperCase()}
     </span>
   )
+}
+
+function PremiumBadge() {
+  const { t } = useI18n()
+  return <span className="workspace-account-pro lb-premium" aria-label={t.leaderboard.premiumUser}><Crown size={12} aria-hidden="true" />Pro</span>
 }
 
 export default function LeaderboardPage() {
@@ -215,7 +221,7 @@ export default function LeaderboardPage() {
                 <Link href={profileHref(person.id)} className="lb-leader-link">
                   <span className="lb-leader-rank">{String(person.rank).padStart(2, '0')}</span>
                   <Avatar user={person} large />
-                  <div className="lb-leader-info"><span className="lb-leader-label">{person.rank === 1 ? <Trophy size={14} aria-hidden="true" /> : null}{copy.rank} {person.rank}{person.id === currentUser?.id && <span className="lb-you">{t.leaderboard.you}</span>}</span><h3>{person.username}</h3><p><strong>{formatTime(person.totalMinutes)}</strong><span>{copy.timeUnit}</span></p></div>
+                  <div className="lb-leader-info"><span className="lb-leader-label">{person.rank === 1 ? <Trophy size={14} aria-hidden="true" /> : null}{copy.rank} {person.rank}{person.id === currentUser?.id && <span className="lb-you">{t.leaderboard.you}</span>}</span><h3>{person.username}{person.isPro && <PremiumBadge />}</h3><p><strong>{formatTime(person.totalMinutes)}</strong><span>{copy.timeUnit}</span></p></div>
                   <ArrowUpRight className="lb-leader-arrow" size={18} aria-hidden="true" />
                 </Link>
               </li>)}
@@ -245,7 +251,7 @@ export default function LeaderboardPage() {
                         const userRank = getRank(person.experience)
                         return <tr key={person.id} className={person.id === currentUser?.id ? 'lb-row-self' : undefined}>
                         <td><span className={`lb-position${person.rank <= 3 ? ' lb-position-top' : ''}`}>{String(person.rank).padStart(2, '0')}</span></td>
-                        <th scope="row"><Link href={profileHref(person.id)} className="lb-person"><Avatar user={person} /><span className="lb-person-name">{person.username}{person.id === currentUser?.id && <span className="lb-you">{t.leaderboard.you}</span>}</span></Link></th>
+                        <th scope="row"><Link href={profileHref(person.id)} className="lb-person"><Avatar user={person} /><span className="lb-person-name">{person.username}{person.isPro && <PremiumBadge />}{person.id === currentUser?.id && <span className="lb-you">{t.leaderboard.you}</span>}</span></Link></th>
                         <td><span className="lb-user-rank"><span className="lb-rank-mark" style={{ background: userRank.ring }} aria-hidden="true" />{t.todayContribution.ranks[userRank.id]}</span></td>
                         <td><strong className="lb-time">{formatTime(person.totalMinutes)}</strong><span className="lb-time-track" aria-hidden="true"><span style={{ width: `${Math.max(1, person.totalMinutes / maxMinutes * 100)}%` }} /></span></td>
                         <td className="lb-pomos">{number(person.totalPomodoros)}</td>
@@ -264,7 +270,7 @@ export default function LeaderboardPage() {
                 <div className="lb-panel-title"><Sprout size={17} aria-hidden="true" /><h2 id="lb-personal-title">{copy.yourPlace}</h2></div>
                 <div className="lb-personal-body">
                   {loading ? <div className="lb-personal-placeholder" aria-hidden="true">—</div> : error ? <p>{t.leaderboard.failedToLoad}</p> : myRank ? <>
-                    <Link href={profileHref(myRank.id)} className="lb-profile"><Avatar user={myRank} /><span>{myRank.username}<small>{copy.viewProfile} <ArrowUpRight size={12} aria-hidden="true" /></small></span></Link>
+                    <Link href={profileHref(myRank.id)} className="lb-profile"><Avatar user={myRank} /><span>{myRank.username}{myRank.isPro && <PremiumBadge />}<small>{copy.viewProfile} <ArrowUpRight size={12} aria-hidden="true" /></small></span></Link>
                     <div className="lb-my-place"><strong>#{number(myRank.rank)}</strong><span>{t.leaderboard.top} {Math.max(1, Math.round(myRank.rank / Math.max(1, leaderboard.length) * 100))}%</span></div>
                     <dl className="lb-personal-stats"><div><dt>{t.leaderboard.focus} <span>({copy.timeUnit})</span></dt><dd>{formatTime(myRank.totalMinutes)}</dd></div><div><dt>{t.leaderboard.pomos}</dt><dd>{number(myRank.totalPomodoros)}</dd></div></dl>
                     <div className="lb-progress-label"><span>{t.leaderboard.progressToFirst}</span><strong>{progress}%</strong></div>
