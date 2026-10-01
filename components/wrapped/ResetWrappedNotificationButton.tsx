@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { RotateCcw } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
 import { previousMonthStart } from '@/lib/wrapped/analytics'
@@ -16,11 +17,11 @@ export default function ResetWrappedNotificationButton() {
   const copy = language === 'es' ? {
     label: 'Debug: reiniciar aviso mensual', signIn: 'Inicia sesión para reiniciar tu aviso.',
     empty: 'No hay actividad el mes pasado para mostrar el aviso.',
-    success: 'Aviso reiniciado.', error: 'No se pudo reiniciar. Inténtalo de nuevo.',
+    error: 'No se pudo reiniciar. Inténtalo de nuevo.',
   } : {
     label: 'Debug: reset monthly notification', signIn: 'Sign in to reset your notification.',
     empty: 'No focus activity last month to show a notification for.',
-    success: 'Notification reset.', error: 'Reset failed. Please try again.',
+    error: 'Reset failed. Please try again.',
   }
 
   const reset = async () => {
@@ -41,7 +42,7 @@ export default function ResetWrappedNotificationButton() {
       if (!response.ok) throw new Error('Reset failed')
       const data: { reset?: boolean } = await response.json()
       if (useAuthStore.getState().token !== token) return
-      setMessage(data.reset ? copy.success : copy.empty)
+      setMessage(data.reset ? '' : copy.empty)
       if (data.reset) {
         window.dispatchEvent(new Event('notifications-updated'))
         wrapped?.refresh()
@@ -51,8 +52,8 @@ export default function ResetWrappedNotificationButton() {
   }
 
   return <div className="fixed bottom-3 left-3 z-30 max-w-[calc(100vw-1.5rem)]" data-no-translate>
-    <button type="button" className="btn-secondary cursor-pointer text-xs active:translate-y-px" disabled={pending} aria-busy={pending} onClick={() => { void reset() }}>
-      {copy.label}
+    <button type="button" className="btn-secondary h-9 w-9 !p-0 cursor-pointer opacity-0 focus-visible:opacity-100" disabled={pending} aria-busy={pending} aria-label={copy.label} title={copy.label} onClick={() => { void reset() }}>
+      <RotateCcw size={16} aria-hidden="true" />
     </button>
     <p role="status" className="mt-1 text-xs bg-[var(--pixel-paper)] text-[var(--pixel-ink)]">{message}</p>
   </div>
