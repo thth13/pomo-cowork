@@ -358,6 +358,13 @@ headings, fields, cards and scrollbars legible in either theme. Bodies stay tran
 controls use dark insets, and the sticky sound footer uses the scene popover surface.
 Window geometry, dragging, resizing and focus behavior retain their shared owners.
 
+Incoming notification menus, rank/monthly invitation toasts and the Monthly Wrapped
+viewer reuse the same glass shell and local scene text, border and scrollbar roles.
+`app/appearance.css` detects rendered workspace scenery from `body` so global feedback
+and the native Wrapped dialog match it even outside the workspace container. Notification
+rows remain translucent, with a brighter unread fill and their semantic edge markers.
+This treatment is disabled in forced colors and when no workspace scenery is rendered.
+
 The task selector uses a darker translucent inset; its portalled popover explicitly
 carries `data-background-mode` from the appearance store and uses a nearly opaque
 dark surface. The separate mini window retains its ordinary theme. Active tabs and filled progress segments use the semantic timer mode accent; inactive
