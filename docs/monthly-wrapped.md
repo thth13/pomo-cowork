@@ -36,8 +36,9 @@ creation is serialized with view acknowledgments to avoid unread-message races.
 
 POST /api/wrapped { monthStart, action: "notify" } atomically claims notifiedAt.
 Only one tab/device shows the top-right invitation. The global provider checks on
-login, focus and every minute while visible, deferring behind dialogs or another
-corner toast. The invitation lasts 12 seconds, paused on hover/focus/hidden tabs.
+login, focus and every minute while visible. Report/inbox creation is never blocked
+by workspace windows. Only the toast waits behind an open modal or another corner
+toast; hidden and non-modal windows do not defer it. The invitation lasts 12 seconds, paused on hover/focus/hidden tabs.
 It never opens the story automatically. Closing or timing out leaves the message
 unread in the existing notifications menu, including after reload and next month.
 A crash after claiming delivery can consume the toast, but the inbox message remains.

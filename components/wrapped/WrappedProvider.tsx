@@ -77,7 +77,7 @@ export default function WrappedProvider({ children }: { children: ReactNode }) {
     const check = async () => {
       if (running || document.visibilityState !== 'visible') return
       const month = previousMonthStart(timezone)
-      if (checkedMonth === month || document.querySelector('dialog[open], [role="dialog"], .rank-toast')) return
+      if (checkedMonth === month) return
       running = true
       const id = generation.current
       try {
@@ -86,7 +86,10 @@ export default function WrappedProvider({ children }: { children: ReactNode }) {
         setArchive({ owner: token, items: data.history })
         window.dispatchEvent(new Event('notifications-updated'))
         if (data.report.totalFocusMinutes <= 0 || !data.pending) { checkedMonth = month; setError(false); return }
-        if (document.querySelector('dialog[open], [role="dialog"], .rank-toast')) return
+        // Workspace windows stay mounted while hidden and are non-modal.
+        // Only a modal or an occupied toast corner should defer the invitation;
+        // the report and inbox notification have already been saved above.
+        if (document.querySelector('dialog[open], [role="dialog"][aria-modal="true"]:not([hidden]), .rank-toast')) return
         const controller = new AbortController()
         const timeout = setTimeout(() => controller.abort(), 20_000)
         let claimed = false
