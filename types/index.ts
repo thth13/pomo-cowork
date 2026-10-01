@@ -150,6 +150,7 @@ export interface ActiveSession {
   username: string
   avatarUrl?: string
   experience?: number
+  isPro?: boolean
   registeredAt?: string | null
   roomId?: string | null
   task: string

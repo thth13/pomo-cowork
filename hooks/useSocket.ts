@@ -70,6 +70,7 @@ const withSessionProfile = (session: ActiveSession): ActiveSession => {
     username: user?.username ?? getAnonymousUsername(),
     avatarUrl: user?.avatarUrl,
     experience: user?.experience ?? 0,
+    isPro: Boolean(user?.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date())),
   }
 }
 

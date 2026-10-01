@@ -117,7 +117,9 @@ Only real sessions appear in the rail and online count; mock participants are re
 Coworkers form a vertical list with 40px avatars on the left and names, activities,
 time, status and a remaining-time meter on the right. Time tracking shows elapsed time
 without a fictional remaining-time meter. The current user keeps a tomato edge accent and
-You label. Room pages keep their detailed session cards. Above 719px the list owns vertical scrolling.
+You label. Active Pro accounts show the profile's small crown icon beside the name;
+the session snapshot carries the same active-access check used by the account UI.
+Room pages keep their detailed session cards. Above 719px the list owns vertical scrolling.
 Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The English H1, “Online Pomodoro Timer for Focused Work”, and Pomodoro overview
 live inside the About the timer workspace window, opened by the question-mark dock
 button. The window is closed by default and never restored on page load, even if left

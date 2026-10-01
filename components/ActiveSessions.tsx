@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, User, ExternalLink, MoreHorizontal } from 'lucide-react'
+import { Clock, Crown, User, ExternalLink, MoreHorizontal } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -257,8 +257,8 @@ function SessionCard({
         <Link
           href={`/user/${session.userId}`}
           className="coworker-tile-profile"
-          aria-label={`${session.username} · ${t.activeSessions.online} · ${statusLabel} · ${session.task || ''} · ${formatTime(elapsedSeconds)}`}
-          title={`${session.username}${isCurrentUser ? ` (${t.activeSessions.you})` : ''} · ${statusLabel} · ${session.task || ''}`}
+          aria-label={`${session.username}${session.isPro ? ' · Pro' : ''} · ${t.activeSessions.online} · ${statusLabel} · ${session.task || ''} · ${formatTime(elapsedSeconds)}`}
+          title={`${session.username}${session.isPro ? ' · Pro' : ''}${isCurrentUser ? ` (${t.activeSessions.you})` : ''} · ${statusLabel} · ${session.task || ''}`}
         >
           <span className="coworker-tile-portrait">
             <span className="coworker-tile-avatar">
@@ -270,7 +270,10 @@ function SessionCard({
           </span>
           <span className="coworker-tile-mini-time" aria-hidden="true"><Clock size={10} />{formatTime(elapsedSeconds)}</span>
           <span className="coworker-tile-details">
-            <span className="coworker-tile-name">{session.username}</span>
+            <span className="coworker-tile-identity">
+              <span className="coworker-tile-name">{session.username}</span>
+              {session.isPro && <Crown className="coworker-tile-pro" size={12} aria-hidden="true" />}
+            </span>
             <span className="coworker-tile-task">{session.task || getSessionTypeLabel(session.type)}</span>
             <span className="coworker-tile-time">{formatTime(elapsedSeconds)}</span>
             <span className="coworker-tile-status">

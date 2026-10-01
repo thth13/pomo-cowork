@@ -14,6 +14,7 @@ interface PomodoroSession {
   username: string
   avatarUrl?: string
   experience?: number
+  isPro?: boolean
   roomId?: string | null
   task: string
   type: string
@@ -275,6 +276,7 @@ const serializeSessions = () =>
     username: session.username,
     avatarUrl: session.avatarUrl,
     experience: session.experience ?? 0,
+    isPro: session.isPro ?? false,
     roomId: session.roomId ?? null,
     task: session.task,
     type: session.type,

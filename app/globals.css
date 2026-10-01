@@ -2333,13 +2333,26 @@ body:has(.workspace-page) {
   border-radius: 2px;
 }
 
-.coworker-tile-name {
+.coworker-tile-identity {
   grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
   padding-right: 34px;
+}
+
+.coworker-tile-name {
+  min-width: 0;
   overflow-wrap: anywhere;
   font-size: 14px;
   line-height: 18px;
   font-weight: 600;
+}
+
+.coworker-tile-pro {
+  flex: none;
+  color: var(--pixel-tomato-ink);
 }
 
 .coworker-tile-task {
