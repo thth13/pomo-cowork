@@ -106,12 +106,13 @@ export default function WrappedProvider({ children }: { children: ReactNode }) {
       } catch { if (!cancelled) setError(true) }
       finally { running = false }
     }
-    void check()
+    // Let a dismissed toast finish exiting before checking the occupied corner.
+    const initialCheck = setTimeout(() => { void check() }, retry > 0 ? 500 : 0)
     const interval = setInterval(() => { void check() }, 60_000)
     const onFocus = () => { void check() }
     window.addEventListener('focus', onFocus)
     document.addEventListener('visibilitychange', onFocus)
-    return () => { cancelled = true; clearInterval(interval); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus) }
+    return () => { cancelled = true; clearTimeout(initialCheck); clearInterval(interval); window.removeEventListener('focus', onFocus); document.removeEventListener('visibilitychange', onFocus) }
   }, [token, userId, isLoading, timezone, load, retry])
   useEffect(() => {
     const open = (event: Event) => { void openMonth((event as CustomEvent<string>).detail) }

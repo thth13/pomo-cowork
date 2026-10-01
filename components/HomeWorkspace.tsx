@@ -23,6 +23,7 @@ import { HOME_TITLE } from '@/lib/homeSeo'
 import FocusSounds from '@/components/FocusSounds'
 import { useAmbientSounds } from '@/hooks/useAmbientSounds'
 import { ambientSoundsCopy } from '@/lib/i18n/ambientSounds'
+import ResetWrappedNotificationButton from '@/components/wrapped/ResetWrappedNotificationButton'
 
 type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits' | 'sounds'
 const WORKING_COLLAPSED_STORAGE_KEY = 'pomo:working:collapsed:v1'
@@ -219,6 +220,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
 
   return (
     <div className="workspace-page garden-page">
+      <ResetWrappedNotificationButton />
       {workspaceLoading ? (
         <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
           <div className="flex flex-col items-center gap-3">

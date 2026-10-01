@@ -300,7 +300,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
   const openAvatarNotifications = () => {
     setIsAccountPreviewOpen(false)
     setIsMenuOpen(false)
-    if (compact) setIsMobileMenuOpen(true)
+    setIsMobileMenuOpen(false)
     setIsNotificationsOpen(true)
     void fetchNotifications().catch(() => undefined)
   }
@@ -372,8 +372,8 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               {isAuthenticated && user ? (
                 unreadCount > 0 ? (
                   <button type="button" className="workspace-account-trigger"
-                    aria-label={unreadLabel} aria-expanded={isNotificationsOpen && isMobileMenuOpen}
-                    aria-controls={compactMenuId} onClick={openAvatarNotifications}>
+                    aria-label={unreadLabel} aria-haspopup="true" aria-expanded={isNotificationsOpen}
+                    onClick={openAvatarNotifications}>
                   <RankAvatarFrame experience={user.experience} thickness={2} className="h-8 w-8">
                     {user.avatarUrl ? (
                       <Image src={user.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
@@ -406,6 +406,23 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                   onClick={() => { setIsMobileMenuOpen(false); setIsAuthModalOpen(true) }}>
                   <span className="workspace-account-guest"><User size={19} aria-hidden="true" /></span>
                 </button>
+              )}
+              {isAuthenticated && user && !isMobileMenuOpen && (
+                <NotificationsMenu
+                  variant="mobile"
+                  inline
+                  hideTrigger
+                  isOpen={isNotificationsOpen}
+                  unreadCount={unreadCount}
+                  notificationsLoading={notificationsLoading}
+                  notifications={notifications}
+                  inviteAction={inviteAction}
+                  onToggle={() => setIsNotificationsOpen(false)}
+                  onAcceptInvite={acceptInvite}
+                  onDeclineInvite={declineInvite}
+                  onNotificationClick={handleNotificationClick}
+                  containerRef={mobileNotificationsRef}
+                />
               )}
               {isAuthenticated && user && isAccountPreviewOpen && !isMobileMenuOpen && (
                 <div className="workspace-account-preview">

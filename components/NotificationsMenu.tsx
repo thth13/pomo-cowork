@@ -11,6 +11,7 @@ import type { RefObject } from 'react'
 interface NotificationsMenuProps {
   variant: 'desktop' | 'mobile'
   inline?: boolean
+  hideTrigger?: boolean
   isOpen: boolean
   unreadCount: number
   notificationsLoading: boolean
@@ -26,6 +27,7 @@ interface NotificationsMenuProps {
 export default function NotificationsMenu({
   variant,
   inline = false,
+  hideTrigger = false,
   isOpen,
   unreadCount,
   notificationsLoading,
@@ -51,7 +53,7 @@ export default function NotificationsMenu({
   const copy = wrappedCopy[language]
   return (
     <div className={inline ? "workspace-navigation-notifications" : "relative"} ref={containerRef}>
-      <button
+      {!hideTrigger && <button
         type="button"
         onClick={onToggle}
         className={buttonClassName}
@@ -63,22 +65,23 @@ export default function NotificationsMenu({
         {unreadCount > 0 && (
           <span className={badgeClassName}>{unreadCount > 99 ? '99+' : unreadCount}</span>
         )}
-      </button>
+      </button>}
 
       {isOpen && (
-        <div className={inline ? "workspace-navigation-notification-list" : "absolute right-0 mt-3 w-80 rounded-2xl border border-gray-200 bg-white/95 shadow-lg ring-1 ring-black/5 backdrop-blur dark:border-slate-700 dark:bg-slate-900/95 z-50 overflow-hidden"}>
-          <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">Notifications</p>
+        <div className={`${inline ? "workspace-navigation-notification-list" : "absolute right-0 mt-3 w-80 z-50"} notifications-panel`}>
+          <div className="notifications-panel-header">
+            <p>Notifications</p>
+            {unreadCount > 0 && <span>{unreadCount > 99 ? '99+' : unreadCount}</span>}
           </div>
 
           {notificationsLoading && notifications.length === 0 ? (
-            <div className="px-4 py-6 flex items-center justify-center">
+            <div className="notifications-panel-state">
               <ClipLoader size={18} color="#ef4444" />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-gray-500 dark:text-slate-400">No notifications</div>
+            <div className="notifications-panel-state">No notifications</div>
           ) : (
-            <div className="max-h-96 overflow-auto">
+            <div className="notifications-panel-list">
               {notifications.map((n) => {
                 const isInvite =
                   n.readAt === null &&
@@ -96,12 +99,10 @@ export default function NotificationsMenu({
                 return (
                   <div
                     key={n.id}
-                    className={`px-4 py-3 border-b border-gray-100 dark:border-slate-700 last:border-b-0 ${
-                      isUnread ? 'bg-gray-50 dark:bg-slate-800/60' : 'bg-transparent'
-                    }`}
+                    className={`notification-entry notification-entry--${n.type.toLowerCase()}${isUnread ? ' notification-entry--unread' : ''}`}
                   >
                     {n.type === 'MONTHLY_WRAPPED' && n.wrappedMonth ? (
-                      <button type="button" onClick={() => onNotificationClick?.(n)} className="wrapped-notification-action">
+                      <button type="button" onClick={() => onNotificationClick?.(n)} className="wrapped-notification-action notification-entry-action">
                         <strong>{copy.notification}</strong>
                         <span>{monthLabel({ monthStart: n.wrappedMonth }, language)}</span>
                         <span>{copy.open} →</span>
@@ -120,7 +121,7 @@ export default function NotificationsMenu({
                       <button
                         type="button"
                         onClick={() => onNotificationClick?.(n)}
-                        className="flex w-full items-start gap-3 text-left"
+                        className="notification-entry-action flex w-full items-start gap-3 text-left"
                       >
                         <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center text-xs font-semibold text-gray-600 dark:text-slate-200">
                           {avatarUrl ? (
@@ -135,10 +136,10 @@ export default function NotificationsMenu({
                         </div>
                       </button>
                     ) : (
-                      <>
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">{n.title}</div>
-                        <div className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{n.message}</div>
-                      </>
+                      <div className="notification-entry-copy">
+                        <div>{n.title}</div>
+                        <div>{n.message}</div>
+                      </div>
                     )}
 
                     {isInvite && (
@@ -147,7 +148,7 @@ export default function NotificationsMenu({
                           type="button"
                           onClick={() => onAcceptInvite(n)}
                           disabled={isInviteBusy}
-                          className="px-3 py-1.5 rounded-lg text-sm font-medium bg-red-500 text-white hover:bg-red-600 transition-colors disabled:opacity-60 flex items-center gap-2"
+                          className="notification-invite-action notification-invite-accept"
                         >
                           {isAccepting && (
                             <span className="h-3.5 w-3.5 rounded-full border-2 border-white/50 border-t-white animate-spin" />
@@ -158,7 +159,7 @@ export default function NotificationsMenu({
                           type="button"
                           onClick={() => onDeclineInvite(n)}
                           disabled={isInviteBusy}
-                          className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-colors disabled:opacity-60 flex items-center gap-2"
+                          className="notification-invite-action notification-invite-decline"
                         >
                           {isDeclining && (
                             <span className="h-3.5 w-3.5 rounded-full border-2 border-gray-400/50 dark:border-slate-400/50 border-t-gray-600 dark:border-t-slate-200 animate-spin" />

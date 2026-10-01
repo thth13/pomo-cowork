@@ -51,6 +51,14 @@ export async function POST(request: NextRequest) {
     if (!body || typeof body !== 'object' || !('monthStart' in body) || typeof body.monthStart !== 'string' || !validMonth(body.monthStart)) return json({ error: 'Invalid month' }, 400)
     const row = await prisma.monthlyWrapped.findUnique({ where: { userId_monthStart: { userId: user.id, monthStart: body.monthStart } } })
     if (!row || (row.snapshot as unknown as MonthlyWrapped).totalFocusMinutes <= 0) return json({ claimed: false })
+    // Temporary debug action: reset only the authenticated user's recap.
+    if ('action' in body && body.action === 'reset-notification') {
+      await prisma.$transaction([
+        prisma.monthlyWrapped.update({ where: { userId_monthStart: { userId: user.id, monthStart: row.monthStart } }, data: { notifiedAt: null, viewedAt: null } }),
+        prisma.notification.updateMany({ where: { userId: user.id, type: 'MONTHLY_WRAPPED', wrappedMonth: row.monthStart }, data: { readAt: null } }),
+      ])
+      return json({ reset: true })
+    }
     if ('action' in body && body.action === 'notify') {
       if (row.monthStart !== previousMonthStart(row.timezone)) return json({ claimed: false })
       const result = await prisma.monthlyWrapped.updateMany({ where: { userId: user.id, monthStart: row.monthStart, viewedAt: null, notifiedAt: null }, data: { notifiedAt: new Date() } })
