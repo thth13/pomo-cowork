@@ -445,7 +445,7 @@ html:has(.workspace-page), body:has(.workspace-page) { height: 100%; overflow: h
 .workspace-navigation-trigger:active, .workspace-account-trigger:active { background: var(--pixel-shadow); }
 .workspace-navigation :is(button, a):focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -2px; }
 .workspace-account { display: flex; border-right: 1px solid var(--pixel-line); }
-.workspace-account-trigger { display: flex; align-items: center; justify-content: center; width: 48px; min-height: 44px; padding: 6px 8px; color: var(--pixel-ink); background: transparent; border: 0; border-radius: 2px 0 0 2px; cursor: pointer; }
+.workspace-account-trigger { position: relative; display: flex; align-items: center; justify-content: center; width: 48px; min-height: 44px; padding: 6px 8px; color: var(--pixel-ink); background: transparent; border: 0; border-radius: 2px 0 0 2px; cursor: pointer; }
 .workspace-account-fallback, .workspace-account-guest { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; background: var(--pixel-screen); }
 .workspace-account-guest { width: 32px; height: 32px; border-radius: 50%; }
 .workspace-account-preview { position: absolute; top: 100%; right: 0; width: min(288px, calc(100vw - 32px)); padding-top: 8px; z-index: 2; }
@@ -986,3 +986,8 @@ html[data-mini-timer] body { min-height: 100%; margin: 0; background: var(--pixe
   .task-search:focus-within { border-bottom-color: Highlight; }
   .task-popover, .task-popover-list { scrollbar-color: auto; }
 }
+
+/* Shared unread count sits below the Pro crown without resizing the avatar. */
+.avatar-unread-badge { position: absolute; right: -4px; bottom: -3px; z-index: 1; display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; border: 2px solid var(--pixel-paper); border-radius: 999px; background: #dc2626; color: #fff; font: 700 10px/1 Inter, sans-serif; font-variant-numeric: tabular-nums; pointer-events: none; }
+.workspace-account-trigger .avatar-unread-badge { right: 2px; bottom: 2px; }
+@media (forced-colors: active) { .avatar-unread-badge { background: Highlight; color: HighlightText; border-color: Canvas; forced-color-adjust: none; } }

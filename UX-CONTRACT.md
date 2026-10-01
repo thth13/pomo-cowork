@@ -373,21 +373,21 @@ public publication opens its stable post URL. Profile saves open the new public 
 Deletion returns to the corresponding owning list; focus sessions survive project deletion.
 There is no auto-publication, automatic follower notification, or inferred moderation role.
 
-## Weekly recaps
+## Monthly recaps
 
-`WrappedProvider` owns account-scoped loading, historical opening and the global viewer.
-`CommunityDialog` owns modal accessibility; `WrappedViewer` owns explicit, non-timed story
-navigation. `WeeklyRecaps` reuses native date input and the same viewer on both statistics
-pages. `lib/wrapped/analytics.ts` reuses sessionStats effective minutes; the server persists
-immutable snapshots. Authenticated API routes derive ownership only from the verified
-bearer token, never a request user ID. No paid access is required.
+`WrappedProvider` owns account-scoped loading, history and the global viewer.
+`CommunityDialog` owns modal accessibility; `WrappedViewer` owns explicit story navigation.
+`MonthlyRecaps` uses a native month input (OS picker ownership) on both statistics pages
+and `/journal/monthly`; `/journal/weekly` redirects there. The API validates completed
+calendar months. Session completion dates use the browser IANA timezone; snapshots
+are immutable and scoped to the authenticated user and first day of the month.
 
-A completed Monday–Sunday week uses the requesting browser's IANA timezone. The account
-and local Monday uniquely identify a snapshot and automatic display claim across devices.
-Zero activity does not open automatically. Atomic viewing claims occur immediately before
-opening; historical opening does not claim automatic viewing. Dismissal and Escape retain
-the server record. Export never includes project/task names. Loading and sharing failures
-have localized recovery; cancelled system share sheets produce no error.
+`NotificationToast` owns the monthly-wrapped top-right invitation. Server `notifiedAt`
+claims deduplicate delivery across devices; `viewedAt` changes only on explicit opening.
+The notification is saved before delivery and stays unread in NotificationsMenu after
+closing or timing out the toast. Opening from the toast, message or archive acknowledges
+it; failed loads preserve the unread message and offer another attempt. Zero-focus
+months do not send notifications. Export includes aggregate metrics only.
 
 ## Achievements
 

@@ -504,13 +504,13 @@ acceptance cases. Existing identity/session data is reused; the migration has no
 applied to a live database. Database validation/client generation and static lint are
 allowed; the user's prohibition on builds, running the app, and tsc remains in force.
 
-## Weekly Wrapped
+## Monthly Wrapped
 
-Weekly Wrapped is a short private story, mounted by WrappedProvider and reopened from
-Weekly Recaps in both statistics screens. CommunityDialog owns native modal focus,
-Escape and focus restoration; its weekly-wrapped variant owns the large paper frame.
+Monthly Wrapped is a short private story, mounted by WrappedProvider and reopened from
+Monthly Recaps in both statistics screens. CommunityDialog owns native modal focus,
+Escape and focus restoration; its monthly-wrapped variant owns the large paper frame.
 `app/wrapped.css` uses existing pixel surface, ink, sage, tomato, border and font tokens.
-Inter carries short narrative headings; pixel numerals are the hero. Seven daily blocks
+Inter carries short narrative headings; pixel numerals are the hero. A month of daily bars and a seven-column streak grid
 form the signature, showing actual activity rather than invented celebration metrics.
 Mobile uses the full viewport and natural modal scrolling; desktop caps at 900px.
 Arrow keys, touch swipes and labeled buttons navigate without automatic advancement.
@@ -520,8 +520,12 @@ English/Spanish copy belongs to `lib/i18n/wrapped.ts`. Async failures retain exp
 retry/download/copy alternatives. The final 1080×1350 canvas uses the documented light
 paper palette regardless of app theme, shares only aggregate metrics, and includes no
 user identity, task names or project names. Native sharing requires a user click.
-`docs/weekly-wrapped.md` defines completion attribution, snapshots, cohort eligibility,
+`docs/monthly-wrapped.md` defines completion attribution, snapshots, cohort eligibility,
 deployment and manual verification. No runtime visual verification has been performed.
+
+Monthly report invitations reuse NotificationToast in the top-right corner. An unread
+message persists in NotificationsMenu until the report is opened; toast dismissal never
+marks it read. The monthly-wrapped toast variant shares the existing paper card tokens.
 
 ## Profile achievements
 
@@ -571,3 +575,8 @@ and an honest reload-reset notice. The book field is local and never uploaded.
 `FlipClock` displays device-local time and date, 12/24-hour format, and optional seconds.
 Native number fields intentionally use browser-owned editing; no new modal or select
 primitive is introduced. Browser verification remains user-owned for this task.
+
+The Navbar account avatar carries a shared red circular unread-notification count
+in compact, desktop and mobile account views. `.avatar-unread-badge` in globals.css
+uses white Inter numerals on #dc2626 with a paper border; its bottom-right placement
+clears the Pro crown and does not resize navigation. Zero hides the badge.

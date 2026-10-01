@@ -1,6 +1,6 @@
 'use client'
 
-import WeeklyRecaps from '@/components/wrapped/WeeklyRecaps'
+import MonthlyRecaps from '@/components/wrapped/MonthlyRecaps'
 
 import { useCallback, useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import Navbar from '@/components/Navbar'
@@ -1902,7 +1902,7 @@ export default function StatsPage() {
           </div>
         </motion.div> */}
 
-        <WeeklyRecaps />
+        <MonthlyRecaps />
       </main>
       {!isPro && showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />

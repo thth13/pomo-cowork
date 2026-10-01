@@ -1,11 +1,5 @@
-import { Suspense } from 'react'
-import { WeeklyWrapped } from '@/components/journal/JournalLists'
-import { JournalLoading } from '@/components/journal/Primitives'
-import { privateMetadata } from '@/lib/journal/metadata'
-export const metadata = {
-  ...privateMetadata,
-  title: 'WeeklyWrapped | Pomo Cowork'
-}
+import { redirect } from 'next/navigation'
+
 export default function Page() {
-  return <Suspense fallback={<JournalLoading />}><WeeklyWrapped /></Suspense>
+  redirect('/journal/monthly')
 }

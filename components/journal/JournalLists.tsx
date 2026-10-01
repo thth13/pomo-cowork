@@ -1,10 +1,12 @@
 'use client'
 
 import Link from 'next/link'
+import MonthlyRecaps from '@/components/wrapped/MonthlyRecaps'
+import { useWrapped } from '@/components/wrapped/WrappedProvider'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useJournalQuery, useJournalText } from '@/lib/journal/client'
-import { PageResult, Post, Project, Author, Stats, duration, profileHref } from '@/lib/journal/types'
+import { PageResult, Post, Project, Author, profileHref } from '@/lib/journal/types'
 import { AuthGate, JournalLoading, QueryError } from './Primitives'
 import { FocusStats, UpdateCard } from './Cards'
 import { FocusProjectButton } from './ProjectPicker'
@@ -57,7 +59,7 @@ function Posts({
     </header>
     <div className="journal-actions">
       <Link href="/discover">{t('Discover people', 'Descubrir personas')}</Link>
-      <Link href="/journal/weekly">{t('Weekly Wrapped', 'Resumen de la semana')}</Link>
+      <Link href="/journal/monthly">{t('Monthly Wrapped', 'Resumen del mes')}</Link>
     </div>
     {query.loading ? <JournalLoading /> : query.error ? <QueryError error={query.error} retry={query.reload} /> : <>
       {query.data?.items.length === 0 && <section className="journal-empty">
@@ -155,39 +157,17 @@ export function Discover() {
   </>}
   </>
 }
-export function WeeklyWrapped() {
-  return <AuthGate><Weekly /></AuthGate>
+export function MonthlyWrapped() {
+  return <AuthGate><Monthly /></AuthGate>
 }
-function Weekly() {
-  const query = useJournalQuery<Stats & {
-      from: string;
-      to: string;
-    }>('weekly'),
-    t = useJournalText()
+function Monthly() {
+  const wrapped = useWrapped(), t = useJournalText()
   return <section className="journal-form">
-  <h1>{t('Your week of focused work', 'Tu semana de trabajo enfocado')}</h1>
-  <p>{t('A starting point for a human-written update. Nothing is published automatically.', 'Un punto de partida para una actualización escrita por ti. Nada se publica automáticamente.')}</p>
-  {query.loading ? <JournalLoading /> : query.error ? <QueryError error={query.error} retry={query.reload} /> : query.data && <div className="journal-card">
-    <p>
-      {query.data.from.slice(0, 10)}
-      {' '}
-      —
-      {' '}
-      {query.data.to.slice(0, 10)}
-      {' '}
-      · UTC
-    </p>
-    <h2>
-      {duration(query.data.seconds)}
-      {' '}
-      {t('focused', 'de enfoque')}
-    </h2>
-    <p>
-      {query.data.sessions}
-      {' '}
-      {t('completed focus sessions', 'sesiones de enfoque completadas')}
-    </p>
-    <Link className="journal-button" href="/journal/compose?type=WEEKLY_UPDATE">{t('Write weekly update', 'Escribir resumen semanal')}</Link>
-  </div>}
+    <h1>{t('Monthly Wrapped', 'Resumen del mes')}</h1>
+    <p>{t('Look back at your last completed month of focused work.', 'Repasa tu último mes completo de trabajo enfocado.')}</p>
+    <button type="button" className="journal-button" disabled={!wrapped || wrapped.loading} onClick={() => { void wrapped?.openMonth() }}>
+      {wrapped?.loading ? t('Loading your month…', 'Cargando tu mes…') : t('Open monthly recap', 'Abrir resumen mensual')}
+    </button>
+    <MonthlyRecaps />
   </section>
 }

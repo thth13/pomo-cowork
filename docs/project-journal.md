@@ -75,7 +75,8 @@ slug changes its public URL; no alias system is introduced in this MVP.
   the present instant for today). Editing prose preserves historical snapshots.
 - Weekly snapshots use Monday-to-now in UTC, scoped to the selected project if present.
   No task-completion count is fabricated: the existing Task model has no completion
-  timestamp. Weekly Wrapped is a minimal new summary, not an automatic publication.
+  timestamp. Monthly Wrapped now lives at `/journal/monthly` (see `monthly-wrapped.md`);
+  weekly journal updates remain manually composed.
 - Activity records project creation/completion, published milestones, and deduplicated
   significant focus/session/streak thresholds. No event is created per ordinary session.
   Threshold detection runs on focus completion and nonzero tracker stops;
@@ -111,7 +112,7 @@ an incognito browser:
    milestones appear separately and ordinary session completions never flood the feed.
 8. Inspect 365-day heatmap tooltips by keyboard and pointer, mobile horizontal scroll,
    light/dark theme, narrow forms, reduced motion, loading, failure/retry, and empty states.
-9. Verify UTC week boundary and backdated milestones. Open Weekly Wrapped, choose Write
+9. Verify UTC week boundary and backdated milestones. Open My updates, choose Write
    weekly update, review prefilled stats and editable content; nothing auto-publishes.
 10. Leave a dirty editor through a link or reload; check the discard prompt, failed-save
     value preservation, busy submit/upload controls, toast feedback, and safe deletion.

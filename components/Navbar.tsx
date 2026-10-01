@@ -154,7 +154,8 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     }
 
     window.addEventListener('rank-up', handleRankUp)
-    return () => window.removeEventListener('rank-up', handleRankUp)
+    window.addEventListener('notifications-updated', handleRankUp)
+    return () => { window.removeEventListener('rank-up', handleRankUp); window.removeEventListener('notifications-updated', handleRankUp) }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authHeaders])
 
@@ -274,6 +275,11 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
 
   const handleNotificationClick = async (notification: NotificationItem) => {
     if (!authHeaders) return
+    if (notification.type === 'MONTHLY_WRAPPED' && notification.wrappedMonth) {
+      setIsNotificationsOpen(false)
+      window.dispatchEvent(new CustomEvent('open-monthly-wrapped', { detail: notification.wrappedMonth }))
+      return
+    }
     if (notification.type !== 'WALL_MESSAGE') return
 
     await markRead(notification.id)
@@ -291,6 +297,14 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     setIsMobileMenuOpen(false)
   }
 
+  const unreadLabel = unreadCount > 0
+    ? (language === 'es' ? `Notificaciones sin leer: ${unreadCount}` : `Unread notifications: ${unreadCount}`)
+    : ''
+  const avatarUnreadBadge = isAuthenticated && user && unreadCount > 0 ? (
+    <span className="avatar-unread-badge" role="img" aria-label={unreadLabel}>
+      {unreadCount > 99 ? '99+' : unreadCount}
+    </span>
+  ) : null
   const rankProgress = getRankProgress(user?.experience)
   const accountDetails = user ? (
     <div className="workspace-account-details">
@@ -351,7 +365,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 <Link
                   href={`/user/${encodeURIComponent(user.id)}`}
                   className="workspace-account-trigger"
-                  aria-label={`${t.nav.profile}: ${user.username}`}
+                  aria-label={`${t.nav.profile}: ${user.username}${unreadLabel ? `. ${unreadLabel}` : ''}`}
                   aria-describedby={isAccountPreviewOpen ? accountPreviewId : undefined}
                   onClick={() => { setIsAccountPreviewOpen(false); setIsMobileMenuOpen(false) }}
                 >
@@ -362,6 +376,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                       <span className="workspace-account-fallback"><User size={17} aria-hidden="true" /></span>
                     )}
                   </RankAvatarFrame>
+                  {avatarUnreadBadge}
                 </Link>
               ) : (
                 <button type="button" className="workspace-account-trigger" aria-label={t.nav.login} title={t.nav.login}
@@ -501,6 +516,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                       type="button"
                       onClick={() => setIsMenuOpen(prev => !prev)}
                       className="relative w-10 h-10 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold transition-transform hover:scale-105"
+                      aria-label={`${t.nav.profile}: ${user.username}${unreadLabel ? `. ${unreadLabel}` : ''}`}
                       aria-haspopup="true"
                       aria-expanded={isMenuOpen}
                     >
@@ -519,6 +535,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                           </span>
                         )}
                       </RankAvatarFrame>
+                      {avatarUnreadBadge}
                       {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
                         <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
                           <Crown className="w-3 h-3" />
@@ -687,6 +704,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                       </span>
                     )}
                   </RankAvatarFrame>
+                  {avatarUnreadBadge}
                   {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
                     <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
                       <Crown className="w-3 h-3" />

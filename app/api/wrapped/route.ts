@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { previousMonday, validWeek, type WeeklyWrapped } from '@/lib/wrapped/analytics'
-import { getWeeklyWrapped } from '@/lib/wrapped/server'
+import { previousMonthStart, validMonth, type MonthlyWrapped } from '@/lib/wrapped/analytics'
+import { getMonthlyWrapped } from '@/lib/wrapped/server'
 
 export const dynamic = 'force-dynamic'
 const json = (body: unknown, status = 200) => NextResponse.json(body, { status, headers: { 'Cache-Control': 'private, no-store' } })
@@ -19,27 +19,47 @@ export async function GET(request: NextRequest) {
     const timezone = request.nextUrl.searchParams.get('timezone') || 'UTC'
     try { new Intl.DateTimeFormat('en', { timeZone: timezone }).format() }
     catch { return json({ error: 'Invalid timezone' }, 400) }
-    const latest = previousMonday(timezone)
-    const week = request.nextUrl.searchParams.get('week') || latest
-    if (!validWeek(week) || week > latest || week < '2020-01-06') return json({ error: 'Invalid completed week' }, 400)
-    const report = await getWeeklyWrapped(user.id, week, timezone)
-    const history = await prisma.weeklyWrapped.findMany({ where: { userId: user.id }, orderBy: { weekStart: 'desc' }, select: { weekStart: true, snapshot: true } })
-    return json({ report, history: history.filter(row => (row.snapshot as unknown as WeeklyWrapped).totalFocusMinutes > 0).map(row => ({ weekStart: row.weekStart, weekEnd: (row.snapshot as unknown as WeeklyWrapped).weekEnd })) })
+    const latest = previousMonthStart(timezone)
+    const month = request.nextUrl.searchParams.get('month') || latest
+    if (!validMonth(month) || month > latest || month < '2020-01-01') return json({ error: 'Invalid completed month' }, 400)
+    const report = await getMonthlyWrapped(user.id, month, timezone)
+    const saved = await prisma.$transaction(async tx => {
+      // Serialize inbox creation with view acknowledgments, including other tabs.
+      await tx.$queryRaw`SELECT "userId" FROM "monthly_wrapped" WHERE "userId" = ${user.id} AND "monthStart" = ${month} FOR UPDATE`
+      const row = await tx.monthlyWrapped.findUniqueOrThrow({ where: { userId_monthStart: { userId: user.id, monthStart: month } } })
+      if (month === latest && report.totalFocusMinutes > 0 && !row.viewedAt) {
+        await tx.notification.upsert({
+          where: { id: `monthly-wrapped:${user.id}:${month}` }, update: {},
+          create: { id: `monthly-wrapped:${user.id}:${month}`, userId: user.id, type: 'MONTHLY_WRAPPED', wrappedMonth: month, title: 'Monthly Wrapped', message: 'Your monthly recap is ready.' },
+        })
+      }
+      return row
+    })
+    const history = await prisma.monthlyWrapped.findMany({ where: { userId: user.id }, orderBy: { monthStart: 'desc' }, select: { monthStart: true, snapshot: true } })
+    return json({ report, pending: !saved.viewedAt && !saved.notifiedAt, history: history.filter(row => (row.snapshot as unknown as MonthlyWrapped).totalFocusMinutes > 0).map(row => ({ monthStart: row.monthStart, monthEnd: (row.snapshot as unknown as MonthlyWrapped).monthEnd })) })
   } catch (error) {
-    console.error('Weekly Wrapped:', error)
+    console.error('Monthly Wrapped:', error)
     return json({ error: 'Unable to load recap' }, 500)
   }
 }
-// Atomic compare-and-set prevents automatic replay across tabs and devices.
+// Toast delivery and actual viewing are separate, account-scoped states.
 export async function POST(request: NextRequest) {
   try {
     const user = await identity(request)
     if (!user) return json({ error: 'Unauthorized' }, 401)
     const body: unknown = await request.json()
-    if (!body || typeof body !== 'object' || !('weekStart' in body) || typeof body.weekStart !== 'string' || !validWeek(body.weekStart)) return json({ error: 'Invalid week' }, 400)
-    const row = await prisma.weeklyWrapped.findUnique({ where: { userId_weekStart: { userId: user.id, weekStart: body.weekStart } } })
-    if (!row || row.weekStart !== previousMonday(row.timezone) || (row.snapshot as unknown as WeeklyWrapped).totalFocusMinutes <= 0) return json({ claimed: false })
-    const result = await prisma.weeklyWrapped.updateMany({ where: { userId: user.id, weekStart: row.weekStart, viewedAt: null }, data: { viewedAt: new Date() } })
-    return json({ claimed: result.count === 1 })
+    if (!body || typeof body !== 'object' || !('monthStart' in body) || typeof body.monthStart !== 'string' || !validMonth(body.monthStart)) return json({ error: 'Invalid month' }, 400)
+    const row = await prisma.monthlyWrapped.findUnique({ where: { userId_monthStart: { userId: user.id, monthStart: body.monthStart } } })
+    if (!row || (row.snapshot as unknown as MonthlyWrapped).totalFocusMinutes <= 0) return json({ claimed: false })
+    if ('action' in body && body.action === 'notify') {
+      if (row.monthStart !== previousMonthStart(row.timezone)) return json({ claimed: false })
+      const result = await prisma.monthlyWrapped.updateMany({ where: { userId: user.id, monthStart: row.monthStart, viewedAt: null, notifiedAt: null }, data: { notifiedAt: new Date() } })
+      return json({ claimed: result.count === 1 })
+    }
+    await prisma.$transaction([
+      prisma.monthlyWrapped.updateMany({ where: { userId: user.id, monthStart: row.monthStart, viewedAt: null }, data: { viewedAt: new Date() } }),
+      prisma.notification.updateMany({ where: { userId: user.id, type: 'MONTHLY_WRAPPED', wrappedMonth: row.monthStart, readAt: null }, data: { readAt: new Date() } }),
+    ])
+    return json({ viewed: true })
   } catch { return json({ error: 'Unable to save viewed state' }, 500) }
 }

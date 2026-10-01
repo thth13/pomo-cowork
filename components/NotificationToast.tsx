@@ -11,7 +11,7 @@ interface NotificationToastProps {
   onClose: () => void
   type?: 'info' | 'warning' | 'error' | 'success'
   duration?: number
-  variant?: 'default' | 'rank-up'
+  variant?: 'default' | 'rank-up' | 'monthly-wrapped'
   notificationKey?: string
   title?: string
   description?: string
@@ -80,7 +80,7 @@ export default function NotificationToast({
     },
   }
 
-  if (variant === 'rank-up') {
+  if (variant === 'rank-up' || variant === 'monthly-wrapped') {
     return (
       <div className="notification-corner" data-i18n-ignore>
         <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">

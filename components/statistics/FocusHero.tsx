@@ -17,7 +17,7 @@ export default function FocusHero({ data }: { data: StatisticsData }) {
       <div className="insight-hero-number" aria-label={`${number(hours)} h ${minutes} min`}><span>{number(hours)}</span><small>h</small><span>{String(minutes).padStart(2, '0')}</span><small>m</small></div>
       <Change current={thisWeek.minutes} previous={lastWeek.minutes} label />
       <p className="insight-hero-note">{copy.weekNote}</p>
-      <Link href="/journal/weekly" className="insight-footnote">{language === 'es' ? 'Ver resumen semanal →' : 'View Weekly Wrapped →'}</Link>
+      <Link href="/journal/monthly" className="insight-footnote">{language === 'es' ? 'Ver resumen mensual →' : 'View Monthly Wrapped →'}</Link>
     </div>
     <div className="insight-hero-progress">
       <div className="insight-streak"><Flame size={23} aria-hidden="true" /><strong>{number(currentStreak)}</strong><span>{copy.streak}</span></div>

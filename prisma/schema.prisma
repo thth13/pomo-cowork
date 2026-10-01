@@ -38,6 +38,7 @@ model User {
   achievementEvents AchievementEvent[]
 
   weeklyWrapped WeeklyWrapped[]
+  monthlyWrapped MonthlyWrapped[]
   projects Project[]
   journalPosts JournalPost[]
   followers Follow[] @relation("Following")
@@ -135,6 +136,7 @@ enum NotificationType {
   ROOM_INVITE
   WALL_MESSAGE
   RANK_UP
+  MONTHLY_WRAPPED
 }
 
 model Room {
@@ -206,6 +208,7 @@ model Notification {
 
   roomInviteId  String?
   roomInvite    RoomInvite?      @relation(fields: [roomInviteId], references: [id], onDelete: SetNull)
+  wrappedMonth String? @db.VarChar(10)
   wallMessageId String?
   wallMessage   UserWallMessage? @relation("WallMessageNotifications", fields: [wallMessageId], references: [id], onDelete: SetNull)
 
@@ -603,4 +606,18 @@ model AchievementPopulation {
   eligibleCount Int
   updatedAt DateTime @default(now())
   @@map("achievement_population")
+}
+
+model MonthlyWrapped {
+  userId String
+  monthStart String @db.VarChar(10)
+  timezone String
+  snapshot Json
+  notifiedAt DateTime?
+  viewedAt DateTime?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, monthStart])
+  @@map("monthly_wrapped")
 }

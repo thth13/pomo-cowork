@@ -1,3 +1,6 @@
+import { useI18n } from '@/components/I18nProvider'
+import { wrappedCopy } from '@/lib/i18n/wrapped'
+import { monthLabel } from '@/lib/wrapped/analytics'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope, faTrophy } from '@fortawesome/free-solid-svg-icons'
 import { ClipLoader } from 'react-spinners'
@@ -44,6 +47,8 @@ export default function NotificationsMenu({
       ? 'absolute top-1 right-0 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] leading-[16px] text-center'
       : 'absolute top-0 right-0 min-w-[16px] h-[16px] px-1 rounded-full bg-red-500 text-white text-[9px] leading-[16px] text-center'
 
+  const { language } = useI18n()
+  const copy = wrappedCopy[language]
   return (
     <div className={inline ? "workspace-navigation-notifications" : "relative"} ref={containerRef}>
       <button
@@ -95,7 +100,13 @@ export default function NotificationsMenu({
                       isUnread ? 'bg-gray-50 dark:bg-slate-800/60' : 'bg-transparent'
                     }`}
                   >
-                    {isRankUp ? (
+                    {n.type === 'MONTHLY_WRAPPED' && n.wrappedMonth ? (
+                      <button type="button" onClick={() => onNotificationClick?.(n)} className="wrapped-notification-action">
+                        <strong>{copy.notification}</strong>
+                        <span>{monthLabel({ monthStart: n.wrappedMonth }, language)}</span>
+                        <span>{copy.open} →</span>
+                      </button>
+                    ) : isRankUp ? (
                       <div className="flex items-start gap-3">
                         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-300 via-rose-400 to-violet-500 text-white shadow-sm">
                           <FontAwesomeIcon icon={faTrophy} className="text-sm" />

@@ -91,13 +91,14 @@ export interface RoomInvite {
 
 export interface NotificationItem {
   id: string
-  type: 'ROOM_INVITE' | 'WALL_MESSAGE' | 'RANK_UP'
+  type: 'ROOM_INVITE' | 'WALL_MESSAGE' | 'RANK_UP' | 'MONTHLY_WRAPPED'
   title: string
   message: string
   readAt: string | null
   createdAt: string
   roomInviteId: string | null
   roomInvite: RoomInvite | null
+  wrappedMonth?: string | null
   wallMessageId?: string | null
   wallMessage?: {
     id: string
