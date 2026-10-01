@@ -25,6 +25,7 @@
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
 | Timer appearance | AppearanceSettings, WorkspaceBackground, useAppearanceStore | Native modal and radio choices; images apply and persist after loading; shared timer digit style and optional image/video scenery |
+| Statistics Select/Listbox | Native select in app/stats/page.tsx | OS-owned popup for the finite annual heatmap year range; browser geometry and keyboard behavior accepted |
 | Locale | I18nProvider | English and Spanish, including new companion copy |
 | Homepage navigation | Navbar compact variant | Shared navigation disclosure; outside click and Escape dismiss; Escape restores trigger focus; guests retain navigation and login |
 | Workspace dock tooltips | HomeWorkspace / app/globals.css | Localized panel labels appear to the right on pointer hover or keyboard focus, remain hoverable, and dismiss on Escape, blur, pointer exit or activation; mobile menu keeps visible labels |

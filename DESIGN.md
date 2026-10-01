@@ -341,8 +341,17 @@ gallery and five digit previews. The default remains Pocket Garden and pixel dig
 Three generated aesthetic landscapes and three Vercel Blob-hosted Mixkit videos provide
 optional scenery; `public/backgrounds/README.md` records sources and generation prompts.
 `lib/appearance.ts` owns the catalog; `app/appearance.css` owns its shared presentation.
-Scenery appears on home and the search timer pages. Existing room backgrounds keep
-their own owner. Personal choice is shared per browser, independent of the account.
+Scenery appears on home, search timer pages and product routes: rooms, leaderboard,
+both statistics pages, habits, profiles, ranks, settings and journal screens.
+Existing room gradients remain inside room headers. Personal choice is shared per
+browser, independent of the account.
+
+Product routes render the selected media once through `AppearanceProvider` and
+`WorkspaceBackground`. `app/appearance.css` maps their existing Pocket Garden
+surface tokens to dark translucent glass, with light text, fine borders and an
+18px blur on major panels. This keeps the scenery visible without replacing each
+route's layout or status colors. The default background retains the established
+paper styling; forced colors restores solid system surfaces.
 
 Chosen scenery fills the viewport beneath the page. In background mode the existing
 timer and Currently Working components use a shared dark translucent surface, 18px

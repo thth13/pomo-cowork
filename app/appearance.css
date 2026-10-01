@@ -151,6 +151,65 @@
   .appearance-selected { border-color: Highlight; }
 }
 
+/* Product routes share the selected workspace scene without changing their layout. */
+.product-scenery { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.product-scenery .workspace-background { position: absolute; z-index: 0; }
+body:has(.product-scenery) :is(.garden-page, .journal-shell, .settings-page) {
+  --pixel-page: rgb(12 18 16 / 76%);
+  --pixel-paper: rgb(20 28 25 / 72%);
+  --pixel-screen: rgb(42 56 46 / 78%);
+  --pixel-ink: #f7f8f3;
+  --pixel-muted: #d3ded3;
+  --pixel-line: rgb(255 255 255 / 23%);
+  --pixel-shadow: rgb(0 0 0 / 24%);
+  --pixel-accent: #e39a87;
+  --pixel-tomato-ink: #ffb29f;
+  --pixel-tomato-soft: rgb(227 154 135 / 17%);
+  --pixel-growth: #b2d0a8;
+  --pixel-scroll-track: rgb(12 18 16 / 45%);
+  --pixel-scroll-thumb: rgb(255 255 255 / 30%);
+  color: var(--pixel-ink);
+  color-scheme: dark;
+  position: relative;
+  z-index: 1;
+  min-height: 100dvh;
+  background: transparent;
+}
+body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.community-panel, .community-metrics, .rooms-global, .room-card, .room-detail-header, .pixel-panel, .lb-totals, .lb-leader, .stats-overview, .stats-panel, .insight-hero, .insight-panel, .insight-state, .insight-pro, .habits-today, .habit-create-panel, .habit-history, .habit-archive, .ranks-ladder, .ranks-example, .journal-card) {
+  border-color: var(--pixel-line);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%), 0 12px 36px rgb(0 0 0 / 16%);
+  -webkit-backdrop-filter: blur(18px) saturate(110%);
+  backdrop-filter: blur(18px) saturate(110%);
+}
+body:has(.product-scenery) .lb-totals { background: var(--pixel-paper); padding: 18px 12px; border: 1px solid var(--pixel-line); }
+body:has(.product-scenery) .room-detail-header { box-shadow: inset 0 0 0 999px rgb(12 18 16 / 52%), 0 12px 36px rgb(0 0 0 / 16%); }
+body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.community-intro h1, .lb-intro h1, .stats-intro h1, .insight-intro h1, .habits-heading h1, .ranks-intro h1, .journal-main h1) {
+  text-shadow: 0 2px 12px rgb(0 0 0 / 55%);
+}
+body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(input, textarea, select)::placeholder { color: var(--pixel-muted); opacity: .85; }
+body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(button, a, input, textarea, select, summary):focus-visible { outline-color: #fff; }
+body:has(.product-scenery) .garden-page :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .dark\:bg-slate-700, .dark\:bg-slate-800) { background-color: var(--pixel-paper); }
+body:has(.product-scenery) .garden-page :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white) { color: var(--pixel-ink); }
+body:has(.product-scenery) .garden-page :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-400, .text-slate-500, .text-slate-600) { color: var(--pixel-muted); }
+body:has(.product-scenery) .garden-page :is(.border-gray-100, .border-gray-200, .border-gray-300, .border-slate-200, .border-slate-700) { border-color: var(--pixel-line); }
+body:has(.product-scenery) .garden-page .stats-panel :is(.bg-gray-50, .bg-slate-700) { background-color: var(--pixel-screen); }
+body:has(.product-scenery) .stats-page :is(.bg-white\/70, .dark\:bg-slate-900\/60, .dark\:bg-slate-700\/50) { background-color: var(--pixel-screen); }
+body:has(.product-scenery) .stats-page .stats-panel { color: var(--pixel-ink); }
+body:has(.product-scenery) .settings-page.bg-gradient-to-br { background-image: none; }
+body:has(.product-scenery) .settings-page :is(.bg-white, .bg-white\/80, .bg-white\/85, .bg-white\/90, .dark\:bg-slate-900\/80, .dark\:bg-slate-900\/70) { background-color: var(--pixel-paper); }
+body:has(.product-scenery) .settings-page :is(.bg-gradient-to-br, .bg-gradient-to-r) { background-image: none; }
+body:has(.product-scenery) .settings-page :is(.text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white, .dark\:text-slate-200) { color: var(--pixel-ink); }
+body:has(.product-scenery) .settings-page :is(.text-slate-400, .text-slate-500, .text-slate-600, .dark\:text-slate-300, .dark\:text-slate-400) { color: var(--pixel-muted); }
+body:has(.product-scenery) .settings-page :is(.border-slate-200, .border-slate-300, .dark\:border-slate-700) { border-color: var(--pixel-line); }
+body:has(.product-scenery) .settings-page :is(.bg-white\/80, .bg-white\/85, .bg-white\/90) { -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+body:has(.product-scenery) .settings-page :is(input, textarea)::placeholder { color: var(--pixel-muted); }
+body:has(.product-scenery) :is(.notifications-panel, .rank-toast, .wrapped-dialog) { --pixel-paper: rgb(20 28 25 / 90%); --pixel-ink: #f7f8f3; --pixel-muted: #d3ded3; --pixel-line: rgb(255 255 255 / 23%); color-scheme: dark; }
+@media (forced-colors: active) {
+  .product-scenery { display: none; }
+  body:has(.product-scenery) :is(.garden-page, .journal-shell, .settings-page) { --pixel-page: Canvas; --pixel-paper: Canvas; --pixel-screen: Canvas; --pixel-ink: CanvasText; --pixel-muted: CanvasText; --pixel-line: CanvasText; --pixel-shadow: transparent; --pixel-accent: Highlight; --pixel-tomato-ink: Highlight; --pixel-growth: Highlight; color: CanvasText; background: Canvas; color-scheme: light; }
+  body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.community-panel, .community-metrics, .rooms-global, .room-card, .room-detail-header, .pixel-panel, .lb-totals, .lb-leader, .stats-overview, .stats-panel, .insight-hero, .insight-panel, .insight-state, .insight-pro, .habits-today, .habit-create-panel, .habit-history, .habit-archive, .ranks-ladder, .ranks-example, .journal-card) { background: Canvas; color: CanvasText; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+}
+
 /* One layout, two surface treatments. Portalled tasks explicitly carry this variant. */
 :is(.pomodoro-home, .seo-shell):has(.workspace-background),
 body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog),

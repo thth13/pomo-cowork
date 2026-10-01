@@ -388,7 +388,7 @@ export default function SettingsPage() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="settings-page min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center">
@@ -401,7 +401,7 @@ export default function SettingsPage() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="settings-page min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-900 dark:to-slate-800">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center">
@@ -418,7 +418,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900">
+    <div className="settings-page min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900">
       <Navbar />
 
       <main className="relative mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
@@ -557,7 +557,7 @@ export default function SettingsPage() {
                           setSaveMessage('')
                         }}
                         rows={3}
-                        className="w-full rounded-2xl border border-slate-300/80 bg-white/90 px-4 py-3 text-base font-medium text-slate-900 shadow-sm transition focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:border-slate-700 dark:bg-slate-900/70 dark:text-white dark:focus:border-primary-300 dark:focus:ring-primary-500/40"
+                        className="w-full min-h-[112px] resize-none rounded-2xl border border-slate-300/80 bg-white/90 px-4 py-3 text-base font-medium text-slate-900 shadow-sm transition focus:border-primary-400 focus:outline-none focus:ring-2 focus:ring-primary-200 dark:border-slate-700 dark:bg-slate-900/70 dark:text-white dark:focus:border-primary-300 dark:focus:ring-primary-500/40"
                         placeholder="Tell us about yourself..."
                       />
                     </div>
