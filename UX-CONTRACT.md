@@ -310,8 +310,9 @@ remains available in the existing progress/profile views after the toast disappe
 
 ## Compact account navigation
 
-Navbar owns the shared two-part account/menu control. The avatar is a native profile
-link (or AuthModal button for guests), independent of the Menu disclosure. Its account
+Navbar owns the shared two-part account/menu control. With unread notifications, the avatar is a button opening the existing notifications
+panel (and its containing menu in compact navigation). Without unread notifications,
+it retains the profile link or account menu; guests retain the AuthModal button. Its account
 preview opens on hover/focus, stays reachable under the pointer and closes on pointer
 exit, blur, Escape or activation. Opening navigation dismisses the preview. The same
 account details appear in the menu on narrow/no-hover devices for touch access.

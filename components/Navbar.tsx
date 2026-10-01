@@ -297,6 +297,14 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     setIsMobileMenuOpen(false)
   }
 
+  const openAvatarNotifications = () => {
+    setIsAccountPreviewOpen(false)
+    setIsMenuOpen(false)
+    if (compact) setIsMobileMenuOpen(true)
+    setIsNotificationsOpen(true)
+    void fetchNotifications().catch(() => undefined)
+  }
+
   const unreadLabel = unreadCount > 0
     ? (language === 'es' ? `Notificaciones sin leer: ${unreadCount}` : `Unread notifications: ${unreadCount}`)
     : ''
@@ -354,18 +362,32 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
           <div className="workspace-navigation-control">
             <div
               className="workspace-account"
-              onMouseEnter={() => { if (!isMobileMenuOpen) setIsAccountPreviewOpen(true) }}
+              onMouseEnter={() => { if (!isMobileMenuOpen && unreadCount === 0) setIsAccountPreviewOpen(true) }}
               onMouseLeave={() => setIsAccountPreviewOpen(false)}
-              onFocus={() => { if (!isMobileMenuOpen) setIsAccountPreviewOpen(true) }}
+              onFocus={() => { if (!isMobileMenuOpen && unreadCount === 0) setIsAccountPreviewOpen(true) }}
               onBlur={(event) => {
                 if (!event.currentTarget.contains(event.relatedTarget)) setIsAccountPreviewOpen(false)
               }}
             >
               {isAuthenticated && user ? (
+                unreadCount > 0 ? (
+                  <button type="button" className="workspace-account-trigger"
+                    aria-label={unreadLabel} aria-expanded={isNotificationsOpen && isMobileMenuOpen}
+                    aria-controls={compactMenuId} onClick={openAvatarNotifications}>
+                  <RankAvatarFrame experience={user.experience} thickness={2} className="h-8 w-8">
+                    {user.avatarUrl ? (
+                      <Image src={user.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="workspace-account-fallback"><User size={17} aria-hidden="true" /></span>
+                    )}
+                  </RankAvatarFrame>
+                  {avatarUnreadBadge}
+                  </button>
+                ) : (
                 <Link
                   href={`/user/${encodeURIComponent(user.id)}`}
                   className="workspace-account-trigger"
-                  aria-label={`${t.nav.profile}: ${user.username}${unreadLabel ? `. ${unreadLabel}` : ''}`}
+                  aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`}
                   aria-describedby={isAccountPreviewOpen ? accountPreviewId : undefined}
                   onClick={() => { setIsAccountPreviewOpen(false); setIsMobileMenuOpen(false) }}
                 >
@@ -378,6 +400,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                   </RankAvatarFrame>
                   {avatarUnreadBadge}
                 </Link>
+                )
               ) : (
                 <button type="button" className="workspace-account-trigger" aria-label={t.nav.login} title={t.nav.login}
                   onClick={() => { setIsMobileMenuOpen(false); setIsAuthModalOpen(true) }}>
@@ -514,11 +537,11 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                   <div className="relative" ref={menuRef}>
                     <button
                       type="button"
-                      onClick={() => setIsMenuOpen(prev => !prev)}
+                      onClick={() => { if (unreadCount > 0) openAvatarNotifications(); else setIsMenuOpen(prev => !prev) }}
                       className="relative w-10 h-10 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold transition-transform hover:scale-105"
-                      aria-label={`${t.nav.profile}: ${user.username}${unreadLabel ? `. ${unreadLabel}` : ''}`}
+                      aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`}
                       aria-haspopup="true"
-                      aria-expanded={isMenuOpen}
+                      aria-expanded={unreadCount > 0 ? isNotificationsOpen : isMenuOpen}
                     >
                       <RankAvatarFrame
                         experience={user.experience}
@@ -690,7 +713,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             {!compact && isAuthenticated && user && (
             <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-slate-700 rounded-xl">
               <div className="flex items-center space-x-3">
-                <div className="relative w-11 h-11 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold">
+                <button type="button" aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`} onClick={() => { if (unreadCount > 0) openAvatarNotifications(); else router.push(`/user/${encodeURIComponent(user.id)}`) }} className="relative w-11 h-11 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold">
                   <RankAvatarFrame
                     experience={user.experience}
                     thickness={3}
@@ -710,7 +733,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                       <Crown className="w-3 h-3" />
                     </span>
                   )}
-                </div>
+                </button>
                 <div>
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{user.username}</p>
                   <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{user.email}</p>
