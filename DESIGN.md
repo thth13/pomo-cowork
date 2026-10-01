@@ -542,3 +542,32 @@ Locked cards use darker neutral surfaces, dashed borders, subdued monochrome bad
 and an explicit lock/status label. Text stays opaque and readable; progress is neutral.
 Both states remain interactive, including secret and public-profile cards without progress.
 Status labels also appear in details and do not rely on color alone.
+
+
+## Intent-specific SEO tools
+
+The English `(tools)` landing shell keeps server-rendered explanations, FAQs and
+canonical metadata. Nine new routes extend the existing aesthetic timer, using
+`seoRoutes.ts` as the sitemap/discovery registry and `seoIntentPages.ts` for authored
+intent content. No new palette is introduced: `app/(tools)/tools.css` consumes the
+existing pixel roles. Static sage landscape shapes distinguish aesthetic/lofi pages;
+large split-flap clock digits are the only new animated signature and respect reduced motion.
+
+`SeoWorkspace` owns the named presentation variants. Pomodoro variants reuse
+`PomodoroTimer`, `TaskPicker`, `ProjectPicker`, and existing session services. Deep-work
+and coding presets cannot replace an active/paused session. The minimalist view omits
+appearance/PiP controls and the coworker feed, retaining a real online count.
+`FocusSounds` and `useAmbientSounds` remain the ambient playback owners, with one mixer
+per mounted SEO workspace, deliberate playback, and existing error/retry states.
+
+`FocusStage` owns fullscreen and the expanded-page fallback; it keeps an exit button,
+Escape support, scrolling, and keyboard containment in the fallback. Fullscreen is
+entered by a click, never on page load. English/Spanish tool controls follow I18nProvider;
+editorial copy retains the existing English, translation-excluded landing contract.
+`StandaloneTimer` owns the local, unsaved exam countdown and reading countdown/stopwatch.
+These are intentionally separate from recorded focus sessions: timestamp-based elapsed
+time, pause/resume/reset, locked duration/mode after starting, explicit visual completion,
+and an honest reload-reset notice. The book field is local and never uploaded.
+`FlipClock` displays device-local time and date, 12/24-hour format, and optional seconds.
+Native number fields intentionally use browser-owned editing; no new modal or select
+primitive is introduced. Browser verification remains user-owned for this task.

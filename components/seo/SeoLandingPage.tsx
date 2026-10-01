@@ -71,7 +71,7 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
           {page.social && <Link className="seo-text-link" href="/rooms">Find a room for your group</Link>}
         </div>
       </header>
-      <SeoWorkspace key={slug} title={page.title} defaults={page.defaults} timerNote={page.timerNote} social={page.social} socialHeading={page.socialHeading} socialCopy={page.socialCopy} appearance={page.appearance} />
+      <SeoWorkspace key={slug} title={page.title} defaults={page.defaults} timerNote={page.timerNote} social={page.social} socialHeading={page.socialHeading} socialCopy={page.socialCopy} appearance={page.appearance} experience={page.experience} />
       <div className="seo-guide">
         <section className="seo-explanation" aria-labelledby="explanation-heading">
           <h2 id="explanation-heading">{page.explanationHeading}</h2>

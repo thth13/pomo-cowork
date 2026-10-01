@@ -265,7 +265,7 @@ export const TaskPicker = memo(function TaskPicker({
               </motion.div>
             )}
           </AnimatePresence>,
-          triggerRef.current?.ownerDocument.body ?? document.body
+          triggerRef.current?.closest('[data-focus-stage]') ?? triggerRef.current?.ownerDocument.body ?? document.body
         )}
       </div>
     </div>

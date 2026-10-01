@@ -1,6 +1,7 @@
 import type { SeoSlug } from './seoRoutes'
 import { additionalSeoPages } from './seoAdditionalPages'
 import { examSeoPages } from './seoExamPages'
+import { intentSeoPages } from './seoIntentPages'
 
 export interface SeoPage {
   keyword: string
@@ -12,6 +13,7 @@ export interface SeoPage {
   cta: string
   social: boolean
   appearance?: 'aesthetic'
+  experience?: 'aesthetic' | 'lofi' | 'fullscreen' | 'clock' | 'minimal' | 'deep-work' | 'exam' | 'reading' | 'coding'
   defaults: { workDuration: number; shortBreak: number; longBreak: number; longBreakAfter: number }
   timerNote: string
   socialHeading: string
@@ -37,9 +39,10 @@ export interface SeoPage {
 export const seoPages: Record<SeoSlug, SeoPage> = {
   ...additionalSeoPages,
   ...examSeoPages,
+  ...intentSeoPages,
   'aesthetic-timer': {
     keyword: 'Aesthetic timer',
-    secondaryKeywords: ['aesthetic Pomodoro timer', 'minimalist timer', 'aesthetic study timer', 'cozy focus timer'],
+    secondaryKeywords: ['aesthetic study timer', 'aesthetic focus timer', 'minimalist timer', 'cozy focus timer'],
     title: 'Aesthetic Timer — Minimalist Pomodoro & Calm Background | Pomo Cowork',
     description: 'Settle into a 25-minute focus session with a calm landscape background and a minimalist Pomodoro timer. Adjust your breaks and study at your own pace.',
     heading: 'Aesthetic timer for a quieter study space',
@@ -47,6 +50,7 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
     cta: 'Settle in and focus',
     social: false,
     appearance: 'aesthetic',
+    experience: 'aesthetic',
     defaults: { workDuration: 25, shortBreak: 5, longBreak: 15, longBreakAfter: 4 },
     timerNote: 'Start with 25 minutes of focus, a five-minute break, and a 15-minute long break after four rounds.',
     socialHeading: 'Company when you want it',
@@ -55,13 +59,13 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
     explanation: [
       'An aesthetic timer pairs a useful countdown with a space you enjoy looking at. Here, soft landscape shapes sit behind a centered timer, with the main controls close to the digits. The background stays still, so you can leave the page beside your notes without a moving scene competing for attention.',
       'The timer follows a familiar Pomodoro rhythm: 25 minutes for one task, a five-minute pause, and a longer break after four focus sessions. You can change those intervals in timer settings. A pleasing workspace is a starting point; choosing a specific task and making room for breaks gives the session its structure.',
-      'Use this page for reading, revision, writing, or a small piece of everyday work. Choose the light or dark theme from the header to suit your surroundings. The timer stays at the center of the page, while live company and study advice sit further down, ready when you want them.',
+      'Use this page for reading, revision, writing, or a small piece of everyday work. Choose the light or dark theme from the header to suit your surroundings. The timer stays at the center of the page, with fullscreen and an ambient mixer available nearby. Study advice sits further down, ready when you want it.',
     ],
     stepsHeading: 'Make the space your own',
     steps: ['Choose the light or dark theme that feels comfortable in your room.', 'Pick one task and keep the materials you need nearby.', 'Use the 25-minute starting interval or adjust timer settings, then press Start.', 'When the interval ends, leave yourself a next step and take a break away from the screen.'],
     benefits: [
       { title: 'A calm backdrop', text: 'Soft, static landscape shapes frame the countdown without adding motion to your study space.' },
-      { title: 'A clear place to start', text: 'A centered timer keeps the current interval and its controls together, with live sessions below.' },
+      { title: 'A clear place to start', text: 'A centered timer keeps the current interval and its controls together, with optional ambient sounds nearby.' },
       { title: 'Your own rhythm', text: 'Adjust focus and break durations to fit the chapter, draft, or practice session in front of you.' },
     ],
     audienceHeading: 'For a desk you want to return to',
@@ -79,7 +83,7 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
       { question: 'Can I pause or reset the timer?', answer: 'Yes. Pause lets you resume the same session after an interruption. Reset stops the current countdown so you can begin again. Visiting this page with an existing active or paused session preserves its timing.' },
       { question: 'Do I need an account to start?', answer: 'You can start the timer as a guest. If you want account features such as saved session history, use the sign-in options in the main workspace. There is no need to create a room for an individual focus session.' },
     ],
-    related: ['pomodoro-timer', 'study-timer', 'focus-timer', '25-5-pomodoro', 'study-with-me'],
+    related: ['aesthetic-pomodoro-timer', 'lofi-timer', 'fullscreen-timer', 'flip-clock', 'minimalist-study-timer'],
     finalHeading: 'A little space for your next task',
     finalCopy: 'Set your materials nearby, choose one starting point, and let the countdown mark the time.',
   },

@@ -43,6 +43,9 @@ interface PomodoroTimerProps {
   onSessionComplete?: () => void
   initialSettings?: TimerSettingsForm
   resetLabel?: string
+  presentation?: 'minimal'
+  focusPresets?: boolean
+  showProject?: boolean
 }
 
 interface TimerSettingsForm {
@@ -172,7 +175,7 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
 }
 
 
-function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel }: PomodoroTimerProps) {
+function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false }: PomodoroTimerProps) {
   const timerFont = useAppearanceStore(state => state.timerFont)
   const { t } = useI18n()
   const pictureInPicture = useDocumentPictureInPicture()
@@ -1339,8 +1342,21 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         </button>
       )}
 
+      {focusPresets && <div className="seo-tool-options" role="group" aria-label={t.timer.focus}>
+        {[[50, 10], [60, 10], [90, 20]].map(([work, rest]) => <button
+          type="button" key={work} disabled={Boolean(currentSession) || isStarting || isStopping}
+          aria-pressed={workDuration === work && shortBreak === rest}
+          onClick={() => {
+            if (useTimerStore.getState().currentSession) return
+            clearAutoStart()
+            setIsTimeTrackerMode(false)
+            setSessionType(SessionType.WORK)
+            initializeWithSettings({ workDuration: work, shortBreak: rest, longBreak: 20, longBreakAfter: 4 })
+          }}
+        >{work} / {rest}</button>)}
+      </div>}
       <div className="pixel-timer-screen">
-        <TimerPictureInPicture
+        {presentation !== 'minimal' && <TimerPictureInPicture
           controller={pictureInPicture}
           actions={timerActions}
           formattedTime={formatTime(timerDisplaySeconds)}
@@ -1351,9 +1367,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
           onSelectTask={handleTaskSelect}
           progress={progress}
           isTimeTracking={isTimeTrackingSession}
-        />
+        />}
         <div className="pixel-timer-status"><span className="pixel-led timer-mode-marker" aria-hidden="true" />{getSessionTypeLabel(activeSessionType)}</div>
-        <AppearanceSettings />
+        {presentation !== 'minimal' && <AppearanceSettings />}
         <button type="button" onClick={openSettings} className="pixel-timer-settings" aria-label={t.settingsModal.title} title={t.settingsModal.title}><Settings size={18} /></button>
         <div className={`pixel-timer-digits ${timerDisplaySeconds >= 6000 ? 'pixel-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={getSessionTypeLabel(activeSessionType)}>{formatTime(timerDisplaySeconds)}</div>
         <div className="pixel-timer-track" role="progressbar" aria-label={getSessionTypeLabel(activeSessionType)} aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
@@ -1366,7 +1382,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         sessionType={activeSessionType}
         onSessionTypeChange={handleSessionTypeChange}
       >
-        {/* <ProjectPicker /> */}
+        {showProject && <ProjectPicker />}
         <TaskPicker
           sessionType={activeSessionType}
           isDisabled={isTaskPickerDisabled}
