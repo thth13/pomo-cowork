@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, ArrowUpRight, Check, Crown, DoorOpen, Globe2, Lock, Plus, Sprout, Users } from 'lucide-react'
+import { ArrowUpRight, Check, Crown, DoorOpen, Globe2, Lock, Plus, Sprout, Users } from 'lucide-react'
 import Link from 'next/link'
 import CommunityDialog from '@/components/CommunityDialog'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
 import Navbar from '@/components/Navbar'
+import PersonalNavigation from '@/components/PersonalNavigation'
+import PersonalPageSkeleton from '@/components/PersonalPageSkeleton'
 import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -222,7 +224,8 @@ export default function RoomsPage() {
   return (
     <div className="community-page garden-page" data-no-translate lang={language}>
       <Navbar compact />
-      <main className="community-layout">
+      <main className="community-layout personal-page-frame">
+        <PersonalNavigation />
         <header className="community-intro">
           <div>
             <p className="community-eyebrow"><Sprout size={15} aria-hidden="true" />{copy.community}</p>
@@ -230,7 +233,6 @@ export default function RoomsPage() {
             <p>{copy.roomsHint}</p>
           </div>
           <div className="community-actions">
-            <Link href="/" className="community-button"><ArrowLeft size={15} aria-hidden="true" />{copy.back}</Link>
             <button type="button" className="community-button community-button-primary" onClick={() => {
               if (!isProMember) { openPaywallOrRegister(); return }
               setError(null)
@@ -244,7 +246,7 @@ export default function RoomsPage() {
 
         {error && !isCreateModalOpen && <div className="community-error" role="alert"><p>{error}</p><button type="button" className="community-button" onClick={() => void loadRooms()}>{copy.retry}</button></div>}
 
-        {isRedirecting ? <div className="community-state" role="status"><span className="community-spinner" aria-hidden="true" />{copy.loading}</div> : <>
+        {isRedirecting ? <PersonalPageSkeleton variant="rooms" /> : <>
           <section className="rooms-global" aria-labelledby="global-room-title">
             <div className="rooms-global-symbol"><Globe2 size={30} aria-hidden="true" /></div>
             <div className="rooms-global-copy">
@@ -258,7 +260,7 @@ export default function RoomsPage() {
 
           <section aria-labelledby="room-directory-title">
             <div className="rooms-directory-heading"><h2 id="room-directory-title">{copy.roomDirectory}</h2><span>{!loading && `${rooms.length} ${copy.roomCount}`}</span></div>
-            {loading ? <div className="community-state" role="status"><span className="community-spinner" aria-hidden="true" />{copy.loading}</div> : rooms.length === 0 ? (
+            {loading ? <PersonalPageSkeleton variant="rooms" /> : rooms.length === 0 ? (
               <div className="community-panel community-state"><DoorOpen aria-hidden="true" /><h2>{copy.emptyRooms}</h2><p>{copy.emptyRoomsHint}</p></div>
             ) : <div className="rooms-grid">
               {rooms.map(room => {

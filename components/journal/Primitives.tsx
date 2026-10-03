@@ -7,9 +7,11 @@ import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from '@/components/AuthModal'
 import { useJournalText, useJournalMutation } from '@/lib/journal/client'
 export function AuthGate({
-  children
+  children,
+  loadingFallback
 }: {
   children: React.ReactNode;
+  loadingFallback?: React.ReactNode;
 }) {
   const {
       user,
@@ -17,7 +19,7 @@ export function AuthGate({
     } = useAuthStore(),
     [open, setOpen] = useState(false),
     t = useJournalText()
-  if (isLoading) return <JournalLoading />
+  if (isLoading) return loadingFallback ?? <JournalLoading />
   if (!user || user.isAnonymous) return <section className="journal-empty">
     <h1>{t('Your project journal', 'Tu diario de proyectos')}</h1>
     <p>{t('Sign in to build, track your work, and share your progress.', 'Inicia sesión para crear proyectos, registrar tu trabajo y compartir tus avances.')}</p>

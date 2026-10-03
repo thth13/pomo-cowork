@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpRight, LockKeyhole, RefreshCw, Sprout } from 'lucide-react'
+import { ArrowUpRight, LockKeyhole, RefreshCw, Sprout } from 'lucide-react'
 import AuthModal from '@/components/AuthModal'
 import { useStatistics } from '@/hooks/useStatistics'
 import { ranksCopy } from '@/lib/i18n/ranks'
@@ -16,6 +16,8 @@ import WeekComparison from './WeekComparison'
 import ProjectsGalaxy from './ProjectsGalaxy'
 import DailyTimeline from './DailyTimeline'
 import { useStatisticsCopy } from './shared'
+import PersonalNavigation from '@/components/PersonalNavigation'
+import PersonalPageSkeleton from '@/components/PersonalPageSkeleton'
 
 export default function StatisticsDashboard() {
   const { copy, language, locale, duration, number } = useStatisticsCopy()
@@ -25,11 +27,12 @@ export default function StatisticsDashboard() {
   useEffect(() => { if (signedIn && !error) setShowAuth(false) }, [signedIn, error])
   const expired = error?.status === 401
   const details = data?.details
-  return <main className="insights" lang={language} data-i18n-ignore>
-    <div className="insight-topline"><Link href="/" className="insight-text-link"><ArrowLeft size={15} aria-hidden="true" />{copy.timer}</Link><Link href="/ranks" className="insight-text-link">{ranksCopy[language].link}<ArrowUpRight size={15} aria-hidden="true" /></Link><Link href="/stats" className="insight-text-link">{copy.classic}<ArrowUpRight size={15} aria-hidden="true" /></Link></div>
+  return <main className="insights personal-page-frame" lang={language} data-i18n-ignore>
+    <PersonalNavigation />
+    <div className="insight-topline"><Link href="/ranks" className="insight-text-link">{ranksCopy[language].link}<ArrowUpRight size={15} aria-hidden="true" /></Link><Link href="/stats" className="insight-text-link">{copy.classic}<ArrowUpRight size={15} aria-hidden="true" /></Link></div>
     <header className="insight-intro"><div><p className="insight-eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p>{copy.subtitle}</p></div><span className="insight-intro-mark" aria-hidden="true"><Sprout size={34} strokeWidth={1.25} /></span></header>
     <MonthlyRecaps />
-    {loading ? <div className="insight-state" role="status"><span className="insight-loader" /><p>{copy.loading}</p></div>
+    {loading ? <PersonalPageSkeleton variant="statistics" />
       : !signedIn || expired ? <div className="insight-state"><Sprout size={42} strokeWidth={1.3} aria-hidden="true" /><h2>{expired ? copy.expired : copy.signInTitle}</h2><p>{copy.signInBody}</p><button type="button" className="insight-button insight-button-primary" onClick={() => setShowAuth(true)}>{copy.signIn}<ArrowUpRight size={16} aria-hidden="true" /></button></div>
       : error && !data ? <div className="insight-state" role="alert"><h2>{copy.error}</h2><p>{copy.errorBody}</p><button type="button" className="insight-button" onClick={retry}>{copy.retry}<RefreshCw size={16} aria-hidden="true" /></button></div>
       : data && !data.summary.totalSessions ? <div className="insight-state insight-empty"><Sprout size={52} strokeWidth={1.2} aria-hidden="true" /><h2>{copy.empty}</h2><p>{copy.emptyBody}</p><Link href="/" className="insight-button insight-button-primary">{copy.start}<ArrowUpRight size={16} aria-hidden="true" /></Link></div>

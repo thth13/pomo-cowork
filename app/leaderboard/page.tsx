@@ -7,7 +7,8 @@ import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Crown, F
 import { DayPicker, type DateRange } from 'react-day-picker'
 import { es } from 'react-day-picker/locale'
 import Navbar from '@/components/Navbar'
-import BackToTimer from '@/components/BackToTimer'
+import PersonalNavigation from '@/components/PersonalNavigation'
+import PersonalPageSkeleton from '@/components/PersonalPageSkeleton'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
 import { leaderboardCopy } from '@/lib/i18n/leaderboard'
@@ -161,14 +162,14 @@ export default function LeaderboardPage() {
 
   return (
     <>
-      <Navbar compact />
       <div className="garden-page lb-page" data-i18n-ignore>
-        <main className="lb-layout">
+        <Navbar compact />
+        <main className="lb-layout personal-page-frame">
+          <PersonalNavigation />
           <header className="lb-intro">
             <div>
               <h1>{t.leaderboard.title}</h1>
             </div>
-            <BackToTimer className="lb-button" />
           </header>
 
           <section className="pixel-panel lb-controls" aria-label={t.leaderboard.customRange}>
@@ -216,7 +217,7 @@ export default function LeaderboardPage() {
 
           {(loading || (!error && leaderboard.length > 0)) && <section className="lb-leaders" aria-labelledby="lb-leaders-title" aria-busy={loading}>
             <div className="lb-section-label"><h2 id="lb-leaders-title"><Trophy size={16} aria-hidden="true" />{copy.leaders}</h2><span>{data?.periodLabel}</span></div>
-            {loading ? <div className="lb-leaders-loading" aria-hidden="true">—</div> : <ol className="lb-podium">
+            {loading ? <PersonalPageSkeleton variant="leaderboard" /> : <ol className="lb-podium">
               {leaderboard.slice(0, 3).map(person => <li key={person.id} className={`lb-leader lb-leader-${person.rank}`}>
                 <Link href={profileHref(person.id)} className="lb-leader-link">
                   <span className="lb-leader-rank">{String(person.rank).padStart(2, '0')}</span>
@@ -238,7 +239,7 @@ export default function LeaderboardPage() {
                   {view.search && <button type="button" className="lb-icon-button" aria-label={copy.clearSearch} title={copy.clearSearch} onClick={clearSearch}><X size={16} /></button>}
                 </div>
               </div>
-              {loading ? <div className="lb-state" role="status"><span className="lb-spinner" aria-hidden="true" /><p>{copy.loading}</p></div>
+              {loading ? <PersonalPageSkeleton variant="leaderboard" />
                 : error ? <div className="lb-state" role="alert"><Trophy size={32} aria-hidden="true" /><h3>{t.leaderboard.errorTitle}</h3><p>{t.leaderboard.errorDescription}</p><button type="button" className="lb-button" onClick={() => setRetry(value => value + 1)}>{t.leaderboard.tryAgain}</button></div>
                 : leaderboard.length === 0 ? <div className="lb-state"><Sprout size={36} aria-hidden="true" /><h3>{t.leaderboard.emptyTitle}</h3><p>{t.leaderboard.emptyDescriptionPrefix} {data?.periodLabel}.</p><Link href="/" className="btn btn-primary">{copy.startFocus}</Link></div>
                 : filtered.length === 0 ? <div className="lb-state" role="status"><Search size={32} aria-hidden="true" /><h3>{t.leaderboard.noMatchesTitle}</h3><p>{t.leaderboard.noMatchesDescription} “{view.search}”</p><button type="button" className="lb-button" onClick={clearSearch}>{copy.clearSearch}</button></div>
@@ -269,7 +270,7 @@ export default function LeaderboardPage() {
               <section className="pixel-panel lb-personal" aria-labelledby="lb-personal-title">
                 <div className="lb-panel-title"><Sprout size={17} aria-hidden="true" /><h2 id="lb-personal-title">{copy.yourPlace}</h2></div>
                 <div className="lb-personal-body">
-                  {loading ? <div className="lb-personal-placeholder" aria-hidden="true">—</div> : error ? <p>{t.leaderboard.failedToLoad}</p> : myRank ? <>
+                  {loading ? <PersonalPageSkeleton variant="leaderboard" /> : error ? <p>{t.leaderboard.failedToLoad}</p> : myRank ? <>
                     <Link href={profileHref(myRank.id)} className="lb-profile"><Avatar user={myRank} /><span>{myRank.username}{myRank.isPro && <PremiumBadge />}<small>{copy.viewProfile} <ArrowUpRight size={12} aria-hidden="true" /></small></span></Link>
                     <div className="lb-my-place"><strong>#{number(myRank.rank)}</strong><span>{t.leaderboard.top} {Math.max(1, Math.round(myRank.rank / Math.max(1, leaderboard.length) * 100))}%</span></div>
                     <dl className="lb-personal-stats"><div><dt>{t.leaderboard.focus} <span>({copy.timeUnit})</span></dt><dd>{formatTime(myRank.totalMinutes)}</dd></div><div><dt>{t.leaderboard.pomos}</dt><dd>{number(myRank.totalPomodoros)}</dd></div></dl>

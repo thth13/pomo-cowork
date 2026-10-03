@@ -1,5 +1,6 @@
 .insights-page { min-height: 100dvh; }
 .insights { width: min(1160px, calc(100% - 64px)); margin: 0 auto; padding: 92px 0 44px; color: var(--pixel-ink); }
+.insights.personal-page-frame { width: min(var(--personal-page-width), calc(100% - 56px)); min-height: calc(100dvh - var(--personal-page-top)); padding-top: var(--personal-page-top); padding-bottom: var(--personal-page-bottom); padding-inline: 28px; }
 .insights *, .insights *::before, .insights *::after { box-sizing: border-box; }
 .insights button, .insights a, .insights summary { -webkit-tap-highlight-color: transparent; }
 .insights button:not(:disabled), .insights a, .insights summary { cursor: pointer; }
@@ -231,6 +232,9 @@
 @keyframes insight-spin { to { transform: rotate(360deg); } }
 @keyframes insight-reveal { from { opacity: .5; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 .insight-hero, .insight-sections { animation: insight-reveal .3s ease-out both; }
+@media (max-width: 719px) {
+  .insights.personal-page-frame { width: calc(100% - 32px); padding-inline: 16px; }
+}
 @media (max-width: 1000px) {
   .insights { width: calc(100% - 40px); }
   .insight-hero-main { padding: 32px 28px; }
@@ -247,6 +251,7 @@
 }
 @media (max-width: 760px) {
   .insights { width: calc(100% - 32px); padding-top: 85px; }
+  .insights.personal-page-frame { padding-top: var(--personal-page-top); padding-bottom: var(--personal-page-bottom); }
   .insight-topline { margin-bottom: 22px; }
   .insight-intro { margin-bottom: 26px; gap: 12px; }
   .insight-intro-mark { width: 48px; height: 48px; }

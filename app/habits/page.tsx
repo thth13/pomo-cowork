@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Navbar from '@/components/Navbar'
 import Habits from '@/components/Habits'
+import PersonalNavigation from '@/components/PersonalNavigation'
 
 export const metadata: Metadata = {
   title: 'Habits | Pomo Cowork',
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 }
 
 export default function HabitsPage() {
-  return <div className="garden-page habits-page"><Navbar compact /><main className="habits-page-content"><Habits /></main></div>
+  return <div className="garden-page habits-page"><Navbar compact /><main className="habits-page-content personal-page-frame"><PersonalNavigation /><Habits /></main></div>
 }

@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useHabits } from '@/hooks/useHabits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import { habitStreak, shiftHabitDate, type Habit } from '@/lib/habits'
+import PersonalPageSkeleton from '@/components/PersonalPageSkeleton'
 
 function HabitNameForm({ initial = '', onSave, onCancel }: { initial?: string; onSave: (title: string) => Promise<boolean>; onCancel?: () => void }) {
   const { language } = useI18n()
@@ -85,7 +86,7 @@ export default function Habits({ compact = false }: { compact?: boolean }) {
       {today && <time dateTime={today}>{dateLabel(today, { weekday: 'long', month: 'long', day: 'numeric' })}</time>}
     </header>}
     <div className="habit-feedback" aria-live="polite" role="status">{saveError ? <span className="habit-error">{c.saveError}</span> : message}</div>
-    {loading ? <p className="habit-state" role="status">{c.loading}</p> : error && !habits ? <div className="habit-state" role="alert"><p>{c.loadError}</p><button className="habit-button" onClick={retry}>{c.retry}</button></div> : <>
+    {loading ? <PersonalPageSkeleton variant="habits" /> : error && !habits ? <div className="habit-state" role="alert"><p>{c.loadError}</p><button className="habit-button" onClick={retry}>{c.retry}</button></div> : <>
       {error && <div className="habit-state" role="alert"><p>{c.loadError}</p><button className="habit-button" onClick={retry}>{c.retry}</button></div>}
       <div className={compact ? undefined : 'habits-overview'}>
         <div className="habits-today">

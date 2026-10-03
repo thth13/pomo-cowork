@@ -17,7 +17,8 @@ function useCompactJournalNav() {
 
 export function JournalBackToTimer() {
   const compact = useCompactJournalNav()
-  return compact ? <div className="journal-back-to-timer"><BackToTimer /></div> : null
+  const pathname = usePathname()
+  return compact && pathname !== '/projects' ? <div className="journal-back-to-timer"><BackToTimer /></div> : null
 }
 
 export default function JournalNav(){

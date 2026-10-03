@@ -17,7 +17,6 @@ import { AppearanceProvider } from '@/components/AppearanceProvider'
 import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
-import InitialLoader from '@/components/InitialLoader'
 import FeedbackWidget from '@/components/FeedbackWidget'
 import GtmClient from '@/components/GtmClient'
 import { I18nProvider } from '@/components/I18nProvider'
@@ -35,11 +34,11 @@ export const metadata: Metadata = {
   description: 'Pomodoro Timer is a collaborative pomodoro coworking app that keeps your focus and team in sync.',
   icons: {
     icon: [
-      { url: '/icons/favicon-16.png?v=2', sizes: '16x16', type: 'image/png' },
-      { url: '/icons/favicon-32.png?v=2', sizes: '32x32', type: 'image/png' },
+      { url: '/icons/favicon-16.png?v=3', sizes: '16x16', type: 'image/png' },
+      { url: '/icons/favicon-32.png?v=3', sizes: '32x32', type: 'image/png' },
     ],
-    apple: { url: '/icons/favicon-192.png?v=2', sizes: '192x192', type: 'image/png' },
-    shortcut: '/icons/favicon-32.png?v=2',
+    apple: { url: '/icons/favicon-192.png?v=3', sizes: '192x192', type: 'image/png' },
+    shortcut: '/icons/favicon-32.png?v=3',
   },
   manifest: '/site.webmanifest',
   openGraph: {
@@ -109,7 +108,6 @@ export default function RootLayout({
             <AppearanceProvider>
               <AuthProvider>
                 <GtmClient />
-                <InitialLoader />
                 <RankUpToast />
                 <AchievementNotifications />
               <JournalToast />
