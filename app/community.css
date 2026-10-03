@@ -8,6 +8,7 @@
 .community-intro p:not(.community-eyebrow), .community-muted { color: var(--pixel-muted); font-size: 13px; line-height: 1.7; }
 .community-intro p:not(.community-eyebrow) { margin-top: 10px; }
 .community-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rooms-actions { justify-content: flex-end; margin-bottom: 24px; }
 .community-button, .community-icon-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 14px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-paper); color: var(--pixel-ink); font-size: 12px; font-weight: 600; line-height: 1.5; text-align: center; }
 .community-icon-button { width: 44px; padding: 10px; flex-shrink: 0; }
 .community-button:hover:not(:disabled), .community-icon-button:hover:not(:disabled) { background: var(--pixel-screen); }

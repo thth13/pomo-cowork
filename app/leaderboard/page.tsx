@@ -166,12 +166,6 @@ export default function LeaderboardPage() {
         <Navbar compact />
         <main className="lb-layout personal-page-frame">
           <PersonalNavigation />
-          <header className="lb-intro">
-            <div>
-              <h1>{t.leaderboard.title}</h1>
-            </div>
-          </header>
-
           <section className="pixel-panel lb-controls" aria-label={t.leaderboard.customRange}>
             <div className="lb-toolbar">
               <div className="lb-periods" role="group" aria-label={copy.currentPeriod}>

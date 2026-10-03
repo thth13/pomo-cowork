@@ -93,12 +93,6 @@ export default function MyProjects() {
   return (
     <section className="my-projects personal-page-frame">
       <PersonalNavigation />
-      <header className="my-projects-heading">
-        <p className="journal-eyebrow">{t('Personal workspace', 'Espacio personal')}</p>
-        <h1>{t('My projects', 'Mis proyectos')}</h1>
-        <p>{t('A clear view of your tasks and the focus time behind them.', 'Una vista clara de tus tareas y el tiempo de enfoque dedicado a cada una.')}</p>
-      </header>
-
       <section className="my-projects-panel" aria-labelledby="my-tasks-title">
         <div className="my-projects-summary">
           <div>

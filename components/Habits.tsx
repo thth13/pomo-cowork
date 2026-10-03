@@ -81,10 +81,6 @@ export default function Habits({ compact = false }: { compact?: boolean }) {
   }
 
   return <section className={`habits ${compact ? 'habits-compact' : ''}`} data-no-translate lang={language} aria-label={c.title}>
-    {!compact && <header className="habits-heading">
-      <div><span className="habits-kicker">{c.active}</span><h1>{c.title}</h1><p>{c.subtitle}</p></div>
-      {today && <time dateTime={today}>{dateLabel(today, { weekday: 'long', month: 'long', day: 'numeric' })}</time>}
-    </header>}
     <div className="habit-feedback" aria-live="polite" role="status">{saveError ? <span className="habit-error">{c.saveError}</span> : message}</div>
     {loading ? <PersonalPageSkeleton variant="habits" /> : error && !habits ? <div className="habit-state" role="alert"><p>{c.loadError}</p><button className="habit-button" onClick={retry}>{c.retry}</button></div> : <>
       {error && <div className="habit-state" role="alert"><p>{c.loadError}</p><button className="habit-button" onClick={retry}>{c.retry}</button></div>}

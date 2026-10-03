@@ -226,8 +226,8 @@ index-only component classes. The article reading layout stays unchanged.
 ## Community leaderboard
 
 `/leaderboard` reuses Navbar’s compact menu with safe-area clearance above its content.
-The heading has no promotional subtitle or description. It follows the Pocket Garden
-identity with a pixel display heading, a quiet
+The introductory heading is omitted. It follows the Pocket Garden
+identity with a quiet
 three-metric strip, and a sage first-place card followed by the next two coworkers.
 All podium links appear in rank order, including on mobile. The native ranking table
 uses Inter, tabular time values, fine row dividers and a tomato edge for the current
@@ -318,6 +318,13 @@ The full page owns creation, rename, reversible archive/restore and week navigat
 English/Spanish copy follows I18nProvider via `lib/i18n/habits.ts`.
 
 ## Focus statistics dashboard
+
+Habits, projects, rooms, leaderboard and `/statistics` omit introductory page headings,
+eyebrows and descriptions above their working content. Habits also omits the introductory
+date. PersonalNavigation continues to identify the active page; section headings and
+room creation remain available. Their loading skeletons omit the introductory heading.
+The rank guide and classic statistics links sit in a paper block below `/statistics`
+content in every loading, empty, error and populated state.
 
 `/statistics` is an additional personal route; `/stats` and its existing API stay intact.
 Navbar links to both. The new page uses the compact menu and natural document scrolling,

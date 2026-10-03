@@ -53,11 +53,6 @@ export default function PersonalPageSkeleton({ variant }: { variant: SkeletonVar
 
   return (
     <section className={`personal-page-skeleton personal-page-skeleton-${variant}`} role="status" aria-label={t.common.loading}>
-      <div className="personal-skeleton-heading">
-        <span className="personal-skeleton-line short" />
-        <span className="personal-skeleton-line title" />
-        <span className="personal-skeleton-line copy" />
-      </div>
       <div className="personal-skeleton-cards">
         {Array.from({ length: cards }, (_, index) => <div key={index} className="personal-skeleton-card">
           <span className="personal-skeleton-line medium" />

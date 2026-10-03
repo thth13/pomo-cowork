@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowUpRight, Check, Crown, DoorOpen, Globe2, Lock, Plus, Sprout, Users } from 'lucide-react'
+import { ArrowUpRight, Check, Crown, DoorOpen, Globe2, Lock, Plus, Users } from 'lucide-react'
 import Link from 'next/link'
 import CommunityDialog from '@/components/CommunityDialog'
 import { useI18n } from '@/components/I18nProvider'
@@ -226,23 +226,16 @@ export default function RoomsPage() {
       <Navbar compact />
       <main className="community-layout personal-page-frame">
         <PersonalNavigation />
-        <header className="community-intro">
-          <div>
-            <p className="community-eyebrow"><Sprout size={15} aria-hidden="true" />{copy.community}</p>
-            <h1>{copy.rooms}</h1>
-            <p>{copy.roomsHint}</p>
-          </div>
-          <div className="community-actions">
-            <button type="button" className="community-button community-button-primary" onClick={() => {
-              if (!isProMember) { openPaywallOrRegister(); return }
-              setError(null)
-              setIsCreateModalOpen(true)
-            }}>
-              {isProMember ? <Plus size={16} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />}
-              {copy.createRoom}{!isProMember && <span className="community-badge">PRO</span>}
-            </button>
-          </div>
-        </header>
+        <div className="community-actions rooms-actions">
+          <button type="button" className="community-button community-button-primary" onClick={() => {
+            if (!isProMember) { openPaywallOrRegister(); return }
+            setError(null)
+            setIsCreateModalOpen(true)
+          }}>
+            {isProMember ? <Plus size={16} aria-hidden="true" /> : <Lock size={15} aria-hidden="true" />}
+            {copy.createRoom}{!isProMember && <span className="community-badge">PRO</span>}
+          </button>
+        </div>
 
         {error && !isCreateModalOpen && <div className="community-error" role="alert"><p>{error}</p><button type="button" className="community-button" onClick={() => void loadRooms()}>{copy.retry}</button></div>}
 

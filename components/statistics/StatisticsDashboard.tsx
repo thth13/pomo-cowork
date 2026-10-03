@@ -29,8 +29,6 @@ export default function StatisticsDashboard() {
   const details = data?.details
   return <main className="insights personal-page-frame" lang={language} data-i18n-ignore>
     <PersonalNavigation />
-    <div className="insight-topline"><Link href="/ranks" className="insight-text-link">{ranksCopy[language].link}<ArrowUpRight size={15} aria-hidden="true" /></Link><Link href="/stats" className="insight-text-link">{copy.classic}<ArrowUpRight size={15} aria-hidden="true" /></Link></div>
-    <header className="insight-intro"><div><p className="insight-eyebrow">{copy.eyebrow}</p><h1>{copy.title}</h1><p>{copy.subtitle}</p></div><span className="insight-intro-mark" aria-hidden="true"><Sprout size={34} strokeWidth={1.25} /></span></header>
     <MonthlyRecaps />
     {loading ? <PersonalPageSkeleton variant="statistics" />
       : !signedIn || expired ? <div className="insight-state"><Sprout size={42} strokeWidth={1.3} aria-hidden="true" /><h2>{expired ? copy.expired : copy.signInTitle}</h2><p>{copy.signInBody}</p><button type="button" className="insight-button insight-button-primary" onClick={() => setShowAuth(true)}>{copy.signIn}<ArrowUpRight size={16} aria-hidden="true" /></button></div>
@@ -49,6 +47,7 @@ export default function StatisticsDashboard() {
         </div> : <section className="insight-pro"><LockKeyhole size={28} strokeWidth={1.5} aria-hidden="true" /><div><h2>{copy.proTitle}</h2><p>{copy.proBody}</p></div><Link href="/pricing" className="insight-button insight-button-primary">{copy.proAction}<ArrowUpRight size={16} aria-hidden="true" /></Link></section>}
         <footer className="insight-footer"><div><span>{copy.totalFocus}: <strong>{duration(data.summary.totalMinutes)}</strong></span><span>{copy.completed}: <strong>{number(data.summary.completedSessions)}</strong></span></div><div><span>{copy.timezone}: {data.timezone} · {copy.updated} {new Date(data.generatedAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</span><button type="button" className="insight-refresh" onClick={retry} disabled={refreshing} aria-label={copy.refresh} title={copy.refresh}><RefreshCw size={15} className={refreshing ? 'insight-spinning' : ''} aria-hidden="true" /></button></div></footer>
       </> : null}
+    <div className="insight-resource-links"><Link href="/ranks" className="insight-text-link">{ranksCopy[language].link}<ArrowUpRight size={15} aria-hidden="true" /></Link><Link href="/stats" className="insight-text-link">{copy.classic}<ArrowUpRight size={15} aria-hidden="true" /></Link></div>
     <AuthModal isOpen={showAuth} onClose={() => setShowAuth(false)} />
   </main>
 }
