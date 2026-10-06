@@ -411,3 +411,16 @@ across tabs; client/server focus state defers notifications during a focus sessi
 Pending unlocks survive reloads. Loading, failed loading with retry, no-results,
 locked, secret and unlocked states are represented explicitly.
 Runtime checks remain for the user: do not run builds, the app, tsc or tests.
+
+## Guest profiles and chat access
+
+Source: user request dated 2026-10-06. An anonymous database profile is created only
+by starting a timer session through `POST /api/sessions`. Task and habit APIs resolve
+existing profiles without creating them; a guest with no profile reads an empty habit
+list. Task/habit writes require an existing profile or a registered account.
+
+`Chat` preserves the draft and opens the shared `AuthModal` in register mode when a
+guest submits. User-authored messages and typing require a registered account;
+`/api/chat/messages` and the socket server verify the author. Timer system activity
+and reading chat remain available to guests. A failed message save restores the draft
+without broadcasting an unsaved message. Verification remains static per user policy.

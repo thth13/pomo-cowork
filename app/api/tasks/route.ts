@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 // POST - создать новую задачу
 export async function POST(request: NextRequest) {
   try {
-    const userId = await resolveTaskUserId(request, { createAnonymous: true })
+    const userId = await resolveTaskUserId(request)
 
     if (!userId) {
       return NextResponse.json(

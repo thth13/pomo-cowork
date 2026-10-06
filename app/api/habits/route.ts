@@ -2,13 +2,20 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { resolveTaskUserId } from '@/lib/taskAuth'
 import { validHabitDate } from '@/lib/habits'
+import { isValidAnonymousId } from '@/lib/anonymousProfile'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = await resolveTaskUserId(request, { createAnonymous: true })
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    const userId = await resolveTaskUserId(request)
+    if (!userId) {
+      // A visitor without a timer session has no persisted profile yet.
+      if (!request.headers.get('authorization') && isValidAnonymousId(request.headers.get('x-anonymous-id')?.trim())) {
+        return NextResponse.json([])
+      }
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
     const habits = await prisma.habit.findMany({
       where: { userId },
       orderBy: { createdAt: 'asc' },
@@ -23,7 +30,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const userId = await resolveTaskUserId(request, { createAnonymous: true })
+    const userId = await resolveTaskUserId(request)
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     const body = await request.json().catch(() => null)
     if (!body || typeof body.title !== 'string' || !body.title.trim() || body.title.trim().length > 120 || !validHabitDate(body.startDate) || typeof body.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(body.id)) {

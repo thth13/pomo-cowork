@@ -10,6 +10,7 @@ import { useRoomStore } from '@/store/useRoomStore'
 import { useSocket } from '@/hooks/useSocket'
 import type { ChatMessage } from '@/types'
 import Image from 'next/image'
+import AuthModal from '@/components/AuthModal'
 
 interface TypingState {
   username: string
@@ -23,7 +24,9 @@ interface ChatProps {
 
 export default function Chat({ matchHeightSelector, isVisible = true }: ChatProps) {
   const router = useRouter()
-  const { user } = useAuthStore()
+  const { user, token, isAuthenticated } = useAuthStore()
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const canWrite = isAuthenticated && Boolean(user && !user.isAnonymous) && Boolean(token)
   const { currentRoomId } = useRoomStore()
   const {
     sendChatMessage,
@@ -249,6 +252,10 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!canWrite) {
+      setIsAuthModalOpen(true)
+      return
+    }
     const text = input.trim()
     if (!text) return
 
@@ -271,7 +278,10 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
       // Save to database
       const response = await fetch('/api/chat/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
           userId: user?.id || null,
           username: user?.username || 'Guest',
@@ -297,25 +307,20 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
           avatarUrl: user?.avatarUrl ?? null
         })
       } else {
+        if (response.status === 401 || response.status === 403) setIsAuthModalOpen(true)
         throw new Error('Failed to save message')
       }
     } catch (error) {
       console.error('Error saving message:', error)
       // Remove optimistic message on error
       setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id))
-      // Still send via socket as fallback
-      sendChatMessage({
-        text,
-        userId: user?.id || null,
-        roomId: currentRoomId ?? null,
-        username: user?.username || 'Guest',
-        avatarUrl: user?.avatarUrl ?? null
-      })
+      setInput(current => current || text)
     }
   }
 
   const onInputChange = (v: string) => {
     setInput(v)
+    if (!canWrite) return
     emitChatTyping(true, {
       userId: user?.id || null,
       username: user?.username || 'Guest',
@@ -501,7 +506,7 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
       </div>
 
       {/* Input */}
-      <form onSubmit={onSubmit} className="p-4 border-t border-gray-200 dark:border-slate-700">
+      <form noValidate onSubmit={onSubmit} className="p-4 border-t border-gray-200 dark:border-slate-700">
         <div className="flex items-center space-x-3">
           {user?.avatarUrl ? (
             <Image 
@@ -532,6 +537,7 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
           </div>
         </div>
       </form>
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
     </div>
   )
 }

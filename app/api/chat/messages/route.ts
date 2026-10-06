@@ -116,8 +116,28 @@ export async function POST(request: Request) {
   if (!body) return NextResponse.json({ error: 'invalid_json' }, { status: 400 })
 
   const isSystem = body.type === 'system'
-  const username = (body.username ?? 'Guest').toString().slice(0, 100)
-  const userId = body.userId ?? null
+  if (isSystem && !body.action) {
+    return NextResponse.json({ error: 'Invalid system action' }, { status: 400 })
+  }
+  let username = (body.username ?? 'Guest').toString().slice(0, 100)
+  let userId = body.userId ?? null
+
+  // Timer activity remains available to guests; authored messages require registration.
+  if (!isSystem) {
+    const token = getTokenFromHeader(request.headers.get('authorization'))
+    const payload = token ? verifyToken(token) : null
+    if (!payload) return NextResponse.json({ error: 'Registration required' }, { status: 401 })
+
+    const author = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, username: true, isAnonymous: true },
+    })
+    if (!author || author.isAnonymous) {
+      return NextResponse.json({ error: 'Registration required' }, { status: 403 })
+    }
+    userId = author.id
+    username = author.username
+  }
   const normalizedRoomId = (() => {
     if (typeof body.roomId !== 'string') return null
     const trimmed = body.roomId.trim()

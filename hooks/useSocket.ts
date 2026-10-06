@@ -235,7 +235,9 @@ export function useSocket() {
 
   // Chat API
   const sendChatMessage = (payload: { text: string; username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
-    sharedSocket?.emit('chat-send', payload)
+    const { user, token, isAuthenticated } = useAuthStore.getState()
+    if (!isAuthenticated || !user || user.isAnonymous || !token) return
+    sharedSocket?.emit('chat-send', { ...payload, token })
   }
 
   const requestChatHistory = (payload?: { roomId?: string | null }) => {
@@ -267,7 +269,9 @@ export function useSocket() {
   }
 
   const emitChatTyping = (isTyping: boolean, meta?: { username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
-    sharedSocket?.emit('chat-typing', { isTyping, ...meta })
+    const { user, token, isAuthenticated } = useAuthStore.getState()
+    if (!isAuthenticated || !user || user.isAnonymous || !token) return
+    sharedSocket?.emit('chat-typing', { isTyping, ...meta, token })
   }
 
   const onChatTyping = (handler: (payload: { username: string; isTyping: boolean }) => void) => {
