@@ -139,9 +139,9 @@ const initSocketOnce = () => {
     const convertedId = state.convertedAnonymousId
     if (state.user && convertedId && convertedId !== state.user.id) {
       const registeredId = state.user.id
-      for (const snapshot of sessionSnapshots.values()) {
+      sessionSnapshots.forEach((snapshot) => {
         if (snapshot.userId === convertedId) snapshot.userId = registeredId
-      }
+      })
       for (const event of pendingSessionEvents) {
         if (event.ownerId !== convertedId) continue
         event.ownerId = registeredId
