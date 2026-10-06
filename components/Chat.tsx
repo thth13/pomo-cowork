@@ -11,6 +11,7 @@ import { useSocket } from '@/hooks/useSocket'
 import type { ChatMessage } from '@/types'
 import Image from 'next/image'
 import AuthModal from '@/components/AuthModal'
+import { ChatMessagesSkeleton } from '@/components/ChatSkeleton'
 
 interface TypingState {
   username: string
@@ -110,6 +111,7 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
   }, [matchHeightSelector])
 
   useEffect(() => {
+    if (!isVisible) return
     const handleHistory = (history: ChatMessage[]) => {
       const roomId = currentRoomIdRef.current
       setMessages(history.filter((m) => (m.roomId ?? null) === roomId))
@@ -153,19 +155,22 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
       offChatTyping(handleTyping)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [isVisible])
 
   useEffect(() => {
-    // On room change: reset and reload history
+    if (!isVisible) return
+    const controller = new AbortController()
+    // On opening or room change: reset and reload history
     setLoading(true)
     setMessages([])
     setHasMore(true)
     setOldestMessageId(null)
 
     const roomQuery = currentRoomId ? `&roomId=${encodeURIComponent(currentRoomId)}` : ''
-    fetch(`/api/chat/messages?take=20${roomQuery}`)
+    fetch(`/api/chat/messages?take=20${roomQuery}`, { signal: controller.signal })
       .then((r) => r.ok ? r.json() : null)
       .then((data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } | null) => {
+        if (controller.signal.aborted) return
         if (data?.items) {
           setMessages(data.items)
           setHasMore(data.hasMore)
@@ -176,9 +181,10 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
           requestChatHistory({ roomId: currentRoomId ?? null })
         }
       })
-      .catch(() => requestChatHistory({ roomId: currentRoomId ?? null }))
+      .catch(() => { if (!controller.signal.aborted) requestChatHistory({ roomId: currentRoomId ?? null }) })
+    return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentRoomId])
+  }, [currentRoomId, isVisible])
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
@@ -374,21 +380,7 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
           </div>
         )}
         {loading ? (
-          <div className="space-y-4">
-            {[1, 2, 3, 4, 5].map((i) => (
-              <div key={i} className="flex items-start space-x-3 animate-pulse">
-                <div className="w-8 h-8 rounded-full bg-gray-200 dark:bg-slate-700 flex-shrink-0" />
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-24" />
-                    <div className="h-3 bg-gray-200 dark:bg-slate-700 rounded w-16" />
-                  </div>
-                  <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-full mb-2" />
-                  <div className="h-4 bg-gray-200 dark:bg-slate-700 rounded w-3/4" />
-                </div>
-              </div>
-            ))}
-          </div>
+          <ChatMessagesSkeleton />
         ) : messages.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-slate-400 py-6">No messages. Be the first!</div>
         ) : (

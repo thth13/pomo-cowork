@@ -40,7 +40,7 @@ const emptyTotals: ContributionTotals = {
   focusMinutes: 0,
 }
 
-export default function TodayContribution() {
+export default function TodayContribution({ isVisible = true }: { isVisible?: boolean }) {
   const { language, t } = useI18n()
   const user = useAuthStore((state) => state.user)
   const token = useAuthStore((state) => state.token)
@@ -105,9 +105,17 @@ export default function TodayContribution() {
   }, [dayGoalStorageKey])
 
   useEffect(() => {
+    if (!isVisible) return
     let active = true
+    let busy = false
+    let dirty = false
+    let lastFetched = 0
+    const controller = new AbortController()
 
     const fetchTodayStats = async () => {
+      if (busy) return
+      busy = true
+      dirty = false
       try {
         setError(false)
         const headers: Record<string, string> = {}
@@ -124,7 +132,7 @@ export default function TodayContribution() {
         url.searchParams.set('dayStart', dayStart.toISOString())
         url.searchParams.set('dayEnd', dayEnd.toISOString())
 
-        const response = await fetch(url.toString(), { headers })
+        const response = await fetch(url.toString(), { headers, signal: controller.signal })
         if (!response.ok) {
           throw new Error('Failed to load sessions')
         }
@@ -132,6 +140,7 @@ export default function TodayContribution() {
         const data = (await response.json()) as TodayStatsResponse
         if (!active) return
 
+        lastFetched = Date.now()
         setTotals({
           pomodoros: data.community.pomodoros,
           focusMinutes: data.community.focusMinutes,
@@ -146,6 +155,8 @@ export default function TodayContribution() {
           setTodayRank(null)
         }
       } finally {
+        busy = false
+        if (dirty && active && !document.hidden) void fetchTodayStats()
         if (active) {
           setLoading(false)
           setRankLoading(false)
@@ -154,7 +165,7 @@ export default function TodayContribution() {
     }
 
     const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && (dirty || Date.now() - lastFetched >= TODAY_STATS_REFRESH_MS)) {
         void fetchTodayStats()
       }
     }
@@ -164,15 +175,20 @@ export default function TodayContribution() {
     void fetchTodayStats()
     const interval = window.setInterval(refreshWhenVisible, TODAY_STATS_REFRESH_MS)
     document.addEventListener('visibilitychange', refreshWhenVisible)
-    window.addEventListener('session-completed', refreshWhenVisible)
+    const refreshAfterSession = () => {
+      dirty = true
+      if (!document.hidden) void fetchTodayStats()
+    }
+    window.addEventListener('session-completed', refreshAfterSession)
 
     return () => {
       active = false
+      controller.abort()
       window.clearInterval(interval)
       document.removeEventListener('visibilitychange', refreshWhenVisible)
-      window.removeEventListener('session-completed', refreshWhenVisible)
+      window.removeEventListener('session-completed', refreshAfterSession)
     }
-  }, [token])
+  }, [isVisible, token])
 
   const formattedPomodoros = useMemo(() => {
     return totals.pomodoros.toLocaleString(language === 'es' ? 'es-ES' : 'en-US')

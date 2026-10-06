@@ -47,7 +47,7 @@ const emptyStats = {
   longBreak: 0,
 }
 
-export default function WorkHistory() {
+export default function WorkHistory({ isVisible = true }: { isVisible?: boolean }) {
   const { user } = useAuthStore()
   const { currentRoomId } = useRoomStore()
   const [sessions, setSessions] = useState<Session[]>([])
@@ -65,9 +65,17 @@ export default function WorkHistory() {
   }, [user?.id, currentRoomId])
 
   useEffect(() => {
+    if (!isVisible) return
     let active = true
+    let busy = false
+    let dirty = false
+    let lastFetched = 0
+    const controller = new AbortController()
 
     const fetchTodaySessions = async () => {
+      if (busy) return
+      busy = true
+      dirty = false
       try {
         const token = localStorage.getItem('token')
         const headers: Record<string, string> = {}
@@ -88,11 +96,13 @@ export default function WorkHistory() {
         }
 
         const response = await fetch(url.toString(), {
-          headers
+          headers, signal: controller.signal
         })
 
         if (response.ok && active) {
           const data = (await response.json()) as WorkHistoryResponse
+          if (!active) return
+          lastFetched = Date.now()
           setSessions(data.sessions)
           setTotalPages(data.pagination.totalPages)
           setTotalSessions(data.pagination.total)
@@ -107,6 +117,8 @@ export default function WorkHistory() {
           console.error('Failed to fetch today sessions:', error)
         }
       } finally {
+        busy = false
+        if (dirty && active && !document.hidden) void fetchTodaySessions()
         if (active) {
           setLoading(false)
         }
@@ -114,7 +126,7 @@ export default function WorkHistory() {
     }
 
     const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') {
+      if (document.visibilityState === 'visible' && (dirty || Date.now() - lastFetched >= HISTORY_REFRESH_MS)) {
         void fetchTodaySessions()
       }
     }
@@ -122,15 +134,20 @@ export default function WorkHistory() {
     void fetchTodaySessions()
     const interval = window.setInterval(refreshWhenVisible, HISTORY_REFRESH_MS)
     document.addEventListener('visibilitychange', refreshWhenVisible)
-    window.addEventListener('session-completed', refreshWhenVisible)
+    const refreshAfterSession = () => {
+      dirty = true
+      if (!document.hidden) void fetchTodaySessions()
+    }
+    window.addEventListener('session-completed', refreshAfterSession)
 
     return () => {
       active = false
+      controller.abort()
       window.clearInterval(interval)
       document.removeEventListener('visibilitychange', refreshWhenVisible)
-      window.removeEventListener('session-completed', refreshWhenVisible)
+      window.removeEventListener('session-completed', refreshAfterSession)
     }
-  }, [currentRoomId, page, refreshKey, user?.id])
+  }, [isVisible, currentRoomId, page, refreshKey, user?.id])
 
   const handleDeleteConfirmed = async () => {
     if (!confirmingId) return

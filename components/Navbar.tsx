@@ -32,7 +32,7 @@ import {
   faUsers
 } from '@fortawesome/free-solid-svg-icons'
 
-const NOTIFICATIONS_REFRESH_MS = 2 * 60 * 1000
+const NOTIFICATIONS_REFRESH_MS = 5 * 60 * 1000
 
 export default function Navbar({ compact = false, workspaceActions }: { compact?: boolean; workspaceActions?: (closeMenu: () => void) => ReactNode }) {
   const compactMenuId = useId()
@@ -47,6 +47,8 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
   const [unreadCount, setUnreadCount] = useState(0)
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [inviteAction, setInviteAction] = useState<{ id: string; kind: 'accept' | 'decline' } | null>(null)
+  const notificationsRequestRef = useRef<AbortController | null>(null)
+  const notificationsFetchedAt = useRef(0)
   const autoReadRef = useRef<Set<string>>(new Set())
   const openedReadRef = useRef<Set<string>>(new Set())
   const menuRef = useRef<HTMLDivElement | null>(null)
@@ -55,6 +57,8 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
   const mobileNotificationsRef = useRef<HTMLDivElement | null>(null)
   const router = useRouter()
   const { user, isAuthenticated, logout, token } = useAuthStore()
+  const notificationsOwnerRef = useRef(token)
+  notificationsOwnerRef.current = token
   const { setCurrentRoom, currentRoomId } = useRoomStore()
   const { totalOnlineCount, isConnected, isChecking } = useConnectionStore()
   const { t, language } = useI18n()
@@ -109,56 +113,78 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     return t ? { Authorization: `Bearer ${t}` } : null
   }, [token])
 
-  const fetchNotifications = async () => {
-    if (!authHeaders) return
+  const fetchNotifications = useCallback(async (force = false) => {
+    if (!authHeaders || notificationsRequestRef.current) return
+    if (!force && Date.now() - notificationsFetchedAt.current < 10_000) return
+    const controller = new AbortController()
+    notificationsRequestRef.current = controller
+    const timeout = window.setTimeout(() => controller.abort(), 20_000)
     setNotificationsLoading(true)
     try {
-      const res = await fetch('/api/notifications', { headers: authHeaders })
+      const res = await fetch('/api/notifications', { headers: authHeaders, signal: controller.signal })
       if (!res.ok) return
       const data = (await res.json()) as { unreadCount: number; notifications: NotificationItem[] }
+      if (controller.signal.aborted || notificationsOwnerRef.current !== token) return
+      notificationsFetchedAt.current = Date.now()
       const all = Array.isArray(data.notifications) ? data.notifications : []
       const visible = all.filter((n) => n.readAt === null)
       setUnreadCount(visible.length)
       setNotifications(visible)
+    } catch {
+      // Keep the last inbox/badge; opening it or the next interval can retry.
     } finally {
-      setNotificationsLoading(false)
+      window.clearTimeout(timeout)
+      if (notificationsRequestRef.current === controller) {
+        notificationsRequestRef.current = null
+        setNotificationsLoading(false)
+      }
     }
-  }
+  }, [authHeaders, token])
 
   useEffect(() => {
-    if (!isAuthenticated || !authHeaders) {
-      setUnreadCount(0)
-      setNotifications([])
-      return
-    }
+    notificationsFetchedAt.current = 0
+    autoReadRef.current.clear()
+    openedReadRef.current.clear()
+    setUnreadCount(0)
+    setNotifications([])
+    if (!isAuthenticated || !authHeaders) return
 
     const refreshWhenVisible = () => {
-      if (document.visibilityState === 'visible') {
+      if (!document.hidden && Date.now() - notificationsFetchedAt.current >= NOTIFICATIONS_REFRESH_MS) {
         void fetchNotifications()
       }
     }
-
+    // One initial request keeps the visible unread badge accurate.
     void fetchNotifications()
     const id = window.setInterval(refreshWhenVisible, NOTIFICATIONS_REFRESH_MS)
     document.addEventListener('visibilitychange', refreshWhenVisible)
-
     return () => {
+      notificationsRequestRef.current?.abort()
+      notificationsRequestRef.current = null
       window.clearInterval(id)
       document.removeEventListener('visibilitychange', refreshWhenVisible)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated, authHeaders])
+  }, [isAuthenticated, authHeaders, fetchNotifications])
 
   useEffect(() => {
-    const handleRankUp = () => {
-      void fetchNotifications()
+    let timeout: ReturnType<typeof setTimeout> | undefined
+    const handleUpdate = () => {
+      // Coalesce rank-up and recap updates from the same user action.
+      clearTimeout(timeout)
+      timeout = setTimeout(() => {
+        if (notificationsRequestRef.current) { handleUpdate(); return }
+        notificationsFetchedAt.current = 0
+        if (!document.hidden) void fetchNotifications(true)
+      }, 500)
     }
-
-    window.addEventListener('rank-up', handleRankUp)
-    window.addEventListener('notifications-updated', handleRankUp)
-    return () => { window.removeEventListener('rank-up', handleRankUp); window.removeEventListener('notifications-updated', handleRankUp) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authHeaders])
+    window.addEventListener('rank-up', handleUpdate)
+    window.addEventListener('notifications-updated', handleUpdate)
+    return () => {
+      clearTimeout(timeout)
+      window.removeEventListener('rank-up', handleUpdate)
+      window.removeEventListener('notifications-updated', handleUpdate)
+    }
+  }, [fetchNotifications])
 
   const markRead = useCallback(async (id: string) => {
     if (!authHeaders) return
@@ -238,7 +264,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
       if (!res.ok) return
 
       await markRead(notification.id)
-      await fetchNotifications()
+      await fetchNotifications(true)
       setCurrentRoom({ id: roomId, name: roomName })
       setIsNotificationsOpen(false)
       router.push(`/rooms/${roomId}`)
@@ -261,7 +287,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
       if (!res.ok) return
 
       await markRead(notification.id)
-      await fetchNotifications()
+      await fetchNotifications(true)
     } finally {
       setInviteAction(null)
     }
@@ -385,7 +411,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                   {avatarUnreadBadge}
                   </button>
                 ) : (
-                <Link
+                <Link prefetch={false}
                   href={userProfileHref(user)}
                   className="workspace-account-trigger"
                   aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`}
@@ -450,7 +476,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
           </div>
         )}
         {!compact && <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <Link href="/" className="flex items-center space-x-2 md:space-x-3">
+          <Link prefetch={false} href="/" className="flex items-center space-x-2 md:space-x-3">
             <div className="w-10 h-10 bg-rose-100 dark:bg-rose-500/20 rounded-xl flex items-center justify-center">
               <PixelSprout className="w-10 h-10" />
             </div>
@@ -461,7 +487,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
           
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-2">
-            <Link 
+            <Link prefetch={false}
               href="/" 
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname === '/' 
@@ -471,7 +497,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             >
               <FontAwesomeIcon icon={faClock} className="mr-2" />{t.nav.timer}
             </Link>
-            <Link 
+            <Link prefetch={false}
               href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname.startsWith('/rooms') 
@@ -487,7 +513,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 </span>
               </span>
             </Link>
-            <Link 
+            <Link prefetch={false}
               href="/leaderboard"
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname === '/leaderboard'
@@ -498,7 +524,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               <FontAwesomeIcon icon={faUsers} className="mr-2" />{t.nav.leaderboard}
             </Link>
             <div className="flex flex-col items-start">
-            <Link
+            <Link prefetch={false}
               href="/stats"
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname === '/stats'
@@ -508,14 +534,14 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             >
               <FontAwesomeIcon icon={faChartLine} className="mr-2 text-xs" />{t.nav.stats}
             </Link>
-            <Link href="/statistics" aria-current={pathname === '/statistics' ? 'page' : undefined} className={`inline-flex items-center px-4 py-1 rounded-lg text-xs font-medium transition-all ${pathname === '/statistics' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
+            <Link prefetch={false} href="/statistics" aria-current={pathname === '/statistics' ? 'page' : undefined} className={`inline-flex items-center px-4 py-1 rounded-lg text-xs font-medium transition-all ${pathname === '/statistics' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
               {statisticsCopy[language].newView}
             </Link>
             </div>
-            <Link href="/habits" aria-current={pathname === '/habits' ? 'page' : undefined} className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all ${pathname === '/habits' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
+            <Link prefetch={false} href="/habits" aria-current={pathname === '/habits' ? 'page' : undefined} className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all ${pathname === '/habits' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
               <ListChecks size={16} className="mr-2" aria-hidden="true" />{habitsCopy[language].title}
             </Link>
-            <Link
+            <Link prefetch={false}
               href="/blog"
               aria-current={pathname.startsWith('/blog') ? 'page' : undefined}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${pathname.startsWith('/blog') ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}
@@ -591,7 +617,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                         <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{user.email}</p>
                       </div>
                       <div className="py-2">
-                        <Link
+                        <Link prefetch={false}
                           href={userProfileHref(user)}
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -599,10 +625,10 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                           <span>{t.nav.profile}</span>
                           <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xs" />
                         </Link>
-                        <Link href="/projects" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Mis proyectos' : 'My projects'}</Link>
-                        <Link href="/feed" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Novedades' : 'Feed'}</Link>
-                        <Link href="/settings/profile" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Editar perfil' : 'Edit profile'}</Link>
-                        <Link
+                        <Link prefetch={false} href="/projects" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Mis proyectos' : 'My projects'}</Link>
+                        <Link prefetch={false} href="/feed" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Novedades' : 'Feed'}</Link>
+                        <Link prefetch={false} href="/settings/profile" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Editar perfil' : 'Edit profile'}</Link>
+                        <Link prefetch={false}
                           href="/settings"
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -772,7 +798,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 { href: '/feed', label: language === 'es' ? 'Novedades' : 'Feed', icon: BookOpen, active: pathname === '/feed' },
                 { href: '/blog', label: 'Blog', icon: BookOpen, active: pathname.startsWith('/blog') },
               ].map(({ href, label, icon: Icon, active, beta }) => (
-                <Link key={href} href={href} onClick={handleMobileLinkClick}
+                <Link prefetch={false} key={href} href={href} onClick={handleMobileLinkClick}
                   aria-current={active ? 'page' : undefined} className="workspace-menu-item">
                   <Icon size={16} aria-hidden="true" />
                   <span className="workspace-menu-label">{label}</span>
@@ -785,7 +811,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             {/* User Menu Items */}
             <div className="workspace-menu-settings">
               {isAuthenticated && user && <>
-              <Link
+              <Link prefetch={false}
                 href={userProfileHref(user)}
                 onClick={handleMobileLinkClick}
                 className="workspace-menu-item"
@@ -794,9 +820,9 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 <User size={16} aria-hidden="true" />
                 <span className="workspace-menu-label">{t.nav.profile}</span>
               </Link>
-              <Link href="/projects" onClick={handleMobileLinkClick} className="workspace-menu-item"><BookOpen size={16} aria-hidden="true"/><span className="workspace-menu-label">{language === 'es' ? 'Mis proyectos' : 'My projects'}</span></Link>
-              <Link href="/settings/profile" onClick={handleMobileLinkClick} className="workspace-menu-item"><User size={16} aria-hidden="true"/><span className="workspace-menu-label">{language === 'es' ? 'Editar perfil' : 'Edit profile'}</span></Link>
-              <Link
+              <Link prefetch={false} href="/projects" onClick={handleMobileLinkClick} className="workspace-menu-item"><BookOpen size={16} aria-hidden="true"/><span className="workspace-menu-label">{language === 'es' ? 'Mis proyectos' : 'My projects'}</span></Link>
+              <Link prefetch={false} href="/settings/profile" onClick={handleMobileLinkClick} className="workspace-menu-item"><User size={16} aria-hidden="true"/><span className="workspace-menu-label">{language === 'es' ? 'Editar perfil' : 'Edit profile'}</span></Link>
+              <Link prefetch={false}
                 href="/settings"
                 onClick={handleMobileLinkClick}
                 className="workspace-menu-item"

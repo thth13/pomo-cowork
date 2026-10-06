@@ -148,7 +148,19 @@ viewport resize keep windows within screen bounds. Click/focus raises a panel. E
 closes the focused panel; the dock toggles it. No backdrop, page scroll lock or focus trap.
 Restoring windows on page load does not move focus. Opening from the dock focuses the
 title handle; keyboard focus uses a neutral background and underlined title without an outline.
-Bodies scroll internally and stay mounted to preserve tasks, drafts and live updates.
+Bodies scroll internally. Data panels mount on their first opening and remain mounted
+afterward to preserve tasks and drafts. Closed panels suspend data fetching, polling
+and chat subscriptions; opening revalidates their data. Help remains in the initial HTML.
+Chat uses the same seven-message skeleton while its lazy component and message history
+load, with the regular chat frame height, shared shimmer tokens and reduced-motion support.
+ActiveSessions uses the existing shared socket for visible collapsed avatars/timers;
+reaction snapshots load only when the rail expands or its context menu opens.
+AuthProvider restores and persists the timer task selection independently of TaskList.
+Notifications keep one initial unread-badge request, coalesce update events, and
+revalidate stale data every five minutes while the tab is visible. Achievement sync
+also uses a five-minute fallback plus debounced session/task events. Wrapped reuses
+the loaded monthly report while toast delivery waits for another overlay to close.
+Navbar links disable automatic route prefetch so destinations load on navigation.
 Open/closed state persists in `pomo:windows:open:v2` and restores before the workspace
 appears. Existing v1 preferences migrate; only floating panels are restored. Only known panel IDs are restored; unavailable storage falls back to memory.
 Positions and user-selected sizes persist per window in versioned localStorage keys,

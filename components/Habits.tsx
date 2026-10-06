@@ -40,10 +40,10 @@ function HabitNameForm({ initial = '', onSave, onCancel }: { initial?: string; o
   </form>
 }
 
-export default function Habits({ compact = false }: { compact?: boolean }) {
+export default function Habits({ compact = false, isVisible = true }: { compact?: boolean; isVisible?: boolean }) {
   const { language } = useI18n()
   const c = habitsCopy[language]
-  const { habits, today, loading, error, retry, save } = useHabits()
+  const { habits, today, loading, error, retry, save } = useHabits(isVisible)
   const user = useAuthStore((state) => state.user)
   const [pending, setPending] = useState<string | null>(null)
   const lock = useRef(false)

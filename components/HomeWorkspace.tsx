@@ -7,7 +7,8 @@ import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
 import { registerServiceWorker } from '@/lib/serviceWorker'
 import dynamic from 'next/dynamic'
-const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => null })
+import ChatSkeleton from '@/components/ChatSkeleton'
+const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => <ChatSkeleton /> })
 import TaskList, { TaskListRef } from '@/components/TaskList'
 import WorkHistory from '@/components/WorkHistory'
 import TodayContribution from '@/components/TodayContribution'
@@ -251,7 +252,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
                 {workingCollapsed ? <ChevronLeft size={16} strokeWidth={1.5} aria-hidden="true" /> : <ChevronRight size={16} strokeWidth={1.5} aria-hidden="true" />}
               </button>
               <div id="workspace-working-content" className="working-sidebar-content">
-                <ActiveSessions variant="page" />
+                <ActiveSessions variant="page" detailsVisible={!workingCollapsed} />
               </div>
             </aside>
             {/* <PocketGarden /> */}
@@ -261,10 +262,11 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
           </div>
         </>
       )}
-      {/* Keep help in the initial HTML; only account-dependent panels wait for auth. */}
+      {/* Keep help in the initial HTML; mount data panels on their first opening.
+          Retain visited bodies so closing a window preserves drafts. */}
       {panels.map(({ id, title }, index) => workspaceLoading && id !== 'about' ? null : (
         <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)}>
-          {id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact /> : id === 'tasks' ? <TaskList ref={taskListRef} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution /> : <WorkHistory />}
+          {(id === 'about' || openPanels.includes(id) || panelOrder.includes(id)) && (id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact isVisible={openPanels.includes(id)} /> : id === 'tasks' ? <TaskList ref={taskListRef} isVisible={openPanels.includes(id)} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution isVisible={openPanels.includes(id)} /> : <WorkHistory isVisible={openPanels.includes(id)} />)}
         </WorkspaceWindow>
       ))}
     </div>

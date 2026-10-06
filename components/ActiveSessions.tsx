@@ -432,7 +432,7 @@ function SessionCard({
   )
 }
 
-export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel' | 'page' }) {
+export default function ActiveSessions({ variant = 'panel', detailsVisible = true }: { variant?: 'panel' | 'page'; detailsVisible?: boolean }) {
   const surfaceClassName = variant === 'page'
     ? 'focus-page-community'
     : 'bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8'
@@ -558,7 +558,10 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
     }
   }, [onTomatoReceive, offTomatoReceive])
 
+  const reactionsVisible = detailsVisible || contextMenu.show
+
   useEffect(() => {
+    if (!reactionsVisible) return
     const handleReactionSnapshot = (payload: { countsByTarget: Record<string, Record<string, number>>; myReactionsByTarget?: Record<string, string> }) => {
       setReactionsByUser(payload.countsByTarget ?? {})
       setMyReactionsByTarget(payload.myReactionsByTarget ?? {})
@@ -597,11 +600,12 @@ export default function ActiveSessions({ variant = 'panel' }: { variant?: 'panel
       offReactionSnapshot(handleReactionSnapshot)
       offReactionUpdate(handleReactionUpdate)
     }
-  }, [onReactionSnapshot, offReactionSnapshot, onReactionUpdate, offReactionUpdate, currentUserId])
+  }, [onReactionSnapshot, offReactionSnapshot, onReactionUpdate, offReactionUpdate, currentUserId, reactionsVisible])
 
   useEffect(() => {
+    if (!reactionsVisible) return
     requestReactions({ userId: currentUserId ?? null })
-  }, [requestReactions, currentUserId])
+  }, [requestReactions, currentUserId, reactionsVisible])
 
   const handleContextMenu = (e: React.MouseEvent, targetUserId: string, element: HTMLElement) => {
     e.preventDefault()

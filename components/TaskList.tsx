@@ -24,8 +24,6 @@ interface Task {
 
 const getTaskCanonicalId = (task: Task): string => task.backendId ?? task.id
 
-const SELECTED_TASK_STORAGE_KEY = 'selectedTask'
-
 const buildTaskHeaders = (
   token: string | null,
   includeContentType = false,
@@ -70,7 +68,7 @@ export interface TaskListRef {
   refreshTasks: () => Promise<void>
 }
 
-const TaskList = forwardRef<TaskListRef>((props, ref) => {
+const TaskList = forwardRef<TaskListRef, { isVisible?: boolean }>(({ isVisible = true }, ref) => {
   const [tasks, setTasks] = useState<Task[]>([])
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskPriority, setNewTaskPriority] = useState<'Critical' | 'High' | 'Medium' | 'Low'>('Medium')
@@ -80,12 +78,20 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
   const [showToast, setShowToast] = useState(false)
   const { selectedTask, setSelectedTask, setTaskOptions, isRunning } = useTimerStore()
   const { user, token } = useAuthStore()
-  const hasRestoredSelectedTask = useRef(false)
+  const userId = user?.id
+  const tasksLoadingRef = useRef(false)
   const loadVersion = useRef(0)
+  const taskRequestRef = useRef<AbortController | null>(null)
   const deleteConfirmTimeoutRef = useRef<number | null>(null)
 
   const loadTasks = useCallback(async () => {
+    if (!isVisible) return
+    taskRequestRef.current?.abort()
+    const controller = new AbortController()
+    taskRequestRef.current = controller
     const version = ++loadVersion.current
+    tasksLoadingRef.current = true
+    setIsLoading(true)
     try {
       const headers = buildTaskHeaders(token)
       if (!headers.Authorization && !headers['X-Anonymous-Id']) {
@@ -96,7 +102,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       }
 
       const response = await fetch('/api/tasks', {
-        headers
+        headers, signal: controller.signal
       })
 
       if (response.ok) {
@@ -120,15 +126,19 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
         console.error('TaskList: Failed to load tasks, status:', response.status)
       }
     } catch (error) {
-      console.error('Failed to load tasks:', error)
+      if (!controller.signal.aborted) console.error('Failed to load tasks:', error)
     } finally {
-      setIsLoading(false)
+      if (version === loadVersion.current) {
+        tasksLoadingRef.current = false
+        setIsLoading(false)
+      }
     }
-  }, [token, setTaskOptions])
+  }, [isVisible, token, setTaskOptions])
 
   useEffect(() => {
     const onTaskChange = (event: Event) => {
       loadVersion.current++
+      tasksLoadingRef.current = false
       const change = (event as CustomEvent<TaskChange>).detail
       setTasks(previous => {
         if ('deletedId' in change) return previous.filter(task => getTaskCanonicalId(task) !== change.deletedId)
@@ -148,51 +158,10 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
     refreshTasks: loadTasks
   }), [loadTasks])
 
+  // Load only while the task window is open.
   useEffect(() => {
-    if (hasRestoredSelectedTask.current) {
-      return
-    }
-
-    try {
-      const storedSelection = localStorage.getItem(SELECTED_TASK_STORAGE_KEY)
-      if (storedSelection) {
-        const parsedSelection = JSON.parse(storedSelection)
-
-        if (parsedSelection?.id) {
-          setSelectedTask({
-            id: parsedSelection.id,
-            title: parsedSelection.title ?? '',
-            description: parsedSelection.description ?? undefined,
-          })
-        }
-      }
-    } catch (error) {
-      console.error('TaskList: Failed to restore selected task from storage:', error)
-      localStorage.removeItem(SELECTED_TASK_STORAGE_KEY)
-    } finally {
-      hasRestoredSelectedTask.current = true
-    }
-  }, [setSelectedTask])
-
-  useEffect(() => {
-    if (!hasRestoredSelectedTask.current) {
-      return
-    }
-
-    try {
-      if (selectedTask) {
-        localStorage.setItem(SELECTED_TASK_STORAGE_KEY, JSON.stringify(selectedTask))
-      } else {
-        localStorage.removeItem(SELECTED_TASK_STORAGE_KEY)
-      }
-    } catch (error) {
-      console.error('TaskList: Failed to persist selected task to storage:', error)
-    }
-  }, [selectedTask])
-
-  // Load tasks on mount
-  useEffect(() => {
-    if (user || token || getAnonymousId()) {
+    if (!isVisible) return
+    if (userId || token || getAnonymousId()) {
       loadTasks()
     } else {
       setTasks([])
@@ -200,9 +169,13 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       setSelectedTask(null)
       setIsLoading(false)
     }
-  }, [user, token, setSelectedTask, setTaskOptions, loadTasks])
+    const versionRef = loadVersion
+    const requestRef = taskRequestRef
+    return () => { versionRef.current++; requestRef.current?.abort() }
+  }, [isVisible, userId, token, setSelectedTask, setTaskOptions, loadTasks])
 
   useEffect(() => {
+    if (!isVisible || isLoading) return
     setTaskOptions(tasks.map((task) => ({
       id: getTaskCanonicalId(task),
       title: task.title,
@@ -210,10 +183,10 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
       completed: task.completed,
       focusMinutes: task.focusMinutes,
     })))
-  }, [tasks, setTaskOptions])
+  }, [isVisible, isLoading, tasks, setTaskOptions])
 
   useEffect(() => {
-    if (!selectedTask) {
+    if (!isVisible || tasksLoadingRef.current || !selectedTask) {
       return
     }
 
@@ -240,7 +213,7 @@ const TaskList = forwardRef<TaskListRef>((props, ref) => {
     if (!isLoading) {
       setSelectedTask(null)
     }
-  }, [tasks, selectedTask, setSelectedTask, isLoading])
+  }, [isVisible, tasks, selectedTask, setSelectedTask, isLoading])
 
   useEffect(() => () => {
     if (deleteConfirmTimeoutRef.current) {

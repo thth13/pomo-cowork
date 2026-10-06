@@ -74,17 +74,22 @@ export default function WrappedProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     let running = false
     let checkedMonth = ''
+    let cached: { month: string; data: ResponseData } | null = null
+    let retryAfter = 0
     const check = async () => {
-      if (running || document.visibilityState !== 'visible') return
+      if (running || document.visibilityState !== 'visible' || Date.now() < retryAfter) return
       const month = previousMonthStart(timezone)
       if (checkedMonth === month) return
       running = true
       const id = generation.current
       try {
-        const data = await load()
+        const data = cached?.month === month ? cached.data : await load()
         if (cancelled || currentOwner.current !== token || generation.current !== id) return
-        setArchive({ owner: token, items: data.history })
-        window.dispatchEvent(new Event('notifications-updated'))
+        if (cached?.month !== month) {
+          cached = { month, data }
+          setArchive({ owner: token, items: data.history })
+          if (data.report.totalFocusMinutes > 0) window.dispatchEvent(new Event('notifications-updated'))
+        }
         if (data.report.totalFocusMinutes <= 0 || !data.pending) { checkedMonth = month; setError(false); return }
         // Workspace windows stay mounted while hidden and are non-modal.
         // Only a modal or an occupied toast corner should defer the invitation;
@@ -103,7 +108,10 @@ export default function WrappedProvider({ children }: { children: ReactNode }) {
         checkedMonth = month
         setError(false)
         if (claimed) setToast({ owner: token, report: data.report })
-      } catch { if (!cancelled) setError(true) }
+      } catch {
+        retryAfter = Date.now() + 5 * 60_000
+        if (!cancelled) setError(true)
+      }
       finally { running = false }
     }
     // Let a dismissed toast finish exiting before checking the occupied corner.
