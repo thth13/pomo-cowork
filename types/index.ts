@@ -91,7 +91,7 @@ export interface RoomInvite {
 
 export interface NotificationItem {
   id: string
-  type: 'ROOM_INVITE' | 'WALL_MESSAGE' | 'RANK_UP' | 'MONTHLY_WRAPPED'
+  type: 'ROOM_INVITE' | 'WALL_MESSAGE' | 'RANK_UP' | 'MONTHLY_WRAPPED' | 'PREMIUM_GRANTED'
   title: string
   message: string
   readAt: string | null

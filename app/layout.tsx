@@ -23,6 +23,7 @@ import { I18nProvider } from '@/components/I18nProvider'
 import RankUpToast from '@/components/RankUpToast'
 import AchievementNotifications from '@/components/achievements/AchievementNotifications'
 import JournalToast from '@/components/journal/JournalToast'
+import PremiumGrantModal from '@/components/PremiumGrantModal'
 
 config.autoAddCss = false
 
@@ -110,6 +111,7 @@ export default function RootLayout({
                 <GtmClient />
                 <RankUpToast />
                 <AchievementNotifications />
+                <PremiumGrantModal />
               <JournalToast />
                 <WrappedProvider>{children}</WrappedProvider>
                 <div className="hidden sm:block">

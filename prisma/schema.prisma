@@ -133,6 +133,7 @@ enum RoomInviteStatus {
 }
 
 enum NotificationType {
+  PREMIUM_GRANTED
   ROOM_INVITE
   WALL_MESSAGE
   RANK_UP

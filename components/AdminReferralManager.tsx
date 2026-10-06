@@ -56,7 +56,8 @@ export default function AdminReferralManager() {
   const [supportLoading, setSupportLoading] = useState(false)
   const [proUsers, setProUsers] = useState<ProUserEntry[]>([])
   const [proUsersLoading, setProUsersLoading] = useState(false)
-  const [premiumEmail, setPremiumEmail] = useState('')
+  const [premiumUsername, setPremiumUsername] = useState('')
+  const [premiumMessage, setPremiumMessage] = useState('')
   const [isGrantingPremium, setIsGrantingPremium] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
   const [toastType, setToastType] = useState<'success' | 'error' | 'info' | 'warning'>('info')
@@ -187,10 +188,18 @@ export default function AdminReferralManager() {
       return
     }
 
-    const email = premiumEmail.trim()
-    if (!email) {
+    const username = premiumUsername.trim()
+    if (!username) {
       setToastType('warning')
-      setToastMessage('Enter a user email')
+      setToastMessage('Enter a username')
+      setShowToast(true)
+      return
+    }
+
+    const message = premiumMessage.trim()
+    if (!message) {
+      setToastType('warning')
+      setToastMessage('Enter a message for the user')
       setShowToast(true)
       return
     }
@@ -204,7 +213,7 @@ export default function AdminReferralManager() {
           'Content-Type': 'application/json',
           Authorization: token ? `Bearer ${token}` : '',
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ username, message }),
       })
       const body = await response.json().catch(() => null)
 
@@ -213,12 +222,13 @@ export default function AdminReferralManager() {
       }
 
       const updatedUser = body?.user as ProUserEntry | undefined
-      setPremiumEmail('')
+      setPremiumUsername('')
+      setPremiumMessage('')
       setToastType('success')
       setToastMessage(
         body?.status === 'already_lifetime'
-          ? `${updatedUser?.email ?? email} already has Premium with no expiry`
-          : `Premium active for ${updatedUser?.email ?? email} until ${formatShortDate(updatedUser?.proExpiresAt)}`
+          ? `${updatedUser?.username ?? username} already has Premium with no expiry`
+          : `Premium active for ${updatedUser?.username ?? username} until ${formatShortDate(updatedUser?.proExpiresAt)}`
       )
       setShowToast(true)
       await fetchProUsers()
@@ -753,35 +763,50 @@ export default function AdminReferralManager() {
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Pro users</h2>
             <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-              Grant one month of Premium by user email.
+              Grant one month of Premium by username.
             </p>
           </div>
           <span className="text-xs text-slate-400">{proUsers.length} total</span>
         </div>
 
-        <div className="mt-4 flex flex-col gap-3 sm:flex-row">
-          <label className="sr-only" htmlFor="premium-user-email">
-            User email
+        <div className="mt-4 flex flex-col gap-3">
+          <label className="sr-only" htmlFor="premium-user-username">
+            Username
           </label>
           <input
-            id="premium-user-email"
-            type="email"
-            value={premiumEmail}
-            onChange={(event) => setPremiumEmail(event.target.value)}
+            id="premium-user-username"
+            type="text"
+            autoCapitalize="none"
+            spellCheck={false}
+            value={premiumUsername}
+            onChange={(event) => setPremiumUsername(event.target.value)}
             onKeyDown={(event) => {
-              if (event.key === 'Enter') {
+              if (event.key === 'Enter' && !event.nativeEvent.isComposing) {
                 event.preventDefault()
                 void handleGrantPremium()
               }
             }}
-            placeholder="user@example.com"
+            placeholder="username"
             disabled={isGrantingPremium}
             className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-amber-500 dark:focus:ring-amber-500/40"
+          />
+          <label className="text-xs text-slate-500 dark:text-slate-400" htmlFor="premium-user-message">
+            Message shown to the user
+          </label>
+          <textarea
+            id="premium-user-message"
+            value={premiumMessage}
+            onChange={(event) => setPremiumMessage(event.target.value)}
+            placeholder="Write a message to display when the user receives Premium"
+            rows={4}
+            maxLength={2000}
+            disabled={isGrantingPremium}
+            className="min-w-0 resize-none rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-amber-500 dark:focus:ring-amber-500/40"
           />
           <button
             type="button"
             onClick={() => void handleGrantPremium()}
-            disabled={isGrantingPremium || !premiumEmail.trim()}
+            disabled={isGrantingPremium || !premiumUsername.trim() || !premiumMessage.trim()}
             className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-amber-300 dark:text-slate-950"
           >
             {isGrantingPremium ? 'Granting...' : 'Grant Premium for 1 month'}

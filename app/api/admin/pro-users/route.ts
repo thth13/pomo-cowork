@@ -71,16 +71,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json().catch(() => null)
-    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : ''
+    const username = typeof body?.username === 'string' ? body.username.trim() : ''
+    const message = typeof body?.message === 'string' ? body.message.trim() : ''
 
-    if (!email) {
-      return NextResponse.json({ error: 'Email is required' }, { status: 400 })
+    if (!username) {
+      return NextResponse.json({ error: 'Username is required' }, { status: 400 })
+    }
+
+    if (!message || message.length > 2000) {
+      return NextResponse.json({ error: 'Message must contain between 1 and 2000 characters' }, { status: 400 })
     }
 
     const user = await prisma.user.findFirst({
       where: {
-        email: {
-          equals: email,
+        username: {
+          equals: username,
           mode: 'insensitive',
         },
         isAnonymous: false,
@@ -113,21 +118,32 @@ export async function POST(request: NextRequest) {
       user.isPro && user.proExpiresAt && user.proExpiresAt > now ? user.proExpiresAt : now
     const proExpiresAt = addMonths(startsAt, 1)
 
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        isPro: true,
-        proExpiresAt,
-      },
-      select: {
-        id: true,
-        username: true,
-        email: true,
-        avatarUrl: true,
-        proExpiresAt: true,
-        createdAt: true,
-        lastSeenAt: true,
-      },
+    const updatedUser = await prisma.$transaction(async (tx) => {
+      const updated = await tx.user.update({
+        where: { id: user.id },
+        data: {
+          isPro: true,
+          proExpiresAt,
+        },
+        select: {
+          id: true,
+          username: true,
+          email: true,
+          avatarUrl: true,
+          proExpiresAt: true,
+          createdAt: true,
+          lastSeenAt: true,
+        },
+      })
+      await tx.notification.create({
+        data: {
+          userId: user.id,
+          type: 'PREMIUM_GRANTED',
+          title: 'You have received Premium',
+          message,
+        },
+      })
+      return updated
     })
 
     return NextResponse.json({

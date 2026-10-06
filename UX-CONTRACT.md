@@ -439,3 +439,21 @@ these errors to the form. Email availability ignores letter case. Invalid submis
 preserves values and focuses the first invalid field once inputs are enabled.
 Confirmation is required only for email registration, stays masked by default, and is
 never stored. Pending submissions disable inputs and block duplicate requests.
+
+## Admin Premium grants
+
+Source: user request dated 2026-10-06; `app/api/admin/pro-users/route.ts` owns
+admin authorization and the existing one-month extension rule. AdminReferralManager
+accepts a username and a required message (up to 2000 characters) below it. A grant
+and its PREMIUM_GRANTED notification persist in one database transaction. An already
+lifetime-Pro account receives no new grant or notification.
+
+PremiumGrantModal is mounted globally for registered accounts and uses CommunityDialog
+for focus containment, Escape and close behavior. It loads the oldest unread grant on
+login, window focus, visibility return and every 30 seconds while visible. The message
+is plain text with preserved line breaks; fixed dialog copy follows English/Spanish.
+Closing acknowledges via the existing owner-scoped notification PATCH endpoint; failed
+acknowledgment keeps the modal open with retry feedback. Pending messages survive
+logout and offline periods. Requests are aborted and local state resets when the account
+changes. Receiving a message refreshes auth to update the displayed Pro status.
+Runtime verification is left to the user; no tests, builds, app start or tsc are run.
