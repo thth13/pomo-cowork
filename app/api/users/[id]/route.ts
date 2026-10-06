@@ -76,7 +76,7 @@ export async function GET(
     const activeSession = await prisma.pomodoroSession.findFirst({
       where: {
         userId,
-        status: 'ACTIVE',
+        status: { in: ['ACTIVE', 'PAUSED'] },
         OR: [{ projectId: null }, { project: { visibility: 'PUBLIC' } }],
       },
       select: {
@@ -84,8 +84,12 @@ export async function GET(
         task: true,
         type: true,
         startedAt: true,
-        duration: true
-      }
+        duration: true,
+        status: true,
+        pausedAt: true,
+        remainingSeconds: true,
+      },
+      orderBy: { startedAt: 'desc' },
     })
 
     // Get recent sessions (last 7 days)

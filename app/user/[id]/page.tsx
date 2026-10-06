@@ -18,7 +18,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useThemeStore } from '@/store/useThemeStore'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import Navbar from '@/components/Navbar'
-import ActiveSessionTimer from '@/components/ActiveSessionTimer'
+import ActiveSessionTimer, { type ProfileActiveSession } from '@/components/ActiveSessionTimer'
 import WeeklyActivityChart from '@/components/WeeklyActivityChart'
 import PersonalNavigation from '@/components/PersonalNavigation'
 import PersonalPageSkeleton from '@/components/PersonalPageSkeleton'
@@ -42,13 +42,7 @@ interface UserProfile {
     totalWorkHours: number
     completionRate: number
   }
-  activeSession?: {
-    id: string
-    task: string
-    type: string
-    startedAt: string
-    duration: number
-  }
+  activeSession?: ProfileActiveSession | null
   recentSessions: Array<{
     id: string
     task: string

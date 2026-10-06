@@ -429,6 +429,12 @@ The public profile shares the leaderboard's floating compact Navbar, including
 loading/error states. Its content reserves 84px plus the top safe area, reduced to
 80px at widths up to 800px. Shared Navbar styles own menu positioning and overlays.
 
+`ActiveSessionTimer` owns the profile's current-session display. Time Tracking shows
+elapsed minutes and seconds, matching the main timer, with its localized mode label
+and no duration progress bar. Pomodoro sessions retain their remaining-time countdown.
+The profile API includes active and paused public sessions; paused displays use saved
+remaining seconds and stop ticking. Existing profile surfaces and typography remain canonical.
+
 Leaderboard rows include a localized rank name and colored marker based on lifetime XP.
 The table owns horizontal overflow on narrow screens. The profile rank badge links to
 `/ranks`, with a localized tooltip and keyboard focus; no separate guide text is shown.
