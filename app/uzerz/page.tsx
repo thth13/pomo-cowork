@@ -1,3 +1,4 @@
+import { userProfileHref } from '@/lib/userProfile'
 import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
@@ -7,6 +8,7 @@ import { getEffectiveMinutes } from '@/lib/sessionStats'
 export const dynamic = 'force-dynamic'
 
 type UserRow = {
+  isAnonymous: boolean
   id: string
   username: string
   avatarUrl: string | null
@@ -103,6 +105,7 @@ async function getUsers(isAnonymous: boolean): Promise<UserRow[]> {
     )
 
     return {
+      isAnonymous,
       id: user.id,
       username: user.username,
       avatarUrl: user.avatarUrl,
@@ -228,7 +231,7 @@ export default async function UzerzPage({
                       >
                         <td className="px-5 py-4">
                           <Link
-                            href={`/user/${user.id}`}
+                            href={userProfileHref(user)}
                             className="flex min-w-[220px] items-center gap-3"
                           >
                             {user.avatarUrl ? (

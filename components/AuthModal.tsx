@@ -1,12 +1,13 @@
 'use client'
 
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { reportConversion } from '@/lib/gtm'
 import { useI18n } from '@/components/I18nProvider'
+import { registrationFields, validateRegistration, type RegistrationField, type RegistrationFieldErrors } from '@/lib/registrationValidation'
 
 interface AuthModalProps {
   isOpen: boolean
@@ -20,8 +21,14 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   const [formData, setFormData] = useState({
     email: '',
     username: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   })
+  const [fieldErrors, setFieldErrors] = useState<RegistrationFieldErrors>({})
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const submittingRef = useRef(false)
+  const pendingFocusRef = useRef<RegistrationField | null>(null)
   const [error, setError] = useState('')
   const [showEmailForm, setShowEmailForm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -33,50 +40,90 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
   useEffect(() => {
     if (!isOpen) {
+      pendingFocusRef.current = null
+      setFieldErrors({})
+      setShowPassword(false)
+      setShowConfirmPassword(false)
       setShowEmailForm(false)
       setError('')
       setIsLoading(false)
       setIsGoogleProcessing(false)
-      setFormData({ email: '', username: '', password: '' })
+      setFormData({ email: '', username: '', password: '', confirmPassword: '' })
       return
     }
 
     setIsLogin(initialMode === 'login')
   }, [initialMode, isOpen])
 
+  useEffect(() => {
+    if (isLoading || !pendingFocusRef.current) return
+    const input = formRef.current?.elements.namedItem(pendingFocusRef.current)
+    pendingFocusRef.current = null
+    if (input instanceof HTMLInputElement) input.focus()
+  }, [fieldErrors, isLoading])
+
+  const showFieldErrors = (errors: RegistrationFieldErrors) => {
+    pendingFocusRef.current = registrationFields.find(field => errors[field]) ?? null
+    setFieldErrors(errors)
+  }
+
+  const fieldError = (field: RegistrationField) => {
+    const code = fieldErrors[field]
+    return code ? (
+      <p id={`auth-${field}-error`} role="alert" className="mt-1 text-xs text-red-700 dark:text-red-300">
+        {t.auth[code]}
+      </p>
+    ) : null
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (submittingRef.current) return
     setError('')
-    setIsLoading(true)
+    setFieldErrors({})
 
+    if (!isLogin) {
+      const errors = validateRegistration(formData)
+      if (Object.keys(errors).length) {
+        showFieldErrors(errors)
+        return
+      }
+    } else if (!formData.email.trim() || !formData.password) {
+      showFieldErrors({
+        ...(!formData.email.trim() ? { email: 'emailRequired' as const } : {}),
+        ...(!formData.password ? { password: 'passwordRequired' as const } : {}),
+      })
+      return
+    }
+
+    submittingRef.current = true
+    setIsLoading(true)
     try {
       let success = false
-      
       if (isLogin) {
-        success = await login(formData.email, formData.password)
-        if (!success) {
-          setError(t.auth.invalidCredentials)
-        }
+        success = await login(formData.email.trim(), formData.password)
+        if (!success) setError(t.auth.invalidCredentials)
       } else {
-        reportConversion()
-        if (!formData.username.trim()) {
-          setError(t.auth.usernameRequired)
-          setIsLoading(false)
-          return
-        }
-        success = await register(formData.email, formData.username, formData.password)
-        if (!success) {
-          setError(t.auth.registrationError)
+        const result = await register(formData.email.trim(), formData.username, formData.password, formData.confirmPassword)
+        success = result.success
+        if (result.success === false) {
+          if (result.fieldErrors && Object.keys(result.fieldErrors).length) {
+            showFieldErrors(result.fieldErrors)
+          } else {
+            setError(result.error === 'networkError' ? t.auth.networkError : result.error === 'Server error' ? t.auth.serverError : result.error)
+          }
         }
       }
 
       if (success) {
+        if (!isLogin) reportConversion()
         onClose()
-        setFormData({ email: '', username: '', password: '' })
+        setFormData({ email: '', username: '', password: '', confirmPassword: '' })
       }
-    } catch (error) {
+    } catch {
       setError(t.auth.unexpectedError)
     } finally {
+      submittingRef.current = false
       setIsLoading(false)
     }
   }
@@ -86,13 +133,24 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       ...prev,
       [e.target.name]: e.target.value
     }))
+    setFieldErrors(prev => {
+      const next = { ...prev }
+      delete next[e.target.name as RegistrationField]
+      if (e.target.name === 'password') delete next.confirmPassword
+      return next
+    })
     setError('')
   }
 
   const toggleMode = () => {
+    if (submittingRef.current) return
+    pendingFocusRef.current = null
     setIsLogin(!isLogin)
+    setFieldErrors({})
+    setShowPassword(false)
+    setShowConfirmPassword(false)
     setError('')
-    setFormData({ email: '', username: '', password: '' })
+    setFormData({ email: '', username: '', password: '', confirmPassword: '' })
   }
 
   const handleGoogleLogin = () => {
@@ -144,7 +202,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.9 }}
-          className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl max-w-md w-full p-8 border border-slate-100/60 dark:border-slate-800"
+          className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto p-8 border border-slate-100/60 dark:border-slate-800"
         >
           {/* Header */}
           <div className="flex items-start justify-between mb-8">
@@ -172,7 +230,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
             <button
               type="button"
               onClick={handleGoogleLogin}
-              disabled={isGoogleProcessing || !googleClientId}
+              disabled={isLoading || isGoogleProcessing || !googleClientId}
               className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-800 rounded-xl py-3 text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/70 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               <svg
@@ -220,6 +278,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
           {/* Error Message */}
           {error && (
             <motion.div
+              role="alert"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               className="mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm"
@@ -230,17 +289,22 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
           {/* Form */}
           {showEmailForm && (
-            <form onSubmit={handleSubmit} className="space-y-4 mt-8">
+            <form ref={formRef} noValidate onSubmit={handleSubmit} className="space-y-4 mt-8">
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="auth-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   {t.auth.email}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
                   <input
                     type="email"
+                    id="auth-email"
                     name="email"
+                    disabled={isLoading}
+                    autoComplete="email"
+                    aria-invalid={Boolean(fieldErrors.email)}
+                    aria-describedby={fieldErrors.email ? 'auth-email-error' : undefined}
                     value={formData.email}
                     onChange={handleInputChange}
                     className="input pl-10"
@@ -248,19 +312,25 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                     required
                   />
                 </div>
+                {fieldError('email')}
               </div>
 
               {/* Username (for registration) */}
               {!isLogin && (
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  <label htmlFor="auth-username" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     {t.auth.username}
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
                     <input
                       type="text"
+                      id="auth-username"
                       name="username"
+                      disabled={isLoading}
+                      autoComplete="username"
+                      aria-invalid={Boolean(fieldErrors.username)}
+                      aria-describedby={fieldErrors.username ? 'auth-username-error' : undefined}
                       value={formData.username}
                       onChange={handleInputChange}
                       className="input pl-10"
@@ -268,19 +338,25 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                       required={!isLogin}
                     />
                   </div>
+                  {fieldError('username')}
                 </div>
               )}
 
               {/* Password */}
               <div>
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                <label htmlFor="auth-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   {t.auth.password}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
                   <input
                     type={showPassword ? 'text' : 'password'}
+                    id="auth-password"
                     name="password"
+                    disabled={isLoading}
+                    autoComplete={isLogin ? 'current-password' : 'new-password'}
+                    aria-invalid={Boolean(fieldErrors.password)}
+                    aria-describedby={fieldErrors.password ? 'auth-password-error' : !isLogin ? 'auth-password-help' : undefined}
                     value={formData.password}
                     onChange={handleInputChange}
                     className="input pl-10 pr-10"
@@ -291,20 +367,59 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? t.auth.hidePassword : t.auth.showPassword}
+                    aria-pressed={showPassword}
                     className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
                   >
                     {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                   </button>
                 </div>
                 {!isLogin && (
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  <p id="auth-password-help" className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                     {t.auth.minimumPassword}
                   </p>
                 )}
+                {fieldError('password')}
               </div>
+
+              {!isLogin && (
+                <div>
+                  <label htmlFor="auth-confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    {t.auth.confirmPassword}
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
+                    <input
+                      id="auth-confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      name="confirmPassword"
+                      autoComplete="new-password"
+                      value={formData.confirmPassword}
+                      onChange={handleInputChange}
+                      disabled={isLoading}
+                      aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                      aria-describedby={fieldErrors.confirmPassword ? 'auth-confirmPassword-error' : undefined}
+                      className="input pl-10 pr-10"
+                      placeholder={t.auth.confirmPasswordPlaceholder}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      aria-label={showConfirmPassword ? t.auth.hidePassword : t.auth.showPassword}
+                      aria-pressed={showConfirmPassword}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                  {fieldError('confirmPassword')}
+                </div>
+              )}
 
               {/* Submit Button */}
               <motion.button
+                aria-busy={isLoading}
                 type="submit"
                 disabled={isLoading}
                 className="btn-primary w-full py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"

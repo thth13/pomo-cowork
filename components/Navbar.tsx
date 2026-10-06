@@ -1,5 +1,6 @@
 'use client'
 
+import { userProfileHref } from '@/lib/userProfile'
 import { useCallback, useEffect, useMemo, useRef, useState, useId, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
@@ -385,7 +386,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                   </button>
                 ) : (
                 <Link
-                  href={`/user/${encodeURIComponent(user.id)}`}
+                  href={userProfileHref(user)}
                   className="workspace-account-trigger"
                   aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`}
                   aria-describedby={isAccountPreviewOpen ? accountPreviewId : undefined}
@@ -591,7 +592,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                       </div>
                       <div className="py-2">
                         <Link
-                          href={`/user/${encodeURIComponent(user.id)}`}
+                          href={userProfileHref(user)}
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center justify-between px-4 py-2 text-sm text-gray-700 transition-colors hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800"
                         >
@@ -730,7 +731,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             {!compact && isAuthenticated && user && (
             <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-slate-700 rounded-xl">
               <div className="flex items-center space-x-3">
-                <button type="button" aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`} onClick={() => { if (unreadCount > 0) openAvatarNotifications(); else router.push(`/user/${encodeURIComponent(user.id)}`) }} className="relative w-11 h-11 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold">
+                <button type="button" aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`} onClick={() => { if (unreadCount > 0) openAvatarNotifications(); else router.push(userProfileHref(user)) }} className="relative w-11 h-11 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold">
                   <RankAvatarFrame
                     experience={user.experience}
                     thickness={3}
@@ -785,10 +786,10 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             <div className="workspace-menu-settings">
               {isAuthenticated && user && <>
               <Link
-                href={`/user/${encodeURIComponent(user.id)}`}
+                href={userProfileHref(user)}
                 onClick={handleMobileLinkClick}
                 className="workspace-menu-item"
-                aria-current={pathname === `/user/${encodeURIComponent(user.id)}` ? 'page' : undefined}
+                aria-current={pathname === userProfileHref(user) ? 'page' : undefined}
               >
                 <User size={16} aria-hidden="true" />
                 <span className="workspace-menu-label">{t.nav.profile}</span>

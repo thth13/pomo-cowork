@@ -1,5 +1,6 @@
 'use client'
 
+import { userProfileHref } from '@/lib/userProfile'
 import { useEffect, useMemo, useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import NotificationToast from '@/components/NotificationToast'
@@ -601,7 +602,7 @@ export default function AdminReferralManager() {
                                   }}
                                 >
                                   <Link
-                                    href={`/user/${entry.user.id}`}
+                                    href={userProfileHref(entry.user)}
                                     className="flex w-full items-center justify-between gap-3 rounded-lg border border-slate-100 bg-white/70 px-3 py-2 text-left transition hover:border-emerald-200 hover:bg-emerald-50/40 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-emerald-900/50"
                                   >
                                     <div className="flex min-w-0 items-center gap-3">
@@ -676,7 +677,7 @@ export default function AdminReferralManager() {
                                   }}
                                 >
                                   <Link
-                                    href={`/user/${entry.user.id}`}
+                                    href={userProfileHref(entry.user)}
                                     className="flex w-full items-center justify-between gap-3 rounded-lg border border-slate-100 bg-white/70 px-3 py-2 text-left transition hover:border-violet-200 hover:bg-violet-50/40 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-violet-900/50"
                                   >
                                     <div className="flex min-w-0 items-center gap-3">
@@ -796,7 +797,7 @@ export default function AdminReferralManager() {
             proUsers.map((entry) => (
               <Link
                 key={entry.id}
-                href={`/user/${entry.id}`}
+                href={userProfileHref(entry)}
                 className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm transition hover:border-amber-200 hover:bg-amber-50/50 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:border-amber-900/50"
               >
                 <div className="flex min-w-0 items-center gap-3">
@@ -885,7 +886,7 @@ export default function AdminReferralManager() {
                 {entry.user ? (
                   <div className="mt-3">
                     <Link
-                      href={`/user/${entry.user.id}`}
+                      href={userProfileHref(entry.user)}
                       className="inline-flex items-center gap-2 text-xs font-semibold text-rose-600 transition hover:text-rose-700 dark:text-rose-300 dark:hover:text-rose-200"
                     >
                       View user profile

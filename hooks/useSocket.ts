@@ -93,7 +93,7 @@ const syncCurrentSession = () => {
     status: isRunning ? SessionStatus.ACTIVE : SessionStatus.PAUSED,
   })
   sessionSnapshots.set(snapshot.id, snapshot)
-  sharedSocket.emit('session-sync', snapshot)
+  sharedSocket.emit('session-sync', { ...snapshot, token: useAuthStore.getState().token ?? undefined })
 }
 
 const initSocketOnce = () => {
@@ -135,7 +135,24 @@ const initSocketOnce = () => {
   // Subscribe once, regardless of how many components use this hook.
   useAuthStore.subscribe((state, previous) => {
     if (state.user === previous.user) return
-    const timer = useTimerStore.getState()
+    let timer = useTimerStore.getState()
+    const convertedId = state.convertedAnonymousId
+    if (state.user && convertedId && convertedId !== state.user.id) {
+      const registeredId = state.user.id
+      for (const snapshot of sessionSnapshots.values()) {
+        if (snapshot.userId === convertedId) snapshot.userId = registeredId
+      }
+      for (const event of pendingSessionEvents) {
+        if (event.ownerId !== convertedId) continue
+        event.ownerId = registeredId
+        if ('userId' in event.payload) event.payload.userId = registeredId
+        else if (event.payload.session) event.payload.session.userId = registeredId
+      }
+      if (timer.currentSession?.userId === convertedId) {
+        useTimerStore.setState({ currentSession: { ...timer.currentSession, userId: registeredId } })
+        timer = useTimerStore.getState()
+      }
+    }
     if (timer.currentSession && timer.currentSession.userId !== currentOwnerId()) {
       sessionSnapshots.delete(timer.currentSession.id)
       timer.cancelSession()
@@ -208,7 +225,7 @@ export function useSocket() {
     if (sessionData.userId !== currentOwnerId()) return
     const snapshot = withSessionProfile(sessionData)
     sessionSnapshots.set(snapshot.id, snapshot)
-    if (sharedSocket?.connected) sharedSocket.emit('session-sync', snapshot)
+    if (sharedSocket?.connected) sharedSocket.emit('session-sync', { ...snapshot, token: useAuthStore.getState().token ?? undefined })
   }, [])
 
   const emitSessionPause = (sessionId: string) => {

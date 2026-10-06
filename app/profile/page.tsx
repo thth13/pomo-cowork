@@ -1,5 +1,6 @@
 'use client'
 
+import { userProfileHref } from '@/lib/userProfile'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -21,8 +22,8 @@ export default function ProfilePage() {
   const showingProfile = isLoading || (isAuthenticated && Boolean(user?.id))
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated && user?.id) router.replace(`/user/${encodeURIComponent(user.id)}`)
-  }, [isLoading, isAuthenticated, user?.id, router])
+    if (!isLoading && isAuthenticated && user?.id) router.replace(userProfileHref(user))
+  }, [isLoading, isAuthenticated, user?.id, user?.username, user?.isAnonymous, router])
 
   return <div className={`community-page garden-page${showingProfile ? ' profile-page' : ''}`} lang={language} data-no-translate>
     <Navbar compact />

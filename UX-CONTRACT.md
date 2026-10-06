@@ -424,3 +424,18 @@ guest submits. User-authored messages and typing require a registered account;
 `/api/chat/messages` and the socket server verify the author. Timer system activity
 and reading chat remain available to guests. A failed message save restores the draft
 without broadcasting an unsaved message. Verification remains static per user policy.
+
+## Email registration validation
+
+AuthModal owns sign-up fields and inline, English/Spanish error feedback through
+I18nProvider. lib/registrationValidation.ts shares required-field, email, username,
+password-length and password-confirmation rules between AuthModal and
+app/api/auth/register/route.ts. Username normalization is also reused by lib/username.ts.
+The existing minimum password length remains four characters.
+
+The API returns field error codes for validation (400) and occupied email/username
+(409), including unique-constraint conflicts during creation. useAuthStore forwards
+these errors to the form. Email availability ignores letter case. Invalid submission
+preserves values and focuses the first invalid field once inputs are enabled.
+Confirmation is required only for email registration, stays masked by default, and is
+never stored. Pending submissions disable inputs and block duplicate requests.

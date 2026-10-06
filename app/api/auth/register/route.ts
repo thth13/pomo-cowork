@@ -1,4 +1,6 @@
-import { validUsername } from '@/lib/journal/validation'
+import { registerAnonymousUser } from '@/lib/registerAnonymousUser'
+import { validateRegistration, type RegistrationFieldErrors } from '@/lib/registrationValidation'
+import { Prisma } from '@prisma/client'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { hashPassword, generateToken } from '@/lib/auth'
@@ -9,32 +11,21 @@ import { isValidAnonymousId } from '@/lib/anonymousProfile'
 export async function POST(request: NextRequest) {
   try {
     const {
-      email,
+      email: rawEmail,
       username,
       password,
+      confirmPassword,
       anonymousId: rawAnonymousId,
       referralCode
     } = await request.json()
     const anonymousId = isValidAnonymousId(rawAnonymousId) ? rawAnonymousId : null
+    const email = typeof rawEmail === 'string' ? rawEmail.trim() : ''
     const normalizedUsername = typeof username === 'string' ? normalizeUsername(username) : ''
 
-    if (!email || !username || !password) {
+    const fieldErrors = validateRegistration({ email, username, password, confirmPassword })
+    if (Object.keys(fieldErrors).length) {
       return NextResponse.json(
-        { error: 'All fields are required' },
-        { status: 400 }
-      )
-    }
-
-    if (!validUsername(normalizedUsername)) {
-      return NextResponse.json(
-        { error: 'Use 3–30 lowercase letters, numbers, dashes or underscores; reserved names are not allowed.' },
-        { status: 400 }
-      )
-    }
-
-    if (password.length < 4) {
-      return NextResponse.json(
-        { error: 'Password must be at least 4 characters long' },
+        { error: 'Please correct the highlighted fields.', fieldErrors },
         { status: 400 }
       )
     }
@@ -44,20 +35,24 @@ export async function POST(request: NextRequest) {
 
     const existingUser = await prisma.user.findFirst({
       where: {
-        email,
+        email: { equals: email, mode: 'insensitive' },
         ...(anonymousId ? { id: { not: anonymousId } } : {})
       }
     })
 
     if (existingUser || usernameTaken) {
+      const fieldErrors: RegistrationFieldErrors = {}
+      if (existingUser) fieldErrors.email = 'emailTaken'
+      if (usernameTaken) fieldErrors.username = 'usernameTaken'
       return NextResponse.json(
-        { error: 'User with this email or username already exists' },
-        { status: 400 }
+        { error: 'Email or username is already in use.', fieldErrors },
+        { status: 409 }
       )
     }
 
     const hashedPassword = await hashPassword(password)
     let user
+    let convertedAnonymousId: string | null = null
 
     // If there's an anonymous user, update it
     if (anonymousId) {
@@ -69,16 +64,12 @@ export async function POST(request: NextRequest) {
       if (anonymousUser && anonymousUser.isAnonymous) {
         console.log(`Converting anonymous user ${anonymousId} to registered user`)
         
-        user = await prisma.user.update({
-          where: { id: anonymousId },
-          data: {
-            email,
-            username: normalizedUsername,
-            password: hashedPassword,
-            isAnonymous: false,
-          },
-          include: { settings: true }
+        user = await registerAnonymousUser(anonymousId, {
+          email,
+          username: normalizedUsername,
+          password: hashedPassword,
         })
+        convertedAnonymousId = anonymousId
 
         // Create settings if they don't exist
         if (!user.settings) {
@@ -95,12 +86,6 @@ export async function POST(request: NextRequest) {
             }
           })
         }
-
-        // Update chat messages with new username
-        await prisma.chatMessage.updateMany({
-          where: { userId: user.id },
-          data: { username: user.username }
-        })
 
         console.log(`Successfully converted anonymous user to ${normalizedUsername}`)
       } else {
@@ -184,10 +169,21 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       user: userWithoutPassword,
-      token
+      token,
+      convertedAnonymousId,
     })
 
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      const target = error.meta?.target
+      const fields = Array.isArray(target) ? target.join(' ') : String(target ?? '')
+      const fieldErrors: RegistrationFieldErrors = {}
+      if (fields.includes('email')) fieldErrors.email = 'emailTaken'
+      if (fields.includes('username')) fieldErrors.username = 'usernameTaken'
+      if (Object.keys(fieldErrors).length) {
+        return NextResponse.json({ error: 'Email or username is already in use.', fieldErrors }, { status: 409 })
+      }
+    }
     console.error('Registration error:', error)
     return NextResponse.json(
       { error: 'Server error' },

@@ -1,16 +1,10 @@
 import crypto from 'crypto'
 import { prisma } from '@/lib/db'
-import { publicUsername, validUsername, slugify } from '@/lib/journal/validation'
+import { validUsername, slugify } from '@/lib/journal/validation'
 
-export const normalizeUsername = (value: string): string => {
-  const normalized = value
-    .normalize('NFKC')
-    .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200D\uFEFF]+/g, '')
-    .replace(/\s+/g, ' ')
-    .trim()
+import { normalizeRegistrationUsername } from '@/lib/registrationValidation'
 
-  return publicUsername(normalized)
-}
+export const normalizeUsername = normalizeRegistrationUsername
 
 export const sanitizeUsername = normalizeUsername
 

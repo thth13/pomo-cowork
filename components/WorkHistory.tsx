@@ -1,5 +1,6 @@
 'use client'
 
+import { userProfileHref } from '@/lib/userProfile'
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -351,7 +352,7 @@ export default function WorkHistory() {
                   <div className="flex items-start justify-between gap-3 mb-2">
                     {session.user ? (
                       <Link 
-                        href={`/user/${session.user.id}`}
+                        href={userProfileHref(session.user)}
                         className="inline-flex items-center space-x-2 text-sm font-semibold text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
                       >
                         <span>{session.user.username}</span>

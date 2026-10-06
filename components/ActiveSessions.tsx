@@ -1,5 +1,6 @@
 'use client'
 
+import { userProfileHref } from '@/lib/userProfile'
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, Crown, User, ExternalLink, MoreHorizontal } from 'lucide-react'
@@ -236,7 +237,7 @@ function SessionCard({
     : Math.max(0, Math.min(100, (currentTimeRemaining / totalDurationForProgress) * 100))
 
   const handleClick = () => {
-    router.push(`/user/${session.userId}`)
+    router.push(userProfileHref({ id: session.userId, username: session.username, isAnonymous: isUnregistered }))
   }
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -255,7 +256,7 @@ function SessionCard({
     return (
       <div ref={cardRef} className={`coworker-tile${isCurrentUser ? ' coworker-tile-self' : ''}`} onContextMenu={handleContextMenu}>
         <Link
-          href={`/user/${session.userId}`}
+          href={userProfileHref({ id: session.userId, username: session.username, isAnonymous: isUnregistered })}
           className="coworker-tile-profile"
           aria-label={`${session.username}${session.isPro ? ' · Pro' : ''} · ${t.activeSessions.online} · ${statusLabel} · ${session.task || ''} · ${formatTime(elapsedSeconds)}`}
           title={`${session.username}${session.isPro ? ' · Pro' : ''}${isCurrentUser ? ` (${t.activeSessions.you})` : ''} · ${statusLabel} · ${session.task || ''}`}

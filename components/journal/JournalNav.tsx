@@ -1,4 +1,5 @@
 'use client'
+import { userProfileHref } from '@/lib/userProfile'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/Navbar'
@@ -28,6 +29,6 @@ export default function JournalNav(){
   if (useCompactNav) return <Navbar compact />
 
   return <header className="journal-nav"><Link href="/" className="journal-brand">Pomo Cowork</Link><nav aria-label={t('Journal navigation','Navegación del diario')}>
-    <Link href="/">{t('Timer','Temporizador')}</Link><Link href="/feed">{t('Feed','Novedades')}</Link><Link href="/projects">{t('My projects','Mis proyectos')}</Link><Link href="/journal">{t('My updates','Mis actualizaciones')}</Link><Link href={user ? `/user/${encodeURIComponent(user.id)}` : '/settings/profile'}>{t('My profile','Mi perfil')}</Link><Link href="/settings/profile">{t('Edit profile','Editar perfil')}</Link><ThemeToggle/>
+    <Link href="/">{t('Timer','Temporizador')}</Link><Link href="/feed">{t('Feed','Novedades')}</Link><Link href="/projects">{t('My projects','Mis proyectos')}</Link><Link href="/journal">{t('My updates','Mis actualizaciones')}</Link><Link href={user ? userProfileHref(user) : '/settings/profile'}>{t('My profile','Mi perfil')}</Link><Link href="/settings/profile">{t('Edit profile','Editar perfil')}</Link><ThemeToggle/>
   </nav></header>
 }

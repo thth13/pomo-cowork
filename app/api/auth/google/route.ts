@@ -1,3 +1,4 @@
+import { registerAnonymousUser } from '@/lib/registerAnonymousUser'
 import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
@@ -94,6 +95,7 @@ export async function POST(request: NextRequest) {
     const email = payload.email.toLowerCase()
     const displayName = payload.name || email.split('@')[0]
     const avatarUrl = payload.picture
+    let convertedAnonymousId: string | null = null
 
     let user = await prisma.user.findUnique({ where: { email }, include: { settings: true } })
 
@@ -113,17 +115,13 @@ export async function POST(request: NextRequest) {
         const username = await generateUniqueUsername(displayName)
         const hashedPassword = await hashPassword(crypto.randomBytes(32).toString('hex'))
 
-        user = await prisma.user.update({
-          where: { id: anonymousId },
-          data: {
-            email,
-            username,
-            password: hashedPassword,
-            isAnonymous: false,
-            avatarUrl,
-          },
-          include: { settings: true },
+        user = await registerAnonymousUser(anonymousId, {
+          email,
+          username,
+          password: hashedPassword,
+          avatarUrl,
         })
+        convertedAnonymousId = anonymousId
 
         if (!user.settings) {
           const settings = await prisma.userSettings.create({
@@ -177,6 +175,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       user: buildUserPayload(user),
       token: jwtToken,
+      convertedAnonymousId,
     })
   } catch (error) {
     console.error('Google auth error:', error)

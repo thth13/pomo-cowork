@@ -642,10 +642,37 @@ io.on('connection', (socket) => {
     io.emit('session-update', serializeSessions())
   })
 
-  socket.on('session-sync', (sessionData: PomodoroSession) => {
+  socket.on('session-sync', async (payload: PomodoroSession & { token?: string }) => {
+    // Keep credentials out of stored sessions and broadcasts.
+    const { token, ...sessionData } = payload
     const ownerId = socketUserMap.get(socket.id) ?? anonymousSockets.get(socket.id)
     const existingOwner = sessionActivity.get(sessionData.id)?.session.userId ?? sessions.get(sessionData.id)?.userId
-    if (sessionData.userId !== ownerId || (existingOwner && existingOwner !== ownerId) || endOperations.has(sessionData.id)) return
+    if (!ownerId || sessionData.userId !== ownerId || endOperations.has(sessionData.id)) return
+    if (existingOwner && existingOwner !== ownerId) {
+      if (!existingOwner.startsWith('anon_') || !token) return
+      const author = await getChatAuthor(token)
+      if (!author || author.id !== ownerId) return
+      // Registration changes the database owner. Verify it before transferring cache ownership.
+      const ownedSessions = await axios.get<Array<{ id: string; userId: string }>>(`${API_URL}/api/sessions?activeOnly=1`, {
+        headers: { Authorization: `Bearer ${token}` },
+        timeout: 5000,
+      }).then(({ data }) => data).catch(() => [])
+      if (!socket.connected || socketUserMap.get(socket.id) !== ownerId ||
+          !ownedSessions.some(session => session.id === sessionData.id && session.userId === ownerId) ||
+          endOperations.has(sessionData.id)) return
+      const activity = sessionActivity.get(sessionData.id)
+      if (activity) {
+        activity.session = { ...activity.session, userId: ownerId, username: author.username, avatarUrl: author.avatarUrl ?? undefined }
+      }
+      for (const history of chatMessagesByRoom.values()) {
+        for (const message of history) {
+          if (message.userId !== existingOwner) continue
+          message.userId = ownerId
+          message.username = author.username
+          message.avatarUrl = author.avatarUrl ?? undefined
+        }
+      }
+    }
     // Remove any existing sessions for this user/socket to prevent duplicates
     const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
     const anonymousId = anonymousSockets.get(socket.id)

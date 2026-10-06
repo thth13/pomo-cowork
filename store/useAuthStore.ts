@@ -1,13 +1,18 @@
 import { create } from 'zustand'
 import { User, UserSettings } from '@/types'
 
+import type { RegistrationFieldErrors } from '@/lib/registrationValidation'
+
+export type RegistrationResult = { success: true } | { success: false; error: string; fieldErrors?: RegistrationFieldErrors }
+
 interface AuthState {
   user: User | null
+  convertedAnonymousId: string | null
   token: string | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<boolean>
-  register: (email: string, username: string, password: string) => Promise<boolean>
+  register: (email: string, username: string, password: string, confirmPassword: string) => Promise<RegistrationResult>
   logout: () => void
   checkAuth: () => Promise<void>
   updateUserSettings: (settings: Partial<UserSettings>) => void
@@ -15,6 +20,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
+  convertedAnonymousId: null,
   token: null,
   isAuthenticated: false,
   isLoading: true,
@@ -39,7 +45,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           localStorage.removeItem('anonymous_user_id')
         }
         
-        set({ user, token, isAuthenticated: true })
+        set({ user, token, isAuthenticated: true, convertedAnonymousId: null })
         return true
       }
       return false
@@ -49,7 +55,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  register: async (email: string, username: string, password: string) => {
+  register: async (email: string, username: string, password: string, confirmPassword: string) => {
     try {
       // Get anonymous ID if it exists
       const anonymousId = localStorage.getItem('anonymous_user_id')
@@ -60,11 +66,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, username, password, anonymousId, referralCode }),
+        body: JSON.stringify({ email, username, password, confirmPassword, anonymousId, referralCode }),
       })
 
       if (response.ok) {
-        const { user, token } = await response.json()
+        const { user, token, convertedAnonymousId } = await response.json()
         localStorage.setItem('token', token)
         
         // Clear anonymous ID after successful registration
@@ -75,19 +81,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           localStorage.removeItem('referral_code')
         }
         
-        set({ user, token, isAuthenticated: true })
-        return true
+        set({ user, token, isAuthenticated: true, convertedAnonymousId: convertedAnonymousId ?? null })
+        return { success: true }
       }
-      return false
+      const data = await response.json().catch(() => ({ error: 'Server error' }))
+      return { success: false, error: data.error || 'Server error', fieldErrors: data.fieldErrors }
     } catch (error) {
       console.error('Register error:', error)
-      return false
+      return { success: false, error: 'networkError' }
     }
   },
 
   logout: () => {
     localStorage.removeItem('token')
-    set({ user: null, token: null, isAuthenticated: false })
+    set({ convertedAnonymousId: null, user: null, token: null, isAuthenticated: false })
   },
 
   checkAuth: async () => {
@@ -110,7 +117,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } else if (response.status === 401) {
         // Только при 401 (невалидный токен) разлогиниваем
         localStorage.removeItem('token')
-        set({ user: null, token: null, isAuthenticated: false, isLoading: false })
+        set({ convertedAnonymousId: null, user: null, token: null, isAuthenticated: false, isLoading: false })
       } else {
         // При других ошибках (403, 500, etc) просто помечаем загрузку завершённой
         // но НЕ разлогиниваем - токен может быть валидным

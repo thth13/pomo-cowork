@@ -1,5 +1,6 @@
 'use client'
 
+import { userProfileHref } from '@/lib/userProfile'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
@@ -605,7 +606,7 @@ export default function RoomPage() {
                 </div>}
               </div>}
               {members.length === 0 ? <p className="community-muted">{copy.noParticipants}</p> : members.map(member => <div className="community-person" key={member.id}>
-                <Link href={`/user/${member.user.id}`} className="community-person-link"><UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} /><span className="community-person-copy"><strong>{member.user.username}</strong><small>{member.role === 'OWNER' ? copy.owner : copy.member}</small></span></Link>
+                <Link href={userProfileHref(member.user)} className="community-person-link"><UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} /><span className="community-person-copy"><strong>{member.user.username}</strong><small>{member.role === 'OWNER' ? copy.owner : copy.member}</small></span></Link>
                 {isOwner && member.user.id !== user?.id && member.role !== 'OWNER' && <button type="button" className="community-icon-button" disabled={Boolean(removingMemberId)} title={copy.remove} aria-label={`${copy.remove}: ${member.user.username}`} onClick={() => { setError(null); setConfirmRemoveMemberId(member.id) }}><X size={16} aria-hidden="true" /></button>}
               </div>)}
             </section>
@@ -613,7 +614,7 @@ export default function RoomPage() {
               <section className="community-panel">
                 <header className="community-panel-heading"><div><h2><Sprout size={18} aria-hidden="true" />{copy.topUsers}</h2><p>{copy.topHint}</p></div></header>
                 {stats?.topUsers?.length ? stats.topUsers.map(person => <div className="community-person" key={person.id}>
-                  <Link href={`/user/${person.id}`} className="community-person-link"><UserAvatar avatarUrl={person.avatarUrl} username={person.username} size={40} /><span className="community-person-copy"><strong>{person.username}</strong><small>{copy.contribution}: {person.contributionPercent}%</small><span className="room-contribution" aria-hidden="true"><span style={{ width: `${Math.max(0, Math.min(100, person.contributionPercent))}%` }} /></span></span></Link><span className="community-person-value">{formatMinutes(person.hours * 60)}</span>
+                  <Link href={userProfileHref(person)} className="community-person-link"><UserAvatar avatarUrl={person.avatarUrl} username={person.username} size={40} /><span className="community-person-copy"><strong>{person.username}</strong><small>{copy.contribution}: {person.contributionPercent}%</small><span className="room-contribution" aria-hidden="true"><span style={{ width: `${Math.max(0, Math.min(100, person.contributionPercent))}%` }} /></span></span></Link><span className="community-person-value">{formatMinutes(person.hours * 60)}</span>
                 </div>) : <p className="community-muted">{stats ? copy.noData : copy.statsUnavailable}</p>}
               </section>
               <section className="community-panel">
