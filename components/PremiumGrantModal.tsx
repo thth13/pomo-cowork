@@ -25,10 +25,8 @@ function AccountPremiumGrantModal({ token }: { token: string }) {
   useEffect(() => {
     const abort = new AbortController()
     controller.current = abort
-    let loading = false
     async function load() {
-      if (loading || current.current || document.hidden || abort.signal.aborted) return
-      loading = true
+      if (current.current || abort.signal.aborted) return
       try {
         const response = await fetch('/api/notifications/premium', {
           headers: { Authorization: `Bearer ${token}` },
@@ -43,21 +41,12 @@ function AccountPremiumGrantModal({ token }: { token: string }) {
         // Refresh Pro status as well as displaying the admin's message.
         void useAuthStore.getState().checkAuth()
       } catch {
-        // The persisted notification remains unread; retry on the next poll or focus.
-      } finally {
-        loading = false
+        // The persisted notification remains unread; retry on the next page load.
       }
     }
-    const refresh = () => { void load() }
-    refresh()
-    const interval = window.setInterval(refresh, 30_000)
-    window.addEventListener('focus', refresh)
-    document.addEventListener('visibilitychange', refresh)
+    void load()
     return () => {
       abort.abort()
-      window.clearInterval(interval)
-      window.removeEventListener('focus', refresh)
-      document.removeEventListener('visibilitychange', refresh)
     }
   }, [token])
 
