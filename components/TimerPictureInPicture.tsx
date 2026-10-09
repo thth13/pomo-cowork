@@ -80,6 +80,8 @@ export function TimerPictureInPicture({
     wasOpen.current = !!pipWindow
   }, [pipWindow])
 
+  if (isSupported !== true) return null
+
   const message = error === 'unsupported' ? t.timer.miniTimerUnsupported : error ? t.timer.miniTimerOpenFailed : ''
 
   return (
@@ -89,12 +91,12 @@ export function TimerPictureInPicture({
         type="button"
         className="pixel-timer-popout"
         onClick={pipWindow ? close : open}
-        disabled={isOpening || isSupported === null}
+        disabled={isOpening}
         aria-label={label}
         aria-pressed={!!pipWindow}
         aria-busy={isOpening}
         aria-describedby={message ? messageId : undefined}
-        title={isSupported === false ? t.timer.miniTimerUnsupported : label}
+        title={label}
       >
         <PictureInPicture2 size={18} aria-hidden="true" />
       </button>
