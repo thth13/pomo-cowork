@@ -1,219 +1,113 @@
-import { MutableRefObject, useEffect, useRef, useState } from 'react'
-import useSWR, { KeyedMutator } from 'swr'
+import { MutableRefObject, useCallback, useEffect, useRef } from 'react'
+import useSWR from 'swr'
 import { PomodoroSession, SessionStatus, SessionType, User } from '@/types'
 import { sessionService } from '@/services/sessionService'
-import { fetcher } from '@/lib/fetcher'
+import { useAuthStore } from '@/store/useAuthStore'
+import { useTimerStore } from '@/store/useTimerStore'
+import { sendMessageToServiceWorker } from '@/lib/serviceWorker'
+import { isTimerSettingsSavePending } from '@/services/timerSettingsService'
 
+interface AccountTimerSnapshot {
+  session: PomodoroSession | null
+  lastSession: PomodoroSession | null
+  serverNow: number
+  user: { id: string; username: string; canTimeTrack: boolean; settings: User['settings'] }
+  localFingerprint: string
+  blockedDuringRequest: boolean
+}
 interface UseSessionRestoreOptions {
   user: User | null
   currentSession: PomodoroSession | null
   restoreSession: (session: PomodoroSession) => void
   setSessionType: (type: SessionType) => void
   emitSessionSync: (session: {
-    id: string
-    roomId?: string | null
-    task: string
-    duration: number
-    type: SessionType
-    userId: string
-    username: string
-    avatarUrl?: string
-    timeRemaining: number
-    startedAt: string
-    status?: SessionStatus
+    id: string; roomId?: string | null; task: string; duration: number; type: SessionType
+    userId: string; username: string; avatarUrl?: string; timeRemaining: number; startedAt: string; status?: SessionStatus
   }) => void
   ignoreSessionIdRef?: MutableRefObject<string | null>
+  busy?: boolean
+  onRemoteEnd?: (completed: boolean, type: SessionType) => void
+  onRemoteMode?: (type: SessionType) => void
+}
+const fingerprint = () => {
+  const { currentSession: session, workDuration, shortBreak, longBreak, longBreakAfter } = useTimerStore.getState()
+  return JSON.stringify([useAuthStore.getState().user?.id, session?.id, session?.status, session?.startedAt, session?.pausedAt, workDuration, shortBreak, longBreak, longBreakAfter])
 }
 
-/**
- * Restores an active Pomodoro session for the authenticated user on mount.
- */
-export function useSessionRestore({
-  user,
-  currentSession,
-  restoreSession,
-  setSessionType,
-  emitSessionSync,
-  ignoreSessionIdRef,
-}: UseSessionRestoreOptions) {
-  const ignoredSessionId = ignoreSessionIdRef?.current
-  const userId = user?.id
-  const completionAttempts = useRef(new Map<string, {
-    attempts: number
-    pending: boolean
-    completed: boolean
-    retryAt: number
-  }>())
-  const mountedRef = useRef(false)
-  const [retryAt, setRetryAt] = useState<number | null>(null)
+/** The authenticated account owns the timer across browser tabs and extension. */
+export function useSessionRestore(options: UseSessionRestoreOptions) {
+  const latest = useRef(options)
+  latest.current = options
+  const userId = options.user && !options.user.isAnonymous ? options.user.id : null
+  const completionAttempts = useRef(new Map<string, { retryAt: number; pending: boolean }>())
+  const lastAppliedSnapshot = useRef<AccountTimerSnapshot | null>(null)
+  const { data, mutate } = useSWR<AccountTimerSnapshot>(userId ? ['/api/timer', userId] : null, async () => {
+    const localFingerprint = fingerprint()
+    const startedBusy = latest.current.busy || isTimerSettingsSavePending()
+    const token = useAuthStore.getState().token
+    const response = await fetch('/api/timer', {
+      headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: AbortSignal.timeout(10000),
+    })
+    if (!response.ok) throw new Error(`Timer sync failed: ${response.status}`)
+    return { ...await response.json(), localFingerprint, blockedDuringRequest: startedBusy || latest.current.busy || isTimerSettingsSavePending() }
+  }, { refreshInterval: 5000, refreshWhenHidden: true, revalidateOnFocus: true, dedupingInterval: 1000 })
 
   useEffect(() => {
-    mountedRef.current = true
-    return () => { mountedRef.current = false }
-  }, [])
-
-  useEffect(() => {
-    if (retryAt === null) return
-    const timer = window.setTimeout(() => setRetryAt(null), Math.max(0, retryAt - Date.now()))
-    return () => window.clearTimeout(timer)
-  }, [retryAt])
-
-  useEffect(() => {
-    if (!userId) return
-
-    const retryFailedCompletions = () => {
-      if (!navigator.onLine) return
-
-      let nextRetryAt: number | null = null
-      for (const [key, attempt] of Array.from(completionAttempts.current)) {
-        if (!key.startsWith(`${userId}:`) || attempt.pending || attempt.completed || attempt.attempts < 3) {
-          continue
-        }
-
-        // Allow a new bounded batch, retaining the cooldown against repeated focus/online events.
-        attempt.attempts = 0
-        nextRetryAt = Math.min(nextRetryAt ?? attempt.retryAt, attempt.retryAt)
+    if (!data || data.blockedDuringRequest || lastAppliedSnapshot.current === data || data.user.id !== userId || latest.current.busy || isTimerSettingsSavePending() || fingerprint() !== data.localFingerprint) return
+    lastAppliedSnapshot.current = data
+    const { user, restoreSession, setSessionType, emitSessionSync, ignoreSessionIdRef, onRemoteEnd, onRemoteMode } = latest.current
+    if (!user) return
+    const state = useTimerStore.getState()
+    const current = state.currentSession
+    if (current?.id.startsWith('temp_')) return
+    const session = data.session
+    const settings = data.user.settings
+    const durationKeys = ['workDuration', 'shortBreak', 'longBreak', 'longBreakAfter'] as const
+    if (settings && durationKeys.some(key => settings[key] !== user.settings?.[key])) {
+      useAuthStore.getState().updateUserSettings(settings)
+    }
+    if (!session) {
+      if (current && current.userId === user.id) {
+        const completed = data.lastSession?.id === current.id && data.lastSession.status === SessionStatus.COMPLETED
+        if (ignoreSessionIdRef) ignoreSessionIdRef.current = current.id
+        sendMessageToServiceWorker({ type: 'STOP_TIMER' })
+        onRemoteEnd?.(completed, current.type)
+        if (useTimerStore.getState().currentSession?.id === current.id) state.cancelSession()
+        window.dispatchEvent(new CustomEvent('session-completed'))
+        void useAuthStore.getState().checkAuth()
       }
-
-      // Wake the effect even when SWR returns the same session data after reconnecting.
-      if (nextRetryAt !== null) setRetryAt(nextRetryAt)
-    }
-
-    window.addEventListener('online', retryFailedCompletions)
-    window.addEventListener('focus', retryFailedCompletions)
-    return () => {
-      window.removeEventListener('online', retryFailedCompletions)
-      window.removeEventListener('focus', retryFailedCompletions)
-    }
-  }, [userId])
-
-  const { data: sessions, mutate } = useSWR<PomodoroSession[]>(
-    user ? '/api/sessions?activeOnly=1' : null,
-    fetcher,
-    {
-      revalidateOnFocus: false,
-    }
-  )
-
-  useEffect(() => {
-    if (!user || currentSession || !sessions) {
       return
     }
-
-    let isMounted = true
-
-    const processSessions = async () => {
-      try {
-        const activeSession = sessions.find(
-          (session) =>
-            session.userId === user.id &&
-            (session.status === SessionStatus.ACTIVE || session.status === SessionStatus.PAUSED)
-        )
-
-        if (!activeSession || !isMounted) {
-          return
-        }
-
-        if (ignoredSessionId && activeSession.id === ignoredSessionId) {
-          return
-        }
-
-        const startTime = new Date(activeSession.startedAt).getTime()
-        const now = Date.now()
-        const elapsed = Math.floor((now - startTime) / 1000)
-        const totalDuration = activeSession.duration * 60
-        const isPaused = activeSession.status === SessionStatus.PAUSED
-        const storedRemaining =
-          typeof activeSession.remainingSeconds === 'number'
-            ? activeSession.remainingSeconds
-            : typeof activeSession.timeRemaining === 'number'
-              ? activeSession.timeRemaining
-              : null
-        const currentTimeRemaining = isPaused && storedRemaining !== null
-          ? Math.max(0, storedRemaining)
-          : Math.max(0, totalDuration - elapsed)
-
-        if (currentTimeRemaining === 0) {
-          const key = `${user.id}:${activeSession.id}`
-          const attempt = completionAttempts.current.get(key) ?? {
-            attempts: 0, pending: false, completed: false, retryAt: 0,
-          }
-          if (attempt.pending || attempt.completed || attempt.attempts >= 3 || attempt.retryAt > Date.now()) {
-            return
-          }
-
-          // Reserve before awaiting: effect cleanup does not cancel the HTTP request.
-          attempt.pending = true
-          attempt.attempts += 1
-          completionAttempts.current.set(key, attempt)
-          try {
-            await sessionService.complete(activeSession.id)
-            attempt.completed = true
-          } catch (error) {
-            attempt.retryAt = Date.now() + 5000 * 2 ** (attempt.attempts - 1)
-            if (mountedRef.current && attempt.attempts < 3) {
-              setRetryAt(attempt.retryAt)
-            }
-            throw error
-          } finally {
-            attempt.pending = false
-          }
-
-          // Remove stale data before revalidation can trigger another render.
-          await mutate(
-            (cached) => cached?.filter((session) => session.id !== activeSession.id),
-            { revalidate: false }
-          )
-          if (mountedRef.current) await mutate()
-          return
-        }
-
-        if (!isMounted) {
-          return
-        }
-
-        restoreSession({
-          ...activeSession,
-          timeRemaining: currentTimeRemaining,
-        })
-        setSessionType(activeSession.type as SessionType)
-
-        emitSessionSync({
-          id: activeSession.id,
-          roomId: activeSession.roomId ?? null,
-          task: activeSession.task,
-          duration: activeSession.duration,
-          type: activeSession.type,
-          userId: user.id,
-          username: user.username,
-          avatarUrl: user.avatarUrl,
-          timeRemaining: currentTimeRemaining,
-          startedAt: activeSession.startedAt,
-          status: activeSession.status,
-        })
-      } catch (error) {
-        if (isMounted) {
-          console.error('Failed to restore session:', error)
-        }
+    // A fresh server read can reveal that a local stop failed to persist.
+    if (session.id === ignoreSessionIdRef?.current) ignoreSessionIdRef.current = null
+    const remaining = session.status === SessionStatus.PAUSED
+      ? Math.max(0, session.remainingSeconds ?? session.duration * 60)
+      : Math.max(0, session.duration * 60 - Math.floor((data.serverNow - new Date(session.startedAt).getTime()) / 1000))
+    if (remaining === 0 && session.status === SessionStatus.ACTIVE) {
+      const key = `${user.id}:${session.id}`
+      const attempt = completionAttempts.current.get(key) ?? { retryAt: 0, pending: false }
+      if (!attempt.pending && Date.now() >= attempt.retryAt) {
+        attempt.pending = true
+        completionAttempts.current.set(key, attempt)
+        void sessionService.complete(session.id, session.updatedAt).then(() => mutate()).catch(() => {
+          attempt.retryAt = Date.now() + 15000
+        }).finally(() => { attempt.pending = false })
       }
+      return
     }
-
-    processSessions()
-
-    return () => {
-      isMounted = false
+    const changed = current?.id !== session.id || current.status !== session.status || current.startedAt !== session.startedAt || current.pausedAt !== session.pausedAt
+    if (!changed) return
+    restoreSession({ ...session, timeRemaining: remaining })
+    setSessionType(session.type)
+    onRemoteMode?.(session.type)
+    if (session.status === SessionStatus.ACTIVE) {
+      sendMessageToServiceWorker({ type: 'START_TIMER', payload: { sessionId: session.id, duration: session.duration, timeRemaining: remaining, startedAt: session.startedAt } })
+    } else {
+      sendMessageToServiceWorker({ type: 'STOP_TIMER' })
     }
-  }, [
-    sessions,
-    user,
-    currentSession,
-    restoreSession,
-    setSessionType,
-    emitSessionSync,
-    mutate,
-    ignoredSessionId,
-    retryAt,
-  ])
+    emitSessionSync({ ...session, username: user.username, avatarUrl: user.avatarUrl, timeRemaining: remaining })
+  }, [data, userId, options.busy, mutate])
 
-  return { mutateSessions: mutate as KeyedMutator<PomodoroSession[]> }
+  const mutateSessions = useCallback(() => mutate(), [mutate])
+  return { mutateSessions }
 }

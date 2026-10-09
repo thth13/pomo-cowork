@@ -55,6 +55,7 @@ export async function PUT(
       task,
       duration,
       type,
+      expectedUpdatedAt,
     } = await request.json()
 
     const effectiveUserId = await resolveExistingOrAnonymousUserId(
@@ -158,10 +159,14 @@ export async function PUT(
           return null
         }
 
-        if (status === SessionStatus.CANCELLED && (
-          session.type !== SessionType.TIME_TRACKING ||
-          (session.status !== SessionStatus.ACTIVE && session.status !== SessionStatus.PAUSED)
-        )) {
+        if (expectedUpdatedAt !== undefined && session.updatedAt.toISOString() !== expectedUpdatedAt) throw new Error('TIMER_CONFLICT')
+
+        if (status === SessionStatus.CANCELLED && session.status !== SessionStatus.ACTIVE && session.status !== SessionStatus.PAUSED) {
+          // Another client may already have completed it. Preserve its final result.
+          return { session, progression: null }
+        }
+
+        if (status === SessionStatus.CANCELLED && session.type !== SessionType.TIME_TRACKING) {
           return {
             session: await tx.pomodoroSession.update({ where: { id: session.id }, data: updateData }),
             progression: null,
@@ -339,12 +344,19 @@ export async function PUT(
       })
     }
 
-    const result = await prisma.pomodoroSession.updateMany({
+    const result = await prisma.$transaction(async tx => {
+      await tx.$queryRaw`SELECT 1::int AS lock_acquired FROM pg_advisory_xact_lock(hashtext(${effectiveUserId}))`
+      const current = await tx.pomodoroSession.findFirst({ where: { id: params.id, userId: effectiveUserId } })
+      if (current && (!['ACTIVE', 'PAUSED'].includes(current.status) || (expectedUpdatedAt !== undefined && current.updatedAt.toISOString() !== expectedUpdatedAt))) {
+        throw new Error('TIMER_CONFLICT')
+      }
+      return tx.pomodoroSession.updateMany({
       where: {
         id: params.id,
         userId: effectiveUserId,
       },
       data: updateData,
+      })
     })
 
     if (result.count === 0) {
@@ -380,6 +392,7 @@ export async function PUT(
     return NextResponse.json(updatedSession)
 
   } catch (error) {
+    if (error instanceof Error && error.message === 'TIMER_CONFLICT') return NextResponse.json({ error: 'STALE' }, { status: 409 })
     console.error('Update session error:', error)
     return NextResponse.json(
       { error: 'Server error' },

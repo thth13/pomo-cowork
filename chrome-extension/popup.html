@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pomo Cowork — Pocket Timer</title>
+  <link rel="stylesheet" href="tokens.css">
+  <link rel="stylesheet" href="popup.css">
+  <script src="popup.js" defer></script>
+</head>
+<body>
+  <header><span class="brand"><img src="icons/32.png" width="24" height="24" alt="">Pomo Cowork</span><button id="open-site" type="button" data-copy="openSite">Open site ↗</button></header>
+  <main aria-busy="true">
+    <div class="account-row" id="account-row" hidden>
+      <span id="account-status" role="status" data-copy="connected">Synchronized with your account</span>
+      <button id="account-name" type="button" aria-expanded="false" aria-controls="account-popover"></button>
+      <div id="account-popover" hidden><button id="logout" type="button" data-copy="logout">Sign out</button></div>
+    </div>
+    <p id="connection" role="status" data-copy="connecting">Loading account…</p>
+    <p id="feedback" role="status" aria-live="polite"></p>
+    <section id="sign-in" hidden>
+      <p data-copy="signInDescription">Sign in to use your account timer, even with the site closed.</p>
+      <button id="login" type="button" class="primary" data-copy="login">Sign in to your account</button>
+      <details><summary data-copy="serverSettings">Server address</summary>
+        <label for="site-url" data-copy="siteAddress">Site address</label>
+        <input id="site-url" type="url" value="https://pomo-co.work" spellcheck="false" aria-describedby="feedback">
+        <p class="hint" data-copy="allowedSites">pomo-co.work or localhost (with your port).</p>
+      </details>
+    </section>
+    <div id="timer-panel" hidden>
+    <section class="timer" aria-labelledby="mode-label">
+      <p id="mode-label">Pomodoro</p>
+      <div id="digits" role="timer" aria-live="off">25:00</div>
+      <p id="timer-status"></p>
+    </section>
+    <div id="task-picker" hidden>
+      <label for="task-select" class="task-label" data-copy="taskName">Task</label>
+      <select id="task-select"></select>
+    </div>
+    <p id="tasks-feedback" class="hint" role="status"></p>
+    <div class="actions">
+      <button id="primary" type="button" class="primary" disabled data-copy="start">Start</button>
+      <button id="stop" type="button" disabled data-copy="stop">Stop</button>
+    </div>
+    <div id="modes" role="group" aria-label="Timer mode">
+      <button type="button" data-mode="WORK" aria-pressed="true" disabled data-copy="focus">Focus</button>
+      <button type="button" data-mode="SHORT_BREAK" aria-pressed="false" disabled data-copy="shortBreak">Short break</button>
+      <button type="button" data-mode="LONG_BREAK" aria-pressed="false" disabled data-copy="longBreak">Long break</button>
+    </div>
+    <details id="settings"><summary data-copy="timerSettings">Timer settings</summary>
+      <label class="switch-row" for="time-track"><span data-copy="tracker">Time track</span><input id="time-track" type="checkbox" role="switch" disabled aria-describedby="mode-help"><span class="switch-track" aria-hidden="true"></span></label>
+      <p id="mode-help" class="hint"></p>
+      <form id="settings-form" novalidate>
+        <div class="fields">
+          <label for="workDuration"><span data-copy="focusMinutes">Focus · minutes</span><input id="workDuration" name="workDuration" type="number" min="1" max="60" step="1" value="25" inputmode="numeric" aria-describedby="feedback"></label>
+          <label for="shortBreak"><span data-copy="shortMinutes">Short break · minutes</span><input id="shortBreak" name="shortBreak" type="number" min="1" max="30" step="1" value="5" inputmode="numeric" aria-describedby="feedback"></label>
+          <label for="longBreak"><span data-copy="longMinutes">Long break · minutes</span><input id="longBreak" name="longBreak" type="number" min="1" max="60" step="1" value="15" inputmode="numeric" aria-describedby="feedback"></label>
+          <label for="longBreakAfter"><span data-copy="breakAfter">Long break after</span><input id="longBreakAfter" name="longBreakAfter" type="number" min="2" max="10" step="1" value="4" inputmode="numeric" aria-describedby="feedback"></label>
+        </div>
+        <p class="hint" data-copy="nextSession">Changes apply to the next session.</p>
+        <button type="submit" id="save" disabled data-copy="save">Save settings</button>
+      </form>
+    </details>
+    </div>
+    <footer data-copy="keepOpen">Your timer syncs with your account. The site can be closed.</footer>
+  </main>
+</body>
+</html>

@@ -15,7 +15,9 @@
 | --- | --- | --- |
 | Timer / session transitions | PomodoroTimer, TimerControls, useTimerStore, sessionService | Preserve existing start/pause/resume/stop/complete operations |
 | Native mini timer | useDocumentPictureInPicture, TimerPictureInPicture, TimerActions | User-opened Document Picture-in-Picture window; portal shares timer state, locale, action handlers and pending flags; closing never stops the session |
+| Chrome extension | chrome-extension/background.js, app/api/timer, useSessionRestore | Account-authenticated popup and background worker control the server session without an open site; Pro gating, server completion rewards and guarded transitions are shared |
 | Task selection | TaskPicker | Existing authored picker; reused |
+| Extension task Select/Listbox | Native select in chrome-extension/popup.html; popup.js owns options | Chrome-owned popup geometry and keyboard behavior accepted for selecting unfinished account tasks; no task creation in the popup |
 | Forms and settings | SettingsModal, existing .input and .btn | Existing settings workflow; shared visual adaptation |
 | Scrollbar | app/globals.css | Global visible baseline, theme tokens and forced-color fallback |
 | Notifications | useNotifications / NotificationToast | Existing global session feedback |
@@ -42,6 +44,59 @@ Its native modal dialog owns focus containment, background isolation and Escape 
 existing pixel tokens own presentation. The registration action closes the invitation
 before opening AuthModal in register mode. Guests may dismiss and continue focusing;
 auto-start behavior is unchanged. English and Spanish copy follows I18nProvider.
+
+## Chrome extension timer
+
+Source: user clarification dated 2026-10-09. The extension is an independent,
+account-authenticated client. `/extension/authorize` reuses AuthModal for email/Google
+sign-in and explicit account approval; the handshake is bound to the originating tab,
+allowed origin and a 10-minute random requestId. Existing JWT credentials are sent
+only to the extension ID pinned by lib/extensionIdentity.ts and the manifest public key,
+through Chrome external messaging, never in a new URL, and validated on the server.
+Chrome local storage is restricted to trusted extension contexts; the token is
+removed on extension sign-out/HTTP 401 and is not synced to other browser profiles.
+Signing out leaves the site account and server timer intact. Content scripts and
+the old window-message bridge are removed.
+
+`app/api/timer` owns account state and extension actions. Existing session routes
+own persistence, ownership checks, progression and rewards. Extension controls check
+session ID/updatedAt; route transactions serialize per user and reject stale changes.
+Registered website starts also require no existing server timer; a conflict rolls
+back their temporary local session and restores the server session. Nonterminal
+updates cannot reactivate an already ended session.
+
+The extension polls every 3 seconds while popup is open and uses a 30-second Chrome
+alarm plus a session deadline alarm in the background. Chrome sleep/shutdown can
+delay completion; missed deadlines settle after reconnection/restart. Server startedAt,
+paused remaining seconds and a server-clock offset own displayed time. Repeated
+completion uses the canonical idempotent server reward handler. No auto-start is
+added to the extension. `useSessionRestore` reconciles the site's timer and settings
+with its account every 5 seconds and on focus; local pending/temporary transitions
+and stale reads are not overwritten. Remote ending updates presentation without
+another completion write. Site auto-start is cancelled on remote endings.
+
+Duration API limits remain focus 1–60, short break 1–30, long break 1–60 and long
+break after 2–10. Time track keeps account Pro eligibility and the 24-hour limit.
+Settings saves affect the next session; failure preserves drafts with visible feedback.
+New extension sessions are global, with an optional title; existing sessions retain
+their site project/room/task binding. The popup loads unfinished tasks through the
+authenticated `/api/tasks` endpoint every 15 seconds while open. It preserves the
+selected task across polling, session completion and popup reopening using account-scoped
+Chrome local storage. A deleted or completed task is cleared on a successful list refresh.
+The LCD omits task names; running controls are Pause and Stop, paused controls are
+Resume and Stop. It hides the picker when the list is empty, and locks
+selection during a session. Task-loading failures keep timer controls available and
+retry on the next refresh. Account changes discard the previous task list/selection;
+late responses from another account are ignored. Synchronization status appears to
+the left of an outlined nickname chip and hides during connection failure; the
+full recovery message appears below the row. Its non-modal sign-out disclosure closes on outside click, focus
+exit or Escape (which restores trigger focus). Time track uses an immediate switch
+inside timer settings, disabled during sessions or without Pro; the Pomodoro mode
+buttons are hidden while tracking. Popup draft settings are transient and survive
+polling. Account changes clear drafts. Language follows authorization (English/Spanish).
+Network failure disables controls until fresh sync; uncertain commands are not retried
+silently. `chrome-extension/README.md` documents installation and manual verification.
+No builds, application startup, tsc or runtime tests are run per user instructions.
 
 ## Native mini timer
 
@@ -326,13 +381,15 @@ remain the frame and progress owners; no new account requests or data are introd
 SettingsModal reuses CommunityDialog with the timer-settings variant. Native modal
 behavior owns focus containment, inert background, Escape and focus restoration;
 its optional backdrop dismissal requires a press and release on the backdrop.
-Duration fields retain the existing draft/Save and normalization behavior in
-PomodoroTimer. Mode and auto-start changes retain their existing immediate behavior.
+Duration fields retain draft/Save behavior in PomodoroTimer and share validated
+API ranges and successful-save persistence through timerSettingsService with the
+extension. Mode and auto-start changes retain their existing immediate behavior.
 Running timers disable mode changes with a visible explanation. Without Pro, the
 mode switch is disabled and the Pro action sits above it. The Pro action
 closes settings before opening the existing paywall/signup flow so the native dialog
 cannot cover that flow. Saving disables repeat submissions and dismissal until the
-existing save callback finishes. No persistence, session or entitlement rules change.
+existing save callback finishes. Session and entitlement rules remain canonical;
+save failures keep the dialog and draft available with localized feedback.
 
 ## Ambient audio
 

@@ -47,6 +47,7 @@ export interface PomodoroSession {
   timeRemaining?: number
   pausedAt?: string
   remainingSeconds?: number
+  updatedAt?: string
 }
 
 export enum RoomPrivacy {

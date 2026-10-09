@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const token = getTokenFromHeader(authHeader)
-    const { task, duration, type, anonymousId, startedAt, roomId, projectId } = await request.json()
+    const { task, duration, type, anonymousId, startedAt, roomId, projectId, expectedSessionId } = await request.json()
 
     if (
       typeof task !== 'string' ||
@@ -163,6 +163,11 @@ export async function POST(request: NextRequest) {
         FROM pg_advisory_xact_lock(hashtext(${userId}))
       `
 
+      if (expectedSessionId !== undefined) {
+        const existing = await tx.pomodoroSession.findFirst({ where: { userId, status: { in: ['ACTIVE', 'PAUSED'] } } })
+        if ((existing?.id ?? null) !== expectedSessionId) throw new Error('TIMER_CONFLICT')
+      }
+
       await tx.pomodoroSession.updateMany({
         where: {
           userId,
@@ -194,6 +199,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(session)
 
   } catch (error) {
+    if (error instanceof Error && error.message === 'TIMER_CONFLICT') return NextResponse.json({ error: 'STALE' }, { status: 409 })
     console.error('Create session error:', error)
     return NextResponse.json(
       { error: 'Server error' },

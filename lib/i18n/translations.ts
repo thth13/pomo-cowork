@@ -120,6 +120,7 @@ export const translations = {
       switchTo: 'Switch to',
     },
     settingsModal: {
+      saveFailed: 'Could not save settings. Try again.',
       autoStart: 'Auto start',
       autoStartDescription: 'Automatically begin the next session when the current one ends.',
       autoStartDisabled: 'Auto start disabled',
@@ -424,6 +425,7 @@ export const translations = {
       switchTo: 'Cambiar a',
     },
     settingsModal: {
+      saveFailed: 'No se pudieron guardar los ajustes. Inténtalo de nuevo.',
       autoStart: 'Inicio automático',
       autoStartDescription: 'Inicia automáticamente la siguiente sesión cuando termine la actual.',
       autoStartDisabled: 'Inicio automático desactivado',

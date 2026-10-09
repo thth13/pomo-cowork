@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Pomo Co — Pocket Timer",
+  "description": "Control your Pomo Co timer and time tracker from Chrome.",
+  "version": "1.1.0",
+  "minimum_chrome_version": "120",
+  "permissions": [
+    "storage",
+    "alarms"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "https://pomo-co.work/*",
+    "https://www.pomo-co.work/*",
+    "http://localhost/*",
+    "http://127.0.0.1/*"
+  ],
+  "action": {
+    "default_title": "Pomo Co — Pocket Timer",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/16.png",
+      "32": "icons/32.png"
+    }
+  },
+  "icons": {
+    "16": "icons/16.png",
+    "32": "icons/32.png",
+    "128": "icons/128.png"
+  },
+  "externally_connectable": {
+    "matches": [
+      "https://pomo-co.work/*",
+      "https://www.pomo-co.work/*",
+      "http://localhost/*",
+      "http://127.0.0.1/*"
+    ],
+    "accepts_tls_channel_id": false
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAtuBFntKl/DrFL9WrPmWvC55kRoEutdNyfPBKIBLwHIKL0mruIxdSlHF9Ru+AwMM6GLSRyzMZpH/oT29HWb8iWzS42yL/sYcd2YWGJpCR/PMa90yAV2NRZJVVBIXonW6KnZ6barMRcZjIDKUZtKZQ+aA582+U8RXt44ivpGbRW55GLJzGGQW2FsMrz4/tL2LrL1VAsClk5066bM718DMGf9Oe2MTmtTJlWtmqNJwndQT75M1ibkg4w8JROvLQgZlwjBW6p9FmVWwXTmjQFc6qqPrQpLnIqtxd3Vvoa/romIW7eUCTgeUD004f0gzAhGNt0lQcPYQBLBp60hrzmiE3yQIDAQAB"
+}

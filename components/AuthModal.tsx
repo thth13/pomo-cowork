@@ -155,6 +155,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
   const handleGoogleLogin = () => {
     setError('')
+    if (window.location.pathname === '/extension/authorize') {
+      sessionStorage.setItem('pomo:extensionAuthReturn', JSON.stringify({ path: window.location.pathname + window.location.search, createdAt: Date.now() }))
+    }
 
     if (!googleClientId) {
       setError(t.auth.googleNotConfigured)

@@ -1,0 +1,71 @@
+* { box-sizing: border-box; }
+:root { scrollbar-color: var(--pixel-line) var(--pixel-page); scrollbar-width: thin; }
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--pixel-page); }
+::-webkit-scrollbar-thumb { background: var(--pixel-line); border: 2px solid var(--pixel-page); }
+::-webkit-scrollbar-thumb:hover { background: var(--pixel-muted); }
+body { width: 360px; margin: 0; background: var(--pixel-page); color: var(--pixel-ink); font: 13px/1.5 Inter, system-ui, sans-serif; }
+header { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--pixel-line); background: var(--pixel-paper); }
+.brand { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+main { padding: 16px 18px; }
+button, input, select, summary { font: inherit; }
+button, select, input { border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-paper); color: var(--pixel-ink); }
+button { min-height: 36px; padding: 7px 10px; font-weight: 600; cursor: pointer; }
+button:hover:not(:disabled), summary:hover { background: var(--pixel-screen); }
+button:active:not(:disabled) { transform: translateY(1px); }
+button:disabled, input:disabled, select:disabled { opacity: .5; cursor: not-allowed; }
+:is(button, input, select, summary):focus-visible { outline: 2px solid var(--pixel-ink); outline-offset: 3px; }
+input, select { width: 100%; min-height: 36px; padding: 6px 8px; }
+select, summary { cursor: pointer; }
+.connection-label, label { display: block; font-weight: 600; }
+.connection-label { margin-bottom: 4px; }
+#connection { margin: 5px 0 14px; color: var(--pixel-muted); font-size: 11px; min-height: 17px; }
+.timer { background: var(--pixel-screen); border: 1px solid var(--pixel-line); box-shadow: inset 2px 2px 0 var(--pixel-shadow); padding: 16px 10px 12px; text-align: center; }
+#mode-label { margin: 0 0 6px; font-weight: 700; }
+#digits { font: 700 49px/1.2 'Courier New', monospace; letter-spacing: -3px; font-variant-numeric: tabular-nums; }
+#timer-status { margin: 0; min-height: 18px; color: var(--pixel-muted); font-size: 12px; }
+.actions { display: flex; gap: 8px; margin: 16px 0 12px; }
+.actions button { flex: 1; min-height: 44px; }
+button.primary { background: var(--pixel-tomato); color: #fff; border-color: var(--pixel-tomato-hover); }
+button.primary:hover:not(:disabled) { background: var(--pixel-tomato-hover); }
+#modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; border-bottom: 1px solid var(--pixel-line); }
+#modes button { border: 0; border-bottom: 2px solid transparent; background: transparent; border-radius: 0; padding: 7px 3px; font-size: 11px; font-weight: 500; color: var(--pixel-muted); }
+#modes button[aria-pressed="true"] { border-bottom-color: var(--pixel-tomato); color: var(--pixel-tomato-ink); font-weight: 700; }
+.hint { color: var(--pixel-muted); font-size: 12px; margin: 8px 0; }
+#mode-help { margin: 0 0 12px; }
+#feedback { margin: 8px 0; overflow-wrap: anywhere; }
+:is(#feedback, #mode-help, #tasks-feedback):empty { display: none; }
+#feedback[data-error="true"] { font-weight: 600; }
+details { border-top: 1px solid var(--pixel-line); padding: 10px 0; }
+summary { padding: 3px 0; font-weight: 600; }
+form { margin-top: 12px; }
+.fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fields label { font-size: 11px; }
+.fields input { margin-top: 4px; font-size: 14px; }
+form > button { width: 100%; margin-top: 4px; }
+footer { margin-top: 12px; color: var(--pixel-muted); font-size: 11px; }
+@media (forced-colors: active) { :root { scrollbar-color: auto; } button.primary { background: ButtonFace; color: ButtonText; } #modes button[aria-pressed="true"] { border: 2px solid Highlight; } }
+
+[hidden] { display: none !important; }
+.account-row { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: -6px 0 10px; }
+#account-status { flex: 1; min-width: 0; color: var(--pixel-muted); font-size: 11px; }
+#account-name { min-height: 28px; max-width: 40%; margin-left: auto; padding: 3px 9px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); font-weight: 600; overflow-wrap: anywhere; }
+#account-name:hover { border-color: var(--pixel-muted); background: var(--pixel-screen); }
+#account-name[aria-expanded="true"] { border-color: var(--pixel-muted); background: var(--pixel-screen); }
+#account-popover { position: absolute; right: 0; top: calc(100% + 4px); z-index: 1; min-width: 140px; padding: 4px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-paper); box-shadow: 2px 2px 0 var(--pixel-shadow); }
+#logout { width: 100%; border: 0; text-align: left; }
+#sign-in > button { width: 100%; margin: 8px 0 16px; }
+.task-label { margin: 12px 0 4px; }
+#task-select { overflow: hidden; text-overflow: ellipsis; }
+.switch-row { display: flex; position: relative; align-items: center; gap: 10px; min-height: 40px; margin-top: 8px; cursor: pointer; }
+.switch-row > span:first-child { flex: 1; }
+#time-track { position: absolute; right: 0; width: 34px; height: 20px; min-height: 0; margin: 0; opacity: 0; cursor: pointer; }
+.switch-track { width: 34px; height: 20px; padding: 3px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-screen); pointer-events: none; }
+.switch-track::after { content: ''; display: block; width: 12px; height: 12px; background: var(--pixel-muted); }
+#time-track:checked + .switch-track { background: var(--pixel-tomato-soft); border-color: var(--pixel-tomato); }
+#time-track:checked + .switch-track::after { transform: translateX(14px); background: var(--pixel-tomato); }
+#time-track:focus-visible + .switch-track { outline: 2px solid var(--pixel-ink); outline-offset: 3px; }
+#time-track:disabled + .switch-track { opacity: .5; }
+.switch-row:has(input:disabled) { cursor: not-allowed; }
+.switch-row:hover:has(input:enabled) .switch-track { border-color: var(--pixel-ink); }
+@media (forced-colors: active) { .switch-track::after, #time-track:checked + .switch-track::after { background: ButtonText; } #time-track:checked + .switch-track { border-color: Highlight; } }

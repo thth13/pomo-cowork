@@ -111,6 +111,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         },
       })
 
+      // A slower check from an earlier account must not overwrite a new sign-in.
+      if (localStorage.getItem('token') !== token) return
+
       if (response.ok) {
         const user = await response.json()
         set({ user, token, isAuthenticated: true, isLoading: false })

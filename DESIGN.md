@@ -58,6 +58,7 @@ Runtime tokens remain canonical (model B). This document mirrors them.
 | Body face | app/layout.tsx Inter | Body, controls, dense data |
 | Spacing, shape | app/globals.css garden layout and shared utilities | Page grid, cards, controls |
 | Scrollbars | app/globals.css --pixel-scroll-* | All app scroll surfaces |
+| Chrome extension palette | scripts/extension-tokens.mjs → chrome-extension/tokens.css | Generated from app/globals.css; popup and action badge share the same exported palette |
 
 Neutral gray/slate/zinc utilities use warm stone and muted sage. Rose and primary
 brand accents use the shared muted tomato palette; red retains danger/error semantics.
@@ -74,6 +75,25 @@ pale ink (#eceee4), muted coral accents (#e39a87) and sage meters (#a7bc91).
 Artwork retains its limited palette; the scene background is desaturated in both themes.
 
 ## Layout and components
+
+The Chrome extension is a 360px pocket timer in the same paper/sage/tomato palette.
+It uses a compact inset LCD, tabular Courier digits and system body typography so it
+requires no remote fonts. It reuses the site's favicon assets. The account row,
+primary timer action, three quiet underlined mode buttons and settings disclosure remain compact.
+The synchronization status sits to the left of a compact outlined nickname chip; the chip opens an anchored sign-out popover
+with Escape, outside-click dismissal and keyboard focus restoration. Time tracking
+is a square switch inside timer settings; enabling it hides the three Pomodoro modes.
+Sign-in uses the existing site AuthModal and a narrow account-authorization page;
+after authorization the extension talks directly to the server without a site tab.
+All controls retain visible keyboard focus; English/Spanish follow the language
+selected at account authorization. A native task select precedes the actions and lists
+unfinished account tasks from `/api/tasks`; Chrome owns its popup geometry and keyboard
+interaction. The LCD contains no task caption; task names appear only in the picker.
+Running sessions show Pause and Stop; paused sessions show Resume and Stop.
+Task selection persists per account across completed sessions and popup reopening.
+Empty task lists hide the picker. Task-list
+refreshes preserve selection and report loading/failure independently of timer sync.
+The extension's generated palette remains independent of transient website themes.
 
 The homepage replaces the full header with a small fixed two-part account/menu control
 at the top right. Its left avatar links to the profile and reveals account details on

@@ -1,0 +1,12 @@
+/* Generated from app/globals.css; refresh with npm run extension:tokens. */
+:root {
+  --pixel-page: #f1efe7;
+  --pixel-paper: #fbfaf5;
+  --pixel-screen: #e1e6d6;
+  --pixel-ink: #303a32;
+  --pixel-muted: #656d61;
+  --pixel-line: #b0b5a6;
+  --pixel-tomato: #b94e3e;
+  --pixel-tomato-hover: #983e32;
+  --pixel-shadow: #d0d3c6;
+}

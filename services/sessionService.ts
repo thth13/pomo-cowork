@@ -77,6 +77,7 @@ export const sessionService = {
       task: data.task,
       duration: data.duration,
       type: data.type,
+      ...(token ? { expectedSessionId: null } : {}),
     }
 
     const selected = useProjectSelection.getState()
@@ -104,6 +105,7 @@ export const sessionService = {
     })
 
     if (!response.ok) {
+      if (response.status === 409) throw new Error('TIMER_CONFLICT')
       throw new Error('Failed to create session')
     }
 
@@ -142,7 +144,7 @@ export const sessionService = {
     return result
   },
 
-  async complete(id: string) {
+  async complete(id: string, expectedUpdatedAt?: string) {
     if (id.startsWith('temp_')) {
       return null
     }
@@ -155,6 +157,7 @@ export const sessionService = {
 
     const completion = (async () => {
       const body: Record<string, any> = {
+        ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}),
         status: 'COMPLETED',
         completedAt: new Date().toISOString(),
         endedAt: new Date().toISOString(),

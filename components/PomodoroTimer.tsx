@@ -12,6 +12,7 @@ import { useSocket } from '@/hooks/useSocket'
 import { useWakeLock } from '@/hooks/useWakeLock'
 import { useSessionRestore } from '@/hooks/useSessionRestore'
 import { useTimerSync } from '@/hooks/useTimerSync'
+import { saveTimerDurations, isValidTimerDurations, TIMER_SETTINGS_STORAGE_KEY } from '@/services/timerSettingsService'
 import { usePageVisibility } from '@/hooks/usePageVisibility'
 import { useAutoStart } from '@/hooks/useAutoStart'
 import { SessionStatus, SessionType } from '@/types'
@@ -177,7 +178,7 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
 
 function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false }: PomodoroTimerProps) {
   const timerFont = useAppearanceStore(state => state.timerFont)
-  const { t } = useI18n()
+  const { t, language } = useI18n()
   const pictureInPicture = useDocumentPictureInPicture()
   const {
     isRunning,
@@ -198,11 +199,10 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     restoreSession,
     previewSessionType,
     initializeWithSettings,
-    setTimerSettings,
     taskOptions,
   } = useTimerStore()
 
-  const { user, isAuthenticated, updateUserSettings } = useAuthStore()
+  const { user, isAuthenticated } = useAuthStore()
   const isProMember = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
   const {
     currentRoomId,
@@ -240,6 +240,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
   const startRequestIdRef = useRef(0)
   const lastStoppedSessionIdRef = useRef<string | null>(null)
   const canTriggerAction = useThrottle(1000)
+  const [settingsSaveError, setSettingsSaveError] = useState('')
   const [isPausing, setIsPausing] = useState(false)
   const [isResuming, setIsResuming] = useState(false)
   const [isPaywallOpen, setIsPaywallOpen] = useState(false)
@@ -328,6 +329,19 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     setSessionType,
     emitSessionSync,
     ignoreSessionIdRef: lastStoppedSessionIdRef,
+    busy: isStarting || isStopping || isPausing || isResuming,
+    onRemoteMode: type => setIsTimeTrackerMode(type === SessionType.TIME_TRACKING),
+    onRemoteEnd: (completed, type) => {
+      clearAutoStart()
+      if (completed) completeSession()
+      else cancelSession()
+      const completedCount = useTimerStore.getState().completedSessions
+      const nextType = completed && type === SessionType.WORK
+        ? completedCount > 0 && completedCount % useTimerStore.getState().longBreakAfter === 0 ? SessionType.LONG_BREAK : SessionType.SHORT_BREAK
+        : SessionType.WORK
+      setSessionType(nextType)
+      previewSessionType(isTimeTrackerMode ? SessionType.TIME_TRACKING : nextType)
+    },
   })
 
   const { showNotification, playSound } = useNotifications(
@@ -405,7 +419,18 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       }
       return
     }
-    if (!user?.settings || currentSession) {
+    if (currentSession) return
+    if (!user?.settings) {
+      try {
+        const stored = localStorage.getItem(TIMER_SETTINGS_STORAGE_KEY)
+        if (stored) {
+          const settings = JSON.parse(stored) as TimerSettingsForm
+          if (isValidTimerDurations(settings)) {
+            initializeWithSettings(settings)
+            previewSessionType(isTimeTrackerMode ? SessionType.TIME_TRACKING : sessionType)
+          }
+        }
+      } catch { /* Unavailable or invalid guest storage keeps default durations. */ }
       return
     }
 
@@ -415,8 +440,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       longBreak: user.settings.longBreak,
       longBreakAfter: user.settings.longBreakAfter,
     })
+    previewSessionType(isTimeTrackerMode ? SessionType.TIME_TRACKING : sessionType)
 
-  }, [user?.settings, currentSession, initializeWithSettings, initialSettings])
+  }, [user?.settings, currentSession, initializeWithSettings, initialSettings, previewSessionType, isTimeTrackerMode, sessionType])
 
   useEffect(() => {
     if (user?.settings) {
@@ -584,6 +610,14 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       if (requestId !== startRequestIdRef.current) {
         return
       }
+      if (error instanceof Error && error.message === 'TIMER_CONFLICT') {
+        if (useTimerStore.getState().currentSession?.id === tempId) {
+          cancelSession()
+          sendMessageToServiceWorker({ type: 'STOP_TIMER' })
+        }
+        void mutateSessions()
+        return
+      }
       // Already started optimistically; keep running.
     }
   }, [
@@ -593,6 +627,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     getSessionTypeLabel,
     mutateSessions,
     selectedTask?.title,
+    cancelSession,
     startSession,
     t.timer.timeTracking,
     t.timer.workSession,
@@ -607,6 +642,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
   }
 
   const openSettings = () => {
+    setSettingsSaveError('')
     setSettingsForm({
       workDuration,
       shortBreak,
@@ -622,58 +658,23 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
   const handleSettingsSave = async () => {
     const normalized: TimerSettingsForm = {
-      workDuration: Math.max(1, Math.round(settingsForm.workDuration)),
-      shortBreak: Math.max(1, Math.round(settingsForm.shortBreak)),
-      longBreak: Math.max(1, Math.round(settingsForm.longBreak)),
-      longBreakAfter: Math.max(1, Math.round(settingsForm.longBreakAfter)),
+      workDuration: Math.min(60, Math.max(1, Math.round(settingsForm.workDuration))),
+      shortBreak: Math.min(30, Math.max(1, Math.round(settingsForm.shortBreak))),
+      longBreak: Math.min(60, Math.max(1, Math.round(settingsForm.longBreak))),
+      longBreakAfter: Math.min(10, Math.max(2, Math.round(settingsForm.longBreakAfter))),
     }
 
+    setSettingsSaveError('')
+    try {
+      await saveTimerDurations(normalized, { soundEnabled, soundVolume, notificationsEnabled: notificationEnabled })
+    } catch {
+      setSettingsSaveError(t.settingsModal.saveFailed)
+      return
+    }
     setSettingsForm(normalized)
-    setTimerSettings({
-      workDuration: normalized.workDuration,
-      shortBreak: normalized.shortBreak,
-      longBreak: normalized.longBreak,
-      longBreakAfter: normalized.longBreakAfter,
-    })
-
-    if (user) {
-      updateUserSettings({
-        workDuration: normalized.workDuration,
-        shortBreak: normalized.shortBreak,
-        longBreak: normalized.longBreak,
-        longBreakAfter: normalized.longBreakAfter,
-      })
-    }
-
-    // Save to backend if user is authenticated
-    if (user) {
-      try {
-        const token = localStorage.getItem('token')
-        if (token) {
-          await fetch('/api/settings', {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              workDuration: normalized.workDuration,
-              shortBreak: normalized.shortBreak,
-              longBreak: normalized.longBreak,
-              longBreakAfter: normalized.longBreakAfter,
-              soundEnabled,
-              soundVolume,
-              notificationsEnabled: notificationEnabled
-            })
-          })
-        }
-      } catch (error) {
-        console.error('Failed to save timer settings:', error)
-      }
-    }
 
     if (!currentSession) {
-      previewSessionType(sessionType)
+      previewSessionType(isTimeTrackerMode ? SessionType.TIME_TRACKING : sessionType)
     }
 
     setIsSettingsOpen(false)
@@ -848,6 +849,13 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         emitSessionStart(sessionData)
       } catch (error) {
         console.error('Failed to create session:', error)
+        if (error instanceof Error && error.message === 'TIMER_CONFLICT') {
+          if (useTimerStore.getState().currentSession?.id === tempId) {
+            cancelSession()
+            sendMessageToServiceWorker({ type: 'STOP_TIMER' })
+          }
+          void mutateSessions()
+        }
         // Already started optimistically; keep running.
       }
     } finally {
@@ -1403,6 +1411,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       <SettingsModal
         isOpen={isSettingsOpen}
         settings={settingsForm}
+        saveError={settingsSaveError}
         onChange={handleSettingsChange}
         onSave={handleSettingsSave}
         onClose={() => setIsSettingsOpen(false)}

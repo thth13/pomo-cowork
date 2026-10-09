@@ -152,7 +152,16 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
         window.history.replaceState({}, '', '/')
         
         // Перепроверяем авторизацию
-        checkAuth()
+        void checkAuth().then(() => {
+          const raw = sessionStorage.getItem('pomo:extensionAuthReturn')
+          if (!raw) return
+          sessionStorage.removeItem('pomo:extensionAuthReturn')
+          try {
+            const saved = JSON.parse(raw)
+            const destination = new URL(saved.path, window.location.origin)
+            if (useAuthStore.getState().isAuthenticated && destination.origin === window.location.origin && destination.pathname === '/extension/authorize' && Date.now() - saved.createdAt < 10 * 60000) window.location.replace(destination.pathname + destination.search)
+          } catch { /* An invalid return address never interrupts sign-in. */ }
+        })
       } else if (authError) {
         console.error('Auth error:', authError)
         // Очищаем URL от параметров

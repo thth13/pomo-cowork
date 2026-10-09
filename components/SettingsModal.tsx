@@ -13,6 +13,7 @@ interface TimerSettingsForm {
 }
 
 interface SettingsModalProps {
+  saveError?: string
   isOpen: boolean
   settings: TimerSettingsForm
   onChange: (field: keyof TimerSettingsForm, value: number) => void
@@ -28,6 +29,7 @@ interface SettingsModalProps {
 }
 
 export const SettingsModal = memo(function SettingsModal({
+  saveError,
   isOpen,
   settings,
   onChange,
@@ -50,10 +52,10 @@ export const SettingsModal = memo(function SettingsModal({
   const autoStartDescriptionId = useId()
   const isTimeTrackerLocked = !isProMember
   const fields = [
-    { key: 'workDuration', label: t.timer.focusLength, icon: Timer },
-    { key: 'shortBreak', label: t.timer.shortBreakInput, icon: Coffee },
-    { key: 'longBreak', label: t.timer.longBreakInput, icon: Armchair },
-    { key: 'longBreakAfter', label: t.timer.sessionsBeforeLongBreak, icon: Repeat2 },
+    { key: 'workDuration', label: t.timer.focusLength, icon: Timer, min: 1, max: 60 },
+    { key: 'shortBreak', label: t.timer.shortBreakInput, icon: Coffee, min: 1, max: 30 },
+    { key: 'longBreak', label: t.timer.longBreakInput, icon: Armchair, min: 1, max: 60 },
+    { key: 'longBreakAfter', label: t.timer.sessionsBeforeLongBreak, icon: Repeat2, min: 2, max: 10 },
   ] as const
 
   const handleSave = async () => {
@@ -104,10 +106,10 @@ export const SettingsModal = memo(function SettingsModal({
           {!isTimeTrackerMode && (
             <>
               <div className="timer-settings-grid">
-                {fields.map(({ key, label, icon: Icon }) => (
+                {fields.map(({ key, label, icon: Icon, min, max }) => (
                   <label key={key} className="timer-settings-field" data-field={key}>
                     <span className="timer-settings-field-label"><Icon size={15} aria-hidden="true" />{label}</span>
-                    <input type="number" min={1} step={1} inputMode="numeric" disabled={isSaving}
+                    <input type="number" min={min} max={max} step={1} inputMode="numeric" disabled={isSaving}
                       value={settings[key] === 0 ? '' : settings[key]}
                       onChange={event => onChange(key, event.target.value === '' ? 0 : Number(event.target.value))} />
                   </label>
@@ -128,6 +130,7 @@ export const SettingsModal = memo(function SettingsModal({
             </>
           )}
         </div>
+        {saveError && <p role="alert" className="text-red-600 px-4 pb-3 text-sm">{saveError}</p>}
         <footer className="timer-settings-footer">
           <button type="button" onClick={onClose} disabled={isSaving} className="timer-settings-button">{t.common.cancel}</button>
           <button type="submit" disabled={isSaving} aria-busy={isSaving} className="timer-settings-button timer-settings-save">
