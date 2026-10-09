@@ -212,7 +212,7 @@ body:has(.product-scenery) :is(.notifications-panel, .rank-toast, .wrapped-dialo
 
 /* One layout, two surface treatments. Portalled tasks explicitly carry this variant. */
 :is(.pomodoro-home, .seo-shell):has(.workspace-background),
-body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog),
+body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog, .timer-settings-dialog, .appearance-dialog),
 .task-popover[data-background-mode] {
   --scene-panel: rgb(20 28 25 / 68%);
   --scene-primary: rgb(255 255 255 / 96%);
@@ -348,10 +348,10 @@ body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notificatio
 }
 .task-popover[data-background-mode] .task-option-row[data-selected="true"] { background: var(--scene-selected); }
 
-/* Global feedback lives outside the workspace, including the native Wrapped dialog.
+/* Feedback and native dialogs share the workspace glass, even outside its container.
    Follow the rendered scenery rather than a saved preference on unrelated routes. */
 @media (forced-colors: none) {
-  body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog) {
+  body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog, .timer-settings-dialog, .appearance-dialog) {
     --pixel-paper: var(--scene-task);
     --pixel-page: var(--scene-task);
     --pixel-screen: var(--scene-hover);
@@ -375,6 +375,8 @@ body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notificatio
     -webkit-backdrop-filter: blur(18px) saturate(110%);
     backdrop-filter: blur(18px) saturate(110%);
   }
+  body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.timer-settings-dialog, .appearance-dialog) :is(button, input, a):focus-visible { outline-color: var(--scene-primary); }
+  body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) .timer-settings-save { color: #fff3ed; }
   body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) .notification-entry { background: transparent; }
   body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) .notification-entry--unread { background: var(--scene-selected); }
   body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) .notifications-panel :is(.text-gray-900, .text-gray-700) { color: var(--scene-primary); }

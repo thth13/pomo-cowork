@@ -389,7 +389,10 @@ controls use dark insets, and the sticky sound footer uses the scene popover sur
 Window geometry, dragging, resizing and focus behavior retain their shared owners.
 
 Incoming notification menus, rank/monthly invitation toasts and the Monthly Wrapped
-viewer reuse the same glass shell and local scene text, border and scrollbar roles.
+viewer, Timer settings and the Appearance background picker reuse the same glass shell
+and local scene text, border and scrollbar roles. Dialog headers, fields, gallery cards
+and footers inherit these local roles; primary actions retain their tomato fill and
+light labels. Selecting or resetting scenery updates an open dialog immediately.
 `app/appearance.css` detects rendered workspace scenery from `body` so global feedback
 and the native Wrapped dialog match it even outside the workspace container. Notification
 rows remain translucent, with a brighter unread fill and their semantic edge markers.
@@ -408,7 +411,8 @@ surface and border; their tooltips, account preview and menu use the dark popove
 roles. Navigation text, separators and interaction states inherit local scene tokens.
 The timer, navigation and coworker rail use fixed light text
 on their own dark surface, independent of image sampling or video frames. Main-surface
-colors do not leak into settings dialogs, avatars or other opaque application UI.
+colors stay scoped to scenery surfaces and their settings dialogs; avatars and other
+opaque application UI retain their theme colors.
 
 The gallery uses native radio inputs, visible selection checks and keyboard focus;
 it scrolls within a bounded dialog while the header and Done action remain reachable.
