@@ -223,6 +223,16 @@
 .insight-pro h2 { font-size: 21px; font-weight: 500; letter-spacing: -.035em; }
 .insight-pro p { margin-top: 7px; color: var(--pixel-muted); font-size: 13px; line-height: 1.8; }
 .insight-pro .insight-button { margin-left: auto; }
+.insight-locked-card { position: relative; isolation: isolate; min-width: 0; overflow: hidden; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); }
+.insight-preview-data { height: 100%; filter: blur(4px) brightness(.88); pointer-events: none; user-select: none; }
+.insight-preview-data > .insight-panel { height: 100%; border: 0; }
+.insight-locked-preview { position: relative; isolation: isolate; margin-top: 30px; }
+.insight-locked-preview > .insight-sections { margin-top: 0; animation: none; }
+.insight-preview-overlay { position: absolute; inset: 0; z-index: 1; display: flex; flex-direction: column; align-items: center; padding: 90px 16px 32px; }
+.insight-pro.insight-pro-overlay { position: sticky; top: 100px; display: flex; flex-direction: column; gap: 16px; width: min(480px, 100%); margin-top: 0; padding: 30px; border-radius: 3px; text-align: center; box-shadow: 4px 4px 0 var(--pixel-shadow); }
+.insight-pro-overlay .insight-preview-label { color: var(--pixel-muted); font-size: 10px; line-height: 1.7; }
+.insight-pro-overlay h2 { line-height: 1.35; }
+.insight-pro.insight-pro-overlay .insight-button { margin: 4px 0 0; }
 .insight-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px 24px; margin-top: 25px; font-size: 10px; color: var(--pixel-muted); }
 .insight-footer > div { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; }
 .insight-footer strong { color: var(--pixel-ink); font-weight: 500; }
@@ -288,6 +298,8 @@
   .insight-pro .insight-button { margin-left: 0; }
 }
 @media (max-width: 480px) {
+  .insight-preview-overlay { padding: 72px 12px 24px; }
+  .insight-pro.insight-pro-overlay { top: 84px; padding: 24px 18px; }
   .insights { width: calc(100% - 28px); }
   .insight-resource-links { gap: 8px; }
   .insight-text-link { font-size: 10px; gap: 5px; }
@@ -352,6 +364,8 @@
   .insights *, .insights *::before, .insights *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 }
 @media (forced-colors: active) {
+  .insight-preview-data { filter: none; opacity: .55; }
+  .insight-pro.insight-pro-overlay { background: Canvas; color: CanvasText; border-color: CanvasText; box-shadow: none; }
   .insight-hero, .insight-panel, .insight-planet, .insight-state { box-shadow: none; border-color: CanvasText; }
   .insight-map [data-level] { forced-color-adjust: none; border-color: CanvasText; }
   .insight-map [data-level="0"] { background: Canvas; }

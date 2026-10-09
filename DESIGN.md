@@ -272,7 +272,12 @@ tomato/sage accents; the annual heatmap grows from paper to sage in five levels.
 `app/stats/stats.css` owns route composition, responsive stacking and chart surfaces.
 Highcharts uses runtime CSS colors so charts follow both themes. Existing statistics
 API, period navigation, task sessions, LatestActivity and Pro access remain owners
-of their workflows. The locked preview is bounded and inert for keyboard users.
+of their workflows. The locked preview feeds static sample data into the exact same
+blocks, Highcharts charts, LatestActivity rows and task-session explorer as the Pro
+dashboard; there is no separate simplified preview layout. It uses the same
+4px blur and slight darkening as `/statistics`, and is inert for keyboard users.
+Its full height remains visible beneath the existing Pro purchase card. Monthly Recaps
+is omitted from both statistics routes.
 The year selector retains its native operating-system popup.
 
 ## Online sessions
@@ -362,6 +367,11 @@ On narrow screens panels stack, the galaxy becomes a full-name distribution list
 the heatmap and timeline own horizontal overflow. The score gauge uses discrete marks;
 existing timer rings remain unchanged. Motion respects reduced-motion preferences.
 English/Spanish copy belongs to `lib/i18n/statistics.ts`; the DOM translator is excluded.
+Basic accounts see the Pro sections filled with explicitly labeled sample statistics,
+blurred, slightly darkened and inert, with one sticky Pro upgrade card over the entire
+preview. Each panel retains its own clipped blur. The real
+summary and footer keep their actual totals; sample data stays client-side and never
+replaces API data. Basic accounts with no sessions also receive this preview.
 
 ## Personal timer appearance
 
@@ -566,7 +576,7 @@ allowed; the user's prohibition on builds, running the app, and tsc remains in f
 ## Monthly Wrapped
 
 Monthly Wrapped is a short private story, mounted by WrappedProvider and reopened from
-Monthly Recaps in both statistics screens. CommunityDialog owns native modal focus,
+the existing Wrapped entry points; both statistics routes omit Monthly Recaps. CommunityDialog owns native modal focus,
 Escape and focus restoration; its monthly-wrapped variant owns the large story frame.
 `app/wrapped.css` uses existing pixel surface, ink, sage, tomato, border and font tokens.
 Inter carries short narrative headings and large metric numerals; the pixel face marks compact captions and the slide count. A month of daily bars and a seven-column streak grid

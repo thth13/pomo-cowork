@@ -31,7 +31,8 @@ button.stats-heat-cell:hover { outline: 2px solid var(--pixel-ink); outline-offs
 .stats-tooltip { border: 1px solid var(--pixel-line); background: var(--pixel-paper); color: var(--pixel-ink); border-radius: 2px; box-shadow: 3px 3px 0 var(--pixel-shadow); }
 .stats-pro-badge { display: inline-block; padding: 6px 8px; margin-bottom: 20px; font-family: var(--font-pixel); font-size: 10px; background: var(--pixel-screen); color: var(--pixel-ink); border: 1px solid var(--pixel-line); }
 .stats-page .stats-pro-card { padding: 32px; border-top: 3px solid var(--pixel-growth); box-shadow: 5px 5px 0 var(--pixel-shadow); }
-.stats-locked-preview { max-height: 510px; overflow: hidden; }
+.stats-locked-preview { overflow: hidden; }
+.stats-locked-preview .stats-panel, .stats-locked-preview .stats-history-surface { filter: blur(4px) brightness(.88); }
 .stats-overview-loading .stats-panel { box-shadow: none; border: 0; border-left: 1px solid var(--pixel-line); min-height: 173px; }
 .stats-overview-loading .stats-panel:first-child { border-left: 0; }
 .stats-layout .highcharts-container { max-width: 100%; }
@@ -59,6 +60,7 @@ button.stats-heat-cell:hover { outline: 2px solid var(--pixel-ink); outline-offs
   .stats-page *, .stats-page *::before { transition: none; }
 }
 @media (forced-colors: active) {
+  .stats-locked-preview .stats-panel, .stats-locked-preview .stats-history-surface { filter: none; opacity: .55; }
   .stats-heat-cell { border-color: CanvasText; }
   .stats-heat-1, .stats-heat-2, .stats-heat-3, .stats-heat-4 { background: Highlight; forced-color-adjust: none; }
 }

@@ -1,8 +1,8 @@
 'use client'
 
-import MonthlyRecaps from '@/components/wrapped/MonthlyRecaps'
+import { createClassicStatisticsPreview, type Stats, type HeatmapDay } from '@/lib/classicStatisticsPreview'
 
-import { useCallback, useEffect, useRef, useState, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import Link from 'next/link'
@@ -10,15 +10,15 @@ import './stats.css'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { 
-  faClock, 
-  faStopwatch, 
-  faCalendarCheck, 
-  faCalendarDays, 
-  faFire, 
-  faArrowUp, 
-  faCalendar, 
-  faBullseye, 
+import {
+  faClock,
+  faStopwatch,
+  faCalendarCheck,
+  faCalendarDays,
+  faFire,
+  faArrowUp,
+  faCalendar,
+  faBullseye,
   faTasks,
   faCheck,
   faTimes
@@ -27,86 +27,6 @@ import LatestActivity from '@/components/LatestActivity'
 import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
 import { useI18n } from '@/components/I18nProvider'
-
-interface Stats {
-  totalPomodoros: number
-  totalFocusMinutes: number
-  currentStreak: number
-  avgMinutesPerDay: number
-  focusTimeThisMonth: number
-  weeklyActivity: Array<{ date: string; pomodoros: number; minutes: number }>
-  yearlyHeatmap: HeatmapDay[]
-  heatmapPeriod: {
-    selected: string
-    availableYears: number[]
-    totalMinutes: number
-    activeDays: number
-    bestDayMinutes: number
-    rangeStart: string
-    rangeEnd: string
-  }
-  monthlyBreakdown: Array<{ month: string; monthIndex: number; pomodoros: number; minutes: number }>
-  lastSevenDaysTimeline: Array<{
-    date: string
-    dayLabel: string
-    totalFocusMinutes: number
-    totalPomodoros: number
-    sessions: Array<{
-      id: string
-      type: string
-      status: string
-      task: string
-      start: string
-      end: string
-      duration: number
-    }>
-  }>
-  productivityTrends: {
-    bestTime: { start: string; end: string; efficiency: number }
-    bestDay: { name: string; avgPomodoros: string }
-    avgSessionDuration: number
-    weeklyTasks: { completed: number; total: number }
-  }
-  taskStats: {
-    total: number
-    completed: number
-    pending: number
-    completionRate: number
-    byPriority: {
-      critical: number
-      high: number
-      medium: number
-      low: number
-    }
-    topByPomodoros: Array<{
-      id: string
-      title: string
-      completedPomodoros: number
-      plannedPomodoros: number
-      completed: boolean
-      priority: string
-    }>
-    estimationAccuracy: number
-    totalPlannedPomodoros: number
-    totalCompletedPomodoros: number
-  }
-  taskTimeDistribution: Array<{
-    task: string
-    minutes: number
-  }>
-  activityRange: {
-    start: string
-    end: string
-  }
-}
-
-interface HeatmapDay {
-  week: number
-  dayOfWeek: number
-  pomodoros: number
-  minutes: number
-  date: string
-}
 
 interface HeatmapColumn {
   week: number
@@ -128,7 +48,7 @@ export default function StatsPage() {
   const heatmapDayLabels = language === 'es'
     ? ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
     : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const [stats, setStats] = useState<Stats | null>(null)
+  const [actualStats, setStats] = useState<Stats | null>(null)
   const [loading, setLoading] = useState(true)
   const [timelineLoading, setTimelineLoading] = useState(false)
   const [activityLoading, setActivityLoading] = useState(false)
@@ -143,19 +63,25 @@ export default function StatsPage() {
   const [showPaywall, setShowPaywall] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const [heatmapTooltip, setHeatmapTooltip] = useState<HeatmapTooltip | null>(null)
-  const [taskSessionsList, setTaskSessionsList] = useState<Array<{ id: string; title: string; completed: boolean; priority: string; focusMinutes: number }>>([])
+  const [actualTaskSessionsList, setTaskSessionsList] = useState<Array<{ id: string; title: string; completed: boolean; priority: string; focusMinutes: number }>>([])
   const [taskSessionsListLoading, setTaskSessionsListLoading] = useState(false)
-  const [selectedTaskName, setSelectedTaskName] = useState<string | null>(null)
-  const [taskSessions, setTaskSessions] = useState<Array<{ id: string; task: string; type: string; status: string; duration: number; startedAt: string; completedAt: string | null; effectiveMinutes: number }>>([])
-  const [taskSessionsTotalMinutes, setTaskSessionsTotalMinutes] = useState(0)
+  const [actualSelectedTaskName, setSelectedTaskName] = useState<string | null>(null)
+  const [actualTaskSessions, setTaskSessions] = useState<Array<{ id: string; task: string; type: string; status: string; duration: number; startedAt: string; completedAt: string | null; effectiveMinutes: number }>>([])
+  const [actualTaskSessionsTotalMinutes, setTaskSessionsTotalMinutes] = useState(0)
   const [taskSessionsLoading, setTaskSessionsLoading] = useState(false)
   const activityPeriodRef = useRef(activityPeriod)
   const activityOffsetRef = useRef(activityOffset)
   const heatmapRangeRef = useRef(heatmapRange)
   const timelineOffsetRef = useRef(timelineOffset)
   const activityDropdownRef = useRef<HTMLDivElement>(null)
-  
+
   const isPro = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
+  const preview = useMemo(() => createClassicStatisticsPreview(language), [language])
+  const stats = isPro ? actualStats : preview.stats
+  const taskSessionsList = isPro ? actualTaskSessionsList : preview.taskList
+  const selectedTaskName = isPro ? actualSelectedTaskName : preview.taskList[0].title
+  const taskSessions = isPro ? actualTaskSessions : preview.taskSessions
+  const taskSessionsTotalMinutes = isPro ? actualTaskSessionsTotalMinutes : preview.taskSessions.reduce((sum, session) => sum + session.effectiveMinutes, 0)
   const shouldPromptRegister = !isAuthenticated || user?.isAnonymous
 
   const openPaywallOrRegister = () => {
@@ -309,7 +235,7 @@ export default function StatsPage() {
       }
     },
     yAxis: {
-      title: { 
+      title: {
         text: t.stats.hours,
         style: { color: 'var(--pixel-muted)' }
       },
@@ -362,7 +288,7 @@ export default function StatsPage() {
       }
     },
     yAxis: {
-      title: { 
+      title: {
         text: t.stats.hours,
         style: { color: 'var(--pixel-muted)' }
       },
@@ -462,13 +388,13 @@ export default function StatsPage() {
     }]
   }
 
-  const totalPomodoros = stats?.totalPomodoros || 0
-  const totalHours = Math.floor((stats?.totalFocusMinutes || 0) / 60)
-  const totalMinutesRemainder = (stats?.totalFocusMinutes || 0) % 60
-  const currentStreak = stats?.currentStreak || 0
-  const avgTimePerDay = stats?.avgMinutesPerDay || 0
-  const focusTimeThisMonth = Math.floor((stats?.focusTimeThisMonth || 0) / 60)
-  const focusTimeThisMonthMinutes = (stats?.focusTimeThisMonth || 0) % 60
+  const totalPomodoros = actualStats?.totalPomodoros || 0
+  const totalHours = Math.floor((actualStats?.totalFocusMinutes || 0) / 60)
+  const totalMinutesRemainder = (actualStats?.totalFocusMinutes || 0) % 60
+  const currentStreak = actualStats?.currentStreak || 0
+  const avgTimePerDay = actualStats?.avgMinutesPerDay || 0
+  const focusTimeThisMonth = Math.floor((actualStats?.focusTimeThisMonth || 0) / 60)
+  const focusTimeThisMonthMinutes = (actualStats?.focusTimeThisMonth || 0) % 60
   const resolvedHeatmapRange = stats?.heatmapPeriod?.selected || heatmapRange
   const yearlyHeatmap = stats?.yearlyHeatmap || []
   const heatmapMaxDailyMinutes = yearlyHeatmap.reduce((max, day) => Math.max(max, day.minutes), 0)
@@ -798,22 +724,8 @@ export default function StatsPage() {
 
   const ProPaywall = ({ children }: { children?: ReactNode }) => (
     <div className="relative mb-8">
-      <div aria-hidden="true" ref={(node) => { node?.setAttribute('inert', '') }} className="stats-locked-preview pointer-events-none select-none opacity-25 blur-[10px] saturate-50">
-        {children ?? (
-          <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-              <SkeletonChart />
-              <SkeletonChart />
-            </div>
-            <div className="mb-8">
-              <SkeletonChart />
-            </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
-              <SkeletonChart />
-              <SkeletonChart />
-            </div>
-          </>
-        )}
+      <div aria-hidden="true" ref={(node) => { node?.setAttribute('inert', '') }} className="stats-locked-preview pointer-events-none select-none">
+        {children}
       </div>
 
       <div className="absolute inset-0 flex items-start justify-center px-4 pt-4 sm:pt-6">
@@ -1001,12 +913,469 @@ export default function StatsPage() {
     </div>
   )
 
+  const statisticsContent = (
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div className="stats-history-surface">
+          <LatestActivity
+            previewEntries={isPro ? undefined : preview.entries}
+            token={isPro ? token : null}
+            isAuthenticated={isAuthenticated}
+            onChange={() => fetchStats({ mode: hasFetchedOnceRef.current ? 'silent' : 'full' })}
+          />
+        </div>
 
+        <div className="stats-panel relative" aria-busy={timelineLoading}>
+          {timelineLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+              <div className="h-4 w-4 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
+            <div className="flex flex-col gap-1">
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Últimos 7 días' : 'Last 7 Days'}</h3>
+              <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Sesiones de enfoque recientes' : 'Recent focus timelines'}</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
+                className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                aria-label={t.stats.previousWeek}
+              >
+                &lt;
+              </button>
+              <div className="text-xs font-medium text-gray-700 dark:text-slate-200 min-w-[130px] text-center">
+                {getTimelineRangeLabel() || '—'}
+              </div>
+              <button
+                type="button"
+                onClick={() => handleTimelineOffsetChange(Math.max(0, timelineOffset - 7))}
+                disabled={timelineOffset === 0}
+                className={`text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
+                  timelineOffset === 0
+                    ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                }`}
+                aria-label={t.stats.nextWeek}
+              >
+                &gt;
+              </button>
+            </div>
+          </div>
+
+          {lastSevenDays.length === 0 ? (
+            <div className="text-sm text-gray-500 dark:text-slate-400 text-center py-10">
+              {t.stats.noSessionsForLastWeek}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {lastSevenDays.map(day => {
+                const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
+                const dayLabel = new Date(day.date + 'T00:00:00').toLocaleDateString(locale, {
+                  day: 'numeric',
+                  month: 'short'
+                })
+                return (
+                  <div key={day.date} className="flex items-center gap-2">
+                    <div className="shrink-0 text-right text-xs font-semibold text-gray-900 dark:text-white">
+                      {dayLabel}
+                    </div>
+                    <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-0">
+                      <div className="pointer-events-none absolute inset-0">
+                        {Array.from({ length: 25 }).map((_, idx) => {
+                          // Пропускаем первую (0) и последнюю (24) линии
+                          if (idx === 0 || idx === 24) return null
+
+                          const left = (idx / 24) * 100
+                          const isMajor = idx % 6 === 0
+                          return (
+                            <div
+                              key={idx}
+                              className={`absolute ${isMajor ? 'h-full bg-gray-300 dark:bg-slate-600' : 'h-1/2 top-1/4 bg-gray-200 dark:bg-slate-700'}`}
+                              style={{ width: '1px', left: `${left}%` }}
+                            />
+                          )
+                        })}
+                      </div>
+
+                      {focusSessions.length > 0 &&
+                        focusSessions.map(session => {
+                          const start = new Date(session.start)
+                          const end = new Date(session.end)
+                          const startMinutes = (start.getHours() * 60) + start.getMinutes()
+                          const endMinutes = Math.min(1440, (end.getHours() * 60) + end.getMinutes())
+                          const durationMinutes = Math.max(1, endMinutes - startMinutes || session.duration)
+                          const left = Math.max(0, (startMinutes / 1440) * 100)
+                          const width = Math.min(100 - left, (durationMinutes / 1440) * 100)
+                          return (
+                            <div
+                              key={session.id}
+                              className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${getSessionColor(session.type)} shadow-sm`}
+                              style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
+                              title={`${formatTimeRange(session.start, session.end)} · ${session.task}`}
+                            >
+                              <span className="absolute inset-0 bg-white/10 dark:bg-slate-900/10 rounded-md" />
+                            </div>
+                          )
+                        })}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          <div className="mt-2 flex items-start gap-2">
+            <div className="w-12 shrink-0" />
+            <div className="relative flex-1 h-5 text-[11px] text-gray-500 dark:text-slate-400 min-w-0">
+              {timeLabels.map((label, idx) => {
+                const left = (label / 24) * 100
+                const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
+                return (
+                  <span
+                    key={label}
+                    className="absolute top-0"
+                    style={{ left: `${left}%`, transform: `translateX(${translateX})` }}
+                  >
+                    {String(label).padStart(2, '0')}:00
+                  </span>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Weekly Chart */}
+      <div className="mb-8">
+        <div
+          className="relative stats-panel"
+          aria-busy={activityLoading}
+        >
+          {activityLoading && (
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
+              <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div className="flex w-full sm:w-auto items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => handleActivityOffsetChange('prev')}
+                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
+                aria-label={t.stats.previousPeriod}
+              >
+                &lt;
+              </button>
+
+              <div className="relative min-w-0 flex-1 sm:flex-none" ref={activityDropdownRef}
+                onKeyDown={(event) => {
+                  if (event.key === 'Escape') {
+                    setActivityDropdownOpen(false)
+                    activityDropdownRef.current?.querySelector('button')?.focus()
+                  }
+                }}>
+                <button
+                  type="button"
+                  onClick={() => setActivityDropdownOpen(prev => !prev)}
+                  aria-expanded={activityDropdownOpen}
+                  aria-controls="stats-activity-period"
+                  className="inline-flex min-h-10 w-full sm:min-w-[190px] items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 px-4 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-center"
+                >
+                  {getActivityRangeLabel() || getActivityPeriodLabel()}
+                </button>
+
+                {activityDropdownOpen && (
+                  <div id="stats-activity-period" className="absolute top-full left-0 w-full mt-1 z-20 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[160px]">
+                    <button
+                      type="button"
+                      onClick={() => handleActivityPeriodChange('7')}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        activityPeriod === '7' && activityOffset === 0
+                          ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
+                          : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {t.stats.thisWeek}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleActivityPeriodChange('30')}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        activityPeriod === '30' && activityOffset === 0
+                          ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
+                          : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {t.stats.thisMonth}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleActivityPeriodChange('365')}
+                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
+                        activityPeriod === '365' && activityOffset === 0
+                          ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
+                          : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {t.stats.thisYear}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleActivityOffsetChange('next')}
+                disabled={activityOffset === 0}
+                className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
+                  activityOffset === 0
+                    ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
+                    : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
+                }`}
+                aria-label={t.stats.nextPeriod}
+              >
+                &gt;
+              </button>
+            </div>
+
+            <div className="text-left sm:text-right">
+              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                {formatDuration(activityTotalMinutes)} {t.stats.totalHours}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-slate-400">
+                {activityActiveUnitsLabel}
+              </div>
+            </div>
+          </div>
+          <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
+        </div>
+      </div>
+
+      {HeatmapSection}
+
+      {/* Productivity Trends & Monthly Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
+        <div className="stats-panel">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Tendencias de productividad' : 'Productivity Trends'}</h3>
+
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                  <FontAwesomeIcon icon={faArrowUp} className="text-[var(--pixel-growth)] text-sm" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestTime}</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">
+                    {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestTime?.efficiency || 0}%</div>
+                <div className="text-xs text-gray-500 dark:text-slate-400">efficiency</div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                  <FontAwesomeIcon icon={faCalendar} className="text-[var(--pixel-growth)] text-sm" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestDay}</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">{bestDayName}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestDay?.avgPomodoros || '0'}</div>
+                <div className="text-xs text-gray-500 dark:text-slate-400">avg. pomodoros</div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                  <FontAwesomeIcon icon={faBullseye} className="text-[var(--pixel-growth)] text-sm" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">Focus Mode</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">Average duration</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.avgSessionDuration || 0}m</div>
+                <div className="text-xs text-gray-500 dark:text-slate-400">per session</div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
+                  <FontAwesomeIcon icon={faTasks} className="text-[var(--pixel-growth)] text-sm" />
+                </div>
+                <div>
+                  <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.completedTasks}</div>
+                  <div className="text-xs text-gray-500 dark:text-slate-400">This week</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
+                <div className="text-xs text-gray-500 dark:text-slate-400">{t.stats.of} {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="stats-panel">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Resumen mensual' : 'Monthly Breakdown'}</h3>
+          <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
+        </div>
+      </div>
+
+      {/* Task Statistics */}
+      <div className="stats-panel">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Tiempo por tarea' : 'Task Time Distribution'}</h3>
+          <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Por minutos de enfoque totales' : 'By total focus minutes'}</p>
+        </div>
+
+        {taskTimeDisplayData.length === 0 ? (
+          <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
+            {t.stats.noTrackedTaskTime}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 sm:gap-6 items-center">
+            <div>
+              <HighchartsReact highcharts={Highcharts} options={taskTimeChartOptions} />
+            </div>
+            <div className="space-y-3">
+              {taskTimeDisplayData.map(item => (
+                <div key={item.name} className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-sm text-gray-800 dark:text-slate-100 truncate">{item.name}</span>
+                  </div>
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
+                    {item.hoursLabel} ({item.percentage.toFixed(1)}%)
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Task Sessions Explorer */}
+      <div className="mt-8 stats-panel">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Sesiones por tarea' : 'Task Sessions'}</h3>
+          <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Selecciona una tarea para ver sus sesiones' : 'Select a task to view its sessions'}</p>
+        </div>
+
+        {taskSessionsListLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
+          </div>
+        ) : taskSessionsList.length === 0 ? (
+          <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
+            {t.stats.noTasksFound}
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Left: task list */}
+            <div className="lg:w-64 shrink-0 flex flex-col gap-1 overflow-y-auto max-h-[420px] pr-1">
+              {taskSessionsList.map((task) => {
+                const isSelected = selectedTaskName === task.title
+                const hours = Math.floor(task.focusMinutes / 60)
+                const mins = task.focusMinutes % 60
+                const label = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
+                return (
+                  <button
+                    key={task.id}
+                    type="button"
+                    onClick={() => handleSelectTaskForSessions(task.title)}
+                    className={`flex flex-col items-start rounded-xl px-3 py-2.5 text-left transition-colors ${
+                      isSelected
+                        ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)]'
+                        : 'hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200'
+                    }`}
+                  >
+                    <span className={`text-sm font-medium truncate max-w-full ${task.completed ? 'line-through opacity-60' : ''}`}>
+                      {task.title}
+                    </span>
+                    <span className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{label} {t.stats.tracked}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Right: sessions list */}
+            <div className="flex-1 min-w-0">
+              {!selectedTaskName ? (
+                <div className="flex items-center justify-center h-full py-12 text-sm text-gray-400 dark:text-slate-500">
+                  {t.stats.selectTask}
+                </div>
+              ) : taskSessionsLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : taskSessions.length === 0 ? (
+                <div className="flex items-center justify-center py-12 text-sm text-gray-400 dark:text-slate-500">
+                  {t.stats.noSessionsForTask}
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 overflow-y-auto max-h-[420px] pr-1">
+                  <div className="flex items-center justify-between mb-2 px-1">
+                    <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{selectedTaskName}</span>
+                    <span className="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap ml-2">
+                      {taskSessions.length} {t.stats.sessions} · {formatHours(taskSessionsTotalMinutes)} {t.stats.total}
+                    </span>
+                  </div>
+                  {taskSessions.map((session) => {
+                    const sessionDate = new Date(session.startedAt)
+                    const endDate = session.completedAt ? new Date(session.completedAt) : null
+                    const dateLabel = sessionDate.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })
+                    const timeLabel = sessionDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+                    const endLabel = endDate
+                      ? endDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
+                      : '—'
+                    const mins = session.effectiveMinutes
+                    const hrsLabel = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`
+                    return (
+                      <div
+                        key={session.id}
+                        className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-3 py-2.5"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${session.type === 'TIME_TRACKING' ? 'bg-indigo-500' : 'bg-red-500'}`} />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-medium text-gray-800 dark:text-slate-100">{dateLabel}</span>
+                            <span className="text-xs text-gray-400 dark:text-slate-500">{timeLabel} — {endLabel}</span>
+                          </div>
+                        </div>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">{hrsLabel}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+    </>
+  )
 
   return (
     <div className="garden-page stats-page">
       <Navbar compact />
-      
+
       <main className="stats-layout">
         <header className="stats-intro">
           <h1>{language === 'es' ? 'Mis estadísticas' : 'My statistics'}</h1>
@@ -1047,7 +1416,7 @@ export default function StatsPage() {
                 </div>
               </>
             ) : (
-              <ProPaywall />
+              <ProPaywall>{statisticsContent}</ProPaywall>
             )}
           </>
         ) : (
@@ -1069,319 +1438,7 @@ export default function StatsPage() {
             </section>
 
             {!isPro ? (
-              <ProPaywall>
-                {!chartReady ? (
-                  <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                      <SkeletonChart />
-                      <SkeletonChart />
-                    </div>
-                    <div className="mb-8">
-                      <SkeletonChart />
-                    </div>
-                    <div className="mb-8">
-                      <SkeletonChart />
-                    </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
-                      <SkeletonChart />
-                      <SkeletonChart />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                      <LatestActivity
-                        token={token}
-                        isAuthenticated={isAuthenticated}
-                        onChange={() => fetchStats({ mode: hasFetchedOnceRef.current ? 'silent' : 'full' })}
-                      />
-
-                      <div className="stats-panel relative" aria-busy={timelineLoading}>
-                        {timelineLoading && (
-                          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                            <div className="h-4 w-4 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
-                          </div>
-                        )}
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
-                          <div className="flex flex-col gap-1">
-                            <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Últimos 7 días' : 'Last 7 Days'}</h3>
-                            <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Sesiones de enfoque recientes' : 'Recent focus timelines'}</p>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-3">
-                            <button
-                              type="button"
-                              onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
-                              className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                              aria-label={t.stats.previousWeek}
-                            >
-                              &lt;
-                            </button>
-                            <div className="text-xs font-medium text-gray-700 dark:text-slate-200 min-w-[130px] text-center">
-                              {getTimelineRangeLabel() || '—'}
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => handleTimelineOffsetChange(Math.max(0, timelineOffset - 7))}
-                              disabled={timelineOffset === 0}
-                              className={`text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
-                                timelineOffset === 0
-                                  ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
-                                  : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                              }`}
-                              aria-label={t.stats.nextWeek}
-                            >
-                              &gt;
-                            </button>
-                          </div>
-                        </div>
-
-                        {lastSevenDays.length === 0 ? (
-                          <div className="text-sm text-gray-500 dark:text-slate-400 text-center py-10">
-                            {t.stats.noSessionsForLastWeek}
-                          </div>
-                        ) : (
-                          <div className="space-y-4">
-                            {lastSevenDays.map(day => {
-                              const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
-                              return (
-                                <div key={day.date} className="flex items-center">
-                                  <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-0">
-                                    <div className="pointer-events-none absolute inset-0">
-                                      {Array.from({ length: 25 }).map((_, idx) => {
-                                        // Пропускаем первую (0) и последнюю (24) линии
-                                        if (idx === 0 || idx === 24) return null
-
-                                        const left = (idx / 24) * 100
-                                        const isMajor = idx % 6 === 0
-                                        return (
-                                          <div
-                                            key={idx}
-                                            className={`absolute ${isMajor ? 'h-full bg-gray-300 dark:bg-slate-600' : 'h-1/2 top-1/4 bg-gray-200 dark:bg-slate-700'}`}
-                                            style={{ width: '1px', left: `${left}%` }}
-                                          />
-                                        )
-                                      })}
-                                    </div>
-
-                                    {focusSessions.length > 0 &&
-                                      focusSessions.map(session => {
-                                        const start = new Date(session.start)
-                                        const end = new Date(session.end)
-                                        const startMinutes = (start.getHours() * 60) + start.getMinutes()
-                                        const endMinutes = Math.min(1440, (end.getHours() * 60) + end.getMinutes())
-                                        const durationMinutes = Math.max(1, endMinutes - startMinutes || session.duration)
-                                        const left = Math.max(0, (startMinutes / 1440) * 100)
-                                        const width = Math.min(100 - left, (durationMinutes / 1440) * 100)
-                                        return (
-                                          <div
-                                            key={session.id}
-                                            className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${getSessionColor(session.type)} shadow-sm`}
-                                            style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
-                                            title={`${formatTimeRange(session.start, session.end)} · ${session.task}`}
-                                          >
-                                            <span className="absolute inset-0 bg-white/10 dark:bg-slate-900/10 rounded-md" />
-                                          </div>
-                                        )
-                                      })}
-                                  </div>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-
-                        <div className="relative mt-2 h-5 text-[11px] text-gray-500 dark:text-slate-400">
-                          {timeLabels.map((label, idx) => {
-                            const left = (label / 24) * 100
-                            const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
-                            return (
-                              <span
-                                key={label}
-                                className="absolute top-0"
-                                style={{ left: `${left}%`, transform: `translateX(${translateX})` }}
-                              >
-                                {String(label).padStart(2, '0')}:00
-                              </span>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Weekly Chart */}
-                    <div className="mb-8">
-                      <div
-                        className="relative stats-panel"
-                        aria-busy={activityLoading}
-                      >
-                        {activityLoading && (
-                          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                            <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
-                          </div>
-                        )}
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-6">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
-                            {activityPeriod === '7' && t.stats.weeklyActivity}
-                            {activityPeriod === '30' && t.stats.monthlyActivity}
-                            {activityPeriod === '365' && t.stats.yearlyActivity}
-                          </h3>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <button
-                              onClick={() => handleActivityPeriodChange('7')}
-                              className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                                activityPeriod === '7'
-                                  ? 'text-white bg-[var(--pixel-tomato)]'
-                                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                              }`}
-                            >
-                              7d
-                            </button>
-                            <button
-                              onClick={() => handleActivityPeriodChange('30')}
-                              className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                                activityPeriod === '30'
-                                  ? 'text-white bg-[var(--pixel-tomato)]'
-                                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                              }`}
-                            >
-                              30d
-                            </button>
-                            <button
-                              onClick={() => handleActivityPeriodChange('365')}
-                              className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                                activityPeriod === '365'
-                                  ? 'text-white bg-[var(--pixel-tomato)]'
-                                  : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                              }`}
-                            >
-                              {t.stats.year}
-                            </button>
-                          </div>
-                        </div>
-                        <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
-                      </div>
-                    </div>
-
-                    {HeatmapSection}
-
-                    {/* Productivity Trends & Monthly Breakdown */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
-                      <div className="stats-panel">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Tendencias de productividad' : 'Productivity Trends'}</h3>
-
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
-                                <FontAwesomeIcon icon={faArrowUp} className="text-[var(--pixel-growth)] text-sm" />
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestTime}</div>
-                                <div className="text-xs text-gray-500 dark:text-slate-400">
-                                  {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestTime?.efficiency || 0}%</div>
-                              <div className="text-xs text-gray-500 dark:text-slate-400">efficiency</div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
-                                <FontAwesomeIcon icon={faCalendar} className="text-[var(--pixel-growth)] text-sm" />
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestDay}</div>
-                                <div className="text-xs text-gray-500 dark:text-slate-400">{bestDayName}</div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestDay?.avgPomodoros || '0'}</div>
-                              <div className="text-xs text-gray-500 dark:text-slate-400">avg. pomodoros</div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
-                                <FontAwesomeIcon icon={faBullseye} className="text-[var(--pixel-growth)] text-sm" />
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">Focus Mode</div>
-                                <div className="text-xs text-gray-500 dark:text-slate-400">Average duration</div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.avgSessionDuration || 0}m</div>
-                              <div className="text-xs text-gray-500 dark:text-slate-400">per session</div>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                            <div className="flex items-center space-x-3">
-                              <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
-                                <FontAwesomeIcon icon={faTasks} className="text-[var(--pixel-growth)] text-sm" />
-                              </div>
-                              <div>
-                                <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.completedTasks}</div>
-                                <div className="text-xs text-gray-500 dark:text-slate-400">This week</div>
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
-                              <div className="text-xs text-gray-500 dark:text-slate-400">{t.stats.of} {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="stats-panel">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Resumen mensual' : 'Monthly Breakdown'}</h3>
-                        <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
-                      </div>
-                    </div>
-
-                    {/* Task Statistics */}
-                    <div className="stats-panel">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Tiempo por tarea' : 'Task Time Distribution'}</h3>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Por minutos de enfoque totales' : 'By total focus minutes'}</p>
-                      </div>
-
-                      {taskTimeDisplayData.length === 0 ? (
-                        <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
-                          {t.stats.noTrackedTaskTime}
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 sm:gap-6 items-center">
-                          <div>
-                            <HighchartsReact highcharts={Highcharts} options={taskTimeChartOptions} />
-                          </div>
-                          <div className="space-y-3">
-                            {taskTimeDisplayData.map(item => (
-                              <div key={item.name} className="flex items-center justify-between gap-4">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <span
-                                    className="w-3 h-3 rounded-full shrink-0"
-                                    style={{ backgroundColor: item.color }}
-                                  />
-                                  <span className="text-sm text-gray-800 dark:text-slate-100 truncate">{item.name}</span>
-                                </div>
-                                <span className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                                  {item.hoursLabel} ({item.percentage.toFixed(1)}%)
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </ProPaywall>
+              <ProPaywall>{statisticsContent}</ProPaywall>
             ) : !chartReady ? (
               <>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
@@ -1400,473 +1457,21 @@ export default function StatsPage() {
                 </div>
               </>
             ) : (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                  <LatestActivity
-                    token={token}
-                    isAuthenticated={isAuthenticated}
-                    onChange={() => fetchStats({ mode: hasFetchedOnceRef.current ? 'silent' : 'full' })}
-                  />
-
-                  <div className="stats-panel relative" aria-busy={timelineLoading}>
-                    {timelineLoading && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                        <div className="h-4 w-4 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-2">
-                      <div className="flex flex-col gap-1">
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Últimos 7 días' : 'Last 7 Days'}</h3>
-                        <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Sesiones de enfoque recientes' : 'Recent focus timelines'}</p>
-                      </div>
-                      <div className="flex flex-wrap items-center gap-3">
-                        <button
-                          type="button"
-                          onClick={() => handleTimelineOffsetChange(timelineOffset + 7)}
-                          className="text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                          aria-label={t.stats.previousWeek}
-                        >
-                          &lt;
-                        </button>
-                        <div className="text-xs font-medium text-gray-700 dark:text-slate-200 min-w-[130px] text-center">
-                          {getTimelineRangeLabel() || '—'}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleTimelineOffsetChange(Math.max(0, timelineOffset - 7))}
-                          disabled={timelineOffset === 0}
-                          className={`text-xs px-3 py-1 rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
-                            timelineOffset === 0
-                              ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
-                              : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                          }`}
-                          aria-label={t.stats.nextWeek}
-                        >
-                          &gt;
-                        </button>
-                      </div>
-                    </div>
-
-                    {lastSevenDays.length === 0 ? (
-                      <div className="text-sm text-gray-500 dark:text-slate-400 text-center py-10">
-                        {t.stats.noSessionsForLastWeek}
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {lastSevenDays.map(day => {
-                          const focusSessions = day.sessions.filter(session => session.type === 'WORK' || session.type === 'TIME_TRACKING')
-                          const dayLabel = new Date(day.date + 'T00:00:00').toLocaleDateString(locale, {
-                            day: 'numeric',
-                            month: 'short'
-                          })
-                          return (
-                            <div key={day.date} className="flex items-center gap-2">
-                              <div className="shrink-0 text-right text-xs font-semibold text-gray-900 dark:text-white">
-                                {dayLabel}
-                              </div>
-                              <div className="relative flex-1 h-8 rounded-lg border border-gray-100 dark:border-slate-700 bg-slate-900/5 dark:bg-slate-900 overflow-hidden min-w-0">
-                                <div className="pointer-events-none absolute inset-0">
-                                  {Array.from({ length: 25 }).map((_, idx) => {
-                                    // Пропускаем первую (0) и последнюю (24) линии
-                                    if (idx === 0 || idx === 24) return null
-
-                                    const left = (idx / 24) * 100
-                                    const isMajor = idx % 6 === 0
-                                    return (
-                                      <div
-                                        key={idx}
-                                        className={`absolute ${isMajor ? 'h-full bg-gray-300 dark:bg-slate-600' : 'h-1/2 top-1/4 bg-gray-200 dark:bg-slate-700'}`}
-                                        style={{ width: '1px', left: `${left}%` }}
-                                      />
-                                    )
-                                  })}
-                                </div>
-
-                                {focusSessions.length > 0 &&
-                                  focusSessions.map(session => {
-                                    const start = new Date(session.start)
-                                    const end = new Date(session.end)
-                                    const startMinutes = (start.getHours() * 60) + start.getMinutes()
-                                    const endMinutes = Math.min(1440, (end.getHours() * 60) + end.getMinutes())
-                                    const durationMinutes = Math.max(1, endMinutes - startMinutes || session.duration)
-                                    const left = Math.max(0, (startMinutes / 1440) * 100)
-                                    const width = Math.min(100 - left, (durationMinutes / 1440) * 100)
-                                    return (
-                                      <div
-                                        key={session.id}
-                                        className={`absolute top-1/2 -translate-y-1/2 h-5 rounded-md ${getSessionColor(session.type)} shadow-sm`}
-                                        style={{ left: `${left}%`, width: `${Math.max(width, 1)}%` }}
-                                        title={`${formatTimeRange(session.start, session.end)} · ${session.task}`}
-                                      >
-                                        <span className="absolute inset-0 bg-white/10 dark:bg-slate-900/10 rounded-md" />
-                                      </div>
-                                    )
-                                  })}
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
-
-                    <div className="mt-2 flex items-start gap-2">
-                      <div className="w-12 shrink-0" />
-                      <div className="relative flex-1 h-5 text-[11px] text-gray-500 dark:text-slate-400 min-w-0">
-                        {timeLabels.map((label, idx) => {
-                          const left = (label / 24) * 100
-                          const translateX = idx === 0 ? '0%' : idx === timeLabels.length - 1 ? '-100%' : '-50%'
-                          return (
-                            <span
-                              key={label}
-                              className="absolute top-0"
-                              style={{ left: `${left}%`, transform: `translateX(${translateX})` }}
-                            >
-                              {String(label).padStart(2, '0')}:00
-                            </span>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Weekly Chart */}
-                <div className="mb-8">
-                  <div
-                    className="relative stats-panel"
-                    aria-busy={activityLoading}
-                  >
-                    {activityLoading && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl">
-                        <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
-                      </div>
-                    )}
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-                      <div className="flex w-full sm:w-auto items-center gap-2 sm:gap-3">
-                        <button
-                          type="button"
-                          onClick={() => handleActivityOffsetChange('prev')}
-                          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                          aria-label={t.stats.previousPeriod}
-                        >
-                          &lt;
-                        </button>
-
-                        <div className="relative min-w-0 flex-1 sm:flex-none" ref={activityDropdownRef}
-                          onKeyDown={(event) => {
-                            if (event.key === 'Escape') {
-                              setActivityDropdownOpen(false)
-                              activityDropdownRef.current?.querySelector('button')?.focus()
-                            }
-                          }}>
-                          <button
-                            type="button"
-                            onClick={() => setActivityDropdownOpen(prev => !prev)}
-                            aria-expanded={activityDropdownOpen}
-                            aria-controls="stats-activity-period"
-                            className="inline-flex min-h-10 w-full sm:min-w-[190px] items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 px-4 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-center"
-                          >
-                            {getActivityRangeLabel() || getActivityPeriodLabel()}
-                          </button>
-
-                          {activityDropdownOpen && (
-                            <div id="stats-activity-period" className="absolute top-full left-0 w-full mt-1 z-20 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[160px]">
-                              <button
-                                type="button"
-                                onClick={() => handleActivityPeriodChange('7')}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                                  activityPeriod === '7' && activityOffset === 0
-                                    ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
-                                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
-                                }`}
-                              >
-                                {t.stats.thisWeek}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleActivityPeriodChange('30')}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                                  activityPeriod === '30' && activityOffset === 0
-                                    ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
-                                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
-                                }`}
-                              >
-                                {t.stats.thisMonth}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleActivityPeriodChange('365')}
-                                className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                                  activityPeriod === '365' && activityOffset === 0
-                                    ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
-                                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
-                                }`}
-                              >
-                                {t.stats.thisYear}
-                              </button>
-                            </div>
-                          )}
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleActivityOffsetChange('next')}
-                          disabled={activityOffset === 0}
-                          className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
-                            activityOffset === 0
-                              ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
-                              : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                          }`}
-                          aria-label={t.stats.nextPeriod}
-                        >
-                          &gt;
-                        </button>
-                      </div>
-
-                      <div className="text-left sm:text-right">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {formatDuration(activityTotalMinutes)} {t.stats.totalHours}
-                        </div>
-                        <div className="text-xs text-gray-500 dark:text-slate-400">
-                          {activityActiveUnitsLabel}
-                        </div>
-                      </div>
-                    </div>
-                    <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
-                  </div>
-                </div>
-
-                {HeatmapSection}
-
-                {/* Productivity Trends & Monthly Breakdown */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 mb-8">
-                  <div className="stats-panel">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Tendencias de productividad' : 'Productivity Trends'}</h3>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
-                            <FontAwesomeIcon icon={faArrowUp} className="text-[var(--pixel-growth)] text-sm" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestTime}</div>
-                            <div className="text-xs text-gray-500 dark:text-slate-400">
-                              {stats?.productivityTrends?.bestTime?.start || '00:00'} - {stats?.productivityTrends?.bestTime?.end || '00:00'}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestTime?.efficiency || 0}%</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">efficiency</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
-                            <FontAwesomeIcon icon={faCalendar} className="text-[var(--pixel-growth)] text-sm" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.bestDay}</div>
-                            <div className="text-xs text-gray-500 dark:text-slate-400">{bestDayName}</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.bestDay?.avgPomodoros || '0'}</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">avg. pomodoros</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
-                            <FontAwesomeIcon icon={faBullseye} className="text-[var(--pixel-growth)] text-sm" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">Focus Mode</div>
-                            <div className="text-xs text-gray-500 dark:text-slate-400">Average duration</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.avgSessionDuration || 0}m</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">per session</div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-xl">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-[var(--pixel-screen)] rounded-lg flex items-center justify-center">
-                            <FontAwesomeIcon icon={faTasks} className="text-[var(--pixel-growth)] text-sm" />
-                          </div>
-                          <div>
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">{t.stats.completedTasks}</div>
-                            <div className="text-xs text-gray-500 dark:text-slate-400">This week</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-sm font-bold text-gray-900 dark:text-white">{stats?.productivityTrends?.weeklyTasks?.completed || 0}</div>
-                          <div className="text-xs text-gray-500 dark:text-slate-400">{t.stats.of} {stats?.productivityTrends?.weeklyTasks?.total || 0}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="stats-panel">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{language === 'es' ? 'Resumen mensual' : 'Monthly Breakdown'}</h3>
-                    <HighchartsReact highcharts={Highcharts} options={monthlyChartOptions} />
-                  </div>
-                </div>
-
-                {/* Task Statistics */}
-                <div className="stats-panel">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Tiempo por tarea' : 'Task Time Distribution'}</h3>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Por minutos de enfoque totales' : 'By total focus minutes'}</p>
-                  </div>
-
-                  {taskTimeDisplayData.length === 0 ? (
-                    <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
-                      {t.stats.noTrackedTaskTime}
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-4 sm:gap-6 items-center">
-                      <div>
-                        <HighchartsReact highcharts={Highcharts} options={taskTimeChartOptions} />
-                      </div>
-                      <div className="space-y-3">
-                        {taskTimeDisplayData.map(item => (
-                          <div key={item.name} className="flex items-center justify-between gap-4">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span
-                                className="w-3 h-3 rounded-full shrink-0"
-                                style={{ backgroundColor: item.color }}
-                              />
-                              <span className="text-sm text-gray-800 dark:text-slate-100 truncate">{item.name}</span>
-                            </div>
-                            <span className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">
-                              {item.hoursLabel} ({item.percentage.toFixed(1)}%)
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Task Sessions Explorer */}
-                <div className="mt-8 stats-panel">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">{language === 'es' ? 'Sesiones por tarea' : 'Task Sessions'}</h3>
-                    <p className="text-xs text-gray-500 dark:text-slate-400">{language === 'es' ? 'Selecciona una tarea para ver sus sesiones' : 'Select a task to view its sessions'}</p>
-                  </div>
-
-                  {taskSessionsListLoading ? (
-                    <div className="flex items-center justify-center py-12">
-                      <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
-                    </div>
-                  ) : taskSessionsList.length === 0 ? (
-                    <div className="text-sm text-gray-500 dark:text-slate-400 py-8 text-center">
-                      {t.stats.noTasksFound}
-                    </div>
-                  ) : (
-                    <div className="flex flex-col lg:flex-row gap-4">
-                      {/* Left: task list */}
-                      <div className="lg:w-64 shrink-0 flex flex-col gap-1 overflow-y-auto max-h-[420px] pr-1">
-                        {taskSessionsList.map((task) => {
-                          const isSelected = selectedTaskName === task.title
-                          const hours = Math.floor(task.focusMinutes / 60)
-                          const mins = task.focusMinutes % 60
-                          const label = hours > 0 ? `${hours}h ${mins}m` : `${mins}m`
-                          return (
-                            <button
-                              key={task.id}
-                              type="button"
-                              onClick={() => handleSelectTaskForSessions(task.title)}
-                              className={`flex flex-col items-start rounded-xl px-3 py-2.5 text-left transition-colors ${
-                                isSelected
-                                  ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)]'
-                                  : 'hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-800 dark:text-slate-200'
-                              }`}
-                            >
-                              <span className={`text-sm font-medium truncate max-w-full ${task.completed ? 'line-through opacity-60' : ''}`}>
-                                {task.title}
-                              </span>
-                              <span className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{label} {t.stats.tracked}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
-
-                      {/* Right: sessions list */}
-                      <div className="flex-1 min-w-0">
-                        {!selectedTaskName ? (
-                          <div className="flex items-center justify-center h-full py-12 text-sm text-gray-400 dark:text-slate-500">
-                            {t.stats.selectTask}
-                          </div>
-                        ) : taskSessionsLoading ? (
-                          <div className="flex items-center justify-center py-12">
-                            <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
-                          </div>
-                        ) : taskSessions.length === 0 ? (
-                          <div className="flex items-center justify-center py-12 text-sm text-gray-400 dark:text-slate-500">
-                            {t.stats.noSessionsForTask}
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-2 overflow-y-auto max-h-[420px] pr-1">
-                            <div className="flex items-center justify-between mb-2 px-1">
-                              <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{selectedTaskName}</span>
-                              <span className="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap ml-2">
-                                {taskSessions.length} {t.stats.sessions} · {formatHours(taskSessionsTotalMinutes)} {t.stats.total}
-                              </span>
-                            </div>
-                            {taskSessions.map((session) => {
-                              const sessionDate = new Date(session.startedAt)
-                              const endDate = session.completedAt ? new Date(session.completedAt) : null
-                              const dateLabel = sessionDate.toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })
-                              const timeLabel = sessionDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
-                              const endLabel = endDate
-                                ? endDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
-                                : '—'
-                              const mins = session.effectiveMinutes
-                              const hrsLabel = mins >= 60 ? `${Math.floor(mins / 60)}h ${mins % 60}m` : `${mins}m`
-                              return (
-                                <div
-                                  key={session.id}
-                                  className="flex items-center justify-between gap-3 rounded-xl border border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-700/50 px-3 py-2.5"
-                                >
-                                  <div className="flex items-center gap-2 min-w-0">
-                                    <span className={`w-2 h-2 rounded-full shrink-0 ${session.type === 'TIME_TRACKING' ? 'bg-indigo-500' : 'bg-red-500'}`} />
-                                    <div className="flex flex-col min-w-0">
-                                      <span className="text-xs font-medium text-gray-800 dark:text-slate-100">{dateLabel}</span>
-                                      <span className="text-xs text-gray-400 dark:text-slate-500">{timeLabel} — {endLabel}</span>
-                                    </div>
-                                  </div>
-                                  <span className="text-sm font-semibold text-gray-900 dark:text-white whitespace-nowrap">{hrsLabel}</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </>
+              statisticsContent
             )}
 
           </>
         )}
 
         {/* Achievements */}
-        {/* <motion.div 
+        {/* <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.0 }}
           className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-6"
         >
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Achievements</h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 border border-gray-200 dark:border-slate-700 rounded-xl text-center hover:shadow-lg transition-all">
               <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center mx-auto mb-3">
@@ -1902,7 +1507,6 @@ export default function StatsPage() {
           </div>
         </motion.div> */}
 
-        <MonthlyRecaps />
       </main>
       {!isPro && showPaywall && <PaywallModal onClose={() => setShowPaywall(false)} />}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />

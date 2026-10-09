@@ -3,19 +3,10 @@
     {
       "category": "unresolved",
       "file": "app/stats/page.tsx",
-      "line": 881,
+      "line": 793,
       "message": "Native select is used without an explicit ownership decision.",
       "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
       "ruleId": "ownership.native-select-undecided",
-      "severity": "error"
-    },
-    {
-      "category": "violation",
-      "file": "app/settings/page.tsx",
-      "line": 553,
-      "message": "Literal product textarea does not show evidence of the canonical resize-none rule.",
-      "remediation": "Use the shared Textarea owner or apply resize-none/resize: none with adequate height or auto-grow behavior.",
-      "ruleId": "form.textarea-resize-missing",
       "severity": "error"
     }
   ],
@@ -23,10 +14,10 @@
   "projectRoot": "/Users/thth13/Desktop/pomo-cowork",
   "schemaVersion": 1,
   "summary": {
-    "errors": 2,
-    "total": 2,
+    "errors": 1,
+    "total": 1,
     "unresolved": 1,
-    "violations": 1,
+    "violations": 0,
     "warnings": 0
   }
 }

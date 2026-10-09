@@ -11,6 +11,7 @@ type LatestActivityProps = {
   token: string | null
   isAuthenticated: boolean
   onChange?: () => void
+  previewEntries?: PomodoroSession[]
 }
 
 type EntryFormState = {
@@ -30,9 +31,10 @@ interface OpenEntryMenuState {
 
 const ENTRIES_PAGE_SIZE = 20
 
-export default function LatestActivity({ token, isAuthenticated, onChange }: LatestActivityProps) {
-  const [timeEntries, setTimeEntries] = useState<PomodoroSession[]>([])
-  const [entriesLoading, setEntriesLoading] = useState(true)
+export default function LatestActivity({ token, isAuthenticated, onChange, previewEntries }: LatestActivityProps) {
+  const [loadedEntries, setTimeEntries] = useState<PomodoroSession[]>([])
+  const timeEntries = previewEntries ?? loadedEntries
+  const [entriesLoading, setEntriesLoading] = useState(!previewEntries)
   const [entriesPage, setEntriesPage] = useState(1)
   const [hasMoreEntries, setHasMoreEntries] = useState(false)
   const [loadingMoreEntries, setLoadingMoreEntries] = useState(false)
@@ -148,13 +150,17 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
   }, [token])
 
   useEffect(() => {
+    if (previewEntries) {
+      setEntriesLoading(false)
+      return
+    }
     if (isAuthenticated && token) {
       fetchTimeEntries(1, false)
       fetchTasks()
     } else if (!isAuthenticated) {
       setEntriesLoading(false)
     }
-  }, [fetchTasks, fetchTimeEntries, isAuthenticated, token])
+  }, [fetchTasks, fetchTimeEntries, isAuthenticated, token, previewEntries])
 
   const getSessionTypeLabel = (type: SessionType) => {
     switch (type) {
@@ -539,7 +545,7 @@ export default function LatestActivity({ token, isAuthenticated, onChange }: Lat
         </div>
         <div className="flex items-center gap-3">
           <div className="text-sm text-gray-500 dark:text-slate-400">
-            {totalEntries ?? timeEntries.length} entries
+            {previewEntries?.length ?? totalEntries ?? timeEntries.length} entries
           </div>
           {isAuthenticated && (
             <button
