@@ -33,7 +33,7 @@ const isPanelId = (value: unknown): value is PanelId =>
   value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits' || value === 'sounds'
 
 export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
-  const { user, isLoading, checkAuth } = useAuthStore()
+  const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore()
   const { t, language } = useI18n()
   const copy = gardenCopy[language]
   const ambientMixer = useAmbientSounds()
@@ -199,7 +199,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
 
   const workspaceLoading = !mounted || isLoading
 
-  const renderPanelButtons = (closeMenu?: () => void) => panels.map(({ id, title, icon: Icon }) => (
+  const renderPanelButtons = (closeMenu?: () => void) => panels.filter(({ id }) => id !== 'about' || !isAuthenticated).map(({ id, title, icon: Icon }) => (
     <button
       key={id}
       type="button"
@@ -291,10 +291,11 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
           </div>
         </>
       )}
-      {/* Keep help in the initial HTML; mount data panels on their first opening.
+      {/* Keep help in the initial HTML regardless of authentication; only its trigger is guest-only.
+          Mount data panels on their first opening.
           Retain visited bodies so closing a window preserves drafts. */}
       {panels.map(({ id, title }, index) => workspaceLoading && id !== 'about' ? null : (
-        <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)}>
+        <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id) && (id !== 'about' || !isAuthenticated)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)}>
           {(id === 'about' || openPanels.includes(id) || panelOrder.includes(id)) && (id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact isVisible={openPanels.includes(id)} /> : id === 'tasks' ? <TaskList ref={taskListRef} isVisible={openPanels.includes(id)} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution isVisible={openPanels.includes(id)} /> : <WorkHistory isVisible={openPanels.includes(id)} />)}
         </WorkspaceWindow>
       ))}

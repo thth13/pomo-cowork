@@ -132,7 +132,9 @@ the session snapshot carries the same active-access check used by the account UI
 Room pages keep their detailed session cards. Above 719px the list owns vertical scrolling.
 Flat rows use fine dividers, with the time aligned opposite the status. Pixel digits and slim progress tracks carry the identity. The English H1, “Online Pomodoro Timer for Focused Work”, and Pomodoro overview
 live inside the About the timer workspace window, opened by the question-mark dock
-button. The window is closed by default and never restored on page load, even if left
+button, available only to signed-out visitors in both the dock and mobile menu.
+Signing in hides the trigger and the window while retaining its server-rendered content.
+The window is closed by default and never restored on page load, even if left
 open on a previous visit. Its heading and full content render in the initial server HTML,
 including while the workspace is loading or checking authentication; there is one copy
 inside the shared window, with no click-dependent content loading.
