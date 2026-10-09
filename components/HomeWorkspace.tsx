@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useState, useRef, type ReactNode } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
@@ -15,7 +15,7 @@ import TodayContribution from '@/components/TodayContribution'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks, ChevronLeft, ChevronRight, Headphones } from 'lucide-react'
+import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks, ChevronRight, Headphones } from 'lucide-react'
 import Habits from '@/components/Habits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
@@ -39,6 +39,9 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const ambientMixer = useAmbientSounds()
   const [mounted, setMounted] = useState(false)
   const [workingCollapsed, setWorkingCollapsed] = useState(false)
+  const workingContentRef = useRef<HTMLDivElement>(null)
+  const workingHeightRef = useRef<number | null>(null)
+  const workingAnimationRef = useRef<Animation | null>(null)
   const taskListRef = useRef<TaskListRef>(null)
   const rank = getRank(user?.experience ?? 0)
   const [openPanels, setOpenPanels] = useState<PanelId[]>([])
@@ -93,6 +96,10 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   }, [mounted, openPanels])
 
   const toggleWorking = () => {
+    if (window.matchMedia('(max-width: 719px)').matches) {
+      workingHeightRef.current = workingContentRef.current?.getBoundingClientRect().height ?? null
+      workingAnimationRef.current?.cancel()
+    }
     const next = !workingCollapsed
     setWorkingCollapsed(next)
     try {
@@ -101,6 +108,26 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       // Keep the choice in memory when storage is unavailable.
     }
   }
+
+  useLayoutEffect(() => {
+    const content = workingContentRef.current
+    const previousHeight = workingHeightRef.current
+    workingHeightRef.current = null
+    if (!content || previousHeight === null ||
+      !window.matchMedia('(max-width: 719px)').matches ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    const nextHeight = content.getBoundingClientRect().height
+    const animation = content.animate([
+      { height: `${previousHeight}px`, overflow: 'hidden' },
+      { height: `${nextHeight}px`, overflow: 'hidden' },
+    ], { duration: 320, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' })
+    workingAnimationRef.current = animation
+    return () => {
+      animation.cancel()
+      workingAnimationRef.current = null
+    }
+  }, [workingCollapsed])
 
   useEffect(() => {
     if (!tooltipPanel) return
@@ -239,19 +266,21 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
               <PomodoroTimer idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />
             </section>
             <aside id="workspace-working" className="working-sidebar" data-collapsed={workingCollapsed} aria-label={t.activeSessions.title}>
-              <button
-                type="button"
-                className="working-sidebar-toggle"
-                aria-expanded={!workingCollapsed}
-                aria-controls="workspace-working-content"
-                aria-label={workingCollapsed ? copy.expandWorking : copy.collapseWorking}
-                title={workingCollapsed ? copy.expandWorking : copy.collapseWorking}
-                onClick={toggleWorking}
-                data-no-translate
-              >
-                {workingCollapsed ? <ChevronLeft size={16} strokeWidth={1.5} aria-hidden="true" /> : <ChevronRight size={16} strokeWidth={1.5} aria-hidden="true" />}
-              </button>
-              <div id="workspace-working-content" className="working-sidebar-content">
+              <div className="working-sidebar-header">
+                <button
+                  type="button"
+                  className="working-sidebar-toggle"
+                  aria-expanded={!workingCollapsed}
+                  aria-controls="workspace-working-content"
+                  aria-label={workingCollapsed ? copy.expandWorking : copy.collapseWorking}
+                  title={workingCollapsed ? copy.expandWorking : copy.collapseWorking}
+                  onClick={toggleWorking}
+                  data-no-translate
+                >
+                  <ChevronRight size={16} strokeWidth={1.5} aria-hidden="true" />
+                </button>
+              </div>
+              <div ref={workingContentRef} id="workspace-working-content" className="working-sidebar-content">
                 <ActiveSessions variant="page" detailsVisible={!workingCollapsed} />
               </div>
             </aside>

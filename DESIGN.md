@@ -110,7 +110,17 @@ edge of the page content without auto margins; equal inline padding centers the 
 The rail opens by default and remembers its collapsed state in browser localStorage.
 HomeWorkspace owns the disclosure; ActiveSessions keeps one live session list mounted.
 Collapsed desktop width is 96px with avatars, green presence dots and elapsed mini timers;
-small screens use a horizontal avatar strip. The page grid stays fixed during a 280ms
+tablet screens use a horizontal avatar strip. On mobile (up to 719px), the rail spans
+the timer's available width with a 44px disclosure button and no visible Currently
+Working title. Its chevron points up to collapse and down to expand; collapsing leaves
+a horizontally scrollable strip of avatars, presence dots and elapsed mini timers.
+The online count and disclosure share one 44px header row in both states; the button
+is anchored over that row rather than taking a separate row. Mobile coworkers use
+32px avatars, 10px vertical padding, 4px detail gaps and a 3px progress track.
+HomeWorkspace animates the measured content height vertically for 320ms, keeping
+ActiveSessions mounted; reduced motion disables the height and chevron animations.
+The mobile grid uses a shrinkable single column and natural content heights.
+The desktop page grid stays fixed during a 280ms
 width transition, and reduced motion disables transitions. The disclosure remains
 available in the empty state. Colors reuse pixel and local scenery roles.
 Only real sessions appear in the rail and online count; mock participants are removed.
