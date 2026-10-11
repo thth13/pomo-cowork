@@ -55,8 +55,9 @@ only to the extension ID pinned by lib/extensionIdentity.ts and the manifest pub
 through Chrome external messaging, never in a new URL, and validated on the server.
 Chrome local storage is restricted to trusted extension contexts; the token is
 removed on extension sign-out/HTTP 401 and is not synced to other browser profiles.
-Signing out leaves the site account and server timer intact. Content scripts and
-the old window-message bridge are removed.
+Signing out leaves the site account and server timer intact. The content script
+relays only account-scoped timer invalidations to the page; it never transfers
+credentials or timer snapshots. The old window-message credential bridge stays removed.
 
 `app/api/timer` owns account state and extension actions. Existing session routes
 own persistence, ownership checks, progression and rewards. Extension controls check
@@ -65,13 +66,22 @@ Registered website starts also require no existing server timer; a conflict roll
 back their temporary local session and restores the server session. Nonterminal
 updates cannot reactivate an already ended session.
 
-The extension polls every 3 seconds while popup is open and uses a 30-second Chrome
-alarm plus a session deadline alarm in the background. Chrome sleep/shutdown can
-delay completion; missed deadlines settle after reconnection/restart. Server startedAt,
+Timer synchronization has no periodic polling. Successful site session/settings writes
+emit account-scoped BroadcastChannel invalidations to other tabs and Chrome external
+messages to the extension. The worker validates the sender origin and matches
+the connected account before reading authoritative state; it notifies site tabs through
+the content script and pushes popup snapshots through chrome.storage.session. No tokens
+or timer state are accepted through this event bridge. Individual runtime messages wake
+the worker when needed; synchronization does not depend on keeping a port alive.
+The extension removes the legacy heartbeat alarm and retains only the session deadline
+alarm. Chrome sleep/shutdown can delay completion; failed deadline reads recover on
+the next opening, user action or browser startup. Server startedAt,
 paused remaining seconds and a server-clock offset own displayed time. Repeated
 completion uses the canonical idempotent server reward handler. No auto-start is
 added to the extension. `useSessionRestore` reconciles the site's timer and settings
-with its account every 5 seconds and on focus; local pending/temporary transitions
+with its account on mount, focus, reconnection, browser events and local actions.
+Other-device changes are discovered on focus/opening rather than pushed live.
+Countdown ticks remain local. Local pending/temporary transitions
 and stale reads are not overwritten. Remote ending updates presentation without
 another completion write. Site auto-start is cancelled on remote endings.
 
@@ -80,8 +90,9 @@ break after 2–10. Time track keeps account Pro eligibility and the 24-hour lim
 Settings saves affect the next session; failure preserves drafts with visible feedback.
 New extension sessions are global, with an optional title; existing sessions retain
 their site project/room/task binding. The popup loads unfinished tasks through the
-authenticated `/api/tasks` endpoint every 15 seconds while open. It preserves the
-selected task across polling, session completion and popup reopening using account-scoped
+authenticated `/api/tasks` endpoint on popup state refresh,
+with a 15-second minimum interval between task reads. It preserves the
+selected task across state updates, session completion and popup reopening using account-scoped
 Chrome local storage. A deleted or completed task is cleared on a successful list refresh.
 The LCD omits task names; running controls are Pause and Stop, paused controls are
 Resume and Stop. It hides the picker when the list is empty, and locks
@@ -93,7 +104,7 @@ full recovery message appears below the row. Its non-modal sign-out disclosure c
 exit or Escape (which restores trigger focus). Time track uses an immediate switch
 inside timer settings, disabled during sessions or without Pro; the Pomodoro mode
 buttons are hidden while tracking. Popup draft settings are transient and survive
-polling. Account changes clear drafts. Language follows authorization (English/Spanish).
+state updates. Account changes clear drafts. Language follows authorization (English/Spanish).
 Network failure disables controls until fresh sync; uncertain commands are not retried
 silently. `chrome-extension/README.md` documents installation and manual verification.
 No builds, application startup, tsc or runtime tests are run per user instructions.

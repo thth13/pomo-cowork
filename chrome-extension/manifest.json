@@ -11,6 +11,16 @@
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [{
+    "matches": [
+      "https://pomo-co.work/*",
+      "https://www.pomo-co.work/*",
+      "http://localhost/*",
+      "http://127.0.0.1/*"
+    ],
+    "js": ["timer-events.js"],
+    "run_at": "document_start"
+  }],
   "host_permissions": [
     "https://pomo-co.work/*",
     "https://www.pomo-co.work/*",

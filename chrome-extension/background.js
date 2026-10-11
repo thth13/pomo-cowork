@@ -1,11 +1,13 @@
-const HEARTBEAT = 'pomo:account-sync'
 const DEADLINE = 'pomo:deadline'
 const DEFAULT_SITE = 'https://pomo-co.work'
 const defaults = { workDuration: 25, shortBreak: 5, longBreak: 15, longBreakAfter: 4 }
 const modes = ['WORK', 'SHORT_BREAK', 'LONG_BREAK', 'TIME_TRACKING']
 let busy = false
 let syncPending = null
+let changePending = false
 const ready = Promise.all([
+  // Remove the repeating alarm left by older extension versions.
+  chrome.alarms.clear('pomo:account-sync'),
   chrome.storage.local.setAccessLevel({ accessLevel: 'TRUSTED_CONTEXTS' }),
   fetch(chrome.runtime.getURL('tokens.css')).then(response => response.text()).then(css => {
     const color = css.match(/--pixel-tomato:\s*(#[\da-f]+);/i)?.[1]
@@ -43,11 +45,8 @@ async function api(path, body, override) {
 async function clearAccount() {
   await chrome.storage.local.remove(['accountToken'])
   await chrome.storage.session.remove(['snapshot', 'pendingAuth'])
-  await Promise.all([chrome.alarms.clear(HEARTBEAT), chrome.alarms.clear(DEADLINE)])
+  await chrome.alarms.clear(DEADLINE)
   await chrome.action.setBadgeText({ text: '' })
-}
-async function ensureHeartbeat() {
-  if (!(await chrome.alarms.get(HEARTBEAT))) await chrome.alarms.create(HEARTBEAT, { periodInMinutes: .5 })
 }
 async function synchronize() {
   if (syncPending) return syncPending
@@ -101,14 +100,33 @@ async function readAccount() {
     sampledAt: Date.now(), clockOffset: account.serverNow - Date.now(), siteUrl: credentials.siteUrl || DEFAULT_SITE, prefsKey,
   }
   await chrome.storage.session.set({ snapshot: state })
-  await ensureHeartbeat()
   if (session?.status === 'ACTIVE') {
     const deadline = Date.parse(session.startedAt) + session.duration * 60000 - state.clockOffset
     const existing = await chrome.alarms.get(DEADLINE)
     if (!existing || Math.abs(existing.scheduledTime - deadline) > 1000) await chrome.alarms.create(DEADLINE, { when: Math.max(Date.now() + 1000, deadline) })
   } else await chrome.alarms.clear(DEADLINE)
   await chrome.action.setBadgeText({ text: session ? session.status === 'PAUSED' ? 'Ⅱ' : '▶' : '' })
+  void notifySiteTabs(state)
   return state
+}
+
+async function notifySiteTabs(state) {
+  try {
+    const origin = allowedOrigin(state.siteUrl)
+    const tabs = await chrome.tabs.query({ url: [
+      'https://pomo-co.work/*', 'https://www.pomo-co.work/*', 'http://localhost/*', 'http://127.0.0.1/*',
+    ] })
+    await Promise.all(tabs.filter(tab => tab.url && new URL(tab.url).origin === origin).map(tab => tab.id === undefined ? undefined :
+      chrome.tabs.sendMessage(tab.id, { source: 'pomo:extension:timer-changed', userId: state.userId }).catch(() => {})))
+  } catch { /* Tabs without the content script reconcile when focused. */ }
+}
+
+async function flushChanges() {
+  if (busy || !changePending) return
+  changePending = false
+  // An earlier read may have started before the site's write committed.
+  if (syncPending) await syncPending.catch(() => {})
+  await wake()
 }
 async function beginLogin(siteUrl) {
   if (busy) throw new Error('BUSY')
@@ -132,7 +150,7 @@ async function handle(message) {
       if (syncPending) await syncPending.catch(() => {})
       await clearAccount()
       return { state: { authenticated: false } }
-    } finally { busy = false }
+    } finally { busy = false; void flushChanges() }
   }
   if (message.action === 'state') {
     if (busy) {
@@ -173,7 +191,7 @@ async function handle(message) {
     } else throw new Error('INVALID_SETTINGS')
     busy = false
     return { state: await synchronize() }
-  } finally { busy = false }
+  } finally { busy = false; void flushChanges() }
 }
 chrome.runtime.onMessage.addListener((message, sender, respond) => {
   if (sender.id !== chrome.runtime.id || !sender.url?.startsWith(chrome.runtime.getURL('popup.html')) || message?.source !== 'pomo:extension:popup') return
@@ -181,6 +199,18 @@ chrome.runtime.onMessage.addListener((message, sender, respond) => {
   return true
 })
 chrome.runtime.onMessageExternal.addListener((message, sender, respond) => {
+  if (message?.source === 'pomo:timer-changed') {
+    void (async () => {
+      const origin = allowedOrigin(sender.url)
+      const credentials = await auth()
+      if (!credentials.accountToken || allowedOrigin(credentials.siteUrl || DEFAULT_SITE) !== origin) return
+      const { snapshot } = await chrome.storage.session.get('snapshot')
+      if (!snapshot || snapshot.userId !== message.userId) return
+      changePending = true
+      await flushChanges()
+    })().then(() => respond({ success: true })).catch(() => respond({ success: false }))
+    return true
+  }
   if (message?.source !== 'pomo:account:authorize') return
   void (async () => {
     await ready
@@ -196,14 +226,17 @@ chrome.runtime.onMessageExternal.addListener((message, sender, respond) => {
       busy = false
       await synchronize()
       respond({ success: true })
-    } finally { busy = false }
+    } finally { busy = false; void flushChanges() }
   })().catch(() => respond({ success: false }))
   return true
 })
 async function wake() {
-  try { if ((await auth()).accountToken) await synchronize() } catch { /* Retry on the next alarm or popup request. */ }
+  try { if ((await auth()).accountToken) await synchronize() } catch { /* Retry on the next user action or browser startup. */ }
 }
-chrome.alarms.onAlarm.addListener(alarm => { if ([HEARTBEAT, DEADLINE].includes(alarm.name) && !busy) void wake() })
+chrome.alarms.onAlarm.addListener(alarm => {
+  if (alarm.name !== DEADLINE) return
+  changePending = true
+  void flushChanges()
+})
 chrome.runtime.onStartup.addListener(() => void wake())
 chrome.runtime.onInstalled.addListener(() => void wake())
-void ready.then(wake).catch(() => {})

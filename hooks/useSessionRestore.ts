@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { sendMessageToServiceWorker } from '@/lib/serviceWorker'
 import { isTimerSettingsSavePending } from '@/services/timerSettingsService'
+import { subscribeTimerChanges } from '@/lib/timerEvents'
 
 interface AccountTimerSnapshot {
   session: PomodoroSession | null
@@ -50,10 +51,27 @@ export function useSessionRestore(options: UseSessionRestoreOptions) {
     })
     if (!response.ok) throw new Error(`Timer sync failed: ${response.status}`)
     return { ...await response.json(), localFingerprint, blockedDuringRequest: startedBusy || latest.current.busy || isTimerSettingsSavePending() }
-  }, { refreshInterval: 5000, refreshWhenHidden: true, revalidateOnFocus: true, dedupingInterval: 1000 })
+  }, {
+    // Changes arrive through browser events; seconds are counted locally.
+    refreshInterval: 0,
+    refreshWhenHidden: false,
+    revalidateOnFocus: true,
+    dedupingInterval: 1000,
+    shouldRetryOnError: false,
+  })
 
   useEffect(() => {
-    if (!data || data.blockedDuringRequest || lastAppliedSnapshot.current === data || data.user.id !== userId || latest.current.busy || isTimerSettingsSavePending() || fingerprint() !== data.localFingerprint) return
+    if (!userId) return
+    return subscribeTimerChanges(userId, () => { void mutate().catch(() => {}) })
+  }, [userId, mutate])
+
+  useEffect(() => {
+    if (!data || lastAppliedSnapshot.current === data || data.user.id !== userId || latest.current.busy || isTimerSettingsSavePending()) return
+    if (data.blockedDuringRequest || fingerprint() !== data.localFingerprint) {
+      // Without polling, a read racing a local action needs one fresh snapshot.
+      void mutate().catch(() => {})
+      return
+    }
     lastAppliedSnapshot.current = data
     const { user, restoreSession, setSessionType, emitSessionSync, ignoreSessionIdRef, onRemoteEnd, onRemoteMode } = latest.current
     if (!user) return

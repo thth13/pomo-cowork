@@ -302,4 +302,11 @@ localize()
 draw()
 void refresh()
 window.setInterval(draw, 1000)
-window.setInterval(() => void refresh(), 3000)
+// The background worker pushes snapshots after actions and deadline completion.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'session' || !changes.snapshot) return
+  if (changes.snapshot.newValue) applyState(changes.snapshot.newValue)
+  else applyState({ authenticated: false })
+})
+window.addEventListener('online', () => void refresh())
+window.addEventListener('focus', () => void refresh())

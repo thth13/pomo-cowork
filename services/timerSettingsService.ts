@@ -1,5 +1,6 @@
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
+import { notifyTimerChanged } from '@/lib/timerEvents'
 
 export interface TimerDurations {
   workDuration: number
@@ -43,6 +44,7 @@ async function persistTimerDurations(settings: TimerDurations, preferences: { so
   }
   useTimerStore.getState().setTimerSettings(settings)
   if (user) updateUserSettings({ ...settings, ...preferences })
+  if (user && !user.isAnonymous) notifyTimerChanged(user.id)
 }
 
 export async function saveTimerDurations(settings: TimerDurations, preferences: { soundEnabled?: boolean; soundVolume?: number; notificationsEnabled?: boolean } = {}) {

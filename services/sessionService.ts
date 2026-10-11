@@ -2,6 +2,7 @@ import { PomodoroSession, SessionType } from '@/types'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useProjectSelection } from '@/store/useProjectSelection'
+import { notifyTimerChanged } from '@/lib/timerEvents'
 
 export interface SessionData {
   task: string
@@ -73,6 +74,7 @@ const applySessionProgression = (result: SessionUpdateResult) => {
 export const sessionService = {
   async create(data: SessionData): Promise<PomodoroSession> {
     const token = useAuthStore.getState().token
+    const userId = useAuthStore.getState().user?.id
     const body: Record<string, any> = {
       task: data.task,
       duration: data.duration,
@@ -109,7 +111,9 @@ export const sessionService = {
       throw new Error('Failed to create session')
     }
 
-    return response.json()
+    const session = await response.json()
+    notifyTimerChanged(userId)
+    return session
   },
 
   async update(id: string, data: Record<string, any>) {
@@ -118,6 +122,7 @@ export const sessionService = {
     }
 
     const token = useAuthStore.getState().token
+    const userId = useAuthStore.getState().user?.id
 
     const body = {
       ...data,
@@ -138,6 +143,7 @@ export const sessionService = {
     }
 
     const result = await response.json()
+    notifyTimerChanged(userId)
     if (data.status === 'COMPLETED' || data.status === 'CANCELLED') {
       return applySessionProgression(result)
     }
@@ -179,7 +185,9 @@ export const sessionService = {
         throw new Error(`Failed to complete session ${id}, status ${response.status}`)
       }
 
-      return applySessionProgression(await response.json())
+      const result = await response.json()
+      notifyTimerChanged(owner)
+      return applySessionProgression(result)
     })()
 
     pendingCompletions.set(key, completion)
