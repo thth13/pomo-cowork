@@ -538,7 +538,8 @@ Source: user request 2026-10-14; task API and project-color migration enforce th
 only root project records store nullable palette keys. ProjectColorPicker is shared
 by create and rename. The draft color saves together with the project name, remains
 on failure, and resets after successful creation; cancel discards rename changes.
-useQuickTasks updates shared options after saving, so project/task titles and the timer
-picker follow the same project color. API validation and a database constraint reject
+useQuickTasks updates shared options after saving, so project titles and project names
+in the timer picker follow the project color; child-task titles keep their normal text
+color. API validation and a database constraint reject
 independent task colors and unknown palette values. Existing ownership checks apply.
 Verification is static; application execution, builds and tsc are excluded by request.

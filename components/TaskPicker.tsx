@@ -150,7 +150,7 @@ export const TaskPicker = memo(function TaskPicker({
           className={`current-task-trigger ${variant === 'mini-timer' ? 'mini-timer-task-trigger' : ''}`}
         >
           {!selectedTask && <Plus size={16} aria-hidden="true" />}
-          <span style={projectColorStyle(allOptions.find(option => option.id === (selectedTask?.parentId ?? selectedTask?.id))?.color)}>{selectedTask?.parentId && selectedTask.projectTitle ? `${selectedTask.projectTitle} / ` : ''}{selectedTask?.title ?? copy.prompt}</span>
+          <span>{selectedTask?.parentId && selectedTask.projectTitle ? <><span style={projectColorStyle(allOptions.find(option => option.id === selectedTask.parentId)?.color)}>{selectedTask.projectTitle}</span>{' / '}</> : null}<span style={selectedTask && !selectedTask.parentId ? projectColorStyle(selectedTask.color) : undefined}>{selectedTask?.title ?? copy.prompt}</span></span>
           <ChevronDown size={14} aria-hidden="true" className={isVisible ? 'rotate-180' : ''} />
         </button>
 
@@ -214,7 +214,7 @@ export const TaskPicker = memo(function TaskPicker({
                           <div className="task-option-row" data-selected={selectedTask?.id === task.id}>
                             {!task.parentId && <button type="button" className="task-option-disclosure" aria-label={`${copy.tasks}: ${task.title}`} aria-expanded={Boolean(queryText) || expandedProjects.includes(task.id)} onClick={() => setExpandedProjects(previous => previous.includes(task.id) ? previous.filter(id => id !== task.id) : [...previous, task.id])}><ChevronDown size={12} strokeWidth={1.5} aria-hidden="true" className={queryText || expandedProjects.includes(task.id) ? '' : '-rotate-90'} /></button>}
                             <button type="button" className="task-option-select" aria-label={task.parentId ? `${project.title} / ${task.title}` : task.title} aria-pressed={selectedTask?.id === task.id} onClick={() => select(task)}>
-                              <span><span className="task-option-title" style={projectColorStyle(project.color)}>{task.title}</span></span>
+                              <span><span className="task-option-title" style={!task.parentId ? projectColorStyle(project.color) : undefined}>{task.title}</span></span>
                               {selectedTask?.id === task.id && <Check size={16} aria-hidden="true" />}
                             </button>
                           </div>

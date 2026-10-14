@@ -774,8 +774,9 @@ Its manual native popover uses the browser top layer so dialog blur and overflow
 not alter viewport positioning or clip the palette. Placement clamps to the visual
 viewport and updates on scrolling, resizing and virtual-keyboard viewport changes.
 `app/globals.css` owns light/dark `--project-color-*` tokens; `lib/projectColors.ts`
-owns stable keys and English/Spanish labels. ProjectList and TaskPicker derive title
-colors from the project, including child tasks; tasks have no independent color control.
+owns stable keys and English/Spanish labels. ProjectList and TaskPicker color only
+project titles; child-task titles retain their normal text color. In the selected
+project/task caption, only the project name carries its color. Tasks have no color control.
 Existing projects retain default text until a color is chosen.
 
 The project-color trigger stays transparent in idle, hover and pressed states; only

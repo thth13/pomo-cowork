@@ -138,7 +138,7 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
               {taskRenameError && <p role="alert">{text('Could not rename the task. Please try again.', 'No se pudo renombrar la tarea. Inténtalo de nuevo.')}</p>}
             </form> : <label className={todo.completed ? 'is-complete' : ''}>
               <input type="checkbox" checked={Boolean(todo.completed)} disabled={saving} onChange={() => void mutate(async () => ({ task: await taskService.update(todo.id, { completed: !todo.completed }) }))} />
-              <span style={projectColorStyle(project.color)}>{todo.title}</span>
+              <span>{todo.title}</span>
             </label>}
             {showSelectionButtons && <button type="button" className="focus-project-icon focus-timer-task" data-active={session?.taskRecordId === todo.id} disabled={Boolean(session) || timerBusy || !startTask || saving || todo.completed || project.completed} aria-label={`${text('Start timer for task', 'Iniciar temporizador para tarea')}: ${todo.title}`} title={session ? text('Stop the current session before starting another task.', 'Detén la sesión actual antes de iniciar otra tarea.') : text('Select this task and start the timer', 'Seleccionar esta tarea e iniciar el temporizador')} onClick={() => { if (startTask) void startTask(todo) }}><Play size={16} aria-hidden="true" /></button>}
             {editingTask?.id !== todo.id && <ProjectActions kind="task" title={todo.title} disabled={saving || Boolean(editingTask)} onRename={() => { setEditingTask(todo); setTaskTitle(todo.title); setTaskRenameError(false); setDeleteStatus('') }} onDelete={() => { setDeleteTarget(todo); setDeleteError(false); setDeleteStatus('') }} />}
