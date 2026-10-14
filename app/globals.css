@@ -1298,7 +1298,61 @@ textarea {
   }
 }
 
+.kofi-widget {
+  position: fixed;
+  left: calc(24px + env(safe-area-inset-left));
+  top: calc(20px + env(safe-area-inset-top));
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  min-width: 220px;
+}
+
+body:has(.workspace-page[aria-busy="true"]) .kofi-widget {
+  display: none;
+}
+
+.kofi-widget .kofi-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 220px;
+  min-height: 44px;
+  padding: 2px 12px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.kofi-widget .kofi-button:hover {
+  filter: brightness(1.08);
+}
+
+.kofi-widget .kofi-button:active {
+  filter: brightness(.95);
+}
+
+.kofi-widget .kofi-button:focus-visible {
+  outline: 2px solid var(--pixel-ink);
+  outline-offset: 3px;
+}
+
 @media (max-width: 719px) {
+  .kofi-widget {
+    left: calc(16px + env(safe-area-inset-left));
+    top: calc(16px + env(safe-area-inset-top));
+  }
+
+  body:has(.workspace-navigation) .kofi-widget {
+    top: calc(72px + env(safe-area-inset-top));
+  }
+
   body:has(.workspace-dock) .feedback-widget {
     bottom: calc(16px + env(safe-area-inset-bottom));
     right: 16px;

@@ -216,6 +216,28 @@ respects prefers-reduced-motion. Focus rings remain visible; meters expose names
 numeric values. No progress announcements every second. Fonts have local fallbacks;
 external font loading is consistent with the project's existing Google Fonts setup.
 
+The shared layout includes a fixed Ko-fi support link at the top left, using the
+react-kofi's KoFiPanel opened by “Support Pomo Cowork” in muted forest #52664B, a
+provider-specific color chosen for white-label contrast and the garden palette.
+The package's kofi.css is loaded before the application styles; Tailwind scans its
+distribution. A native button opens CommunityDialog's kofi-support variant with the
+embedded Ko-fi form, close action, Escape, backdrop dismissal and focus restoration.
+The iframe mounts only while open; a separate link opens Ko-fi in a new tab if needed.
+The support widget renders only after hydration and the initial auth check; the
+homepage's aria-busy workspace also hides its trigger until workspace restoration ends.
+The modal fits narrow/short viewports and the embedded document scrolls. Its iframe
+caps at 644px to fit the coffee quantity controls and trim the blank area below the provider footer;
+the external-link row uses compact 6px vertical padding. Shorter viewports retain
+scrolling inside the embedded form. The user requested an
+always-white shell matching Ko-fi, including in dark and scenery themes: local neutral
+tokens, a 400px maximum width, 12px corners and soft shadow. The header is visually
+hidden but keeps the accessible title; a circular close icon overlays the iframe's
+top-right corner with a 44px target. The iframe has no surrounding padding. This explicit
+variant retains CommunityDialog behavior while excluding scene glass styling. The target
+is at least 44px high with visible keyboard focus. Below 720px it sits beneath compact navigation to avoid overlap.
+English/Spanish accessible labels follow
+I18nProvider through gardenCopy; Ko-fi owns the embedded form's language and content.
+
 ## Native mini timer
 
 The native mini timer opens from the top-left pop-out button on the shared timer.

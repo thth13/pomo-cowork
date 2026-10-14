@@ -61,6 +61,20 @@
 .community-dialog-heading h2 { font-size: 20px; font-weight: 650; line-height: 1.5; }
 .community-dialog-heading p { font-size: 13px; line-height: 1.7; color: var(--pixel-muted); margin-top: 6px; }
 .community-dialog-body { padding: 24px; }
+.community-dialog.kofi-support-dialog { --pixel-paper: #fff; --pixel-ink: #25252b; --pixel-muted: #71717a; --pixel-line: #ececf0; --pixel-screen: #f4f4f5; --pixel-shadow: #e9e9ec; width: min(400px, calc(100vw - 24px)); max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: hidden; background: #fff; color: #25252b; color-scheme: light; border: 0; border-radius: 12px; box-shadow: 0 24px 80px rgb(0 0 0 / 24%), 0 4px 16px rgb(0 0 0 / 10%); }
+.kofi-support-dialog::backdrop { background: rgb(0 0 0 / 45%); }
+.kofi-support-dialog .community-dialog-heading { position: absolute; inset: 0 0 auto; z-index: 1; display: block; padding: 0; border: 0; pointer-events: none; }
+.kofi-support-dialog .community-dialog-heading > div { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.kofi-support-dialog .community-icon-button { position: absolute; top: 0; right: 0; width: 44px; height: 44px; border: 0; border-radius: 50%; background: radial-gradient(circle at center, #e9e9ec 12px, transparent 13px); color: #71717a; pointer-events: auto; }
+.kofi-support-dialog .community-icon-button:hover:not(:disabled) { background: radial-gradient(circle at center, #dedee3 12px, transparent 13px); color: #25252b; }
+.kofi-support-dialog .community-icon-button:active:not(:disabled) { background: radial-gradient(circle at center, #d0d0d7 12px, transparent 13px); }
+.kofi-support-dialog .community-icon-button:focus-visible { outline: 2px solid #52664b; outline-offset: -5px; }
+.kofi-support-dialog .community-dialog-body { padding: 0; }
+.kofi-support-dialog iframe { display: block; height: min(644px, calc(100dvh - 60px - env(safe-area-inset-top) - env(safe-area-inset-bottom))); padding: 0 !important; color-scheme: light; }
+.kofi-dialog-link { display: block; min-height: 32px; padding: 6px 16px; color: var(--pixel-ink); text-align: center; font-size: 12px; text-decoration: underline; cursor: pointer; }
+.kofi-dialog-link:hover { background: var(--pixel-screen); }
+.kofi-dialog-link:active { background: var(--pixel-shadow); }
+.kofi-dialog-link:focus-visible { outline: 2px solid var(--pixel-ink); outline-offset: -4px; }
 .community-dialog-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 .community-dialog-actions .community-button-danger:first-child { margin-right: auto; }
 .community-avatar { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--pixel-line); background: var(--pixel-screen); color: var(--pixel-ink); border-radius: 3px; font-size: 14px; font-weight: 600; }

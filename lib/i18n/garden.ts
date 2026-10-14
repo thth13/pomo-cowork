@@ -1,5 +1,7 @@
 export const gardenCopy = {
   en: {
+    supportKofi: 'Support Pomo Cowork',
+    openKofi: 'Open Ko-fi in a new tab',
     guestSignup: {
       title: 'Join the community and track your focus statistics.',
       description: 'Create a free account to follow your progress, celebrate each session, and build a habit you can be proud of.',
@@ -24,6 +26,8 @@ export const gardenCopy = {
     cooldown: 'Pet and water again after 30 minutes.', noFood: 'Finish a focus session to earn food.', ready: 'Ready when you are',
   },
   es: {
+    supportKofi: 'Apoya a Pomo Cowork',
+    openKofi: 'Abrir Ko-fi en una nueva pestaña',
     guestSignup: {
       title: 'Únete a la comunidad y sigue tus estadísticas de concentración.',
       description: 'Crea una cuenta gratis para seguir tu progreso, celebrar cada sesión y construir un hábito del que sentirte orgulloso.',

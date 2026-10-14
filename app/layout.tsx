@@ -1,3 +1,4 @@
+import 'react-kofi/dist/kofi.css'
 import './globals.css'
 import './appearance.css'
 import './community.css'
@@ -18,6 +19,7 @@ import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
 import FeedbackWidget from '@/components/FeedbackWidget'
+import KofiWidget from '@/components/KofiWidget'
 import GtmClient from '@/components/GtmClient'
 import { I18nProvider } from '@/components/I18nProvider'
 import RankUpToast from '@/components/RankUpToast'
@@ -114,6 +116,7 @@ export default function RootLayout({
                 <PremiumGrantModal />
               <JournalToast />
                 <WrappedProvider>{children}</WrappedProvider>
+                <KofiWidget />
                 <div className="hidden sm:block">
                   <FeedbackWidget />
                 </div>

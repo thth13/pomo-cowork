@@ -257,7 +257,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   ))
 
   return (
-    <div className="workspace-page garden-page">
+    <div className="workspace-page garden-page" aria-busy={workspaceLoading}>
       <ResetWrappedNotificationButton />
       {workspaceLoading ? (
         <div className="h-full flex items-center justify-center bg-slate-50 dark:bg-slate-950">
