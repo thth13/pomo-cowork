@@ -1,7 +1,7 @@
 export const statisticsCopy = {
   en: {
     title: 'Your focus, in perspective.', eyebrow: 'My statistics', subtitle: 'Small sessions. A bigger picture.',
-    navigation: 'Statistics · new', newView: 'New dashboard ↗', classic: 'Classic statistics', timer: 'Back to timer',
+    navigation: 'Statistics', newView: 'New dashboard ↗', classic: 'Classic statistics', timer: 'Back to timer',
     thisWeek: 'This week', lastWeek: 'Last week', weeklyFocus: 'Focused this week', versus: 'vs last week',
     newWeek: 'A new week of focus', same: 'Same as last week', weekNote: 'Monday–Sunday · this week is still in progress',
     streak: 'day streak', rank: 'Your rank', nextRank: 'Next rank', highestRank: 'Highest rank reached',
@@ -33,7 +33,7 @@ export const statisticsCopy = {
   },
   es: {
     title: 'Tu enfoque, en perspectiva.', eyebrow: 'Mis estadísticas', subtitle: 'Pequeñas sesiones. Una visión más amplia.',
-    navigation: 'Estadísticas · nuevo', newView: 'Nuevo panel ↗', classic: 'Estadísticas clásicas', timer: 'Volver al temporizador',
+    navigation: 'Estadísticas', newView: 'Nuevo panel ↗', classic: 'Estadísticas clásicas', timer: 'Volver al temporizador',
     thisWeek: 'Esta semana', lastWeek: 'Semana pasada', weeklyFocus: 'Enfoque esta semana', versus: 'vs. semana pasada',
     newWeek: 'Una nueva semana de enfoque', same: 'Igual que la semana pasada', weekNote: 'Lunes–domingo · esta semana sigue en curso',
     streak: 'días consecutivos', rank: 'Tu rango', nextRank: 'Siguiente rango', highestRank: 'Rango máximo alcanzado',

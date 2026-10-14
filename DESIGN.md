@@ -736,3 +736,8 @@ Sessions retain the legacy activity caption and journal `projectId`, with separa
 has no taskRecordId. Project totals include work and time tracking, including time
 from deleted child tasks; IDs preserve attribution across renames. Historical
 same-title sessions resolve to the oldest matching project to avoid double counting.
+
+Navbar navigation lists Timer, authenticated Projects, Rooms, Leaderboard, Statistics
+and Habits. Projects follows Timer and uses Projects/Proyectos in both locales.
+Rooms and Statistics have no release badges. Stats, Blog, Feed and Edit profile
+are omitted from Navbar menus; profile and settings remain in the account section.

@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import ThemeToggle from './ThemeToggle'
-import { Crown, User, Menu, X, ListChecks, Timer, Users, Trophy, LineChart, BarChart3, BookOpen, Settings, LogOut, ChevronRight } from 'lucide-react'
+import { Crown, User, Menu, X, ListChecks, Timer, Users, Trophy, BarChart3, BookOpen, Settings, LogOut, ChevronRight } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
@@ -26,7 +26,6 @@ import {
   faArrowRightFromBracket,
   faArrowUpRightFromSquare,
   faChartLine,
-  faBookOpen,
   faClock,
   faCog,
   faUsers
@@ -497,6 +496,9 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             >
               <FontAwesomeIcon icon={faClock} className="mr-2" />{t.nav.timer}
             </Link>
+            {isAuthenticated && user && <Link prefetch={false} href="/projects" aria-current={pathname.startsWith('/projects') ? 'page' : undefined} className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all ${pathname.startsWith('/projects') ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
+              <BookOpen size={16} className="mr-2" aria-hidden="true" />{language === 'es' ? 'Proyectos' : 'Projects'}
+            </Link>}
             <Link prefetch={false}
               href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
@@ -506,12 +508,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               }`}
             >
               <FontAwesomeIcon icon={faUsers} className="mr-2" />
-              <span className="relative inline-flex items-center">
-                <span>{t.nav.rooms}</span>
-                <span className="pointer-events-none absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 rounded-full border border-amber-200 bg-amber-50 px-1 py-[1px] text-[8px] font-semibold uppercase leading-none tracking-wide text-amber-700 dark:border-amber-400/30 dark:bg-amber-500/10 dark:text-amber-300">
-                  {t.common.beta}
-                </span>
-              </span>
+              <span>{t.nav.rooms}</span>
             </Link>
             <Link prefetch={false}
               href="/leaderboard"
@@ -523,30 +520,11 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             >
               <FontAwesomeIcon icon={faUsers} className="mr-2" />{t.nav.leaderboard}
             </Link>
-            <div className="flex flex-col items-start">
-            <Link prefetch={false}
-              href="/stats"
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                pathname === '/stats'
-                  ? 'bg-rose-600 text-white'
-                  : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
-              }`}
-            >
-              <FontAwesomeIcon icon={faChartLine} className="mr-2 text-xs" />{t.nav.stats}
+            <Link prefetch={false} href="/statistics" aria-current={pathname === '/statistics' ? 'page' : undefined} className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all ${pathname === '/statistics' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
+              <FontAwesomeIcon icon={faChartLine} className="mr-2" />{statisticsCopy[language].navigation}
             </Link>
-            <Link prefetch={false} href="/statistics" aria-current={pathname === '/statistics' ? 'page' : undefined} className={`inline-flex items-center px-4 py-1 rounded-lg text-xs font-medium transition-all ${pathname === '/statistics' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
-              {statisticsCopy[language].newView}
-            </Link>
-            </div>
             <Link prefetch={false} href="/habits" aria-current={pathname === '/habits' ? 'page' : undefined} className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all ${pathname === '/habits' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
               <ListChecks size={16} className="mr-2" aria-hidden="true" />{habitsCopy[language].title}
-            </Link>
-            <Link prefetch={false}
-              href="/blog"
-              aria-current={pathname.startsWith('/blog') ? 'page' : undefined}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${pathname.startsWith('/blog') ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}
-            >
-              <FontAwesomeIcon icon={faBookOpen} className="mr-2" />Blog
             </Link>
           </nav>
           
@@ -625,9 +603,6 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                           <span>{t.nav.profile}</span>
                           <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="text-xs" />
                         </Link>
-                        <Link prefetch={false} href="/projects" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Mis proyectos' : 'My projects'}</Link>
-                        <Link prefetch={false} href="/feed" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Novedades' : 'Feed'}</Link>
-                        <Link prefetch={false} href="/settings/profile" onClick={() => setIsMenuOpen(false)} className="flex px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-800">{language === 'es' ? 'Editar perfil' : 'Edit profile'}</Link>
                         <Link prefetch={false}
                           href="/settings"
                           onClick={() => setIsMenuOpen(false)}
@@ -790,19 +765,16 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             <nav className="workspace-menu-links" aria-label={gardenCopy[language].menu}>
               {[
                 { href: '/', label: t.nav.timer, icon: Timer, active: pathname === '/' },
-                { href: currentRoomId ? `/rooms/${currentRoomId}` : '/rooms', label: t.nav.rooms, icon: Users, active: pathname.startsWith('/rooms'), beta: true },
+                ...(isAuthenticated && user ? [{ href: '/projects', label: language === 'es' ? 'Proyectos' : 'Projects', icon: BookOpen, active: pathname.startsWith('/projects') }] : []),
+                { href: currentRoomId ? `/rooms/${currentRoomId}` : '/rooms', label: t.nav.rooms, icon: Users, active: pathname.startsWith('/rooms') },
                 { href: '/leaderboard', label: t.nav.leaderboard, icon: Trophy, active: pathname === '/leaderboard' },
-                { href: '/stats', label: t.nav.stats, icon: LineChart, active: pathname === '/stats' },
                 { href: '/statistics', label: statisticsCopy[language].navigation, icon: BarChart3, active: pathname === '/statistics' },
                 { href: '/habits', label: habitsCopy[language].title, icon: ListChecks, active: pathname === '/habits' },
-                { href: '/feed', label: language === 'es' ? 'Novedades' : 'Feed', icon: BookOpen, active: pathname === '/feed' },
-                { href: '/blog', label: 'Blog', icon: BookOpen, active: pathname.startsWith('/blog') },
-              ].map(({ href, label, icon: Icon, active, beta }) => (
+              ].map(({ href, label, icon: Icon, active }) => (
                 <Link prefetch={false} key={href} href={href} onClick={handleMobileLinkClick}
                   aria-current={active ? 'page' : undefined} className="workspace-menu-item">
                   <Icon size={16} aria-hidden="true" />
                   <span className="workspace-menu-label">{label}</span>
-                  {beta && <span className="workspace-menu-badge">{t.common.beta}</span>}
                   {active && <ChevronRight size={14} className="workspace-menu-current" aria-hidden="true" />}
                 </Link>
               ))}
@@ -820,8 +792,6 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 <User size={16} aria-hidden="true" />
                 <span className="workspace-menu-label">{t.nav.profile}</span>
               </Link>
-              <Link prefetch={false} href="/projects" onClick={handleMobileLinkClick} className="workspace-menu-item"><BookOpen size={16} aria-hidden="true"/><span className="workspace-menu-label">{language === 'es' ? 'Mis proyectos' : 'My projects'}</span></Link>
-              <Link prefetch={false} href="/settings/profile" onClick={handleMobileLinkClick} className="workspace-menu-item"><User size={16} aria-hidden="true"/><span className="workspace-menu-label">{language === 'es' ? 'Editar perfil' : 'Edit profile'}</span></Link>
               <Link prefetch={false}
                 href="/settings"
                 onClick={handleMobileLinkClick}
