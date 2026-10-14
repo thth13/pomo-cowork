@@ -17,16 +17,29 @@ export function useQuickTasks(isOpen: boolean) {
   const [revision, setRevision] = useState(0)
   const pending = useRef(false)
   const generation = useRef(0)
+  const loadedRevision = useRef<number | null>(null)
 
   useEffect(() => {
-    if (!isOpen) return
+    loadedRevision.current = null
+    setLoadError(false)
+  }, [token])
+
+  useEffect(() => {
+    if (!isOpen || loadedRevision.current === revision) {
+      setLoading(false)
+      return
+    }
     const controller = new AbortController()
     const requestGeneration = ++generation.current
     setLoading(true)
     setLoadError(false)
     setError(false)
     taskService.list(controller.signal).then(tasks => {
-      if (!controller.signal.aborted && requestGeneration === generation.current) useTimerStore.getState().setTaskOptions(tasks)
+      if (!controller.signal.aborted && requestGeneration === generation.current && token === useAuthStore.getState().token) {
+        useTimerStore.getState().setTaskOptions(tasks)
+        // An empty list is also a successful load; reopening needs no request.
+        loadedRevision.current = revision
+      }
     }).catch(() => {
       if (!controller.signal.aborted) setLoadError(true)
     }).finally(() => {
@@ -36,7 +49,7 @@ export function useQuickTasks(isOpen: boolean) {
   }, [isOpen, token, revision])
 
   useEffect(() => {
-    if (!isOpen) return
+    // Invalidate while closed too, so the next opening sees changes.
     const refresh = () => setRevision(value => value + 1)
     window.addEventListener(TASK_CHANGED_EVENT, refresh)
     window.addEventListener('session-completed', refresh)
@@ -44,7 +57,7 @@ export function useQuickTasks(isOpen: boolean) {
       window.removeEventListener(TASK_CHANGED_EVENT, refresh)
       window.removeEventListener('session-completed', refresh)
     }
-  }, [isOpen])
+  }, [])
 
   const mutate = useCallback(async (operation: () => Promise<TaskChange>) => {
     if (pending.current) return null
