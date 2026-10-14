@@ -763,3 +763,35 @@ Navbar navigation lists Timer, authenticated Projects, Rooms, Leaderboard, Stati
 and Habits. Projects follows Timer and uses Projects/Proyectos in both locales.
 Rooms and Statistics have no release badges. Stats, Blog, Feed and Edit profile
 are omitted from Navbar menus; profile and settings remain in the account section.
+
+## Focus project colors
+
+ProjectColorPicker owns the shared circular trigger inside the new-project and
+rename-project inputs. Its anchored five-column menu offers nineteen named colors and no color,
+with a visible check, keyboard navigation, Escape, outside dismissal and focus return.
+The menu portals into the owning dialog when present to preserve modal interaction.
+Its manual native popover uses the browser top layer so dialog blur and overflow do
+not alter viewport positioning or clip the palette. Placement clamps to the visual
+viewport and updates on scrolling, resizing and virtual-keyboard viewport changes.
+`app/globals.css` owns light/dark `--project-color-*` tokens; `lib/projectColors.ts`
+owns stable keys and English/Spanish labels. ProjectList and TaskPicker derive title
+colors from the project, including child tasks; tasks have no independent color control.
+Existing projects retain default text until a color is chosen.
+
+The project-color trigger stays transparent in idle, hover and pressed states; only
+the circle carries a fill. Palette focus uses preventScroll, and ancestor scrolling
+repositions the open palette instead of dismissing it inside Rename project.
+
+The color palette uses 24px circles with 6px gaps and an inset centered checkmark,
+plus a thin circular selection outline. No rectangular option tiles are shown.
+
+The expanded palette has nineteen colors plus no color, arranged in four rows.
+Every additional hue has light/dark text tokens and a stable API/database key.
+
+Project name fields place the color circle before the text, on the left. The trigger
+is centered against the input height, with reserved text padding in create and rename.
+
+The project color palette joins the shared glass overlay selectors in
+`app/appearance.css`: rendered scenery enables the same translucent surface, blur,
+border and shadow as project actions and rename dialogs, including portalled menus.
+Forced-colors mode retains the default accessible surface.

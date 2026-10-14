@@ -1,3 +1,4 @@
+import { isProjectColor } from '@/lib/projectColors'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { listFocusProjects } from '@/lib/focusProjects'
@@ -42,13 +43,21 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, pomodoros, priority, parentId } = body
+    const { color, title, description, pomodoros, priority, parentId } = body
 
     if (typeof title !== 'string' || !title.trim()) {
       return NextResponse.json(
         { error: 'Title is required' },
         { status: 400 }
       )
+    }
+
+    if (color !== undefined && color !== null && !isProjectColor(color)) {
+      return NextResponse.json({ error: 'Invalid project color' }, { status: 400 })
+    }
+
+    if (parentId !== undefined && color !== undefined) {
+      return NextResponse.json({ error: 'Only projects can have a color' }, { status: 400 })
     }
 
     if (description !== undefined && typeof description !== 'string') {
@@ -74,6 +83,7 @@ export async function POST(request: NextRequest) {
         userId,
         parentId: parentId ?? null,
         title: title.trim(),
+        color: color ?? null,
         description: description ?? '',
         pomodoros: pomodoros ?? 1,
         priority: priority ?? 'Medium',

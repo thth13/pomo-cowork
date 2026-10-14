@@ -1,6 +1,7 @@
 export interface TaskOption {
   id: string
   parentId?: string | null
+  color?: string | null
   projectTitle?: string
   title: string
   description?: string

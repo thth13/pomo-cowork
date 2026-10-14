@@ -1,3 +1,4 @@
+import { isProjectColor } from '@/lib/projectColors'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { resolveTaskUserId } from '@/lib/taskAuth'
@@ -22,7 +23,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { title, description, pomodoros, priority, completed, incrementPomodoro } = body
+    const { color, title, description, pomodoros, priority, completed, incrementPomodoro } = body
 
     if (incrementPomodoro !== undefined && typeof incrementPomodoro !== 'boolean') {
       return NextResponse.json({ error: 'Invalid incrementPomodoro value' }, { status: 400 })
@@ -30,6 +31,16 @@ export async function PUT(
 
     if (title !== undefined && (typeof title !== 'string' || !title.trim())) {
       return NextResponse.json({ error: 'Invalid title' }, { status: 400 })
+    }
+
+    if (color !== undefined && color !== null && !isProjectColor(color)) {
+      return NextResponse.json({ error: 'Invalid project color' }, { status: 400 })
+    }
+
+    if (color !== undefined) {
+      const project = await prisma.task.findFirst({ where: { id: params.id, userId } })
+      if (!project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      if (project.parentId) return NextResponse.json({ error: 'Only projects can have a color' }, { status: 400 })
     }
 
     if (description !== undefined && typeof description !== 'string') {
@@ -60,6 +71,7 @@ export async function PUT(
           }
         }),
         ...(!incrementPomodoro && {
+          ...(color !== undefined && { color }),
           ...(title !== undefined && { title: title.trim() }),
           ...(description !== undefined && { description }),
           ...(pomodoros !== undefined && { pomodoros }),

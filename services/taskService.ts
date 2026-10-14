@@ -39,9 +39,9 @@ async function requestTask<T>(path: string, method: string, body?: object, signa
 
 export const taskService = {
   list: (signal?: AbortSignal) => requestTask<TaskRecord[]>('', 'GET', undefined, signal),
-  create: (data: { title: string; description?: string; pomodoros?: number; priority?: string; parentId?: string }) =>
+  create: (data: { title: string; description?: string; pomodoros?: number; priority?: string; parentId?: string; color?: string | null }) =>
     requestTask<TaskRecord>('', 'POST', data),
-  update: (id: string, data: { title?: string; completed?: boolean }) =>
+  update: (id: string, data: { title?: string; color?: string | null; completed?: boolean }) =>
     requestTask<TaskRecord>(`/${encodeURIComponent(id)}`, 'PUT', data),
   remove: (id: string) => requestTask<{ success: boolean }>(`/${encodeURIComponent(id)}`, 'DELETE'),
   async incrementPomodoro(taskId: string) {

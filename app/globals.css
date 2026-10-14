@@ -4795,3 +4795,67 @@ html[data-mini-timer] body {
 
 .focus-project-completion { margin-left: 4px; flex: none; width: 16px; height: 16px; accent-color: var(--pixel-tomato); cursor: pointer; }
 .focus-project-disclosure .is-complete { color: var(--pixel-muted); text-decoration: line-through; }
+
+/* Project colors belong to projects; task titles inherit their project choice. */
+:root {
+  --project-color-red: #a33732;
+  --project-color-orange: #985014;
+  --project-color-gold: #79600c;
+  --project-color-green: #3f713e;
+  --project-color-teal: #26736b;
+  --project-color-blue: #345fad;
+  --project-color-purple: #7850a0;
+  --project-color-pink: #a13e70;
+  --project-color-coral: #a8493b;
+  --project-color-amber: #925d0b;
+  --project-color-olive: #627026;
+  --project-color-lime: #4e781e;
+  --project-color-emerald: #18724c;
+  --project-color-cyan: #146f87;
+  --project-color-sky: #246f9c;
+  --project-color-indigo: #514ba5;
+  --project-color-magenta: #99408f;
+  --project-color-brown: #795640;
+  --project-color-slate: #536170;
+}
+.dark {
+  --project-color-red: #f0a49a;
+  --project-color-orange: #edb27b;
+  --project-color-gold: #dcc777;
+  --project-color-green: #a5ce94;
+  --project-color-teal: #8dcec3;
+  --project-color-blue: #a3bff3;
+  --project-color-purple: #cbb0e8;
+  --project-color-pink: #e9a6c8;
+  --project-color-coral: #f4ad98;
+  --project-color-amber: #efc17b;
+  --project-color-olive: #bfcc85;
+  --project-color-lime: #b5d982;
+  --project-color-emerald: #86d3ae;
+  --project-color-cyan: #8ccfdf;
+  --project-color-sky: #98cff0;
+  --project-color-indigo: #b8b3ef;
+  --project-color-magenta: #e2a4da;
+  --project-color-brown: #d2b19a;
+  --project-color-slate: #b1bfcd;
+}
+.project-name-field { position: relative; display: grid; align-self: center; flex: 1; min-width: 0; width: 100%; }
+.project-name-field > input { display: block; width: 100%; padding-left: 42px; padding-right: 10px; }
+.focus-project-create .project-name-field > input { padding-left: 42px; padding-right: 10px; }
+.project-name-field > .project-color-trigger { position: absolute; left: 3px; top: 50%; transform: translateY(-50%); width: 36px; height: 32px; max-height: calc(100% - 4px); padding: 0; display: grid; place-items: center; border: 0; background: transparent; cursor: pointer; }
+.project-color-dot { display: block; width: 18px; height: 18px; border-radius: 50%; background: currentColor; color: var(--pixel-muted); border: 1px solid currentColor; }
+.project-color-menu { position: fixed; inset: auto; margin: 0; z-index: 10000; width: 162px; max-height: calc(100dvh - 16px); overflow-y: auto; padding: 8px; display: grid; grid-template-columns: repeat(5, 24px); gap: 6px; background: var(--pixel-paper); color: var(--pixel-ink); border: 1px solid var(--pixel-line); border-radius: 3px; box-shadow: 3px 3px 0 var(--pixel-shadow); }
+.project-color-menu[role=menu] > button[role=menuitemradio] { display: grid; place-items: center; width: 24px; height: 24px; min-height: 24px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; background: transparent; transform: none; }
+.project-color-menu .project-color-dot { display: grid; place-items: center; width: 24px; height: 24px; }
+.project-color-menu .project-color-dot > svg { color: #fff; }
+.dark .project-color-menu .project-color-dot > svg { color: #1c2320; }
+.project-color-menu > button[aria-checked=true] .project-color-dot { outline: 1px solid var(--pixel-muted); outline-offset: 2px; }
+.project-color-menu > button:hover .project-color-dot { outline: 1px solid currentColor; outline-offset: 2px; }
+.focus-projects .project-name-field > .project-color-trigger,
+.focus-projects .project-name-field > .project-color-trigger:hover:not(:disabled),
+.project-name-field > .project-color-trigger:is(:hover, :focus, :active) { background: transparent; box-shadow: none; }
+.project-color-trigger:hover:not(:disabled) .project-color-dot { outline: 1px solid currentColor; outline-offset: 2px; }
+.project-color-menu > button:focus-visible, .project-color-trigger:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 1px; }
+.project-color-trigger:disabled { cursor: not-allowed; opacity: .5; }
+
+.project-action-dialog .community-field .project-name-field > input { padding-left: 42px; padding-right: 10px; }

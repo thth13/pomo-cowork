@@ -77,7 +77,7 @@ export default function ProjectActions({ title, disabled, onRename, onDelete, ki
           items[next]?.focus()
         }
       }}>
-      <button type="button" role="menuitem" tabIndex={-1} disabled={disabled} onClick={() => { close(true); onRename() }}><Pencil size={15} aria-hidden="true" />{text('Rename', 'Renombrar')}</button>
+      <button type="button" role="menuitem" tabIndex={-1} disabled={disabled} onClick={() => { close(true); onRename() }}><Pencil size={15} aria-hidden="true" />{kind === 'project' ? text('Edit project', 'Editar proyecto') : text('Rename', 'Renombrar')}</button>
       <button type="button" role="menuitem" tabIndex={-1} className="focus-project-actions-danger" disabled={disabled} onClick={() => { close(true); onDelete() }}><Trash2 size={15} aria-hidden="true" />{text('Delete', 'Eliminar')}</button>
     </div>, document.body)}
   </>

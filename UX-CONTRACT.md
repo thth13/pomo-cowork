@@ -531,3 +531,14 @@ acknowledgment keeps the modal open with retry feedback. Pending messages surviv
 logout and offline periods. Requests are aborted and local state resets when the account
 changes. Receiving a message refreshes auth to update the displayed Pro status.
 Runtime verification is left to the user; no tests, builds, app start or tsc are run.
+
+## Focus project color
+
+Source: user request 2026-10-14; task API and project-color migration enforce that
+only root project records store nullable palette keys. ProjectColorPicker is shared
+by create and rename. The draft color saves together with the project name, remains
+on failure, and resets after successful creation; cancel discards rename changes.
+useQuickTasks updates shared options after saving, so project/task titles and the timer
+picker follow the same project color. API validation and a database constraint reject
+independent task colors and unknown palette values. Existing ownership checks apply.
+Verification is static; application execution, builds and tsc are excluded by request.

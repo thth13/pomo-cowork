@@ -213,7 +213,7 @@ body:has(.product-scenery) :is(.notifications-panel, .rank-toast, .wrapped-dialo
 /* One layout, two surface treatments. Portalled tasks explicitly carry this variant. */
 :is(.pomodoro-home, .seo-shell):has(.workspace-background),
 body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog, .timer-settings-dialog, .appearance-dialog),
-body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog),
+body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu),
 .task-popover[data-background-mode] {
   --scene-panel: rgb(20 28 25 / 68%);
   --scene-primary: rgb(255 255 255 / 96%);
@@ -352,7 +352,7 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
 /* Feedback and native dialogs share the workspace glass, even outside its container.
    Follow the rendered scenery rather than a saved preference on unrelated routes. */
 @media (forced-colors: none) {
-  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog) {
+  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu) {
     --pixel-paper: var(--scene-task);
     --pixel-screen: var(--scene-hover);
     --pixel-ink: var(--scene-primary);

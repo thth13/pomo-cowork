@@ -238,6 +238,17 @@
   margin-top: 6px;
   min-height: 44px;
 }
+.journal-main .project-name-field > input:not([type=checkbox]) {
+  margin-top: 0;
+  padding-left: 42px;
+  padding-right: 10px;
+}
+.journal-main .project-name-field > button.project-color-trigger,
+.journal-main .project-name-field > button.project-color-trigger:is(:active, :disabled) {
+  min-height: 0;
+  padding: 0;
+  transform: translateY(-50%);
+}
 .journal-main .focus-task-create {
   gap: 4px;
   padding: 4px;

@@ -252,6 +252,7 @@ model Task {
   parent             Task? @relation("ProjectTasks", fields: [parentId], references: [id], onDelete: Cascade)
   children           Task[] @relation("ProjectTasks")
 
+  color              String?
   title              String
   description        String  @default("")
   pomodoros          Int     @default(1) // Планируемое количество
