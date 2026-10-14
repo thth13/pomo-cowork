@@ -4672,10 +4672,26 @@ html[data-mini-timer] body {
 .focus-project-table { width: 100%; min-width: 580px; border-collapse: collapse; table-layout: fixed; font-size: 13px; }
 .focus-project-table th, .focus-project-table td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--pixel-line); vertical-align: middle; }
 .focus-project-table thead th { color: var(--pixel-muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
-.focus-project-table th:first-child { width: 46%; }
+.focus-project-table th:first-child { width: calc(46% - 52px); }
 .focus-project-table th:nth-child(2) { width: 24%; }
 .focus-project-table th:nth-child(3) { width: 10%; }
 .focus-project-table th:nth-child(4) { width: 20%; }
+.focus-project-table .focus-project-table-actions { width: 52px; padding-inline: 4px; text-align: right; }
+.focus-projects .focus-project-actions-trigger { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid transparent; border-radius: 2px; outline: none; background: transparent; box-shadow: none; color: var(--pixel-muted); appearance: none; }
+.focus-project-table-row .focus-project-actions-trigger { opacity: 0; pointer-events: none; }
+.focus-project-table-row:hover .focus-project-actions-trigger, .focus-project-table-row:focus-within .focus-project-actions-trigger, .focus-project-table-row .focus-project-actions-trigger[aria-expanded=true] { opacity: 1; pointer-events: auto; }
+.focus-projects .focus-project-actions-trigger:hover:not(:disabled), .focus-project-actions-trigger[aria-expanded=true] { background: transparent; color: var(--pixel-ink); }
+.focus-projects .focus-project-actions-trigger:hover:not(:disabled) { border-color: color-mix(in srgb, var(--pixel-muted) 35%, transparent); }
+.focus-projects .focus-project-actions-trigger:focus-visible { outline: 1px solid color-mix(in srgb, var(--pixel-muted) 55%, transparent); outline-offset: 2px; }
+@media (hover: none) { .focus-project-table-row .focus-project-actions-trigger { opacity: 1; pointer-events: auto; } }
+.focus-project-actions-menu { position: fixed; z-index: 100; width: 160px; padding: 4px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); color: var(--pixel-ink); box-shadow: 3px 3px 0 var(--pixel-shadow); }
+.focus-project-actions-menu button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 8px 10px; border-radius: 2px; font-size: 13px; text-align: left; cursor: pointer; }
+.focus-project-actions-menu button:hover:not(:disabled), .focus-project-actions-menu button:focus-visible { background: var(--pixel-screen); }
+.focus-project-actions-menu button:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -2px; }
+.focus-project-actions-menu button:active:not(:disabled) { background: var(--pixel-shadow); }
+.focus-project-actions-menu button:disabled { opacity: .5; cursor: not-allowed; }
+.focus-project-actions-menu .focus-project-actions-danger { color: var(--pixel-tomato-ink); }
+.focus-project-actions-menu .focus-project-actions-danger:hover:not(:disabled) { background: var(--pixel-tomato-soft); }
 .focus-project-table .focus-project-table-number { text-align: right; font-variant-numeric: tabular-nums; }
 .focus-project-table-date { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .focus-project-table tbody th { font-weight: 600; }
@@ -4689,12 +4705,21 @@ html[data-mini-timer] body {
 @media (pointer: coarse) { .focus-project-table-disclosure { min-height: 44px; } }
 .focus-project-task-count { display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
 .focus-project-icon { display: inline-flex; align-items: center; justify-content: center; min-width: 32px; min-height: 36px; color: var(--pixel-muted); }
+.focus-timer-task { flex-shrink: 0; gap: 5px; padding-inline: 6px; font-size: 11px; white-space: nowrap; }
+.focus-timer-task svg { flex-shrink: 0; }
+.focus-timer-task[data-active=true] svg { color: var(--pixel-tomato-ink); }
 .focus-project-icon[aria-pressed=true], .focus-project-todos li[data-selected=true] { color: var(--pixel-tomato-ink); background: var(--pixel-tomato-soft); }
 .focus-project-todos { padding: 0 4px 12px 24px; }
 .focus-project-todos li { display: flex; align-items: center; gap: 8px; min-height: 36px; }
 .focus-project-todos label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer; font-size: 13px; overflow-wrap: anywhere; }
 .focus-project-todos input[type=checkbox] { flex: none; accent-color: var(--pixel-tomato); width: 16px; height: 16px; }
 .focus-project-todos .is-complete span { text-decoration: line-through; color: var(--pixel-muted); }
+.focus-projects .focus-task-actions-trigger { flex-shrink: 0; width: 28px; height: 32px; }
+.focus-task-rename { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+.focus-projects .focus-project-todos .focus-task-rename input { flex: 1; min-width: 0; width: 0; margin: 0; padding: 5px 6px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-paper); color: var(--pixel-ink); font-size: 13px; }
+.focus-task-rename button { display: inline-flex; align-items: center; justify-content: center; width: 28px; min-height: 32px; color: var(--pixel-muted); }
+.focus-projects .focus-task-rename p { flex-basis: 100%; margin: 4px 0; font-size: 12px; color: var(--pixel-tomato-ink); }
+@media (pointer: coarse) { .focus-projects .focus-task-actions-trigger, .focus-task-rename button { width: 44px; min-height: 44px; } }
 #workspace-tasks .workspace-window-heading { padding: 6px; }
 .workspace-window-header-link { display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex-shrink: 0; min-height: 28px; margin-right: 4px; padding: 4px 9px; border: 1px solid var(--pixel-line); border-radius: 3px; background: transparent; color: var(--pixel-ink); font-size: 12px; font-weight: 500; line-height: 1.3; cursor: pointer; text-decoration: none; }
 .workspace-window-header-link svg { flex-shrink: 0; }

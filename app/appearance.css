@@ -213,6 +213,7 @@ body:has(.product-scenery) :is(.notifications-panel, .rank-toast, .wrapped-dialo
 /* One layout, two surface treatments. Portalled tasks explicitly carry this variant. */
 :is(.pomodoro-home, .seo-shell):has(.workspace-background),
 body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog, .timer-settings-dialog, .appearance-dialog),
+body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog),
 .task-popover[data-background-mode] {
   --scene-panel: rgb(20 28 25 / 68%);
   --scene-primary: rgb(255 255 255 / 96%);
@@ -351,6 +352,23 @@ body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notificatio
 /* Feedback and native dialogs share the workspace glass, even outside its container.
    Follow the rendered scenery rather than a saved preference on unrelated routes. */
 @media (forced-colors: none) {
+  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog) {
+    --pixel-paper: var(--scene-task);
+    --pixel-screen: var(--scene-hover);
+    --pixel-ink: var(--scene-primary);
+    --pixel-muted: var(--scene-secondary);
+    --pixel-line: var(--scene-border);
+    --pixel-accent: var(--scene-primary);
+    --pixel-tomato-ink: var(--scene-accent);
+    --pixel-tomato-soft: var(--scene-selected);
+    color-scheme: dark;
+    color: var(--scene-primary);
+    background: var(--scene-panel);
+    border-color: var(--scene-border);
+    box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
+    -webkit-backdrop-filter: blur(18px) saturate(110%);
+    backdrop-filter: blur(18px) saturate(110%);
+  }
   body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog, .timer-settings-dialog, .appearance-dialog) {
     --pixel-paper: var(--scene-task);
     --pixel-page: var(--scene-task);

@@ -6,6 +6,7 @@ import { usePetStore } from '@/store/usePetStore'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Settings } from 'lucide-react'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
+import { useTimerActionsStore } from '@/store/useTimerActionsStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { useSocket } from '@/hooks/useSocket'
@@ -707,9 +708,12 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
-  const handleStart = async () => {
+  const handleStart = async (focusTask?: TaskOption) => {
+    if (focusTask && (useTimerStore.getState().currentSession || focusTask.completed)) return
     // Prevent multiple rapid clicks (throttled)
     if (isStarting || !canTriggerAction()) return
+
+    if (focusTask) setSelectedTask(focusTask)
     
     clearAutoStart()
 
@@ -718,10 +722,11 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     setIsStarting(true)
 
     try {
-      const startType = isTimeTrackerMode ? SessionType.TIME_TRACKING : sessionType
+      const startType = isTimeTrackerMode ? SessionType.TIME_TRACKING : focusTask ? SessionType.WORK : sessionType
+      if (focusTask && !isTimeTrackerMode) setSessionType(SessionType.WORK)
 
       // If there's already an active session, silently end it first
-      if (currentSession) {
+      if (currentSession && !focusTask) {
         const sessionId = currentSession.id
         const currentTimeRemaining = useTimerStore.getState().timeRemaining
         
@@ -753,8 +758,8 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       const duration = getSessionDuration(startType)
       const taskName =
         startType === SessionType.TIME_TRACKING
-          ? selectedTask?.title || t.timer.timeTracking
-          : selectedTask?.title || getSessionTypeLabel(startType)
+          ? (focusTask ?? selectedTask)?.title || t.timer.timeTracking
+          : (focusTask ?? selectedTask)?.title || getSessionTypeLabel(startType)
 
       // Get user ID or anonymous ID
       const userId = user?.id || getOrCreateAnonymousId()
@@ -863,6 +868,25 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       }, 500)
     }
   }
+
+  const taskStartRef = useRef(handleStart)
+  useEffect(() => { taskStartRef.current = handleStart })
+  useEffect(() => {
+    const startTask = async (task: TaskOption) => {
+      const store = useTimerStore.getState()
+      const currentTask = store.taskOptions.find(item => item.id === task.id)
+      if (!currentTask || currentTask.completed || store.currentSession || useTimerActionsStore.getState().busy) return
+      if (currentTask.parentId && store.taskOptions.find(item => item.id === currentTask.parentId)?.completed) return
+      await taskStartRef.current(currentTask)
+    }
+    useTimerActionsStore.setState({ startTask })
+    return () => {
+      if (useTimerActionsStore.getState().startTask === startTask) useTimerActionsStore.setState({ startTask: null, busy: false })
+    }
+  }, [])
+  useEffect(() => {
+    useTimerActionsStore.setState({ busy: isStarting || isStopping || isPausing || isResuming })
+  }, [isStarting, isStopping, isPausing, isResuming])
 
   const handlePause = async () => {
     if (!currentSession || currentSession.status === SessionStatus.PAUSED) {
@@ -1300,7 +1324,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
   const timerActions = {
     stopLabel: isTimeTrackingSession ? undefined : resetLabel,
     currentSession,
-    onStart: handleStart,
+    onStart: () => handleStart(),
     onPause: handlePause,
     onResume: handleResume,
     onStop: handleStop,

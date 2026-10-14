@@ -77,6 +77,18 @@
 .kofi-dialog-link:focus-visible { outline: 2px solid var(--pixel-ink); outline-offset: -4px; }
 .community-dialog-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 .community-dialog-actions .community-button-danger:first-child { margin-right: auto; }
+.project-action-dialog { width: min(400px, calc(100vw - 24px)); border-width: 1px; box-shadow: 0 8px 28px rgb(0 0 0 / 16%); }
+.project-action-dialog .community-dialog-heading { position: relative; align-items: center; min-height: 44px; padding: 12px 52px 8px 16px; border: 0; }
+.project-action-dialog .community-dialog-heading h2 { margin: 0; font-size: 15px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.project-action-dialog .community-dialog-heading .community-icon-button { position: absolute; top: 4px; right: 4px; width: 44px; min-height: 44px; padding: 0; border: 0; background: transparent; box-shadow: none; color: var(--pixel-muted); }
+.project-action-dialog .community-dialog-heading .community-icon-button:hover:not(:disabled) { background: transparent; color: var(--pixel-ink); }
+.project-action-dialog .community-dialog-body { padding: 0 16px 16px; font-size: 13px; line-height: 1.6; }
+.project-action-description { margin-bottom: 12px; color: var(--pixel-muted); }
+.project-action-dialog .community-field { display: grid; gap: 6px; margin: 0; font-weight: 500; }
+.project-action-dialog .community-field input { min-height: 38px; margin: 0; padding: 8px 10px; font-size: 13px; }
+.project-action-dialog .community-dialog-actions { gap: 8px; margin-top: 16px; }
+.project-action-dialog .community-dialog-actions .community-button { min-height: 36px; padding: 7px 11px; font-weight: 500; box-shadow: none; }
+@media (pointer: coarse) { .project-action-dialog .community-field input, .project-action-dialog .community-dialog-actions .community-button { min-height: 44px; } }
 .community-avatar { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; object-fit: cover; border: 1px solid var(--pixel-line); background: var(--pixel-screen); color: var(--pixel-ink); border-radius: 3px; font-size: 14px; font-weight: 600; }
 .community-person { display: flex; align-items: center; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--pixel-line); min-width: 0; }
 .community-person:last-child { border-bottom: 0; }
