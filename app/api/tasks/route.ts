@@ -1,17 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
-import { getEffectiveSessionMinutesSql } from '@/lib/sessionStatsSql'
+import { listFocusProjects } from '@/lib/focusProjects'
 import { resolveTaskUserId } from '@/lib/taskAuth'
 
 export const dynamic = 'force-dynamic'
 
 const TASK_PRIORITIES = new Set(['Critical', 'High', 'Medium', 'Low'])
-
-interface TaskFocusRow {
-  task: string
-  focusMinutes: number
-}
 
 // GET - получить все задачи пользователя
 export async function GET(request: NextRequest) {
@@ -25,40 +19,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const effectiveMinutes = getEffectiveSessionMinutesSql('s')
-    const [tasks, taskFocusRows] = await Promise.all([
-      prisma.task.findMany({
-        where: {
-          userId
-        },
-        orderBy: [
-          { completed: 'asc' },
-          { createdAt: 'desc' }
-        ]
-      }),
-      prisma.$queryRaw<TaskFocusRow[]>(Prisma.sql`
-        SELECT
-          "s"."task",
-          COALESCE(SUM(${effectiveMinutes}), 0)::integer AS "focusMinutes"
-        FROM "pomodoro_sessions" AS "s"
-        WHERE "s"."userId" = ${userId}
-          AND "s"."type" = 'WORK'
-          AND "s"."status" IN ('COMPLETED', 'CANCELLED')
-        GROUP BY "s"."task"
-      `),
-    ])
-
-    const focusMinutesByTask = new Map<string, number>()
-    taskFocusRows.forEach((row) => {
-      focusMinutesByTask.set(row.task, row.focusMinutes)
-    })
-
-    const tasksWithStats = tasks.map(task => ({
-      ...task,
-      focusMinutes: focusMinutesByTask.get(task.title) ?? 0,
-    }))
-
-    return NextResponse.json(tasksWithStats)
+    return NextResponse.json(await listFocusProjects(userId))
   } catch (error) {
     console.error('Get tasks error:', error)
     return NextResponse.json(
@@ -71,7 +32,7 @@ export async function GET(request: NextRequest) {
 // POST - создать новую задачу
 export async function POST(request: NextRequest) {
   try {
-    const userId = await resolveTaskUserId(request)
+    const userId = await resolveTaskUserId(request, true)
 
     if (!userId) {
       return NextResponse.json(
@@ -81,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, description, pomodoros, priority } = body
+    const { title, description, pomodoros, priority, parentId } = body
 
     if (typeof title !== 'string' || !title.trim()) {
       return NextResponse.json(
@@ -102,9 +63,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid priority' }, { status: 400 })
     }
 
+    if (parentId !== undefined) {
+      if (typeof parentId !== 'string') return NextResponse.json({ error: 'Invalid project' }, { status: 400 })
+      const parent = await prisma.task.findFirst({ where: { id: parentId, userId, parentId: null, completed: false } })
+      if (!parent) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+
     const task = await prisma.task.create({
       data: {
         userId,
+        parentId: parentId ?? null,
         title: title.trim(),
         description: description ?? '',
         pomodoros: pomodoros ?? 1,

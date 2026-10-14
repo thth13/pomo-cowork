@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization')
     const token = getTokenFromHeader(authHeader)
-    const { task, duration, type, anonymousId, startedAt, roomId, projectId, expectedSessionId } = await request.json()
+    const { task, duration, type, anonymousId, startedAt, roomId, projectId, workProjectId, taskRecordId, expectedSessionId } = await request.json()
 
     if (
       typeof task !== 'string' ||
@@ -156,6 +156,22 @@ export async function POST(request: NextRequest) {
       if (type === SessionType.WORK || type === SessionType.TIME_TRACKING) focusProjectId = project.id
     }
 
+    let workProject: { id: string; title: string } | null = null
+    let todo: { id: string; title: string } | null = null
+    if (workProjectId != null) {
+      if (typeof workProjectId !== 'string' || (taskRecordId != null && typeof taskRecordId !== 'string')) {
+        return NextResponse.json({ error: 'Invalid project or task' }, { status: 400 })
+      }
+      workProject = await prisma.task.findFirst({ where: { id: workProjectId, userId, parentId: null }, select: { id: true, title: true } })
+      if (!workProject) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+      if (taskRecordId != null) {
+        todo = await prisma.task.findFirst({ where: { id: taskRecordId, userId, parentId: workProject.id }, select: { id: true, title: true } })
+        if (!todo) return NextResponse.json({ error: 'Task not found' }, { status: 404 })
+      }
+    } else if (taskRecordId != null) {
+      return NextResponse.json({ error: 'A task requires a project' }, { status: 400 })
+    }
+
     const session = await prisma.$transaction(async (tx) => {
       // Serialize session creation per user, including concurrent browser tabs.
       await tx.$queryRaw`
@@ -186,7 +202,10 @@ export async function POST(request: NextRequest) {
           userId,
           projectId: focusProjectId,
           ...(normalizedRoomId ? { roomId: normalizedRoomId } : {}),
-          task: task.trim(),
+          workProjectId: workProject?.id ?? null,
+          taskRecordId: todo?.id ?? null,
+          projectName: workProject?.title ?? null,
+          task: todo?.title ?? workProject?.title ?? task.trim(),
           duration,
           type: type as string,
           status: 'ACTIVE',

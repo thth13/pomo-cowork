@@ -7,10 +7,13 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { Calendar, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react'
 import ConfirmModal from './ConfirmModal'
+import { useI18n } from '@/components/I18nProvider'
 import Image from 'next/image'
 
 interface Session {
   id: string
+  projectName?: string | null
+  taskRecordId?: string | null
   task: string
   duration: number
   type: string
@@ -48,6 +51,7 @@ const emptyStats = {
 }
 
 export default function WorkHistory({ isVisible = true }: { isVisible?: boolean }) {
+  const { language } = useI18n()
   const { user } = useAuthStore()
   const { currentRoomId } = useRoomStore()
   const [sessions, setSessions] = useState<Session[]>([])
@@ -403,8 +407,13 @@ export default function WorkHistory({ isVisible = true }: { isVisible?: boolean 
                         </button>
                       )}
                     </div>
-                    {session.type === 'WORK' && (
-                      <div className="text-sm text-gray-600 dark:text-slate-300 mb-1">{session.task}</div>
+                    {(session.type === 'WORK' || session.type === 'TIME_TRACKING') && (
+                      <div className="text-sm text-gray-600 dark:text-slate-300 mb-1">
+                        {session.projectName ? <>
+                          <div>{language === 'es' ? 'Proyecto' : 'Project'}: {session.projectName}</div>
+                          {session.taskRecordId && <div>{language === 'es' ? 'Tarea' : 'Task'}: {session.task}</div>}
+                        </> : session.task}
+                      </div>
                     )}
                   <div className="text-xs text-gray-500 dark:text-slate-400">
                     {session.duration} minutes • {getProductivityNote(session)}

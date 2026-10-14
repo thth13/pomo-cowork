@@ -54,6 +54,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         task: true,
+        projectName: true,
         type: true,
         status: true,
         duration: true,
@@ -92,6 +93,7 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         task: true,
+        projectName: true,
         type: true,
         status: true,
         duration: true,
@@ -508,7 +510,7 @@ export async function GET(request: NextRequest) {
 
     const taskTimeMap = new Map<string, number>()
     allFocusSessions.forEach((session) => {
-      const taskName = session.task?.trim() || 'Без названия'
+      const taskName = (session.projectName ?? session.task)?.trim() || 'Без названия'
       taskTimeMap.set(taskName, (taskTimeMap.get(taskName) || 0) + getEffectiveMinutes(session))
     })
     const taskTimeDistribution = Array.from(taskTimeMap.entries())

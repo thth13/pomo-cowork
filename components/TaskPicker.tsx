@@ -1,14 +1,15 @@
 'use client'
 
+import { compareTaskActivity } from '@/lib/taskActivity'
+
 import { isTaskSelectionLocked } from '@/lib/taskSelection'
 
-import { RefObject, memo, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { RefObject, memo, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Check, ChevronDown, MoreHorizontal, Plus, X } from 'lucide-react'
+import { Check, ChevronDown, Plus, X } from 'lucide-react'
 import { taskPickerCopy } from '@/lib/i18n/taskPicker'
 import { useQuickTasks } from '@/hooks/useQuickTasks'
-import { taskService } from '@/services/taskService'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { SessionType } from '@/types'
@@ -51,9 +52,8 @@ export const TaskPicker = memo(function TaskPicker({
   const reducedMotion = useReducedMotion()
   const backgroundId = useAppearanceStore(state => state.backgroundId)
   const searchRef = useRef<HTMLInputElement>(null)
-  const [actionId, setActionId] = useState<string | null>(null)
-  const [editing, setEditing] = useState<'rename' | 'delete' | null>(null)
-  const [name, setName] = useState('')
+  const allOptions = useTimerStore(state => state.taskOptions)
+  const [expandedProjects, setExpandedProjects] = useState<string[]>([])
   const pickerId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [position, setPosition] = useState<{
@@ -65,34 +65,19 @@ export const TaskPicker = memo(function TaskPicker({
   } | null>(null)
   const isVisible = isOpen && !isDisabled
 
-  const { loading, loadError, saving, error, mutate, retry } = useQuickTasks(isVisible)
-  const options = filteredTaskOptions.filter(task => !task.completed && !task.id.startsWith('temp_') && `${task.title} ${task.description ?? ''}`.toLocaleLowerCase().includes(taskSearch.trim().toLocaleLowerCase()))
+  const { loading, loadError, retry } = useQuickTasks(isVisible)
+  const queryText = taskSearch.trim().toLocaleLowerCase()
+  const matches = filteredTaskOptions.filter(task => !task.completed && !task.id.startsWith('temp_') && `${task.title} ${task.projectTitle ?? ''} ${task.description ?? ''}`.toLocaleLowerCase().includes(queryText))
+  const projects = [...allOptions].sort(compareTaskActivity).filter(project => !project.parentId && !project.completed && (!queryText || matches.some(item => item.id === project.id || item.parentId === project.id)))
+  const options = projects.flatMap(project => [project, ...(queryText || expandedProjects.includes(project.id) ? matches.filter(task => task.parentId === project.id).sort(compareTaskActivity) : [])])
   const query = taskSearch.trim()
   const exactMatch = options.find(task => task.title.toLocaleLowerCase() === query.toLocaleLowerCase())
-  const canCreate = Boolean(query && !exactMatch && !loading && !loadError)
-
-  useEffect(() => {
-    if (!isVisible) { setActionId(null); setEditing(null) }
-  }, [isVisible])
-
   const close = () => { onClose(); triggerRef.current?.focus() }
   const select = (task: TaskOption | null) => {
-    if (saving || isDisabled || isTaskSelectionLocked(useTimerStore.getState().currentSession)) return
+    if (isDisabled || isTaskSelectionLocked(useTimerStore.getState().currentSession)) return
     onSelectTask(task)
     close()
   }
-  const create = async () => {
-    if (!canCreate) return
-    const result = await mutate(async () => ({ task: await taskService.create({ title: query }) }))
-    if (result && 'task' in result && !isTaskSelectionLocked(useTimerStore.getState().currentSession)) { onSelectTask(result.task); close() }
-  }
-  const update = async (task: TaskOption, action: 'rename' | 'complete' | 'delete') => {
-    const result = await mutate(async () => action === 'delete'
-      ? (await taskService.remove(task.id), { deletedId: task.id })
-      : { task: await taskService.update(task.id, action === 'rename' ? { title: name.trim() } : { completed: true }) })
-    if (result) { setActionId(null); setEditing(null); searchRef.current?.focus() }
-  }
-
   useLayoutEffect(() => {
     if (!isVisible) return
     const ownerWindow = triggerRef.current?.ownerDocument.defaultView
@@ -159,12 +144,12 @@ export const TaskPicker = memo(function TaskPicker({
           aria-expanded={isVisible}
           aria-haspopup="dialog"
           aria-controls={isVisible ? `${pickerId}-options` : undefined}
-          aria-label={`${t.timer.currentTask}: ${selectedTask?.title ?? copy.prompt}`}
+          aria-label={`${copy.selection}: ${selectedTask?.projectTitle && selectedTask.parentId ? `${selectedTask.projectTitle} / ` : ''}${selectedTask?.title ?? copy.prompt}`}
           title={isDisabled ? copy.locked : selectedTask?.title}
           className={`current-task-trigger ${variant === 'mini-timer' ? 'mini-timer-task-trigger' : ''}`}
         >
           {!selectedTask && <Plus size={16} aria-hidden="true" />}
-          <span>{selectedTask?.title ?? copy.prompt}</span>
+          <span>{selectedTask?.parentId && selectedTask.projectTitle ? `${selectedTask.projectTitle} / ` : ''}{selectedTask?.title ?? copy.prompt}</span>
           <ChevronDown size={14} aria-hidden="true" className={isVisible ? 'rotate-180' : ''} />
         </button>
 
@@ -176,8 +161,8 @@ export const TaskPicker = memo(function TaskPicker({
                 style={position}
                 id={`${pickerId}-options`}
                 role="dialog"
-                aria-label={t.timer.currentTask}
-                aria-busy={loading || saving}
+                aria-label={copy.selection}
+                aria-busy={loading}
                 data-i18n-ignore
                 data-background-mode={variant !== 'mini-timer' && backgroundId !== 'default' || undefined}
                 data-mini-timer-picker={variant === 'mini-timer' || undefined}
@@ -192,7 +177,7 @@ export const TaskPicker = memo(function TaskPicker({
                 onKeyDown={event => {
                   if (event.nativeEvent.isComposing) return
                   if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return }
-                  if ((event.key === 'ArrowDown' || event.key === 'ArrowUp') && !((event.target as HTMLElement).tagName === 'INPUT' && editing)) {
+                  if ((event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
                     event.preventDefault()
                     const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled), button:not(:disabled)'))
                     const index = controls.indexOf(event.target as HTMLElement)
@@ -207,61 +192,49 @@ export const TaskPicker = memo(function TaskPicker({
               >
                 <form noValidate className="task-search" onSubmit={event => {
                   event.preventDefault()
-                  if (loading || loadError || saving) return
+                  if (loading || loadError) return
                   if (exactMatch) select(exactMatch)
-                  else if (canCreate) void create()
                   else if (options[0]) select(options[0])
                 }}>
-                  <input ref={searchRef} autoFocus value={taskSearch} disabled={saving}
-                    onChange={event => { onTaskSearchChange(event.target.value); setActionId(null); setEditing(null) }}
+                  <input ref={searchRef} autoFocus value={taskSearch}
+                    onChange={event => onTaskSearchChange(event.target.value)}
                     onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }}
                     aria-label={copy.search} placeholder={copy.search} />
-                  {taskSearch && <button type="button" disabled={saving} aria-label={copy.clear} onClick={() => { onTaskSearchChange(''); searchRef.current?.focus() }}><X size={16} /></button>}
+                  {taskSearch && <button type="button" aria-label={copy.clear} onClick={() => { onTaskSearchChange(''); searchRef.current?.focus() }}><X size={16} /></button>}
                 </form>
                 <div className="task-popover-list">
                   {loading ? <p className="task-popover-message" role="status">{copy.loading}</p> : loadError ? (
                     <div className="task-popover-message" role="alert">{copy.loadError} <button type="button" onClick={retry}>{copy.retry}</button></div>
                   ) : <>
-                    {options.map(task => (
-                      <div className="task-option" key={task.id}>
-                        <div className="task-option-row" data-selected={selectedTask?.id === task.id}>
-                          <button type="button" className="task-option-select" disabled={saving} aria-pressed={selectedTask?.id === task.id} onClick={() => select(task)}>
-                            <span><span className="task-option-title">{task.title}</span>
-                              {Boolean(task.focusMinutes) && <small>{task.focusMinutes} {copy.minutes}</small>}
-                            </span>
-                            {selectedTask?.id === task.id && <Check size={16} aria-hidden="true" />}
-                          </button>
-                          <button type="button" className="task-option-more" disabled={saving} aria-label={`${copy.more}: ${task.title}`} aria-expanded={actionId === task.id}
-                            onClick={() => { setActionId(actionId === task.id ? null : task.id); setEditing(null); setName(task.title) }}><MoreHorizontal size={18} /></button>
+                    {projects.map(project => {
+                      const children = options.filter(task => task.parentId === project.id)
+                      const renderOption = (task: TaskOption) => (
+                        <div className="task-option" key={task.id} data-project-task={Boolean(task.parentId)}>
+                          <div className="task-option-row" data-selected={selectedTask?.id === task.id}>
+                            {!task.parentId && <button type="button" className="task-option-disclosure" aria-label={`${copy.tasks}: ${task.title}`} aria-expanded={Boolean(queryText) || expandedProjects.includes(task.id)} onClick={() => setExpandedProjects(previous => previous.includes(task.id) ? previous.filter(id => id !== task.id) : [...previous, task.id])}><ChevronDown size={12} strokeWidth={1.5} aria-hidden="true" className={queryText || expandedProjects.includes(task.id) ? '' : '-rotate-90'} /></button>}
+                            <button type="button" className="task-option-select" aria-label={task.parentId ? `${project.title} / ${task.title}` : task.title} aria-pressed={selectedTask?.id === task.id} onClick={() => select(task)}>
+                              <span><span className="task-option-title">{task.title}</span></span>
+                              {selectedTask?.id === task.id && <Check size={16} aria-hidden="true" />}
+                            </button>
+                          </div>
                         </div>
-                        {actionId === task.id && <div className="task-inline-actions">
-                          {editing === 'rename' ? <form noValidate onSubmit={event => { event.preventDefault(); if (name.trim()) void update(task, 'rename') }}>
-                            <input autoFocus aria-label={copy.name} value={name} disabled={saving} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
-                            <div><button type="button" disabled={saving} onClick={() => { setEditing(null); searchRef.current?.focus() }}>{copy.cancel}</button><button type="submit" disabled={saving || !name.trim()}>{copy.save}</button></div>
-                          </form> : editing === 'delete' ? <>
-                            <p>{copy.deleteHint}</p>
-                            <button type="button" autoFocus disabled={saving} onClick={() => { setEditing(null); searchRef.current?.focus() }}>{copy.cancel}</button>
-                            <button type="button" className="task-delete" disabled={saving} onClick={() => void update(task, 'delete')}>{copy.delete}</button>
-                          </> : <>
-                            <button type="button" disabled={saving} onClick={() => setEditing('rename')}>{copy.rename}</button>
-                            <button type="button" disabled={saving} onClick={() => void update(task, 'complete')}>{copy.complete}</button>
-                            <button type="button" className="task-delete" disabled={saving} onClick={() => setEditing('delete')}>{copy.delete}</button>
-                          </>}
-                        </div>}
-                      </div>
-                    ))}
+                      )
+                      return (
+                        <div className="task-project-group" key={project.id}>
+                          {renderOption(project)}
+                          {children.length > 0 && <div className="task-project-children" role="group" aria-label={project.title}>
+                            {children.map(renderOption)}
+                          </div>}
+                        </div>
+                      )
+                    })}
                     {!options.length && !query && <p className="task-popover-message">{copy.empty}</p>}
                     {!options.length && query && <p className="task-popover-message">{t.timer.noMatchingTasks}</p>}
                   </>}
                 </div>
-                <div className="task-popover-footer">
-                  <button type="button" disabled={saving || loading || loadError} onClick={() => canCreate ? void create() : searchRef.current?.focus()}>
-                    <Plus size={16} /><span>{canCreate ? `${copy.create} “${query}”` : copy.add}</span>
-                  </button>
-                  {selectedTask && <button type="button" disabled={saving} onClick={() => select(null)}>{copy.noTask}</button>}
-                </div>
-                {saving && <p className="task-popover-message" role="status">{copy.saving}</p>}
-                {error && <p className="task-popover-message task-delete" role="alert">{copy.error}</p>}
+                {selectedTask && <div className="task-popover-footer">
+                  <button type="button" onClick={() => select(null)}>{copy.noTask}</button>
+                </div>}
               </motion.div>
             )}
           </AnimatePresence>,

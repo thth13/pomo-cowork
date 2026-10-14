@@ -50,6 +50,7 @@ export async function POST(request: NextRequest) {
       const labels = { WORK: 'Focus', SHORT_BREAK: 'Short break', LONG_BREAK: 'Long break', TIME_TRACKING: 'Time tracking' }
       return createSession(forward('/api/sessions', {
         type: body.mode, duration, task: typeof body.task === 'string' && body.task.trim() ? body.task.trim().slice(0, 500) : labels[body.mode as SessionType],
+        ...(body.mode === SessionType.WORK || body.mode === SessionType.TIME_TRACKING ? { workProjectId: body.workProjectId, taskRecordId: body.taskRecordId } : {}),
         expectedSessionId: null,
       }))
     }

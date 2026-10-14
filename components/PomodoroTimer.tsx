@@ -358,21 +358,13 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     }
 
     return sorted.filter((taskOption) => {
-      const haystack = `${taskOption.title} ${taskOption.description ?? ''}`.toLowerCase()
+      const haystack = `${taskOption.title} ${taskOption.projectTitle ?? ''} ${taskOption.description ?? ''}`.toLowerCase()
       return haystack.includes(query)
     })
   }, [taskOptions, taskSearch])
 
   const handleTaskSelect = (taskOption: TaskOption | null) => {
-    if (taskOption) {
-      setSelectedTask({
-        id: taskOption.id,
-        title: taskOption.title,
-        description: taskOption.description,
-      })
-    } else {
-      setSelectedTask(null)
-    }
+    setSelectedTask(taskOption)
 
     setIsTaskMenuOpen(false)
   }
@@ -576,6 +568,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
             ...state.currentSession,
             id: dbSession.id,
             projectId: dbSession.projectId,
+            workProjectId: dbSession.workProjectId,
+            taskRecordId: dbSession.taskRecordId,
+            projectName: dbSession.projectName,
             startedAt: optimisticStartedAt,
           },
         }
@@ -817,6 +812,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
               ...state.currentSession,
               id: dbSession.id,
               projectId: dbSession.projectId,
+            workProjectId: dbSession.workProjectId,
+            taskRecordId: dbSession.taskRecordId,
+            projectName: dbSession.projectName,
               startedAt: optimisticStartedAt,
             },
           }

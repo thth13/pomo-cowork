@@ -1,6 +1,7 @@
 import { PomodoroSession, SessionType } from '@/types'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useTimerStore } from '@/store/useTimerStore'
 import { useProjectSelection } from '@/store/useProjectSelection'
 import { notifyTimerChanged } from '@/lib/timerEvents'
 
@@ -80,6 +81,12 @@ export const sessionService = {
       duration: data.duration,
       type: data.type,
       ...(token ? { expectedSessionId: null } : {}),
+    }
+
+    const focus = useTimerStore.getState().selectedTask
+    if (focus && (data.type === SessionType.WORK || data.type === SessionType.TIME_TRACKING)) {
+      body.workProjectId = focus.parentId ?? focus.id
+      body.taskRecordId = focus.parentId ? focus.id : null
     }
 
     const selected = useProjectSelection.getState()

@@ -1,6 +1,6 @@
 .journal-shell {
   min-height: 100dvh;
-  background: var(--pixel-page);
+  background-color: var(--pixel-page);
   color: var(--pixel-ink);
   font-family: inherit;
   line-height: 1.65;
@@ -196,6 +196,27 @@
   cursor: not-allowed;
   transform: none;
 }
+.journal-main .focus-project-table button.focus-project-table-disclosure {
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit;
+  font: inherit;
+}
+.journal-main .focus-project-table button.focus-project-table-disclosure:hover,
+.journal-main .focus-project-table button.focus-project-table-disclosure:active {
+  background: transparent;
+  filter: none;
+  transform: none;
+}
+@media (pointer: coarse) {
+  .journal-main .focus-project-table button.focus-project-table-disclosure {
+    min-height: 44px;
+  }
+}
 .journal-main :focus-visible,.journal-nav :focus-visible {
   outline: 2px solid var(--pixel-accent);
   outline-offset: 4px;
@@ -216,6 +237,63 @@
   color: var(--pixel-ink);
   margin-top: 6px;
   min-height: 44px;
+}
+.journal-main .focus-task-create {
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--pixel-line);
+  border-radius: 3px;
+  background: var(--pixel-paper);
+}
+.journal-main .focus-task-create:focus-within {
+  border-color: var(--pixel-muted);
+}
+.journal-main .focus-task-create input:not([type=checkbox]) {
+  min-height: 36px;
+  margin: 0;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 13px;
+}
+.journal-main .focus-task-create input:focus-visible {
+  outline: none;
+}
+.journal-main .focus-task-create button {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 0;
+  background: var(--pixel-screen);
+  color: var(--pixel-ink);
+  box-shadow: none;
+}
+.journal-main .focus-task-create button svg {
+  flex-shrink: 0;
+}
+.journal-main .focus-task-create button:disabled {
+  opacity: 1;
+  color: var(--pixel-muted);
+}
+.journal-main .focus-task-create button:hover:not(:disabled) {
+  background: var(--pixel-line);
+  filter: none;
+}
+.journal-main .focus-task-create button:focus-visible {
+  outline-offset: 1px;
+}
+@media (pointer: coarse) {
+  .journal-main .focus-task-create input:not([type=checkbox]) {
+    min-height: 44px;
+  }
+  .journal-main .focus-task-create button {
+    width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
 }
 .journal-main textarea {
   resize: none;

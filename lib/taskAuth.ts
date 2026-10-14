@@ -1,12 +1,14 @@
 import { NextRequest } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
+import { ensureAnonymousUser } from './anonymousServer'
 import { isValidAnonymousId } from '@/lib/anonymousProfile'
 
 const ANONYMOUS_ID_HEADER = 'x-anonymous-id'
 
 export const resolveTaskUserId = async (
-  request: NextRequest
+  request: NextRequest,
+  createAnonymous = false
 ): Promise<string | null> => {
   const token = getTokenFromHeader(request.headers.get('authorization'))
 
@@ -28,6 +30,8 @@ export const resolveTaskUserId = async (
   if (!isValidAnonymousId(anonymousId)) {
     return null
   }
+
+  if (createAnonymous) return (await ensureAnonymousUser(prisma, anonymousId!))?.id ?? null
 
   const anonymousUser = await prisma.user.findFirst({
     where: {

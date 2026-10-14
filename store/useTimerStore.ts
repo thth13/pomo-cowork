@@ -3,15 +3,12 @@ import { useAuthStore } from './useAuthStore'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { PomodoroSession, SessionType, SessionStatus, ActiveSession } from '@/types'
 
+import { TaskOption } from '@/types/task'
+import { isTaskSelectionLocked } from '@/lib/taskSelection'
+
 export const TIME_TRACKER_DURATION_MINUTES = 24 * 60
 
-interface TimerTaskOption {
-  id: string
-  title: string
-  description?: string
-  completed?: boolean
-  focusMinutes?: number
-}
+type TimerTaskOption = TaskOption
 
 interface TimerState {
   // Timer state
@@ -25,11 +22,7 @@ interface TimerState {
   activeSessions: ActiveSession[]
 
   // Selected task
-  selectedTask: {
-    id: string
-    title: string
-    description?: string
-  } | null
+  selectedTask: TaskOption | null
   taskOptions: TimerTaskOption[]
 
   // Actions
@@ -43,7 +36,7 @@ interface TimerState {
   updateActiveSessionTime: (sessionId: string, timeRemaining: number) => void
   restoreSession: (session: PomodoroSession) => void
   previewSessionType: (type: SessionType) => void
-  setSelectedTask: (task: { id: string; title: string; description?: string } | null) => void
+  setSelectedTask: (task: TaskOption | null) => void
   setTaskOptions: (tasks: TimerTaskOption[]) => void
 
   // Settings
@@ -88,6 +81,11 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       userId: useAuthStore.getState().user?.id ?? getOrCreateAnonymousId(),
       roomId: roomId ?? null,
       task,
+      ...((type === SessionType.WORK || type === SessionType.TIME_TRACKING) ? {
+        workProjectId: get().selectedTask?.parentId ?? get().selectedTask?.id ?? null,
+        taskRecordId: get().selectedTask?.parentId ? get().selectedTask?.id : null,
+        projectName: get().selectedTask?.projectTitle ?? get().selectedTask?.title ?? null,
+      } : {}),
       duration,
       type,
       status: SessionStatus.ACTIVE,
@@ -196,6 +194,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         timeRemaining: nextDuration * 60,
         pausedAt: null,
       })
+      if (get().taskOptions.length) get().setTaskOptions(get().taskOptions)
     }
   },
 
@@ -210,6 +209,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         timeRemaining: fallbackDuration * 60,
         pausedAt: null,
       })
+      if (get().taskOptions.length) get().setTaskOptions(get().taskOptions)
     }
   },
 
@@ -271,7 +271,12 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   setTaskOptions: (tasks) => {
-    set({ taskOptions: tasks })
+    const titles = new Map(tasks.filter(task => !task.parentId).map(task => [task.id, task.title]))
+    const options = tasks.map(task => ({ ...task, projectTitle: titles.get(task.parentId ?? task.id) }))
+    const selected = get().selectedTask
+    const updated = selected ? options.find(task => task.id === selected.id) : null
+    const locked = isTaskSelectionLocked(get().currentSession)
+    set({ taskOptions: options, ...(!locked && selected ? { selectedTask: updated && !updated.completed && (!updated.parentId || !options.find(task => task.id === updated.parentId)?.completed) ? updated : null } : {}) })
   },
 }))
 

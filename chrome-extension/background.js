@@ -96,7 +96,7 @@ async function readAccount() {
     sessionId: session?.id || null, updatedAt: session?.updatedAt || null,
     mode, running: session?.status === 'ACTIVE', remaining: session ? remaining(session) : idleSeconds,
     duration: session ? session.duration * 60 : 0, startedAt: session?.startedAt || null,
-    task: session?.task || '', busy, canTimeTrack: account.user.canTimeTrack, settings,
+    task: session?.task || '', workProjectId: session?.workProjectId || null, taskRecordId: session?.taskRecordId || null, busy, canTimeTrack: account.user.canTimeTrack, settings,
     sampledAt: Date.now(), clockOffset: account.serverNow - Date.now(), siteUrl: credentials.siteUrl || DEFAULT_SITE, prefsKey,
   }
   await chrome.storage.session.set({ snapshot: state })
@@ -140,7 +140,7 @@ async function handle(message) {
   if (message.action === 'tasks') {
     const tasks = await api('/api/tasks')
     if (!Array.isArray(tasks)) throw new Error('ACTION_FAILED')
-    return { tasks: tasks.filter(task => !task.completed).map(task => ({ id: task.id, title: task.title })) }
+    return { tasks: tasks.filter(task => !task.completed && (!task.parentId || !tasks.find(project => project.id === task.parentId)?.completed)).map(task => ({ id: task.id, title: task.title, parentId: task.parentId, projectTitle: task.projectTitle })) }
   }
   if (message.action === 'login') return beginLogin(message.siteUrl)
   if (message.action === 'logout') {
@@ -187,7 +187,7 @@ async function handle(message) {
       if (response.status === 401) { await clearAccount(); throw new Error('AUTH_REQUIRED') }
       if (!response.ok) throw new Error('SAVE_FAILED')
     } else if (['start', 'pause', 'resume', 'stop'].includes(message.action)) {
-      await api('/api/timer', { action: message.action, sessionId: state.sessionId, updatedAt: state.updatedAt, mode: state.mode, task: message.task })
+      await api('/api/timer', { action: message.action, sessionId: state.sessionId, updatedAt: state.updatedAt, mode: state.mode, task: message.task, workProjectId: message.workProjectId, taskRecordId: message.taskRecordId })
     } else throw new Error('INVALID_SETTINGS')
     busy = false
     return { state: await synchronize() }

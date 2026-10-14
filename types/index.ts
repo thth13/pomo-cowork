@@ -36,6 +36,9 @@ export interface PomodoroSession {
   userId: string
   user?: User
   roomId?: string | null
+  workProjectId?: string | null
+  taskRecordId?: string | null
+  projectName?: string | null
   projectId?: string | null
   task: string
   duration: number

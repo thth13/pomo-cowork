@@ -25,9 +25,10 @@ interface WorkspaceWindowProps {
   onActivate: () => void
   onClose: () => void
   children: ReactNode
+  headerAction?: ReactNode
 }
 
-export default function WorkspaceWindow({ id, title, open, offset, layer, onActivate, onClose, children }: WorkspaceWindowProps) {
+export default function WorkspaceWindow({ id, title, open, offset, layer, onActivate, onClose, children, headerAction }: WorkspaceWindowProps) {
   const windowRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<HTMLButtonElement>(null)
   const positionRef = useRef<{ x: number; y: number } | null>(null)
@@ -199,6 +200,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
           <GripHorizontal size={16} aria-hidden="true" />
           <span id={`${id}-title`}>{title}</span>
         </button>
+        {headerAction}
         <button type="button" className="workspace-window-close" onClick={onClose} aria-label={t.common.close}>
           <X size={16} aria-hidden="true" />
         </button>

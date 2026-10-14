@@ -6,6 +6,8 @@ export interface StatisticsSession extends SessionForStats {
   type: string
   status: string
   task: string
+  workProjectId?: string | null
+  projectName?: string | null
 }
 
 export interface FocusDay { date: string; minutes: number; sessions: number; completed: number }
@@ -114,11 +116,12 @@ export function buildStatistics(sessions: StatisticsSession[], experience: numbe
     hours[hour] += minutes
     periods[hour < 6 ? 3 : hour < 12 ? 0 : hour < 18 ? 1 : 2] += minutes
     weekdays[weekday(key)] += minutes
-    const name = session.task.trim()
-    const project = projects.get(name) ?? { name: name || null, minutes: 0, sessions: 0, share: 0 }
+    const name = (session.projectName ?? session.task).trim()
+    const projectKey = session.workProjectId ?? name
+    const project = projects.get(projectKey) ?? { name: name || null, minutes: 0, sessions: 0, share: 0 }
     project.minutes += minutes
     project.sessions++
-    projects.set(name, project)
+    projects.set(projectKey, project)
     if (minutes > longestSession) { longestSession = minutes; longestSessionDate = key }
     if (key < monday) previousLongestSession = Math.max(previousLongestSession, minutes)
 

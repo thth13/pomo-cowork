@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { getEffectiveMinutes } from '@/lib/sessionStats'
-import { getEffectiveSessionMinutesSql } from '@/lib/sessionStatsSql'
+import { listFocusProjects } from '@/lib/focusProjects'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
-
-interface TaskFocusRow {
-  task: string
-  focusMinutes: number
-}
 
 // GET /api/tasks/sessions?taskName=xxx
 // Returns sessions for a given task name, plus all tasks summary list
@@ -30,50 +24,25 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url)
     const taskName = searchParams.get('taskName')
+    const projectId = searchParams.get('projectId')
 
-    if (!taskName) {
-      // Return tasks summary list sorted by focus time
-      const effectiveMinutes = getEffectiveSessionMinutesSql('s')
-      const [tasks, taskFocusRows] = await Promise.all([
-        prisma.task.findMany({
-          where: { userId: decoded.userId },
-          orderBy: { createdAt: 'desc' },
-        }),
-        prisma.$queryRaw<TaskFocusRow[]>(Prisma.sql`
-          SELECT
-            "s"."task",
-            COALESCE(SUM(${effectiveMinutes}), 0)::integer AS "focusMinutes"
-          FROM "pomodoro_sessions" AS "s"
-          WHERE "s"."userId" = ${decoded.userId}
-            AND "s"."type" IN ('WORK', 'TIME_TRACKING')
-            AND "s"."status" IN ('COMPLETED', 'CANCELLED')
-          GROUP BY "s"."task"
-        `),
-      ])
-
-      const focusMinutesByTask = new Map<string, number>()
-      taskFocusRows.forEach((row) => {
-        focusMinutesByTask.set(row.task, row.focusMinutes)
-      })
-
-      const tasksWithStats = tasks
-        .map((task) => ({
-          id: task.id,
-          title: task.title,
-          completed: task.completed,
-          priority: task.priority,
-          focusMinutes: focusMinutesByTask.get(task.title) ?? 0,
-        }))
-        .sort((a, b) => b.focusMinutes - a.focusMinutes)
-
-      return NextResponse.json({ tasks: tasksWithStats })
+    if (!taskName && !projectId) {
+      const tasks = (await listFocusProjects(decoded.userId)).filter(task => !task.parentId).sort((a, b) => b.focusMinutes - a.focusMinutes)
+      return NextResponse.json({ tasks })
     }
 
-    // Return sessions for a specific task name
+    const project = await prisma.task.findFirst({
+      where: { userId: decoded.userId, parentId: null, ...(projectId ? { id: projectId } : { title: taskName! }) },
+      orderBy: [{ createdAt: 'asc' }, { id: 'asc' }],
+      select: { id: true },
+    })
+    if (projectId && !project) return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+
+    // Resolve by ID so renaming a project retains its session history.
     const sessions = await prisma.pomodoroSession.findMany({
       where: {
         userId: decoded.userId,
-        task: taskName,
+        ...(project ? { workProjectId: project.id } : { OR: [{ projectName: taskName }, { projectName: null, task: taskName! }] }),
         type: { in: ['WORK', 'TIME_TRACKING'] },
         status: { in: ['COMPLETED', 'CANCELLED'] },
       },
@@ -81,6 +50,8 @@ export async function GET(request: NextRequest) {
       select: {
         id: true,
         task: true,
+        projectName: true,
+        taskRecordId: true,
         type: true,
         status: true,
         duration: true,

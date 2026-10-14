@@ -248,6 +248,10 @@ model Task {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  parentId           String?
+  parent             Task? @relation("ProjectTasks", fields: [parentId], references: [id], onDelete: Cascade)
+  children           Task[] @relation("ProjectTasks")
+
   title              String
   description        String  @default("")
   pomodoros          Int     @default(1) // Планируемое количество
@@ -259,6 +263,7 @@ model Task {
   updatedAt DateTime @updatedAt
 
   @@index([userId, completed, createdAt])
+  @@index([userId, parentId])
   @@map("tasks")
 }
 
@@ -296,6 +301,10 @@ model PomodoroSession {
   projectId String?
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
+  workProjectId String?
+  taskRecordId  String?
+  projectName   String?
+
   task     String
   duration Int // in minutes
   type     String @default("WORK")
@@ -312,6 +321,7 @@ model PomodoroSession {
   updatedAt DateTime @updatedAt
 
   @@index([userId, type, status, completedAt], map: "pomodoro_sessions_achievement_history_idx")
+  @@index([workProjectId, status, completedAt])
   @@index([projectId, status, completedAt])
   @@index([roomId])
   @@index([status, startedAt])

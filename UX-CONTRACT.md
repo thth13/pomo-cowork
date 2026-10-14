@@ -17,6 +17,8 @@
 | Native mini timer | useDocumentPictureInPicture, TimerPictureInPicture, TimerActions | User-opened Document Picture-in-Picture window; portal shares timer state, locale, action handlers and pending flags; closing never stops the session |
 | Chrome extension | chrome-extension/background.js, app/api/timer, useSessionRestore | Account-authenticated popup and background worker control the server session without an open site; Pro gating, server completion rewards and guarded transitions are shared |
 | Task selection | TaskPicker | Existing authored picker; reused |
+| Projects table | ProjectList table variant, MyProjects | Native table on /projects; creation dates follow I18nProvider and browser timezone; name button expands shared tasks; narrow screens scroll the table region; activity ordering is preserved |
+| New task destination | ProjectList workspace composer, native select | Inset project chip uses browser-owned popup and keyboard behavior; only unfinished focus projects; successful creation expands destination and clears title, failure preserves draft |
 | Extension task Select/Listbox | Native select in chrome-extension/popup.html; popup.js owns options | Chrome-owned popup geometry and keyboard behavior accepted for selecting unfinished account tasks; no task creation in the popup |
 | Forms and settings | SettingsModal, existing .input and .btn | Existing settings workflow; shared visual adaptation |
 | Scrollbar | app/globals.css | Global visible baseline, theme tokens and forced-color fallback |

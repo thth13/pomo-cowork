@@ -676,3 +676,63 @@ The Navbar account avatar carries a shared red circular unread-notification coun
 in compact, desktop and mobile account views. `.avatar-unread-badge` in globals.css
 uses white Inter numerals on #dc2626 with a paper border; its bottom-right placement
 clears the Pro crown and does not resize navigation. Zero hides the badge.
+
+## Focus projects and tasks
+
+The workspace's My Projects window and `/projects` reuse `ProjectList`.
+`/projects` uses its native table variant: Project, Created, Tasks and Focused time
+columns, with quiet uppercase headers and fine row dividers. Creation dates follow
+the active English/Spanish locale and browser timezone; unavailable dates show a dash.
+Project-name buttons expand the shared task checklist in a full-width detail row.
+On narrow screens the table scrolls horizontally within its own focusable region.
+The workspace uses the compact list variant: a quiet project disclosure with localized task counts and tabular focused hours at the right
+and todo checkboxes below. Task counts include completed child tasks and show zero for
+empty projects, updating from the shared task store after mutations. Project headings
+stay on one line: long titles truncate with an ellipsis and expose the full title on
+hover; task counts use a small list icon and number with localized accessible text.
+The disclosure grid vertically centers all content and reserves equal task-count and
+focused-time columns across rows, centering each metric within its column.
+Both surfaces support inline task creation and preserve drafts on failure.
+Only `/projects` supports project creation; the workspace window has a neutral outlined
+Manage projects navigation button in the window header beside Close, leading to that route.
+It retains native link semantics and uses a transparent background, neutral border
+and ink text, a medium-weight label, and a trailing chevron, with distinct hover, active, and
+keyboard-focus states. The projects header has 6px inner padding; the compact 28px
+button is vertically centered with extra separation from Close. Coarse pointers
+retain a 44px minimum target height.
+The list starts directly below the window header without a duplicate inner heading
+or an empty divider row. The workspace adds tasks through one top input with an
+inset project chip and arrow submit button, replacing per-project entry rows.
+The chip uses a native select: application CSS owns its closed appearance; the
+browser owns the popup and keyboard interaction. Only unfinished projects are
+offered; success clears the draft and expands the destination project, failure
+preserves the draft. On `/projects`, task entry is a single transparent row with
+a fine bottom border and an integrated, quiet plus button; no separate empty-task
+caption competes with its placeholder. Both surfaces use the existing pixel tokens,
+Inter text and English/Spanish locale. Native
+buttons own disclosures and timer selection; checkboxes own child-task completion.
+Root projects have no completion checkbox or delete action on either surface.
+Projects and child tasks show unfinished items first, ordered by the start date of
+their latest recorded work/time-tracking session with positive focused time.
+Project activity includes child-task sessions. Ties and items without sessions use
+newest creation first; lifetime focused hours do not determine list order.
+The My Projects workspace window uses circle selection buttons with a check in
+the selected circle; labels say Select project/task. Selection never starts a
+session. `/projects` hides selection buttons for both projects and child tasks.
+The timer TaskPicker only searches and selects: no action menus, creation buttons,
+inline editing or focused-hour captions. Enter selects an existing search result.
+TaskPicker
+lists selectable projects with expandable child tasks. Project headings use
+semibold titles; child tasks use regular titles and an
+indented branch with connecting lines. Fine dividers separate project groups.
+This hierarchy is retained in search results and the mini timer. The picker searches both titles and
+shows project/task context for a selected todo. The existing native extension select
+keeps platform-owned popup behavior and displays the same project/task context. A running or paused focus session
+locks selection; its checklist can still be edited.
+
+Existing `Task` rows are retained as root projects; child rows use `parentId`.
+Sessions retain the legacy activity caption and journal `projectId`, with separate
+`workProjectId`, `taskRecordId` and `projectName` for focus attribution. Root selection
+has no taskRecordId. Project totals include work and time tracking, including time
+from deleted child tasks; IDs preserve attribution across renames. Historical
+same-title sessions resolve to the oldest matching project to avoid double counting.

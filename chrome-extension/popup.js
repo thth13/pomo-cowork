@@ -132,13 +132,13 @@ function renderTasks() {
   taskOptionsKey = key
   const select = $('task-select')
   select.replaceChildren(new Option(t('noTask'), ''))
-  for (const task of tasks) select.add(new Option(task.title, task.id))
+  for (const task of tasks) select.add(new Option(task.parentId ? `${task.projectTitle} / ${task.title}` : task.title, task.id))
   if (tasksHaveLoaded && selectedTaskId && !tasks.some(task => task.id === selectedTaskId)) {
     selectedTaskId = ''
     persistTask()
   }
   if (state?.sessionId) {
-    const current = tasks.find(task => task.title === state.task)
+    const current = tasks.find(task => task.id === (state.taskRecordId || state.workProjectId)) || tasks.find(task => task.title === state.task)
     if (current) {
       select.value = current.id
       if (selectedTaskId !== current.id) { selectedTaskId = current.id; persistTask() }
@@ -245,7 +245,7 @@ async function command(action, extra = {}) {
   } catch { offline = true; feedback('TIMEOUT', true); return false }
   finally { requestPending = false; draw(); void refresh() }
 }
-$('primary').addEventListener('click', () => void command(state?.sessionId ? state.running ? 'pause' : 'resume' : 'start', { task: tasks.find(task => task.id === selectedTaskId)?.title || '' }))
+$('primary').addEventListener('click', () => void command(state?.sessionId ? state.running ? 'pause' : 'resume' : 'start', { task: tasks.find(task => task.id === selectedTaskId)?.title || '', workProjectId: tasks.find(task => task.id === selectedTaskId)?.parentId || selectedTaskId || null, taskRecordId: tasks.find(task => task.id === selectedTaskId)?.parentId ? selectedTaskId : null }))
 $('stop').addEventListener('click', () => void command('stop'))
 document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => void command('mode', { mode: button.dataset.mode })))
 $('settings-form').addEventListener('input', event => { dirty = true; event.target.removeAttribute('aria-invalid') })

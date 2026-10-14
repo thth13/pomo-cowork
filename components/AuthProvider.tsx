@@ -23,6 +23,8 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
       if (saved && typeof saved.id === 'string' && !useTimerStore.getState().selectedTask) {
         useTimerStore.getState().setSelectedTask({
           id: saved.id,
+          parentId: typeof saved.parentId === "string" ? saved.parentId : null,
+          projectTitle: typeof saved.projectTitle === "string" ? saved.projectTitle : undefined,
           title: typeof saved.title === 'string' ? saved.title : '',
           description: typeof saved.description === 'string' ? saved.description : undefined,
         })

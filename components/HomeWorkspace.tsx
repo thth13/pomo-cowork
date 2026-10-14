@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useState, useRef, type ReactNode } from 'react'
+import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
 import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
@@ -304,7 +305,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
           Mount data panels on their first opening.
           Retain visited bodies so closing a window preserves drafts. */}
       {panels.map(({ id, title }, index) => workspaceLoading && id !== 'about' ? null : (
-        <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id) && (id !== 'about' || !isAuthenticated)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)}>
+        <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id) && (id !== 'about' || !isAuthenticated)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)} headerAction={id === 'tasks' ? <Link href="/projects" prefetch={false} className="workspace-window-header-link"><span>{language === 'es' ? 'Gestionar proyectos' : 'Manage projects'}</span><ChevronRight size={14} aria-hidden="true" /></Link> : undefined}>
           {(id === 'about' || openPanels.includes(id) || panelOrder.includes(id)) && (id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact isVisible={openPanels.includes(id)} /> : id === 'tasks' ? <TaskList ref={taskListRef} isVisible={openPanels.includes(id)} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution isVisible={openPanels.includes(id)} /> : <WorkHistory isVisible={openPanels.includes(id)} />)}
         </WorkspaceWindow>
       ))}

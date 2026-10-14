@@ -48,6 +48,8 @@ export async function GET(request: Request) {
         select: {
           id: true,
           task: true,
+          projectName: true,
+          taskRecordId: true,
           duration: true,
           type: true,
           status: true,
