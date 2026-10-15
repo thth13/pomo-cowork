@@ -1345,12 +1345,7 @@ body:has(.workspace-page[aria-busy="true"]) .kofi-widget {
 
 @media (max-width: 719px) {
   .kofi-widget {
-    left: calc(16px + env(safe-area-inset-left));
-    top: calc(16px + env(safe-area-inset-top));
-  }
-
-  body:has(.workspace-navigation) .kofi-widget {
-    top: calc(72px + env(safe-area-inset-top));
+    display: none;
   }
 
   body:has(.workspace-dock) .feedback-widget {

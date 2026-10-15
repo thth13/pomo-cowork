@@ -234,7 +234,7 @@ tokens, a 400px maximum width, 12px corners and soft shadow. The header is visua
 hidden but keeps the accessible title; a circular close icon overlays the iframe's
 top-right corner with a 44px target. The iframe has no surrounding padding. This explicit
 variant retains CommunityDialog behavior while excluding scene glass styling. The target
-is at least 44px high with visible keyboard focus. Below 720px it sits beneath compact navigation to avoid overlap.
+is at least 44px high with visible keyboard focus. Below 720px the support trigger is hidden.
 English/Spanish accessible labels follow
 I18nProvider through gardenCopy; Ko-fi owns the embedded form's language and content.
 
