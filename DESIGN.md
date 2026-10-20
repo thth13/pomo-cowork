@@ -668,6 +668,46 @@ Status labels also appear in details and do not rely on color alone.
 
 ## Intent-specific SEO tools
 
+### Independent aesthetic study desks
+
+Five additional routes (`aesthetic-study-timer`, `cozy-study-timer`, `rain-timer`,
+`animedoro-timer`, `study-stopwatch`) deliberately use page-local visual identities,
+as requested, instead of the shared workspace timer. `LocalStudyTimer.module.css`
+owns their semantic `--local-*` tokens and maps them to the editorial shell's pixel
+roles locally. Pastel uses lavender paper (#fbf6fc), plum ink (#40364f), and sunset
+peach (#edc0a4); cozy uses reading-paper (#f7f4e8) and green ink (#354539); rain uses
+blue-night (#1b303d) and mist ink (#e6f1f4); anime uses lavender (#f5f2fc) and violet
+ink (#39355b); the stopwatch uses notebook blue (#edf4f4) and teal ink (#26494e).
+These are intentional fixed scenes in either site theme, not saved appearance settings.
+Scenery contrast sampling and translucent editorial styling exclude their main element.
+Forced colors restores system colors. Existing outer header/footer retain site styling.
+
+Georgia carries the sunset, cozy and rain display; Trebuchet carries Animedoro;
+Courier carries the stopwatch, with inherited Inter for labels and prose. No fonts
+or image downloads are added. Original inline SVG/CSS scenes are decorative and
+static: sunset hills, tea/books, a rain window, mountains, and a ruled notebook.
+Sunset and Animedoro center the clock above a landscape; cozy/rain split the desk
+note and instrument; the stopwatch uses a ruled journal. All stack on narrow screens.
+
+`useLocalStudyTimer` is the per-mount timing owner for these five tools: timestamp
+arithmetic with millisecond pause preservation, idle/running/paused/finished states,
+and cleanup on unmount. `LocalStudyTimer` owns manual focus/break transitions,
+duration validation (1–180 whole minutes), a local intention and completion count.
+No store, socket, API, storage, document title, notification, or service-worker updates.
+Each page resets on reload/navigation. The existing standalone practice timer stays
+the owner for exam/classroom/reading; these new study desks require their own manual
+break lifecycle and count-up Finish action. No shared session services are used.
+RainAudio uses an isolated HTML audio element and the existing licensed rain asset;
+it never touches the workspace mixer. Playback is opt-in, errors are inline, and
+unmount stops audio. Countdown completion is visual and does not stop rain.
+
+English tool controls follow the English translation-excluded landing page, without
+depending on I18nProvider. Number/range inputs intentionally use native editing.
+All actions have visible focus and disabled states; timer ticks are not live-announced.
+Metadata, FAQs, related links, registry-driven discovery and sitemap reuse existing
+SEO owners. `docs/seo-local-timers.md` records search evidence and manual checks.
+Per the user's instructions, do not run the project, builds, tests or tsc for this task.
+
 The English `(tools)` landing shell keeps server-rendered explanations, FAQs and
 canonical metadata. Nine new routes extend the existing aesthetic timer, using
 `seoRoutes.ts` as the sitemap/discovery registry and `seoIntentPages.ts` for authored

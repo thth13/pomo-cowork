@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import JsonLd from '@/components/blog/JsonLd'
 import SeoWorkspace from './SeoWorkspace'
+import LocalStudyTimer from './LocalStudyTimer'
+import localStyles from './LocalStudyTimer.module.css'
 import { seoPages } from '@/lib/seoPages'
 import { seoToolLabels, type SeoSlug } from '@/lib/seoRoutes'
 
@@ -37,20 +39,20 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
   const page = seoPages[slug]
   const url = `${siteUrl}/${slug}`
   return (
-    <main id="seo-content" className={`seo-content${page.appearance === 'aesthetic' ? ' seo-content-aesthetic' : ''}`}>
+    <main id="seo-content" data-local-timer={page.localTimer} className={`seo-content${page.appearance === 'aesthetic' ? ' seo-content-aesthetic' : ''}${page.localTimer ? ` ${localStyles.page} ${localStyles[page.localTimer]}` : ''}`}>
       <JsonLd data={{
         '@context': 'https://schema.org',
         '@graph': [
           {
             '@type': 'WebPage', '@id': `${url}#page`, url,
             name: page.title, description: page.description, inLanguage: 'en',
-            about: { '@id': `${siteUrl}/#application` },
+            about: { '@id': page.localTimer ? `${url}#application` : `${siteUrl}/#application` },
           },
           {
-            '@type': 'WebApplication', '@id': `${siteUrl}/#application`,
-            name: 'Pomo Cowork', url: siteUrl,
+            '@type': 'WebApplication', '@id': page.localTimer ? `${url}#application` : `${siteUrl}/#application`,
+            name: page.localTimer ? seoToolLabels[slug] : 'Pomo Cowork', url: page.localTimer ? url : siteUrl,
             applicationCategory: 'ProductivityApplication', operatingSystem: 'Web browser',
-            description: 'An online focus timer with live coworking sessions, tasks, and study rooms.',
+            description: page.localTimer ? page.description : 'An online focus timer with live coworking sessions, tasks, and study rooms.',
           },
           {
             '@type': 'FAQPage', '@id': `${url}#faq`, url: `${url}#faq`, inLanguage: 'en',
@@ -71,7 +73,7 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
           {page.social && <Link className="seo-text-link" href="/rooms">Find a room for your group</Link>}
         </div>
       </header>
-      <SeoWorkspace key={slug} title={page.title} defaults={page.defaults} timerNote={page.timerNote} social={page.social} socialHeading={page.socialHeading} socialCopy={page.socialCopy} appearance={page.appearance} experience={page.experience} />
+      {page.localTimer ? <LocalStudyTimer key={slug} variant={page.localTimer} /> : <SeoWorkspace key={slug} title={page.title} defaults={page.defaults} timerNote={page.timerNote} social={page.social} socialHeading={page.socialHeading} socialCopy={page.socialCopy} appearance={page.appearance} experience={page.experience} />}
       <div className="seo-guide">
         <section className="seo-explanation" aria-labelledby="explanation-heading">
           <h2 id="explanation-heading">{page.explanationHeading}</h2>

@@ -51,6 +51,11 @@ export const seoSlugs = [
   'timeboxing-timer',
   'body-doubling-online',
   'classroom-timer',
+  'aesthetic-study-timer',
+  'cozy-study-timer',
+  'rain-timer',
+  'animedoro-timer',
+  'study-stopwatch',
 ] as const
 
 export type SeoSlug = typeof seoSlugs[number]
@@ -108,6 +113,11 @@ export const seoToolLabels: Record<SeoSlug, string> = {
   'timeboxing-timer': 'Timeboxing Timer',
   'body-doubling-online': 'Body Doubling Online',
   'classroom-timer': 'Classroom Timer',
+  'aesthetic-study-timer': 'Aesthetic Study Timer',
+  'cozy-study-timer': 'Cozy Study Timer',
+  'rain-timer': 'Rain Timer',
+  'animedoro-timer': 'Animedoro Timer',
+  'study-stopwatch': 'Study Stopwatch',
 }
 
 export function isSeoPath(pathname: string) {

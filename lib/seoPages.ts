@@ -4,6 +4,8 @@ import { examSeoPages } from './seoExamPages'
 import { intentSeoPages } from './seoIntentPages'
 import { learningSeoPages } from './seoLearningPages'
 import { workflowSeoPages } from './seoWorkflowPages'
+import { localTimerSeoPages } from './seoLocalTimerPages'
+import type { LocalTimerVariant } from './localTimerConfig'
 
 export interface SeoPage {
   keyword: string
@@ -15,6 +17,7 @@ export interface SeoPage {
   cta: string
   social: boolean
   appearance?: 'aesthetic'
+  localTimer?: LocalTimerVariant
   experience?: 'aesthetic' | 'lofi' | 'fullscreen' | 'clock' | 'minimal' | 'deep-work' | 'exam' | 'reading' | 'coding' | 'classroom'
   defaults: { workDuration: number; shortBreak: number; longBreak: number; longBreakAfter: number }
   timerNote: string
@@ -44,9 +47,10 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
   ...intentSeoPages,
   ...learningSeoPages,
   ...workflowSeoPages,
+  ...localTimerSeoPages,
   'aesthetic-timer': {
     keyword: 'Aesthetic timer',
-    secondaryKeywords: ['aesthetic study timer', 'aesthetic focus timer', 'minimalist timer', 'cozy focus timer'],
+    secondaryKeywords: ['aesthetic desk timer', 'aesthetic focus timer', 'minimalist timer', 'calm focus timer'],
     title: 'Aesthetic Timer — Minimalist Pomodoro & Calm Background | Pomo Cowork',
     description: 'Settle into a 25-minute focus session with a calm landscape background and a minimalist Pomodoro timer. Adjust your breaks and study at your own pace.',
     heading: 'Aesthetic timer for a quieter study space',
@@ -87,7 +91,7 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
       { question: 'Can I pause or reset the timer?', answer: 'Yes. Pause lets you resume the same session after an interruption. Reset stops the current countdown so you can begin again. Visiting this page with an existing active or paused session preserves its timing.' },
       { question: 'Do I need an account to start?', answer: 'You can start the timer as a guest. If you want account features such as saved session history, use the sign-in options in the main workspace. There is no need to create a room for an individual focus session.' },
     ],
-    related: ['aesthetic-pomodoro-timer', 'lofi-timer', 'fullscreen-timer', 'flip-clock', 'minimalist-study-timer'],
+    related: ['aesthetic-study-timer', 'cozy-study-timer', 'aesthetic-pomodoro-timer', 'lofi-timer', 'fullscreen-timer', 'flip-clock', 'minimalist-study-timer'],
     finalHeading: 'A little space for your next task',
     finalCopy: 'Set your materials nearby, choose one starting point, and let the countdown mark the time.',
   },
@@ -177,7 +181,7 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
       { question: 'Does more time on the timer mean better learning?', answer: 'Not necessarily. Time is a useful record of effort, but understanding needs a separate check. Summarize a concept from memory, solve a fresh problem, or explain why an answer is correct. Use the timer to make space for these activities instead of treating a high total as the goal.' },
       { question: 'Can I study alongside people without joining a class?', answer: 'Yes. Pomo Cowork shows live focus sessions, and you can work on your own material alongside the people who are online. There is no shared syllabus required. If you want the same group each time, explore the rooms and account options in the app.' },
     ],
-    related: ['pomodoro-timer', 'focus-timer', 'study-with-friends', '50-minute-timer', 'timer-for-studying', 'study-timer-with-friends'],
+    related: ['aesthetic-study-timer', 'study-stopwatch', 'animedoro-timer', 'pomodoro-timer', 'focus-timer', 'study-with-friends', '50-minute-timer', 'timer-for-studying', 'study-timer-with-friends'],
     finalHeading: 'Choose the topic for your next block',
     finalCopy: 'Open your materials, decide what progress looks like, and start studying.',
   },

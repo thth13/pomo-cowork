@@ -4,7 +4,7 @@
 .workspace-background-media, .workspace-background-wash { position: absolute; inset: 0; width: 100%; height: 100%; }
 .workspace-background-media { object-fit: cover; }
 .workspace-background-wash { background: color-mix(in srgb, var(--pixel-page) 20%, transparent); }
-.seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer) {
+.seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer):where(:not([data-local-timer])) {
   background: color-mix(in srgb, var(--pixel-page) 12%, transparent);
   -webkit-backdrop-filter: blur(6px);
   backdrop-filter: blur(6px);
@@ -19,7 +19,7 @@
 [data-scenery-text] .scenery-task-trigger > span,
 .workspace-dock[data-scenery-text] > button,
 .seo-header[data-scenery-text] :is(h1, p),
-.seo-content[data-scenery-text] :is(h2, h3, p, li),
+.seo-content[data-scenery-text]:where(:not([data-local-timer])) :is(h2, h3, p, li),
 .seo-footer[data-scenery-text] :is(p, a) {
   color: var(--scenery-ink);
   text-shadow: var(--scenery-shadow);
@@ -37,7 +37,7 @@
 .workspace-dock[data-scenery-text] button:focus-visible { outline-color: var(--scenery-ink); }
 .workspace-dock[data-scenery-text] .workspace-dock-tooltip { text-shadow: none; }
 [data-scenery-text] :is(.coworker-tile-avatar, .pixel-mini-timer-message) { color: var(--pixel-ink); text-shadow: none; }
-.seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer) {
+.seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer):where(:not([data-local-timer])) {
   padding-inline: 24px;
 }
 
@@ -146,7 +146,7 @@
   .pomodoro-home:has(.workspace-background) .focus-station,
   .pomodoro-home:has(.workspace-background) .working-sidebar,
   .pomodoro-home:has(.workspace-background) .workspace-dock,
-  .seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer) { background: Canvas; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer):where(:not([data-local-timer])) { background: Canvas; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .appearance-choice:has(input:checked) { border-color: Highlight; outline: 2px solid Highlight; box-shadow: none; }
   .appearance-selected { border-color: Highlight; }
 }
