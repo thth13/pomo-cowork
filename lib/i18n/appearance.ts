@@ -12,8 +12,9 @@ export const appearanceCopy = {
     loading: 'Loading your scene…', error: 'This scene could not load. Try again or choose another background.',
     blocked: 'Your browser paused the video. Press Play background to try again.', retry: 'Try again',
     source: 'Video source: Mixkit',
-    names: { default: 'Pocket garden', 'rainy-window': 'Rainy window', 'misty-lake': 'Morning mist', 'sunset-coast': 'Peach coast', 'forest-rain': 'Forest rain', 'forest-stream': 'Woodland stream', 'ocean-sunset': 'Ocean sunset' },
-    fonts: { pixel: 'Pixel', sans: 'Clean', serif: 'Editorial', mono: 'Mono', rounded: 'Soft' },
+    unlockPremium: 'Unlock with Pro. View plans.',
+    names: { default: 'Pocket garden', 'rainy-window': 'Rainy window', 'misty-lake': 'Morning mist', 'sunset-coast': 'Peach coast', 'forest-rain': 'Forest rain', 'forest-stream': 'Woodland stream', 'ocean-sunset': 'Ocean sunset', 'alpine-dawn': 'Alpine dawn', 'desert-dunes': 'Desert dunes', 'aurora-lake': 'Aurora lake', 'peach-glow': 'Peach glow', 'mint-haze': 'Mint haze', 'violet-dusk': 'Violet dusk' },
+    fonts: { pixel: 'Pixel', sans: 'Clean', serif: 'Editorial', mono: 'Mono', rounded: 'Soft', orbitron: 'Orbitron', 'space-grotesk': 'Space', cormorant: 'Cormorant', bebas: 'Bebas', vt323: 'Terminal' },
   },
   es: {
     title: 'Tu espacio para concentrarte', trigger: 'Apariencia',
@@ -28,7 +29,8 @@ export const appearanceCopy = {
     loading: 'Cargando tu escena…', error: 'No se pudo cargar esta escena. Reinténtalo o elige otro fondo.',
     blocked: 'Tu navegador ha pausado el vídeo. Pulsa Reproducir fondo para reintentarlo.', retry: 'Reintentar',
     source: 'Fuente del vídeo: Mixkit',
-    names: { default: 'Pequeño jardín', 'rainy-window': 'Ventana con lluvia', 'misty-lake': 'Bruma matinal', 'sunset-coast': 'Costa al atardecer', 'forest-rain': 'Lluvia en el bosque', 'forest-stream': 'Arroyo del bosque', 'ocean-sunset': 'Ocaso en el mar' },
-    fonts: { pixel: 'Píxel', sans: 'Limpia', serif: 'Editorial', mono: 'Mono', rounded: 'Suave' },
+    unlockPremium: 'Desbloquea con Pro. Ver planes.',
+    names: { default: 'Pequeño jardín', 'rainy-window': 'Ventana con lluvia', 'misty-lake': 'Bruma matinal', 'sunset-coast': 'Costa al atardecer', 'forest-rain': 'Lluvia en el bosque', 'forest-stream': 'Arroyo del bosque', 'ocean-sunset': 'Ocaso en el mar', 'alpine-dawn': 'Amanecer alpino', 'desert-dunes': 'Dunas del desierto', 'aurora-lake': 'Lago de auroras', 'peach-glow': 'Brillo melocotón', 'mint-haze': 'Bruma menta', 'violet-dusk': 'Ocaso violeta' },
+    fonts: { pixel: 'Píxel', sans: 'Limpia', serif: 'Editorial', mono: 'Mono', rounded: 'Suave', orbitron: 'Orbitron', 'space-grotesk': 'Space', cormorant: 'Cormorant', bebas: 'Bebas', vt323: 'Terminal' },
   },
 } as const

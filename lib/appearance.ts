@@ -8,12 +8,28 @@ export const BACKGROUNDS = [
   { id: 'forest-rain', kind: 'video', src: `${BLOB_BASE_URL}/backgrounds/videos/forest-rain.mp4`, preview: `${BLOB_BASE_URL}/backgrounds/posters/forest-rain.jpg`, source: 'https://mixkit.co/free-stock-video/raining-in-a-cloud-forest-full-of-tall-trees-22728/' },
   { id: 'forest-stream', kind: 'video', src: `${BLOB_BASE_URL}/backgrounds/videos/forest-stream.mp4`, preview: `${BLOB_BASE_URL}/backgrounds/posters/forest-stream.jpg`, source: 'https://mixkit.co/free-stock-video/forest-stream-in-the-sunlight-529/' },
   { id: 'ocean-sunset', kind: 'video', src: `${BLOB_BASE_URL}/backgrounds/videos/ocean-sunset.mp4`, preview: `${BLOB_BASE_URL}/backgrounds/posters/ocean-sunset.jpg`, source: 'https://mixkit.co/free-stock-video/stunning-sunset-seen-from-the-sea-4119/' },
+  { id: 'alpine-dawn', kind: 'image', premium: true, src: '/backgrounds/images/alpine-dawn.jpg', preview: '/backgrounds/images/alpine-dawn-thumb.jpg' },
+  { id: 'desert-dunes', kind: 'image', premium: true, src: '/backgrounds/images/desert-dunes.jpg', preview: '/backgrounds/images/desert-dunes-thumb.jpg' },
+  { id: 'aurora-lake', kind: 'image', premium: true, src: '/backgrounds/images/aurora-lake.jpg', preview: '/backgrounds/images/aurora-lake-thumb.jpg' },
+  { id: 'peach-glow', kind: 'image', premium: true, src: '/backgrounds/images/peach-glow.jpg', preview: '/backgrounds/images/peach-glow-thumb.jpg' },
+  { id: 'mint-haze', kind: 'image', premium: true, src: '/backgrounds/images/mint-haze.jpg', preview: '/backgrounds/images/mint-haze-thumb.jpg' },
+  { id: 'violet-dusk', kind: 'image', premium: true, src: '/backgrounds/images/violet-dusk.jpg', preview: '/backgrounds/images/violet-dusk-thumb.jpg' },
 ] as const
 
-export const TIMER_FONTS = ['pixel', 'sans', 'serif', 'mono', 'rounded'] as const
+export const PREMIUM_TIMER_FONTS = ['orbitron', 'space-grotesk', 'cormorant', 'bebas', 'vt323'] as const
+export const TIMER_FONTS = ['pixel', 'sans', 'serif', 'mono', 'rounded', ...PREMIUM_TIMER_FONTS] as const
 export const PLAY_BACKGROUND_EVENT = 'pomo:play-background'
 export type BackgroundId = (typeof BACKGROUNDS)[number]['id']
 export type TimerFont = (typeof TIMER_FONTS)[number]
+
+export function isPremiumBackground(id: BackgroundId): boolean {
+  const background = BACKGROUNDS.find(item => item.id === id)
+  return Boolean(background && 'premium' in background && background.premium)
+}
+
+export function isPremiumTimerFont(font: TimerFont): boolean {
+  return PREMIUM_TIMER_FONTS.some(premiumFont => premiumFont === font)
+}
 
 export const DEFAULT_APPEARANCE = {
   backgroundId: 'default' as BackgroundId,

@@ -328,12 +328,22 @@ Failures preserve the previous background and offer a localized retry after a bo
 20-second wait. Other appearance changes apply immediately; the footer says they save automatically.
 Reset restores the default background, pixel face and video playback preference.
 Native radio groups own arrow-key choice; there is no authored select popup.
+The six new image choices (three landscapes and three gradients) and five new fonts are Pro-only. Locked
+tiles remain visible with a Pro badge and use native buttons with localized plan-view
+labels. Activating one closes the native appearance dialog before opening the existing
+PaywallModal from `/statistics`; closing the paywall restores the appearance trigger.
+Available choices retain native radio behavior. Billing and signup retain their shared owners.
 
 AppearanceProvider restores validated catalog IDs after hydration. The versioned
 `pomo:appearance:v1` localStorage record contains only background, font and pause state.
 Storage failures keep choices in memory and show an inline notice. Storage events
 sync tabs, using the browser's last write; settings do not change timer/session state.
-No account, database, room-membership or billing change is involved.
+`lib/proAccess.ts` shares the existing active-Pro predicate with server authorization.
+The appearance store checks entitlement for selection, asynchronous image completion
+and restore. AppearanceProvider synchronizes auth changes, expiry and tab visibility.
+Unavailable Pro preferences remain saved but render the default background/pixel font
+until access returns. This also avoids applying Pro assets while authentication loads.
+No database, room-membership or billing workflow is changed.
 
 WorkspaceBackground is mounted by the home and search timer shells. Only the chosen
 full-size scene loads; the settings gallery uses still thumbnails, never preview videos.

@@ -1,17 +1,42 @@
 'use client'
 
-import { useEffect, useId, useRef, useState } from 'react'
-import { Check, Film, Loader2, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
-import { BACKGROUNDS, PLAY_BACKGROUND_EVENT, TIMER_FONTS } from '@/lib/appearance'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
+import { Check, Crown, Film, Loader2, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
+import { BACKGROUNDS, isPremiumBackground, isPremiumTimerFont, PLAY_BACKGROUND_EVENT, TIMER_FONTS } from '@/lib/appearance'
 import { appearanceCopy } from '@/lib/i18n/appearance'
 import { useI18n } from '@/components/I18nProvider'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
+import { PaywallModal } from '@/components/PaywallModal'
+
+function AppearanceChoice({ premium, locked, name, value, checked, busy, label, className = '', onSelect, onUnlock, children }: {
+  premium: boolean
+  locked: boolean
+  name: string
+  value: string
+  checked: boolean
+  busy?: boolean
+  label: string
+  className?: string
+  onSelect: () => void
+  onUnlock: () => void
+  children: ReactNode
+}) {
+  const badge = premium && <span className="appearance-pro-badge" aria-hidden="true"><Crown size={11} />Pro</span>
+  const classes = `appearance-choice ${className}`
+  if (locked) return <button type="button" className={classes} data-premium aria-label={label} aria-haspopup="dialog" onClick={onUnlock}>{children}{badge}</button>
+  return <label className={classes} data-premium={premium || undefined}>
+    <input type="radio" name={name} value={value} checked={checked} aria-label={label} aria-busy={busy} onChange={onSelect} />
+    {children}{badge}
+  </label>
+}
 
 export default function AppearanceSettings() {
   const { language, t } = useI18n()
   const copy = appearanceCopy[language]
   const [open, setOpen] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
   const dialogRef = useRef<HTMLDialogElement>(null)
   const triggerRef = useRef<HTMLButtonElement>(null)
   const backdropPointer = useRef(false)
@@ -24,6 +49,11 @@ export default function AppearanceSettings() {
   const selected = BACKGROUNDS.find(background => background.id === state.backgroundId) ?? BACKGROUNDS[0]
   const mediaStatus = state.pendingBackgroundId ? 'loading' : state.failedBackgroundId ? 'error' : state.mediaStatus
   const loadingBackgroundId = state.pendingBackgroundId ?? (state.mediaStatus === 'loading' ? state.backgroundId : null)
+  const openPaywall = () => {
+    // Leave the native top layer before opening the shared checkout/auth overlays.
+    setOpen(false)
+    setShowPaywall(true)
+  }
 
   useEffect(() => {
     const dialog = dialogRef.current
@@ -68,8 +98,10 @@ export default function AppearanceSettings() {
               <legend>{copy.backgrounds}</legend>
               <div className="appearance-scenes">
                 {BACKGROUNDS.map(background => (
-                  <label key={background.id} className="appearance-choice">
-                    <input type="radio" name={radioName} value={background.id} checked={(state.pendingBackgroundId ?? state.backgroundId) === background.id} aria-busy={loadingBackgroundId === background.id} onChange={() => state.setBackground(background.id)} />
+                  <AppearanceChoice key={background.id} premium={isPremiumBackground(background.id)} locked={isPremiumBackground(background.id) && !state.hasProAccess}
+                    name={radioName} value={background.id} checked={(state.pendingBackgroundId ?? state.backgroundId) === background.id} busy={loadingBackgroundId === background.id}
+                    label={`${copy.names[background.id]}${isPremiumBackground(background.id) && !state.hasProAccess ? `. ${copy.unlockPremium}` : ''}`}
+                    onSelect={() => state.setBackground(background.id)} onUnlock={openPaywall}>
                     <span className="appearance-scene-preview">
                       {background.kind === 'default' ? <span className="appearance-default-preview garden-page"><span aria-hidden="true">25:00</span></span> : (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -83,7 +115,7 @@ export default function AppearanceSettings() {
                       {copy.names[background.id]}
                       {background.kind === 'default' && state.backgroundId === background.id && <span className="appearance-selected"><Check size={13} aria-hidden="true" /><span className="sr-only">{copy.selected}</span></span>}
                     </span>
-                  </label>
+                  </AppearanceChoice>
                 ))}
               </div>
               <div className="appearance-media-feedback" role="status" aria-live="polite">
@@ -114,11 +146,13 @@ export default function AppearanceSettings() {
               <legend>{copy.font}</legend>
               <div className="appearance-fonts">
                 {TIMER_FONTS.map(font => (
-                  <label key={font} className="appearance-choice appearance-font-choice">
-                    <input type="radio" name={fontName} checked={state.timerFont === font} value={font} onChange={() => state.setTimerFont(font)} />
+                  <AppearanceChoice key={font} className="appearance-font-choice" premium={isPremiumTimerFont(font)} locked={isPremiumTimerFont(font) && !state.hasProAccess}
+                    name={fontName} value={font} checked={state.timerFont === font}
+                    label={`${copy.fonts[font]}${isPremiumTimerFont(font) && !state.hasProAccess ? `. ${copy.unlockPremium}` : ''}`}
+                    onSelect={() => state.setTimerFont(font)} onUnlock={openPaywall}>
                     <span className="appearance-font-sample" data-timer-font={font} aria-hidden="true">25:00</span>
                     <span className="appearance-choice-label">{copy.fonts[font]}{state.timerFont === font && <Check size={13} aria-hidden="true" />}</span>
-                  </label>
+                  </AppearanceChoice>
                 ))}
               </div>
             </fieldset>
@@ -132,6 +166,10 @@ export default function AppearanceSettings() {
           </footer>
         </dialog>
       )}
+      {showPaywall && createPortal(<PaywallModal onClose={() => {
+        setShowPaywall(false)
+        triggerRef.current?.focus({ preventScroll: true })
+      }} />, document.body)}
     </>
   )
 }

@@ -11,7 +11,7 @@ import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import Link from 'next/link'
 import Script from 'next/script'
-import { Inter } from 'next/font/google'
+import { Bebas_Neue, Cormorant_Garamond, Inter, Orbitron, Space_Grotesk, VT323 } from 'next/font/google'
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AppearanceProvider } from '@/components/AppearanceProvider'
@@ -30,6 +30,11 @@ import PremiumGrantModal from '@/components/PremiumGrantModal'
 config.autoAddCss = false
 
 const inter = Inter({ subsets: ['latin'] })
+const orbitron = Orbitron({ subsets: ['latin'], weight: '500', variable: '--font-timer-orbitron', preload: false })
+const spaceGrotesk = Space_Grotesk({ subsets: ['latin'], weight: '500', variable: '--font-timer-space', preload: false })
+const cormorant = Cormorant_Garamond({ subsets: ['latin'], weight: '500', variable: '--font-timer-cormorant', preload: false })
+const bebas = Bebas_Neue({ subsets: ['latin'], weight: '400', variable: '--font-timer-bebas', preload: false })
+const terminal = VT323({ subsets: ['latin'], weight: '400', variable: '--font-timer-terminal', preload: false })
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://pomo-co.work'),
@@ -105,7 +110,7 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${orbitron.variable} ${spaceGrotesk.variable} ${cormorant.variable} ${bebas.variable} ${terminal.variable}`}>
         <ThemeProvider>
           <I18nProvider>
             <AppearanceProvider>

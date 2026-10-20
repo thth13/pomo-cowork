@@ -420,14 +420,17 @@ replaces API data. Basic accounts with no sessions also receive this preview.
 The timer's icon-only Appearance button sits at the top beside Settings, with a localized
 accessible name and tooltip. On narrow screens the status sits below the icon row.
 It opens a native modal dialog with a compact scenery
-gallery and five digit previews. The default remains Pocket Garden and pixel digits.
-Three generated aesthetic landscapes and three Vercel Blob-hosted Mixkit videos provide
-optional scenery; `public/backgrounds/README.md` records sources and generation prompts.
+gallery and ten digit previews. The default remains Pocket Garden and pixel digits.
+Six generated aesthetic landscapes, three abstract gradient wallpapers and three Vercel Blob-hosted Mixkit videos provide
+optional scenery; `public/backgrounds/README.md` records new asset paths and generation prompts.
 `lib/appearance.ts` owns the catalog; `app/appearance.css` owns its shared presentation.
 Scenery appears on home, search timer pages and product routes: rooms, leaderboard,
 both statistics pages, habits, profiles, ranks, settings and journal screens.
 Existing room gradients remain inside room headers. Personal choice is shared per
-browser, independent of the account.
+browser; access to the three new landscapes, three gradients and five additional fonts
+follows the active account's Pro entitlement. The original choices stay free.
+The gradients offer peach/rose/lilac, mint/blue/cream and indigo/orchid color fields;
+they are static raster scenery and use the same thumbnails, loading and contrast behavior.
 
 Product routes render the selected media once through `AppearanceProvider` and
 `WorkspaceBackground`. `app/appearance.css` maps their existing Pocket Garden
@@ -479,13 +482,19 @@ colors stay scoped to scenery surfaces and their settings dialogs; avatars and o
 opaque application UI retain their theme colors.
 
 The gallery uses native radio inputs, visible selection checks and keyboard focus;
+Pro choices carry a small crown-and-Pro badge using existing paper, ink and border tokens.
+Without active Pro, these tiles are native buttons that close the appearance dialog
+and open the same PaywallModal used by `/statistics`, keeping checkout above all other UI.
 it scrolls within a bounded dialog while the header and Done action remain reachable.
 English/Spanish text follows I18nProvider via `lib/i18n/appearance.ts`.
 
 `data-timer-font` maps pixel, system sans, Georgia, Courier New and Trebuchet MS to
 `--timer-face` in `app/appearance.css`, with local fallbacks. Only timer numerals change,
 including the native mini window; existing size/line-height remains stable. UI and
-body typography retain their previous owners. No extra font request is introduced.
+body typography retain their previous owners. Pro adds Orbitron, Space Grotesk,
+Cormorant Garamond, Bebas Neue and VT323 through `next/font/google` in `app/layout.tsx`,
+with preloading disabled. Body CSS variables map them to `--timer-face`; these same
+variables follow the mini window. Font files load when a preview or selected face is used.
 Video is muted and loops, with playback controls in appearance settings only. Reduced-motion users get
 the poster without a video request; hidden tabs pause playback. Forced colors hides
 scenery and retains system surfaces. No new palette or global theme change is needed.

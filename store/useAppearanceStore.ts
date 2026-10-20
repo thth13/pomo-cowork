@@ -1,7 +1,9 @@
 'use client'
 
 import { create } from 'zustand'
-import { BACKGROUNDS, DEFAULT_APPEARANCE, parseAppearance, type BackgroundId, type TimerFont } from '@/lib/appearance'
+import { BACKGROUNDS, DEFAULT_APPEARANCE, isPremiumBackground, isPremiumTimerFont, parseAppearance, type BackgroundId, type TimerFont } from '@/lib/appearance'
+import { hasActiveProAccess } from '@/lib/proAccess'
+import { useAuthStore } from '@/store/useAuthStore'
 
 export const APPEARANCE_STORAGE_KEY = 'pomo:appearance:v1'
 type MediaStatus = 'idle' | 'loading' | 'ready' | 'error' | 'blocked'
@@ -11,6 +13,7 @@ interface AppearanceStore {
   timerFont: TimerFont
   videoPaused: boolean
   hydrated: boolean
+  hasProAccess: boolean
   storageAvailable: boolean
   mediaStatus: MediaStatus
   mediaRevision: number
@@ -18,6 +21,7 @@ interface AppearanceStore {
   failedBackgroundId: BackgroundId | null
   hydrate: () => void
   restore: (value: string | null) => void
+  syncProAccess: () => void
   setBackground: (id: BackgroundId) => void
   setTimerFont: (font: TimerFont) => void
   setVideoPaused: (paused: boolean) => void
@@ -27,6 +31,21 @@ interface AppearanceStore {
 }
 
 export const useAppearanceStore = create<AppearanceStore>((set, get) => {
+  // Preserve preferences while access is unavailable (including the initial auth check).
+  let savedAppearance = { ...DEFAULT_APPEARANCE }
+  const canUsePremium = () => {
+    const { isAuthenticated, user } = useAuthStore.getState()
+    return isAuthenticated && hasActiveProAccess(user)
+  }
+  const availableAppearance = () => {
+    const hasProAccess = canUsePremium()
+    return {
+      ...savedAppearance,
+      hasProAccess,
+      backgroundId: !hasProAccess && isPremiumBackground(savedAppearance.backgroundId) ? DEFAULT_APPEARANCE.backgroundId : savedAppearance.backgroundId,
+      timerFont: !hasProAccess && isPremiumTimerFont(savedAppearance.timerFont) ? DEFAULT_APPEARANCE.timerFont : savedAppearance.timerFont,
+    }
+  }
   let cancelImageLoad: (() => void) | undefined
   const cancelPendingBackground = () => {
     cancelImageLoad?.()
@@ -34,10 +53,10 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => {
     set({ pendingBackgroundId: null, failedBackgroundId: null })
   }
   const save = (changes: Partial<typeof DEFAULT_APPEARANCE>) => {
-    set(changes)
-    const { backgroundId, timerFont, videoPaused } = get()
+    savedAppearance = { ...savedAppearance, ...changes }
+    set(availableAppearance())
     try {
-      localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify({ backgroundId, timerFont, videoPaused }))
+      localStorage.setItem(APPEARANCE_STORAGE_KEY, JSON.stringify(savedAppearance))
       set({ storageAvailable: true })
     } catch {
       set({ storageAvailable: false })
@@ -47,6 +66,7 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => {
   return {
     ...DEFAULT_APPEARANCE,
     hydrated: false,
+    hasProAccess: false,
     storageAvailable: true,
     mediaStatus: 'idle',
     mediaRevision: 0,
@@ -64,14 +84,27 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => {
     restore: value => {
       cancelPendingBackground()
       try {
-        const next = parseAppearance(value ? JSON.parse(value) : null)
+        savedAppearance = parseAppearance(value ? JSON.parse(value) : null)
+        const next = availableAppearance()
         set({ ...next, mediaStatus: next.backgroundId === get().backgroundId ? get().mediaStatus : 'idle' })
       } catch {
         // Invalid saved data must never prevent opening the timer.
-        set({ ...DEFAULT_APPEARANCE, mediaStatus: 'idle' })
+        savedAppearance = { ...DEFAULT_APPEARANCE }
+        set({ ...availableAppearance(), mediaStatus: 'idle' })
       }
     },
+    syncProAccess: () => {
+      const next = availableAppearance()
+      const pending = get().pendingBackgroundId
+      const failed = get().failedBackgroundId
+      if (!next.hasProAccess) {
+        if (pending && isPremiumBackground(pending)) cancelPendingBackground()
+        else if (failed && isPremiumBackground(failed)) set({ failedBackgroundId: null })
+      }
+      set({ ...next, mediaStatus: next.backgroundId === get().backgroundId ? get().mediaStatus : 'idle' })
+    },
     setBackground: backgroundId => {
+      if (isPremiumBackground(backgroundId) && !canUsePremium()) return
       if (get().pendingBackgroundId === backgroundId) return
       cancelPendingBackground()
       if (get().backgroundId === backgroundId) return
@@ -97,6 +130,11 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => {
         if (cancelled) return
         cleanup()
         cancelImageLoad = undefined
+        if (isPremiumBackground(backgroundId) && !canUsePremium()) {
+          set({ pendingBackgroundId: null })
+          get().syncProAccess()
+          return
+        }
         if (success) {
           set({ pendingBackgroundId: null, mediaStatus: 'ready' })
           save({ backgroundId })
@@ -113,7 +151,10 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => {
       image.onerror = () => finish(false)
       image.src = scene.src
     },
-    setTimerFont: timerFont => save({ timerFont }),
+    setTimerFont: timerFont => {
+      if (isPremiumTimerFont(timerFont) && !canUsePremium()) return
+      save({ timerFont })
+    },
     setVideoPaused: videoPaused => save({ videoPaused }),
     setMediaStatus: (id, mediaStatus) => {
       if (get().backgroundId === id) set({ mediaStatus })

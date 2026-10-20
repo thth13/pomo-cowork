@@ -47,11 +47,18 @@
 [data-timer-font="serif"] { --timer-face: Georgia, 'Times New Roman', serif; }
 [data-timer-font="mono"] { --timer-face: 'Courier New', Courier, monospace; }
 [data-timer-font="rounded"] { --timer-face: 'Trebuchet MS', Verdana, sans-serif; }
+[data-timer-font="orbitron"] { --timer-face: var(--font-timer-orbitron), 'Trebuchet MS', sans-serif; }
+[data-timer-font="space-grotesk"] { --timer-face: var(--font-timer-space), system-ui, sans-serif; }
+[data-timer-font="cormorant"] { --timer-face: var(--font-timer-cormorant), Georgia, serif; }
+[data-timer-font="bebas"] { --timer-face: var(--font-timer-bebas), Impact, sans-serif; }
+[data-timer-font="vt323"] { --timer-face: var(--font-timer-terminal), 'Courier New', monospace; }
 .pixel-timer-digits[data-timer-font], .mini-timer-digits[data-timer-font], .appearance-font-sample[data-timer-font] { font-family: var(--timer-face); font-variant-numeric: tabular-nums lining-nums; }
 .pixel-timer-digits[data-timer-font]:not([data-timer-font="pixel"]),
 .mini-timer-digits[data-timer-font]:not([data-timer-font="pixel"]) { letter-spacing: -.045em; font-weight: 500; }
 .pixel-timer-digits[data-timer-font="mono"], .mini-timer-digits[data-timer-font="mono"] { font-weight: 600; letter-spacing: -.065em; }
 .pixel-timer-digits[data-timer-font="serif"], .mini-timer-digits[data-timer-font="serif"] { font-weight: 400; }
+.pixel-timer-digits:is([data-timer-font="bebas"], [data-timer-font="vt323"]),
+.mini-timer-digits:is([data-timer-font="bebas"], [data-timer-font="vt323"]) { font-weight: 400; letter-spacing: 0; }
 
 .timer-appearance-trigger { position: absolute; top: 10px; right: 58px; display: grid; place-items: center; width: 44px; height: 44px; padding: 10px; color: inherit; border: 1px solid transparent; border-radius: 3px; }
 .pixel-timer-screen .pixel-timer-settings { display: grid; place-items: center; width: 44px; height: 44px; }
@@ -84,6 +91,9 @@
 .appearance-choice:active { background: var(--pixel-shadow); }
 .appearance-choice:has(input:checked) { border-color: var(--pixel-accent); box-shadow: 0 0 0 1px var(--pixel-accent); background: var(--pixel-tomato-soft); }
 .appearance-choice:has(input:focus-visible) { outline: 3px solid var(--pixel-accent); outline-offset: 3px; }
+button.appearance-choice { text-align: left; color: inherit; }
+button.appearance-choice:focus-visible { outline: 3px solid var(--pixel-accent); outline-offset: 3px; }
+.appearance-pro-badge { position: absolute; top: 8px; left: 8px; display: inline-flex; align-items: center; gap: 3px; padding: 2px 5px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-paper); color: var(--pixel-ink); font-size: 9px; font-weight: 650; line-height: 1.4; pointer-events: none; }
 .appearance-scene-preview { display: block; position: relative; aspect-ratio: 16 / 9; overflow: hidden; width: 100%; pointer-events: none; background: var(--pixel-screen); }
 .appearance-scene-preview > img { width: 100%; height: 100%; object-fit: cover; }
 .appearance-default-preview { display: grid; width: 100%; height: 100%; place-items: center; }
@@ -105,6 +115,9 @@
 .appearance-fonts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
 .appearance-font-sample { display: grid; place-items: center; min-height: 56px; font-size: 26px; letter-spacing: -.06em; pointer-events: none; }
 .appearance-font-sample[data-timer-font="pixel"] { font-size: 15px; }
+.appearance-font-choice[data-premium] .appearance-font-sample { min-height: 76px; padding-top: 20px; }
+.appearance-font-sample[data-timer-font="orbitron"] { font-size: clamp(17px, 4.6vw, 23px); }
+.appearance-font-sample:is([data-timer-font="bebas"], [data-timer-font="vt323"]) { font-weight: 400; letter-spacing: 0; }
 .appearance-font-choice .appearance-choice-label { padding-inline: 3px; }
 .appearance-media-feedback { min-height: 28px; padding-top: 8px; font-size: 12px; line-height: 1.5; color: var(--pixel-muted); }
 .appearance-media-feedback button { margin-left: 8px; text-decoration: underline; text-underline-offset: 3px; color: var(--pixel-tomato-ink); }

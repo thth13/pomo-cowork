@@ -1,21 +1,12 @@
 import { prisma } from '@/lib/db'
+import { hasActiveProAccess } from '@/lib/proAccess'
+
+export { hasActiveProAccess } from '@/lib/proAccess'
 
 interface ProState {
   id: string
   isPro: boolean
   proExpiresAt: Date | string | null
-}
-
-export function hasActiveProAccess(user: Pick<ProState, 'isPro' | 'proExpiresAt'>): boolean {
-  if (!user.isPro) {
-    return false
-  }
-
-  if (!user.proExpiresAt) {
-    return true
-  }
-
-  return new Date(user.proExpiresAt) > new Date()
 }
 
 export async function syncExpiredProStatus<T extends ProState>(user: T): Promise<T> {
