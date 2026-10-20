@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
+import RoomSwitch from '@/components/RoomSwitch'
 import { registerServiceWorker } from '@/lib/serviceWorker'
 import dynamic from 'next/dynamic'
 import ChatSkeleton from '@/components/ChatSkeleton'
@@ -273,9 +274,10 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
           <Navbar compact workspaceActions={renderPanelButtons} />
           <div className="focus-page-layout">
             <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
-              <PomodoroTimer idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />
+              <PomodoroTimer showRoomSwitch={false} idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />
             </section>
             <aside id="workspace-working" className="working-sidebar" data-collapsed={workingCollapsed} aria-label={t.activeSessions.title}>
+              <RoomSwitch />
               <div className="working-sidebar-header">
                 <button
                   type="button"

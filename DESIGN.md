@@ -796,3 +796,10 @@ The project color palette joins the shared glass overlay selectors in
 `app/appearance.css`: rendered scenery enables the same translucent surface, blur,
 border and shadow as project actions and rename dialogs, including portalled menus.
 Forced-colors mode retains the default accessible surface.
+
+The homepage room switch sits outside the Active Sessions panel, 12px above its
+upper-left edge. The rail reserves space above for it, including on mobile. Its compact outlined button includes
+the localized Room/Sala prefix, the room name and a swap icon (lock while unavailable).
+It uses Inter, existing pixel/scenery roles and 3px corners. Long names truncate with
+full text in the accessible label and title. Other routes retain their original timer
+control. Global/last-room switching and the running-session lock remain unchanged.

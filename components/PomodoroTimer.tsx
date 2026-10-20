@@ -47,6 +47,7 @@ interface PomodoroTimerProps {
   resetLabel?: string
   presentation?: 'minimal'
   focusPresets?: boolean
+  showRoomSwitch?: boolean
   showProject?: boolean
 }
 
@@ -177,7 +178,7 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
 }
 
 
-function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false }: PomodoroTimerProps) {
+function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false, showRoomSwitch = true }: PomodoroTimerProps) {
   const timerFont = useAppearanceStore(state => state.timerFont)
   const { t, language } = useI18n()
   const pictureInPicture = useDocumentPictureInPicture()
@@ -1344,7 +1345,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
   return (
     <div className="flex flex-col items-center" data-timer-panel data-timer-mode={activeSessionType}>
-      {(currentRoomId || lastRoomId) && (
+      {showRoomSwitch && (currentRoomId || lastRoomId) && (
         <button
           type="button"
           onClick={() => {

@@ -13,6 +13,7 @@
 
 | Capability | Owner | Behavior |
 | --- | --- | --- |
+| Homepage room switch | RoomSwitch, useRoomStore, useTimerStore | Compact native button outside and above the Active Sessions panel when a current/last room exists; toggles Global/last room and preserves the existing running-session lock. Other routes retain the timer control |
 | Timer / session transitions | PomodoroTimer, TimerControls, useTimerStore, sessionService | Preserve existing start/pause/resume/stop/complete operations |
 | Native mini timer | useDocumentPictureInPicture, TimerPictureInPicture, TimerActions | User-opened Document Picture-in-Picture window; portal shares timer state, locale, action handlers and pending flags; closing never stops the session |
 | Chrome extension | chrome-extension/background.js, app/api/timer, useSessionRestore | Account-authenticated popup and background worker control the server session without an open site; Pro gating, server completion rewards and guarded transitions are shared |
