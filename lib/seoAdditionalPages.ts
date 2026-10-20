@@ -787,7 +787,7 @@ export const additionalSeoPages = {
     "secondaryKeywords": [
       "writing Pomodoro timer",
       "timed writing sessions",
-      "writing sprint timer"
+      "writing routine with breaks"
     ],
     "title": "Pomodoro for Writers: Make Time for a Draft | Pomo Cowork",
     "description": "Use Pomodoro for writers to separate outlining, drafting, and editing. Start a 25-minute writing session, leave a return note, and write with quiet company.",
@@ -862,8 +862,8 @@ export const additionalSeoPages = {
         "answer": "Choose the purpose of the round before starting. If the goal is a first draft, note nonessential edits and return to the next sentence. A separate editing round can then focus on structure or clarity. You can change this approach when immediate revision is useful for the particular piece you are writing."
       },
       {
-        "question": "How long should a writing sprint be?",
-        "answer": "Start with a length that lets you attempt a defined passage and still leaves time to pause. This page offers 25 minutes; the 50- and 90-minute timers are options for longer work. Compare what you produced and how easily you returned after the break rather than assuming longer is always better."
+        "question": "How do I plan several writing Pomodoros?",
+        "answer": "Give each round a job: review sources, draft one section, then revise its structure. This page starts with 25-minute rounds and five-minute breaks, with a longer break after four rounds. You can stop earlier or change the duration; plan the sequence around the piece rather than filling a quota of sessions."
       },
       {
         "question": "Can a writing group use this for silent sessions?",
@@ -874,7 +874,8 @@ export const additionalSeoPages = {
       "25-5-pomodoro",
       "50-10-pomodoro",
       "90-minute-timer",
-      "pomodoro-for-freelancers"
+      "pomodoro-for-freelancers",
+      "writing-sprint-timer"
     ],
     "finalHeading": "Give the next passage a first attempt",
     "finalCopy": "Choose one writing job and begin before the draft has to be perfect."

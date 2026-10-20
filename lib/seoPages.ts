@@ -2,6 +2,8 @@ import type { SeoSlug } from './seoRoutes'
 import { additionalSeoPages } from './seoAdditionalPages'
 import { examSeoPages } from './seoExamPages'
 import { intentSeoPages } from './seoIntentPages'
+import { learningSeoPages } from './seoLearningPages'
+import { workflowSeoPages } from './seoWorkflowPages'
 
 export interface SeoPage {
   keyword: string
@@ -13,7 +15,7 @@ export interface SeoPage {
   cta: string
   social: boolean
   appearance?: 'aesthetic'
-  experience?: 'aesthetic' | 'lofi' | 'fullscreen' | 'clock' | 'minimal' | 'deep-work' | 'exam' | 'reading' | 'coding'
+  experience?: 'aesthetic' | 'lofi' | 'fullscreen' | 'clock' | 'minimal' | 'deep-work' | 'exam' | 'reading' | 'coding' | 'classroom'
   defaults: { workDuration: number; shortBreak: number; longBreak: number; longBreakAfter: number }
   timerNote: string
   socialHeading: string
@@ -40,6 +42,8 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
   ...additionalSeoPages,
   ...examSeoPages,
   ...intentSeoPages,
+  ...learningSeoPages,
+  ...workflowSeoPages,
   'aesthetic-timer': {
     keyword: 'Aesthetic timer',
     secondaryKeywords: ['aesthetic study timer', 'aesthetic focus timer', 'minimalist timer', 'cozy focus timer'],
@@ -218,52 +222,52 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
       { question: 'Can I use a focus timer for coding?', answer: 'Yes. Pick a bounded activity such as reproducing a bug, writing one function, or reviewing a specific change. Keep a note of the current hypothesis or next step before a break. That note is particularly useful when returning to work that has several pieces of context.' },
       { question: 'Does this timer block distracting websites?', answer: 'No. The countdown gives your work a time boundary, but it does not block websites or control other applications. Close distracting tabs or use your own device controls if needed. Pomo Cowork adds live presence and session tracking rather than enforcing which tools you can open.' },
     ],
-    related: ['45-minute-timer', '50-minute-timer', 'pomodoro-timer', 'online-pomodoro-timer', 'study-with-me', 'online-study-room', 'aesthetic-timer'],
+    related: ['timeboxing-timer', '45-minute-timer', '50-minute-timer', 'pomodoro-timer', 'online-pomodoro-timer', 'study-with-me', 'online-study-room', 'aesthetic-timer'],
     finalHeading: 'Make room for the next piece of work',
     finalCopy: 'Pick a useful outcome and begin your protected focus block.',
   },
   'timer-for-studying': {
     keyword: 'Timer for studying',
-    secondaryKeywords: ['homework timer', 'timer for homework', 'timed study blocks', 'study break timer'],
-    title: 'Timer for Studying & Finishing Homework | Pomo Cowork',
-    description: 'Break homework into manageable steps with a timer for studying. Start a short work block, check your progress, and take a break before the next assignment.',
+    secondaryKeywords: ['short study timer', '15 minute study block', 'timed study blocks', 'study break timer'],
+    title: 'Timer for Studying — Start with 15 Minutes | Pomo Cowork',
+    description: 'Having trouble starting a study session? Set a 15-minute timer, choose a small first step, and leave a return note before your break.',
     heading: 'A timer for studying when starting feels hard',
-    intro: 'You do not have to finish the whole assignment right now. Open it, choose the first small step, and give that step 15 minutes.',
+    intro: 'You have opened the notes three times without reading them. Choose one page, one example, or one question, and give it 15 minutes.',
     cta: 'Start a 15-minute study block',
     social: false,
     defaults: { workDuration: 15, shortBreak: 5, longBreak: 15, longBreakAfter: 4 },
     timerNote: 'Start small: 15 minutes of study and a five-minute break. Use a longer interval when you are ready.',
-    socialHeading: 'A little company for homework time',
-    socialCopy: 'Your assignment is your own, but the study desk does not have to feel empty. See who is working in the current workspace.',
-    explanationHeading: 'How does a timer for studying help organize homework?',
+    socialHeading: 'A little company while you get started',
+    socialCopy: 'See who is working in the current workspace while you make a first attempt at your own material.',
+    explanationHeading: 'Make the first study block smaller',
     explanation: [
-      'A timer for studying turns an open-ended assignment into a short appointment with one part of the work. “Finish the essay” may be too broad to begin comfortably. “Read the question and write three possible points” tells you what to do during the next interval. The countdown supplies a stopping point so you can check progress before choosing another step.',
-      'This page opens with 15 minutes of study and a five-minute break. That short starting block can hold a few homework questions, a paragraph outline, or a review of instructions. You can change the length in settings. For a longer assignment, break the work into preparation, a first attempt, and checking; each part can become its own session.',
-      'Before taking a break, leave yourself a clear return point. Write the number of the next exercise or the sentence you want to revise. When the break ends, that note removes another decision. Pomo Cowork adds real people working nearby online, while the timer remains yours to pause, reset, or adapt to the assignment.',
+      'A timer for studying can make the first decision smaller. Instead of planning an entire evening of revision, open one page and choose what to do with it. Read a worked example and cover the answer, draw a diagram from memory, or list what you do not understand. The first block is an attempt to get into the material, not a promise to finish a subject.',
+      'This page begins with 15 minutes of study and a five-minute break. Spend the opening minute finding your place, then attempt the activity you chose. If you discover a missing prerequisite, write its name down. Finding out that you need to revisit fractions before starting an algebra exercise gives the next block a more useful job.',
+      'Before taking a break, leave a return note: “Try the example on page 18 without looking at the solution.” When you sit down again, begin there instead of deciding from scratch. Adjust the interval in settings once you know how much time this material needs. The live coworking list is available alongside the timer if company helps you settle in.',
     ],
-    stepsHeading: 'Move from assignment to first action',
-    steps: ['Open the assignment and read what it actually asks you to produce.', 'Choose a small first action that fits a 15-minute block.', 'Start the timer and work only on that action.', 'Check the result, write down your next step, and take a short break.'],
+    stepsHeading: 'Get through the first fifteen minutes',
+    steps: ['Open one page and put the materials you need within reach.', 'Choose an attempt: explain one idea, draw one diagram, or solve one example.', 'Start the timer and work on that attempt.', 'Write what to try next, then take a short break.'],
     benefits: [
       { title: 'Less to start with', text: 'Commit to opening the work and taking one step instead of finishing everything at once.' },
       { title: 'A place for checking', text: 'Make reviewing an answer or proofreading a paragraph its own timed activity.' },
       { title: 'An easier return', text: 'A next-step note gives the following block a clear beginning after your break.' },
     ],
-    audienceHeading: 'For the assignment on your desk',
+    audienceHeading: 'When finding a starting point is the problem',
     audience: [
-      { title: 'Problem sets', text: 'Attempt a small group of questions, then check your method.' },
-      { title: 'Essays', text: 'Separate understanding the prompt, outlining, drafting, and editing.' },
-      { title: 'Reading homework', text: 'Read a manageable section and write a short summary before moving on.' },
+      { title: 'An unfamiliar chapter', text: 'Read the opening example and write one question about it before trying to cover the chapter.' },
+      { title: 'Revision after a gap', text: 'Attempt something you used to know and note which part needs refreshing.' },
+      { title: 'Too many open notes', text: 'Pick one source for this block. Keep the other tabs for a later comparison.' },
     ],
     advantageHeading: 'A starting point you can return to',
     advantage: 'The main Pomo Cowork workspace brings tasks and session history together, so another study block can continue an existing piece of work. Live coworkers add a shared sense of activity, and rooms offer a place for a regular homework group. The timer itself is available without setting up a group or an account first.',
     faq: [
-      { question: 'What is a good timer length for homework?', answer: 'Choose a duration that fits the next step, not necessarily the whole assignment. This page begins at 15 minutes to make a small first attempt easier to schedule. Once you know what the work involves, you can use settings to choose a longer block for drafting or problem solving.' },
+      { question: 'Why start with a 15-minute study timer?', answer: 'It is a small initial commitment when you are unsure where to begin. Fifteen minutes is a starting setting, not an ideal length for everyone. After one attempt, change the duration to fit the material and the time you have.' },
       { question: 'How do I start studying when I keep putting it off?', answer: 'Reduce the first action until it is concrete: open the file, read the instructions, or attempt the first question. Set a short timer for that action and decide what follows after it ends. This is a planning approach, not a guarantee; adjust it if the task needs a different kind of support.' },
       { question: 'Should I use a separate timer for each subject?', answer: 'You can use the same timer and start a fresh session when you change subjects. Name the task clearly so you know what the block is for. Leave a return note for unfinished work before switching, especially if the next subject needs different materials or a different approach.' },
-      { question: 'What if I finish my homework before the timer ends?', answer: 'Check that you answered the question and review any uncertain parts. You do not need to invent extra work just to fill the countdown. You can stop the session when you are done; an unfinished countdown that you reset is not treated as a completed Pomodoro.' },
+      { question: 'What if my first activity takes less than fifteen minutes?', answer: 'Check what you understood and decide whether another small attempt would be useful. You can stop when you are done rather than fill the remaining time. Resetting an unfinished countdown is not recorded as completing the planned Pomodoro.' },
       { question: 'Can I use this timer for studying on a phone?', answer: 'Yes, the page and controls fit a mobile browser. Keep the timer page available while you work and check your device volume if you want an audible alert. Mobile browsers can restrict background activity, so do not rely on a locked phone behaving like a dedicated alarm app.' },
     ],
-    related: ['30-minute-timer', 'study-timer', 'pomodoro-timer', 'study-with-friends', 'study-timer-with-friends'],
+    related: ['homework-timer', '30-minute-timer', 'study-timer', 'pomodoro-timer', 'study-with-friends', 'study-timer-with-friends'],
     finalHeading: 'Start with the first question',
     finalCopy: 'A small, specific step is enough for your next study block.',
   },
@@ -533,7 +537,7 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
       { question: 'Can I create a study room for my own group?', answer: 'The rooms screen offers room creation through the Pro interface. Check the current account and plan options there, then choose the room’s name and privacy setting. Creating a room and inviting people are separate steps from starting the timer on this page; use the room’s membership tools to organize access.' },
       { question: 'Are there always people in the study room?', answer: 'Availability depends on who is connected and running a session at that moment. Pomo Cowork shows real activity and an empty state when nobody is active. If you need company at a fixed time, invite a friend or arrange a recurring group session rather than relying on a room being continuously occupied.' },
     ],
-    related: ['study-with-me', 'study-with-friends', 'study-timer-with-friends', 'focus-timer', '50-minute-timer', 'online-pomodoro-timer'],
+    related: ['body-doubling-online', 'study-with-me', 'study-with-friends', 'study-timer-with-friends', 'focus-timer', '50-minute-timer', 'online-pomodoro-timer'],
     finalHeading: 'Settle in for a quiet block of work',
     finalCopy: 'Bring one learning goal and make the next stretch of time your own.',
   },

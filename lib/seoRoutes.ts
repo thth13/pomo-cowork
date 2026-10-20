@@ -46,6 +46,11 @@ export const seoSlugs = [
   'mcat-study-timer',
   'jee-study-timer',
   'neet-study-timer',
+  'homework-timer',
+  'writing-sprint-timer',
+  'timeboxing-timer',
+  'body-doubling-online',
+  'classroom-timer',
 ] as const
 
 export type SeoSlug = typeof seoSlugs[number]
@@ -98,6 +103,11 @@ export const seoToolLabels: Record<SeoSlug, string> = {
   'mcat-study-timer': 'MCAT Study Timer',
   'jee-study-timer': 'JEE Study Timer',
   'neet-study-timer': 'NEET Study Timer',
+  'homework-timer': 'Homework Timer',
+  'writing-sprint-timer': 'Writing Sprint Timer',
+  'timeboxing-timer': 'Timeboxing Timer',
+  'body-doubling-online': 'Body Doubling Online',
+  'classroom-timer': 'Classroom Timer',
 }
 
 export function isSeoPath(pathname: string) {

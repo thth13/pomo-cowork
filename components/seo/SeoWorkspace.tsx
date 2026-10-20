@@ -23,11 +23,11 @@ export default function SeoWorkspace({ title, defaults, timerNote, social, socia
   const isConnected = useConnectionStore((state) => state.isConnected)
   const { language } = useI18n()
   const totalOnlineCount = useConnectionStore(state => state.totalOnlineCount)
-  const standalone = experience === 'exam' || experience === 'reading' || experience === 'clock'
+  const standalone = experience === 'exam' || experience === 'reading' || experience === 'classroom' || experience === 'clock'
   const quiet = Boolean(experience)
   const sounds = experience === 'aesthetic' || experience === 'lofi'
   const content = standalone ? (
-    experience === 'clock' ? <FlipClock /> : <StandaloneTimer reading={experience === 'reading'} />
+    experience === 'clock' ? <FlipClock /> : <StandaloneTimer variant={experience === 'reading' || experience === 'classroom' ? experience : 'exam'} />
   ) : !mounted || isLoading ? (
     <div className="seo-loading" role="status">
       <span className="seo-spinner" aria-hidden="true" />
@@ -46,7 +46,7 @@ export default function SeoWorkspace({ title, defaults, timerNote, social, socia
   return (
     <div className={`seo-workspace${social ? ' seo-workspace-social' : ''}${appearance === 'aesthetic' ? ' seo-workspace-aesthetic' : ''}${quiet ? ' seo-workspace-intent' : ''}${experience ? ` seo-experience-${experience}` : ''}`}>
       <section className="seo-timer" id="focus-timer" aria-labelledby="timer-heading" tabIndex={-1}>
-        <h2 id="timer-heading">{experience === 'clock' ? 'Your online flip clock' : experience === 'exam' ? 'Your practice countdown' : experience === 'reading' ? 'Your reading session' : 'Your next focus session'}</h2>
+        <h2 id="timer-heading">{experience === 'clock' ? 'Your online flip clock' : experience === 'exam' ? 'Your practice countdown' : experience === 'reading' ? 'Your reading session' : experience === 'classroom' ? 'Your classroom countdown' : 'Your next focus session'}</h2>
         <div className="seo-timer-live" lang={language}>
           {quiet ? <FocusStage>
             {content}

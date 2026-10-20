@@ -686,13 +686,22 @@ per mounted SEO workspace, deliberate playback, and existing error/retry states.
 Escape support, scrolling, and keyboard containment in the fallback. Fullscreen is
 entered by a click, never on page load. English/Spanish tool controls follow I18nProvider;
 editorial copy retains the existing English, translation-excluded landing contract.
-`StandaloneTimer` owns the local, unsaved exam countdown and reading countdown/stopwatch.
+`StandaloneTimer` owns the local, unsaved exam and classroom countdowns and reading countdown/stopwatch.
 These are intentionally separate from recorded focus sessions: timestamp-based elapsed
 time, pause/resume/reset, locked duration/mode after starting, explicit visual completion,
 and an honest reload-reset notice. The book field is local and never uploaded.
 `FlipClock` displays device-local time and date, 12/24-hour format, and optional seconds.
 Native number fields intentionally use browser-owned editing; no new modal or select
 primitive is introduced. Browser verification remains user-owned for this task.
+
+Five further intent pages use the same shell and theme: homework (20/5) and writing
+sprints (15/5) use the minimal timer; timeboxing (30/5) uses the fullscreen presentation;
+online body doubling (25/5) keeps live coworkers visible. `seoLearningPages.ts` and
+`seoWorkflowPages.ts` own their English copy. Classroom uses the shared standalone
+timer's named `classroom` variant: five minutes initially, 5/10/15/20-minute presets,
+custom whole minutes, and a silent visual finish without automatic breaks. It does
+not record sessions. The existing `exam` and `reading` variants retain their behavior.
+`docs/seo-tools-expansion.md` records intent boundaries, research and manual checks.
 
 The Navbar account avatar carries a shared red circular unread-notification count
 in compact, desktop and mobile account views. `.avatar-unread-badge` in globals.css

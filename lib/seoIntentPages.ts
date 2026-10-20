@@ -121,7 +121,7 @@ export const intentSeoPages = {
       { question: 'How do I exit the full screen study timer?', answer: 'Use the visible Exit fullscreen button or Escape. Leaving fullscreen does not cancel a running Pomodoro.' },
       { question: 'Can I use a plain countdown instead?', answer: 'Yes. The exam timer has a one-shot countdown with fullscreen and no Pomodoro break cycle. It is suitable for practice sections or other timed exercises.' },
     ],
-    related: ['exam-timer', 'flip-clock', 'minimalist-study-timer', 'aesthetic-pomodoro-timer'],
+    related: ['classroom-timer', 'exam-timer', 'flip-clock', 'minimalist-study-timer', 'aesthetic-pomodoro-timer'],
     finalHeading: 'One screen, one focus block',
     finalCopy: 'Expand the timer and make a clear start.',
   },

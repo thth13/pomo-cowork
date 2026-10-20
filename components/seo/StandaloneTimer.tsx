@@ -4,13 +4,21 @@ import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '@/components/I18nProvider'
 import { useWakeLock } from '@/hooks/useWakeLock'
 
+const timerVariants = {
+  exam: { initialMinutes: 60, presets: [30, 60, 90, 120], label: { en: 'Practice countdown', es: 'Cuenta atrás de práctica' } },
+  reading: { initialMinutes: 20, presets: [10, 20, 30], label: { en: 'Reading time', es: 'Tiempo de lectura' } },
+  classroom: { initialMinutes: 5, presets: [5, 10, 15, 20], label: { en: 'Classroom countdown', es: 'Cuenta atrás para el aula' } },
+}
+
 /** Local practice timer; deliberately does not create coworking/Pomodoro sessions. */
-export default function StandaloneTimer({ reading = false }: { reading?: boolean }) {
+export default function StandaloneTimer({ variant = 'exam' }: { variant?: keyof typeof timerVariants }) {
   const { language } = useI18n()
   const es = language === 'es'
-  const [minutes, setMinutes] = useState(reading ? '20' : '60')
+  const reading = variant === 'reading'
+  const { initialMinutes, presets, label } = timerVariants[variant]
+  const [minutes, setMinutes] = useState(String(initialMinutes))
   const [stopwatch, setStopwatch] = useState(false)
-  const [seconds, setSeconds] = useState((reading ? 20 : 60) * 60)
+  const [seconds, setSeconds] = useState(initialMinutes * 60)
   const [running, setRunning] = useState(false)
   const [started, setStarted] = useState(false)
   const [finished, setFinished] = useState(false)
@@ -40,7 +48,7 @@ export default function StandaloneTimer({ reading = false }: { reading?: boolean
     setRunning(false)
     setStarted(false)
     setFinished(false)
-    const duration = /^\d+$/.test(nextMinutes) && Number(nextMinutes) >= 1 && Number(nextMinutes) <= 1440 ? Number(nextMinutes) : (reading ? 20 : 60)
+    const duration = /^\d+$/.test(nextMinutes) && Number(nextMinutes) >= 1 && Number(nextMinutes) <= 1440 ? Number(nextMinutes) : initialMinutes
     setSeconds(nextStopwatch ? 0 : duration * 60)
   }
   const toggle = () => {
@@ -70,7 +78,7 @@ export default function StandaloneTimer({ reading = false }: { reading?: boolean
     </div>}
     {!stopwatch && <div className="seo-countdown-settings">
       <div className="seo-tool-options" role="group" aria-label={es ? 'Minutos' : 'Minutes'}>
-        {(reading ? [10, 20, 30] : [30, 60, 90, 120]).map(value => <button type="button" key={value} disabled={started} aria-pressed={Number(minutes) === value} onClick={() => { setMinutes(String(value)); reset(false, String(value)) }}>{value} min</button>)}
+        {presets.map(value => <button type="button" key={value} disabled={started} aria-pressed={Number(minutes) === value} onClick={() => { setMinutes(String(value)); reset(false, String(value)) }}>{value} min</button>)}
       </div>
       <label className="seo-tool-field">{es ? 'Duración en minutos' : 'Duration in minutes'}
         <input type="number" min="1" max="1440" step="1" value={minutes} disabled={started} aria-invalid={!valid} aria-describedby="countdown-help" onChange={event => {
@@ -81,7 +89,7 @@ export default function StandaloneTimer({ reading = false }: { reading?: boolean
       </label>
       <p id="countdown-help">{!valid ? (es ? 'Introduce entre 1 y 1440 minutos enteros.' : 'Enter a whole number from 1 to 1440 minutes.') : (es ? 'Reinicia para cambiar la duración.' : 'Reset to change the duration after starting.')}</p>
     </div>}
-    <div className="seo-countdown-digits" role="timer" aria-label={es ? 'Tiempo de lectura o práctica' : 'Reading or practice time'}>{display}</div>
+    <div className="seo-countdown-digits" role="timer" aria-label={es ? label.es : label.en}>{display}</div>
     <p className="seo-completion" role="status">{finished ? (es ? 'Tiempo terminado.' : 'Time is up.') : '\u00a0'}</p>
     <div className="seo-tool-options">
       <button className="seo-button" type="button" onClick={toggle} disabled={(!stopwatch && !valid) || finished}>
