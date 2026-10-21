@@ -727,6 +727,33 @@ Status labels also appear in details and do not rely on color alone.
 
 ## Intent-specific SEO tools
 
+### Study planners and templates
+
+`weekly-study-planner`, `exam-revision-planner`, and `pomodoro-calculator` share
+`PlannerLandingPage` and `StudyPlanner`. The English, translation-excluded tools
+shell remains canonical for editorial content and controls. The signature is a
+dated study ledger: a narrow date column joins the session checklist, while the
+editable workload stays beside it on desktop and above it on narrow screens.
+Inter owns headings, forms and data; the existing pixel face is reserved for small
+captions and the local timer. No fonts, images, or global palette changes are added.
+
+`StudyPlanner.module.css` maps its local paper/soft/ink/muted/line roles to the
+existing `--pixel-*` runtime tokens. Primary actions reuse tomato and the established
+light primary-button foreground (#fff3ed). Three-pixel corners, fine rules and
+natural document scrolling match the other tools. Native date inputs intentionally
+accept browser/OS popup geometry and locale; all date values are civil YYYY-MM-DD
+strings. Form text, validation, and date captions stay English on these routes.
+
+`lib/studyPlanner.ts` owns validation, templates, budget arithmetic and scheduling.
+`lib/plannerStorage.ts` owns validated local snapshots and CSV escaping. The shared
+`useLocalStudyTimer` remains the clock owner. Plans/drafts/checkmarks can persist
+locally; active clocks reset on navigation and never change account sessions.
+Seven selected days are visible at a time; printing reveals every generated day
+and omits controls and site chrome. The journal's shared `UnsavedChangesGuard`
+accepts an English copy/style variant for storage failures and active local timers.
+`docs/study-planners.md` records limits, recovery and manual acceptance. Runtime
+visual verification remains user-owned; no project, builds, tests or tsc are run.
+
 ### Independent aesthetic study desks
 
 Five additional routes (`aesthetic-study-timer`, `cozy-study-timer`, `rain-timer`,

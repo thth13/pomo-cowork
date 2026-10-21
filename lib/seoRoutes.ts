@@ -1,3 +1,5 @@
+import { plannerSlugs } from './plannerPages'
+
 export const seoSlugs = [
   'pomodoro-timer',
   'study-timer',
@@ -141,5 +143,5 @@ export const seoToolLabels: Record<SeoSlug, string> = {
 }
 
 export function isSeoPath(pathname: string) {
-  return seoSlugs.some((slug) => pathname === `/${slug}` || pathname === `/${slug}/`)
+  return [...seoSlugs, ...plannerSlugs].some((slug) => pathname === `/${slug}` || pathname === `/${slug}/`)
 }

@@ -11,6 +11,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
       <header className="seo-header">
         <Link className="seo-brand" href="/">Pomo Cowork</Link>
         <nav aria-label="Main navigation">
+          <Link href="/weekly-study-planner">Plan your study</Link>
           <Link href="/rooms">Rooms</Link>
           <Link href="/blog">Blog</Link>
           <Link href="/">Workspace <span aria-hidden="true">↗</span></Link>
@@ -20,7 +21,7 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
       {children}
       <footer className="seo-footer">
         <Link className="seo-brand" href="/">Pomo Cowork</Link>
-        <nav aria-label="Footer navigation"><Link href="/pricing">Pricing</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav>
+        <nav aria-label="Footer navigation"><Link href="/weekly-study-planner">Plan your study</Link><Link href="/pricing">Pricing</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav>
       </footer>
     </div>
   )

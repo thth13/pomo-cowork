@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { seoSlugs, seoToolLabels } from '@/lib/seoRoutes'
+import { plannerLabels, plannerSlugs } from '@/lib/plannerPages'
 
 export default function PomodoroOverview() {
   return (
@@ -59,6 +60,14 @@ export default function PomodoroOverview() {
         work today. Small sessions add up faster than they feel like they will.
         Start with one. Take the break. Repeat tomorrow.
       </p>
+      <nav className="focus-tools" aria-labelledby="study-planners-heading" data-i18n-ignore>
+        <h2 id="study-planners-heading">Planners and templates</h2>
+        <ul>
+          {plannerSlugs.map((slug) => (
+            <li key={slug}><Link href={`/${slug}`}>{plannerLabels[slug]}</Link></li>
+          ))}
+        </ul>
+      </nav>
       <nav className="focus-tools" aria-labelledby="focus-tools-heading" data-i18n-ignore>
         <h2 id="focus-tools-heading">Focus Tools</h2>
         <ul>
