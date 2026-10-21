@@ -3,6 +3,7 @@ import Link from 'next/link'
 import JsonLd from '@/components/blog/JsonLd'
 import SeoWorkspace from './SeoWorkspace'
 import LocalStudyTimer from './LocalStudyTimer'
+import PracticeLandingPage from './PracticeLandingPage'
 import localStyles from './LocalStudyTimer.module.css'
 import { seoPages } from '@/lib/seoPages'
 import { seoToolLabels, type SeoSlug } from '@/lib/seoRoutes'
@@ -37,6 +38,7 @@ export function getSeoMetadata(slug: SeoSlug): Metadata {
 
 export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
   const page = seoPages[slug]
+  if ('practice' in page) return <PracticeLandingPage slug={slug} page={page} />
   const url = `${siteUrl}/${slug}`
   return (
     <main id="seo-content" data-local-timer={page.localTimer} className={`seo-content${page.appearance === 'aesthetic' ? ' seo-content-aesthetic' : ''}${page.localTimer ? ` ${localStyles.page} ${localStyles[page.localTimer]}` : ''}`}>

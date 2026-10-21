@@ -6,6 +6,7 @@ import { learningSeoPages } from './seoLearningPages'
 import { workflowSeoPages } from './seoWorkflowPages'
 import { localTimerSeoPages } from './seoLocalTimerPages'
 import type { LocalTimerVariant } from './localTimerConfig'
+import { practiceSeoPages, type PracticeSeoPage } from './seoPracticePages'
 
 export interface SeoPage {
   keyword: string
@@ -41,7 +42,8 @@ export interface SeoPage {
 
 // Keywords are editorial targets, not a meta-keywords tag. Each route has its
 // own intent, examples and answers; the shared component only owns presentation.
-export const seoPages: Record<SeoSlug, SeoPage> = {
+export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
+  ...practiceSeoPages,
   ...additionalSeoPages,
   ...examSeoPages,
   ...intentSeoPages,
@@ -181,7 +183,7 @@ export const seoPages: Record<SeoSlug, SeoPage> = {
       { question: 'Does more time on the timer mean better learning?', answer: 'Not necessarily. Time is a useful record of effort, but understanding needs a separate check. Summarize a concept from memory, solve a fresh problem, or explain why an answer is correct. Use the timer to make space for these activities instead of treating a high total as the goal.' },
       { question: 'Can I study alongside people without joining a class?', answer: 'Yes. Pomo Cowork shows live focus sessions, and you can work on your own material alongside the people who are online. There is no shared syllabus required. If you want the same group each time, explore the rooms and account options in the app.' },
     ],
-    related: ['aesthetic-study-timer', 'study-stopwatch', 'animedoro-timer', 'pomodoro-timer', 'focus-timer', 'study-with-friends', '50-minute-timer', 'timer-for-studying', 'study-timer-with-friends'],
+    related: ['active-recall-timer', 'blurting-timer', 'spaced-repetition-timer', 'feynman-technique-timer', 'aesthetic-study-timer', 'study-stopwatch', 'animedoro-timer', 'pomodoro-timer', 'focus-timer', 'study-with-friends', '50-minute-timer', 'timer-for-studying', 'study-timer-with-friends'],
     finalHeading: 'Choose the topic for your next block',
     finalCopy: 'Open your materials, decide what progress looks like, and start studying.',
   },

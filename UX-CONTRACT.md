@@ -15,6 +15,7 @@
 | --- | --- | --- |
 | Homepage room switch | RoomSwitch, useRoomStore, useTimerStore | Compact native button outside and above the Active Sessions panel when a current/last room exists; toggles Global/last room and preserves the existing running-session lock. Other routes retain the timer control |
 | Timer / session transitions | PomodoroTimer, TimerControls, useTimerStore, sessionService | Preserve existing start/pause/resume/stop/complete operations |
+| Local practice timers | PracticeTimer, practiceTimerConfig, useLocalStudyTimer | Ten independent in-memory page instances; Start/Pause/Resume/Reset; manual stage preparation and start; 1–180 whole-minute overrides; Flowmodoro count-up prepares elapsed/5 rest, minimum one minute. No persistence, account timer, sessions, stats, audio or analytics calls. Finished status is announced without per-second live updates. Leaving/reloading clears state. See docs/seo-practice-pages.md for boundaries and manual checks |
 | Native mini timer | useDocumentPictureInPicture, TimerPictureInPicture, TimerActions | User-opened Document Picture-in-Picture window; portal shares timer state, locale, action handlers and pending flags; closing never stops the session |
 | Chrome extension | chrome-extension/background.js, app/api/timer, useSessionRestore | Account-authenticated popup and background worker control the server session without an open site; Pro gating, server completion rewards and guarded transitions are shared |
 | Task selection | TaskPicker | Existing authored picker; reused |

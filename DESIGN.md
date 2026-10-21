@@ -265,6 +265,56 @@ inspection, diff checks and the design skill's static audit are authorized here.
 Runtime behavior, responsive screenshots and full accessibility remain for manual
 verification. Existing unrelated workflow audit findings are not assertions of compliance.
 
+## Local practice landing pages
+
+Ten additional English search tools use `PracticeLandingPage` and `PracticeTimer`.
+They are intentional editorial variants authorised to have distinct page designs.
+`PracticeLandingPage.module.css` owns their opaque page palettes, display/digit roles,
+layouts and motifs; Inter remains the inherited body face. Existing Space Grotesk,
+Cormorant and Bebas font variables are reused with system fallbacks. No new font
+dependencies or raster assets are introduced. `data-local-timer` excludes these pages from the
+existing scenery contrast and translucent panel rules in either app theme.
+
+| Variant | Paper / soft / ink / muted / accent / line | Signature and composition |
+| --- | --- | --- |
+| flow | #eef5f8 / #d6e8ef / #193f50 / #486372 / #24647b / #a3bfcc | Blue horizon, wave motif, open clock instrument |
+| blurt | #f4f8f2 / #e2ecd9 / #293e29 / #50614b / #3c6837 / #aebca4 | Green whiteboard frame, rough recall sketch, clock on left |
+| recall | #f5f2fb / #e3dbf2 / #3a2b57 / #65567e / #694396 / #bcb0d0 | Lilac flashcard stack and separate clipped-corner timer |
+| spaced | #edf6f2 / #d2e8df / #204b42 / #47685f / #276858 / #a1c2b5 | Mint return path, horizontal stages over centred clock |
+| explain | #edf2fa / #dbe4f5 / #243d66 / #526583 / #315b9d / #a7b8d6 | Blue teach-back diagram, graph paper and annotation margin |
+| micro | #fff7df / #f0dfaa / #493c19 / #6d5d32 / #805419 / #c8b77f | Honey lesson ticket, perforated stub, condensed display |
+| offline | #273e45 / #344f56 / #edf4f2 / #c0d2d2 / #b9dcd5 / #6c8b90 | Slate phone sleeve and centred quiet enclosure |
+| journal | #faf0f0 / #efdcdf / #533440 / #775764 / #874762 / #cfacb6 | Rose notebook spread, double spine, serif clock |
+| tidy | #f5f2e9 / #e5e0c9 / #414831 / #5b6249 / #56662c / #b5b99d | Olive sorting bins, sturdy edges, plan to right of clock |
+| read | #f0f0fa / #dddff1 / #343455 / #5c5e7b / #53568d / #b2b4ce | Lavender book spines, library slip and narrow host margin |
+
+Motifs are static, decorative HTML/SVG derived from the task. All actual progress is
+calculated from the local clock. Native stage buttons, presets and number inputs own
+keyboard behaviour. The stage plan is ordered because it represents a real sequence;
+stages remain manually selected and manually started. Idle → running → paused/resumed
+or finished uses consistent Start/Pause/Resume/Reset labels. A completed stage offers
+Prepare next stage or New session. Reset unlocks duration/stage choices. Inputs use
+the existing 1–180 whole-minute boundary and inline associated errors. Flowmodoro
+counts upward and prepares elapsed/5 rest with a one-minute minimum; calculated
+seconds are preserved until a whole-minute override. `practiceTimerConfig.ts` owns
+these ten plans, captions and stage prompts; `useLocalStudyTimer` owns clock arithmetic.
+
+Each page mount owns its state; no account timer, persistence, session, statistics,
+audio, microphone, analytics events or network calls are connected to these controls.
+The site shell's existing page analytics/providers remain outside that promise.
+Leaving/reloading clears the clock. No background completion notification is promised.
+Status announcements occur on state changes, not every second. No new dialogs,
+selectors, toasts or scrollbar systems are introduced. Page scrolling remains natural.
+At 800px timer columns collapse; at 540px the motif and editorial content stack.
+Focus styles, disabled/pressed states, reduced-motion and forced-colors rules are
+scoped to this family. Browser/viewport verification remains manual per user request.
+
+`seoPracticePages.ts` owns unique metadata, copy, examples, FAQ and research links.
+The server component renders all editorial text and matching structured data before
+client interaction. Research scope, source dates, intent separation and uncertainty
+are documented in `docs/seo-practice-pages.md`; no guaranteed ranking or AI-detector
+outcome is claimed.
+
 ## Editorial blog
 
 `/blog` and `/blog/[slug]` are public content routes with document scrolling.

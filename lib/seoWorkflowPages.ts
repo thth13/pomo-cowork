@@ -50,7 +50,7 @@ export const workflowSeoPages = {
       { question: 'What if the task is unfinished when the timebox ends?', answer: 'Check what is left before extending it. You may have enough to send a draft, need one specific answer, or need to shrink the task. If more work is justified, choose another duration explicitly. Going over the estimate is information for planning, not a failed session.' },
       { question: 'Can I make the timer wait between timeboxes?', answer: 'Yes. Turn off automatic starts in timer settings before beginning. Work and break controls remain available, and you choose when to start the next interval. Your existing active or paused session keeps its timing when you visit this page.' },
     ],
-    related: ['focus-timer', 'deep-work-timer', 'pomodoro-for-freelancers', 'writing-sprint-timer', 'body-doubling-online'],
+    related: ['declutter-timer', 'focus-timer', 'deep-work-timer', 'pomodoro-for-freelancers', 'writing-sprint-timer', 'body-doubling-online'],
     finalHeading: 'How much time does this task get?',
     finalCopy: 'Write the output and the stopping rule. Then set the minutes.',
   },

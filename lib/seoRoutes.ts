@@ -56,6 +56,16 @@ export const seoSlugs = [
   'rain-timer',
   'animedoro-timer',
   'study-stopwatch',
+  'flowmodoro-timer',
+  'blurting-timer',
+  'active-recall-timer',
+  'spaced-repetition-timer',
+  'feynman-technique-timer',
+  'microlearning-timer',
+  'digital-detox-timer',
+  'journaling-timer',
+  'declutter-timer',
+  'silent-reading-timer',
 ] as const
 
 export type SeoSlug = typeof seoSlugs[number]
@@ -118,6 +128,16 @@ export const seoToolLabels: Record<SeoSlug, string> = {
   'rain-timer': 'Rain Timer',
   'animedoro-timer': 'Animedoro Timer',
   'study-stopwatch': 'Study Stopwatch',
+  'flowmodoro-timer': 'Flowmodoro Timer',
+  'blurting-timer': 'Blurting Timer',
+  'active-recall-timer': 'Active Recall Timer',
+  'spaced-repetition-timer': 'Spaced Repetition Timer',
+  'feynman-technique-timer': 'Feynman Technique Timer',
+  'microlearning-timer': 'Microlearning Timer',
+  'digital-detox-timer': 'Digital Detox Timer',
+  'journaling-timer': 'Journaling Timer',
+  'declutter-timer': 'Declutter Timer',
+  'silent-reading-timer': 'Silent Reading Timer',
 }
 
 export function isSeoPath(pathname: string) {

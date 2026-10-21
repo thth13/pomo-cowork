@@ -204,7 +204,7 @@ export const localTimerSeoPages = {
       { question: 'Will my study time remain after reloading?', answer: 'No. Reloading or leaving clears the stopwatch, topic, and completed-session count. There is no saved session list. Note any result you want to keep before leaving the page.' },
       { question: 'Does it show hours for longer sessions?', answer: 'Yes. The display includes hours once elapsed time reaches one hour. There is no preset session length and no automatic break; choose your own stopping point and remember to take breaks.' },
     ],
-    related: ['study-timer', 'aesthetic-study-timer', 'reading-timer', 'cozy-study-timer', 'deep-work-timer'],
+    related: ['flowmodoro-timer', 'study-timer', 'aesthetic-study-timer', 'reading-timer', 'cozy-study-timer', 'deep-work-timer'],
     finalHeading: 'Start with curiosity. Stop at a useful point.',
     finalCopy: 'Name your topic and let the stopwatch follow your study.',
   },
