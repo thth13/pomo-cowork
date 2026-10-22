@@ -5,6 +5,7 @@ import { intentSeoPages } from './seoIntentPages'
 import { learningSeoPages } from './seoLearningPages'
 import { workflowSeoPages } from './seoWorkflowPages'
 import { localTimerSeoPages } from './seoLocalTimerPages'
+import { togetherSeoPages } from './seoTogetherPages'
 import type { LocalTimerVariant } from './localTimerConfig'
 import { practiceSeoPages, type PracticeSeoPage } from './seoPracticePages'
 
@@ -50,6 +51,7 @@ export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
   ...learningSeoPages,
   ...workflowSeoPages,
   ...localTimerSeoPages,
+  ...togetherSeoPages,
   'aesthetic-timer': {
     keyword: 'Aesthetic timer',
     secondaryKeywords: ['aesthetic desk timer', 'aesthetic focus timer', 'minimalist timer', 'calm focus timer'],
@@ -453,7 +455,7 @@ export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
       { question: 'How many Pomodoros should we do together?', answer: 'Start with a number that fits everyone’s schedule, such as two rounds with a short break between them. Leave time to agree on goals and wrap up. If you plan four rounds, include the longer break in the calendar rather than counting only the focus minutes.' },
       { question: 'Can one person pause the whole group’s timer?', answer: 'Do not assume that pausing your own timer pauses anyone else’s session. Each participant has individual controls. If the group needs to stop together, communicate that explicitly and have everyone check their timer. For an individual interruption, pausing only your own session may be the simpler choice.' },
     ],
-    related: ['study-with-friends', 'study-timer-with-friends', 'pomodoro-timer', 'online-study-room'],
+    related: ['pomodoro-working-together', 'timer-working-together', 'study-with-friends', 'study-timer-with-friends', 'pomodoro-timer', 'online-study-room'],
     finalHeading: 'Choose your next round together',
     finalCopy: 'One task each, one agreed start, and a break to look forward to.',
   },
@@ -543,7 +545,7 @@ export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
       { question: 'Can I create a study room for my own group?', answer: 'The rooms screen offers room creation through the Pro interface. Check the current account and plan options there, then choose the room’s name and privacy setting. Creating a room and inviting people are separate steps from starting the timer on this page; use the room’s membership tools to organize access.' },
       { question: 'Are there always people in the study room?', answer: 'Availability depends on who is connected and running a session at that moment. Pomo Cowork shows real activity and an empty state when nobody is active. If you need company at a fixed time, invite a friend or arrange a recurring group session rather than relying on a room being continuously occupied.' },
     ],
-    related: ['body-doubling-online', 'study-with-me', 'study-with-friends', 'study-timer-with-friends', 'focus-timer', '50-minute-timer', 'online-pomodoro-timer'],
+    related: ['virtual-coworking-room', 'body-doubling-online', 'study-with-me', 'study-with-friends', 'study-timer-with-friends', 'focus-timer', '50-minute-timer', 'online-pomodoro-timer'],
     finalHeading: 'Settle in for a quiet block of work',
     finalCopy: 'Bring one learning goal and make the next stretch of time your own.',
   },

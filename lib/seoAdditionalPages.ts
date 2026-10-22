@@ -1070,7 +1070,9 @@ export const additionalSeoPages = {
       "50-10-pomodoro",
       "pomodoro-for-freelancers",
       "pomodoro-for-developers",
-      "pomodoro-with-friends"
+      "pomodoro-with-friends",
+      "work-together-online",
+      "coworking-timer"
     ],
     "finalHeading": "Make space for one task before the next call",
     "finalCopy": "Choose a realistic interval and work alongside others at your own pace."
