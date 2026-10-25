@@ -471,16 +471,34 @@ The timer's icon-only Appearance button sits at the top beside Settings, with a 
 accessible name and tooltip. On narrow screens the status sits below the icon row.
 It opens a native modal dialog with a compact scenery
 gallery and ten digit previews. The default remains Pocket Garden and pixel digits.
-Six generated aesthetic landscapes, three abstract gradient wallpapers and three Vercel Blob-hosted Mixkit videos provide
+Six scenic landscapes, one original fantasy academy wallpaper, two animated pixel forests, three abstract gradient wallpapers and three Vercel Blob-hosted Mixkit videos provide
 optional scenery; `public/backgrounds/README.md` records new asset paths and generation prompts.
 `lib/appearance.ts` owns the catalog; `app/appearance.css` owns its shared presentation.
 Scenery appears on home, search timer pages and product routes: rooms, leaderboard,
 both statistics pages, habits, profiles, ranks, settings and journal screens.
 Existing room gradients remain inside room headers. Personal choice is shared per
 browser; access to the three new landscapes, three gradients and five additional fonts
-follows the active account's Pro entitlement. The original choices stay free.
+follows the active account's Pro entitlement. Magic Academy, Forest Campfire and
+Autumn Breeze also require active Pro access. The original choices stay free.
 The gradients offer peach/rose/lilac, mint/blue/cream and indigo/orchid color fields;
 they are static raster scenery and use the same thumbnails, loading and contrast behavior.
+Magic Academy depicts a lakeside Gothic school with steep slate towers, candlelit
+windows and moonlit mist; its local JPEG and thumbnail reuse the same gallery flow.
+Forest Campfire uses a lossless 1672 × 941 pixel-art PNG with CSS-animated SVG
+flame accents, firelight, embers and fireflies in `PixelCampfireEffects`. The image
+and effects share the same centered cover crop, keeping the fire aligned on mobile.
+It remains an image catalog entry with `animation: 'campfire'`, so preloading,
+failure recovery and contrast sampling reuse the existing image workflow.
+`isAnimatedBackground` exposes pause/play controls for videos and animated images;
+both reuse the persisted `videoPaused` preference for storage compatibility. Effects
+start only after the image loads, pause in hidden tabs, and are omitted for reduced
+motion. The base artwork includes a complete still fire. No video or audio is loaded.
+Autumn Breeze adds a golden-hour woodland stream with wind-blown pixel leaves in
+`PixelAutumnEffects`, using `animation: 'autumn'` and a matching lossless PNG.
+Twenty-six deterministic leaves use layered descent, gust, sway and flutter animations;
+the scenery stays still. Both pixel scenes share `.pixel-scene-effects` for cover
+geometry, pause and reduced-motion rules. The gallery uses a leaf badge for autumn
+and a flame badge for the campfire, with English/Spanish labels and existing controls.
 
 Product routes render the selected media once through `AppearanceProvider` and
 `WorkspaceBackground`. `app/appearance.css` maps their existing Pocket Garden

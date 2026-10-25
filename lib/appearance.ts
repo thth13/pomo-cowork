@@ -11,6 +11,9 @@ export const BACKGROUNDS = [
   { id: 'alpine-dawn', kind: 'image', premium: true, src: '/backgrounds/images/alpine-dawn.jpg', preview: '/backgrounds/images/alpine-dawn-thumb.jpg' },
   { id: 'desert-dunes', kind: 'image', premium: true, src: '/backgrounds/images/desert-dunes.jpg', preview: '/backgrounds/images/desert-dunes-thumb.jpg' },
   { id: 'aurora-lake', kind: 'image', premium: true, src: '/backgrounds/images/aurora-lake.jpg', preview: '/backgrounds/images/aurora-lake-thumb.jpg' },
+  { id: 'magic-academy', kind: 'image', premium: true, src: '/backgrounds/images/magic-academy-gothic.jpg', preview: '/backgrounds/images/magic-academy-gothic-thumb.jpg' },
+  { id: 'pixel-campfire', kind: 'image', premium: true, animation: 'campfire', src: '/backgrounds/images/pixel-campfire.png', preview: '/backgrounds/images/pixel-campfire-thumb.png' },
+  { id: 'pixel-autumn', kind: 'image', premium: true, animation: 'autumn', src: '/backgrounds/images/pixel-autumn.png', preview: '/backgrounds/images/pixel-autumn-thumb.png' },
   { id: 'peach-glow', kind: 'image', premium: true, src: '/backgrounds/images/peach-glow.jpg', preview: '/backgrounds/images/peach-glow-thumb.jpg' },
   { id: 'mint-haze', kind: 'image', premium: true, src: '/backgrounds/images/mint-haze.jpg', preview: '/backgrounds/images/mint-haze-thumb.jpg' },
   { id: 'violet-dusk', kind: 'image', premium: true, src: '/backgrounds/images/violet-dusk.jpg', preview: '/backgrounds/images/violet-dusk-thumb.jpg' },
@@ -21,6 +24,10 @@ export const TIMER_FONTS = ['pixel', 'sans', 'serif', 'mono', 'rounded', ...PREM
 export const PLAY_BACKGROUND_EVENT = 'pomo:play-background'
 export type BackgroundId = (typeof BACKGROUNDS)[number]['id']
 export type TimerFont = (typeof TIMER_FONTS)[number]
+
+export function isAnimatedBackground(background: (typeof BACKGROUNDS)[number]): boolean {
+  return background.kind === 'video' || 'animation' in background
+}
 
 export function isPremiumBackground(id: BackgroundId): boolean {
   const background = BACKGROUNDS.find(item => item.id === id)

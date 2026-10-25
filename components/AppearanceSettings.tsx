@@ -2,8 +2,8 @@
 
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Crown, Film, Loader2, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
-import { BACKGROUNDS, isPremiumBackground, isPremiumTimerFont, PLAY_BACKGROUND_EVENT, TIMER_FONTS } from '@/lib/appearance'
+import { Check, Crown, Film, Flame, Leaf, Loader2, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
+import { BACKGROUNDS, isAnimatedBackground, isPremiumBackground, isPremiumTimerFont, PLAY_BACKGROUND_EVENT, TIMER_FONTS } from '@/lib/appearance'
 import { appearanceCopy } from '@/lib/i18n/appearance'
 import { useI18n } from '@/components/I18nProvider'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
@@ -108,6 +108,7 @@ export default function AppearanceSettings() {
                         <img src={background.preview} alt="" width={320} height={180} loading="lazy" />
                       )}
                       {background.kind === 'video' && <span className="appearance-video-badge"><Film size={12} aria-hidden="true" /><span className="sr-only">{copy.videos}</span></span>}
+                      {'animation' in background && <span className="appearance-video-badge">{background.animation === 'autumn' ? <Leaf size={12} aria-hidden="true" /> : <Flame size={12} aria-hidden="true" />}<span className="sr-only">{copy.animated}</span></span>}
                       {background.kind !== 'default' && state.backgroundId === background.id && <span className="appearance-selected"><Check size={13} aria-hidden="true" /><span className="sr-only">{copy.selected}</span></span>}
                       {loadingBackgroundId === background.id && <span className="appearance-scene-loading"><Loader2 size={24} aria-hidden="true" /><span className="sr-only">{copy.loading}</span></span>}
                     </span>
@@ -123,9 +124,9 @@ export default function AppearanceSettings() {
                 {mediaStatus === 'error' && <><span>{state.failedBackgroundId && `${copy.names[state.failedBackgroundId]}: `}{copy.error}</span><button type="button" onClick={state.retryMedia}>{copy.retry}</button></>}
                 {mediaStatus === 'blocked' && copy.blocked}
               </div>
-              {selected.kind === 'video' && (
+              {isAnimatedBackground(selected) && (
                 <div className="appearance-video-options">
-                  <p>{reducedMotion ? copy.reducedMotion : copy.silent}</p>
+                  <p>{reducedMotion ? copy.reducedMotion : selected.kind === 'video' ? copy.silent : copy.animatedSilent}</p>
                   <div>
                     {!reducedMotion && state.mediaStatus !== 'error' && (
                       <button type="button" className="appearance-secondary" onClick={() => {
@@ -137,7 +138,7 @@ export default function AppearanceSettings() {
                         {state.videoPaused || state.mediaStatus === 'blocked' ? copy.play : copy.pause}
                       </button>
                     )}
-                    <a href={selected.source} target="_blank" rel="noopener noreferrer">{copy.source} ↗</a>
+                    {selected.kind === 'video' && <a href={selected.source} target="_blank" rel="noopener noreferrer">{copy.source} ↗</a>}
                   </div>
                 </div>
               )}

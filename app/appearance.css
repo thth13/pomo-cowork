@@ -3,6 +3,65 @@
 .workspace-background { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; background: var(--pixel-page); }
 .workspace-background-media, .workspace-background-wash { position: absolute; inset: 0; width: 100%; height: 100%; }
 .workspace-background-media { object-fit: cover; }
+.workspace-background-media[data-pixel-art] { image-rendering: pixelated; }
+.pixel-scene-effects { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.pixel-scene-effects[data-paused="true"] * { animation-play-state: paused; }
+.campfire-light { animation: campfire-light 3.7s ease-in-out infinite; }
+.campfire-flame { transform-box: fill-box; transform-origin: center bottom; animation: campfire-flame 1.3s steps(5, end) infinite; }
+.campfire-flame-left { animation-duration: 1.7s; animation-delay: -0.6s; }
+.campfire-flame-right { animation-duration: 1.1s; animation-delay: -0.3s; }
+.campfire-ember { opacity: 0; animation: campfire-ember 4s steps(32, end) infinite; }
+.campfire-firefly { opacity: 0; animation: campfire-firefly 9s ease-in-out infinite; }
+@keyframes campfire-light {
+  0%, 100% { opacity: 0.45; }
+  30% { opacity: 0.8; }
+  55% { opacity: 0.5; }
+  75% { opacity: 0.7; }
+}
+@keyframes campfire-flame {
+  0%, 100% { transform: scale(1, 0.88); opacity: 0.45; }
+  25% { transform: translateX(3px) scale(0.88, 1.04); opacity: 0.7; }
+  50% { transform: translateX(-3px) scale(1.05, 0.92); opacity: 0.5; }
+  75% { transform: scale(0.94, 1.1); opacity: 0.65; }
+}
+@keyframes campfire-ember {
+  0% { transform: translate(0, 0); opacity: 0; }
+  12% { opacity: 0.8; }
+  65% { opacity: 0.5; }
+  100% { transform: translate(var(--ember-drift), var(--ember-rise)); opacity: 0; }
+}
+@keyframes campfire-firefly {
+  0%, 100% { transform: translate(0, 0); opacity: 0; }
+  25% { opacity: 0.55; }
+  50% { transform: translate(var(--firefly-drift), -18px); opacity: 0.1; }
+  75% { opacity: 0.4; }
+}
+.autumn-leaf-fall { opacity: 0; animation: autumn-leaf-fall 22s linear infinite; }
+.autumn-leaf-sway { animation: autumn-leaf-sway 6s ease-in-out infinite; }
+.autumn-leaf-flutter { transform-box: fill-box; transform-origin: center; animation: autumn-leaf-flutter 4s ease-in-out infinite; }
+@keyframes autumn-leaf-fall {
+  0% { transform: translate(0, 0); opacity: 0; }
+  8% { opacity: var(--leaf-opacity); }
+  28% { transform: translate(calc(var(--leaf-drift) * 0.18), 280px); }
+  44% { transform: translate(calc(var(--leaf-drift) * 0.58), 400px); }
+  65% { transform: translate(calc(var(--leaf-drift) * 0.68), 640px); opacity: var(--leaf-opacity); }
+  84% { transform: translate(var(--leaf-drift), 800px); opacity: var(--leaf-opacity); }
+  100% { transform: translate(calc(var(--leaf-drift) * 1.12), 1040px); opacity: 0; }
+}
+@keyframes autumn-leaf-sway {
+  0%, 100% { transform: translate(-24px, 0); }
+  50% { transform: translate(30px, -14px); }
+}
+@keyframes autumn-leaf-flutter {
+  0%, 100% { transform: rotate(-28deg) scaleX(0.85); }
+  25% { transform: rotate(18deg) scaleX(0.35); }
+  50% { transform: rotate(56deg) scaleX(1); }
+  75% { transform: rotate(10deg) scaleX(0.45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pixel-scene-effects { display: none; }
+  .pixel-scene-effects * { animation: none; }
+}
 .workspace-background-wash { background: color-mix(in srgb, var(--pixel-page) 20%, transparent); }
 .seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer):where(:not([data-local-timer])) {
   background: color-mix(in srgb, var(--pixel-page) 12%, transparent);

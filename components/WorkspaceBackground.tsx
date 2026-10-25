@@ -5,6 +5,8 @@ import { BACKGROUNDS, PLAY_BACKGROUND_EVENT } from '@/lib/appearance'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
 import { useSceneryContrast } from '@/hooks/useSceneryContrast'
+import PixelCampfireEffects from '@/components/PixelCampfireEffects'
+import PixelAutumnEffects from '@/components/PixelAutumnEffects'
 
 type Scene = Exclude<(typeof BACKGROUNDS)[number], { kind: 'default' }>
 
@@ -19,6 +21,9 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
   const [visible, setVisible] = useState(false)
   const [failed, setFailed] = useState(false)
   const [posterFailed, setPosterFailed] = useState(false)
+  const [imageReady, setImageReady] = useState(false)
+  const animation = 'animation' in scene ? scene.animation : null
+  const Effects = animation === 'campfire' ? PixelCampfireEffects : animation === 'autumn' ? PixelAutumnEffects : null
   const shouldPlay = scene.kind === 'video' && !videoPaused && !reducedMotion && visible && !failed
 
   useEffect(() => {
@@ -35,6 +40,7 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
       return
     }
     if (scene.kind === 'image' && imageRef.current?.complete && imageRef.current.naturalWidth > 0) {
+      setImageReady(true)
       setMediaStatus(scene.id, 'ready')
       return
     }
@@ -90,7 +96,7 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
   return (
     <div className="workspace-background" aria-hidden="true">
       {!posterFailed && (
-        // Optimized Blob assets; CORS allows contrast sampling through canvas.
+        // Local and Blob assets; CORS allows contrast sampling through canvas.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={imageRef}
@@ -98,7 +104,11 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
           src={scene.kind === 'video' ? scene.preview : scene.src}
           alt=""
           className="workspace-background-media"
-          onLoad={() => { if (scene.kind === 'image') setMediaStatus(scene.id, 'ready') }}
+          data-pixel-art={Boolean(animation) || undefined}
+          onLoad={() => {
+            setImageReady(true)
+            if (scene.kind === 'image') setMediaStatus(scene.id, 'ready')
+          }}
           onError={() => {
             setPosterFailed(true)
             if (scene.kind === 'image' || !shouldPlay) setMediaStatus(scene.id, 'error')
@@ -126,6 +136,9 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
             setMediaStatus(scene.id, 'error')
           }}
         />
+      )}
+      {Effects && imageReady && !posterFailed && !reducedMotion && (
+        <Effects paused={videoPaused || !visible} />
       )}
       <div className="workspace-background-wash" />
     </div>
