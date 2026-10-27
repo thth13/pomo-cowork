@@ -613,3 +613,17 @@ Auth responses omit the field; public profile selections remain unchanged.
 Apply `20261026120000_add_user_country` before deploying the new application.
 Local development has no trusted country header and leaves the field unset.
 Runtime verification remains user-owned; no builds, app starts or tsc.
+
+
+## Account access presentation
+
+Source: user request 2026-10-27. AuthModal uses CommunityDialog's `auth` variant for
+native focus containment, inert background, Escape, backdrop dismissal and focus
+restoration. Email fields are visible immediately beside the existing Google option;
+login/registration switching remains in the footer. The existing auth store, Google
+redirect and shared registration validation remain canonical. Pending email/Google
+submission disables form controls, mode switching and dismissal. Field errors keep
+the entered values and focus the first invalid field. English/Spanish labels follow
+I18nProvider, including the conjunction in the existing registration terms copy.
+Visual tokens and rendered-scenery detection follow DESIGN.md and appearance.css.
+Verification is static; app execution, builds and tsc remain user-owned.

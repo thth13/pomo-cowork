@@ -59,6 +59,7 @@ export const translations = {
       description: 'Choose your site language. Changes apply immediately and are saved in this browser.',
     },
     auth: {
+      and: 'and',
       confirmPassword: 'Confirm password',
       confirmPasswordPlaceholder: 'Repeat your password',
       emailRequired: 'Email is required',
@@ -394,6 +395,7 @@ export const translations = {
       description: 'Elige el idioma del sitio. Los cambios se aplican al instante y se guardan en este navegador.',
     },
     auth: {
+      and: 'y',
       confirmPassword: 'Confirmar contraseña',
       confirmPasswordPlaceholder: 'Repite tu contraseña',
       emailRequired: 'El email es obligatorio',

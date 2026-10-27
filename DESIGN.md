@@ -1037,3 +1037,16 @@ the localized Room/Sala prefix, the room name and a swap icon (lock while unavai
 It uses Inter, existing pixel/scenery roles and 3px corners. Long names truncate with
 full text in the accessible label and title. Other routes retain their original timer
 control. Global/last-room switching and the running-session lock remain unchanged.
+
+
+## Account access dialog
+
+AuthModal reuses CommunityDialog's `auth` variant: a compact sage title bar with a
+pixel Pomo Cowork caption, Inter heading, outlined Google action, email divider and
+always-visible email form. Registration adds username and password confirmation in
+the same column. Tomato owns the primary action and mode link; fields use existing
+pixel surface, ink, muted and border roles. `app/community.css` owns layout and
+`app/appearance.css` includes the dialog in the shared scene-glass selectors on all
+routes with rendered scenery. Local aliases also cover fields, error contrast and
+scrollbars in either app theme. The header stays visible while the body scrolls on
+short screens; phone inputs use 16px text. Forced colors retains system surfaces.

@@ -2,8 +2,8 @@
 
 import Link from 'next/link'
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Mail, Lock, User, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react'
+import CommunityDialog from '@/components/CommunityDialog'
 import { useAuthStore } from '@/store/useAuthStore'
 import { reportConversion } from '@/lib/gtm'
 import { useI18n } from '@/components/I18nProvider'
@@ -30,9 +30,9 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   const submittingRef = useRef(false)
   const pendingFocusRef = useRef<RegistrationField | null>(null)
   const [error, setError] = useState('')
-  const [showEmailForm, setShowEmailForm] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isGoogleProcessing, setIsGoogleProcessing] = useState(false)
+  const isBusy = isLoading || isGoogleProcessing
 
   const { login, register } = useAuthStore()
   const { t } = useI18n()
@@ -44,7 +44,6 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       setFieldErrors({})
       setShowPassword(false)
       setShowConfirmPassword(false)
-      setShowEmailForm(false)
       setError('')
       setIsLoading(false)
       setIsGoogleProcessing(false)
@@ -70,7 +69,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   const fieldError = (field: RegistrationField) => {
     const code = fieldErrors[field]
     return code ? (
-      <p id={`auth-${field}-error`} role="alert" className="mt-1 text-xs text-red-700 dark:text-red-300">
+      <p id={`auth-${field}-error`} role="alert" className="auth-field-error">
         {t.auth[code]}
       </p>
     ) : null
@@ -78,7 +77,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (submittingRef.current) return
+    if (submittingRef.current || isGoogleProcessing) return
     setError('')
     setFieldErrors({})
 
@@ -143,7 +142,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   }
 
   const toggleMode = () => {
-    if (submittingRef.current) return
+    if (submittingRef.current || isGoogleProcessing) return
     pendingFocusRef.current = null
     setIsLogin(!isLogin)
     setFieldErrors({})
@@ -154,6 +153,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   }
 
   const handleGoogleLogin = () => {
+    if (submittingRef.current || isGoogleProcessing) return
     setError('')
     if (window.location.pathname === '/extension/authorize') {
       sessionStorage.setItem('pomo:extensionAuthReturn', JSON.stringify({ path: window.location.pathname + window.location.search, createdAt: Date.now() }))
@@ -199,284 +199,240 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
   if (!isOpen) return null
 
   return (
-    <AnimatePresence>
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.9 }}
-          className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl rounded-2xl shadow-2xl max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto p-8 border border-slate-100/60 dark:border-slate-800"
+    <CommunityDialog
+      open={isOpen}
+      variant="auth"
+      title={isLogin ? t.auth.signIn : t.auth.createAccount}
+      description={t.auth.subtitle}
+      busy={isBusy}
+      dismissOnBackdrop
+      onClose={onClose}
+    >
+      {/* Google Auth */}
+      <div className="auth-methods">
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          disabled={isBusy || !googleClientId}
+          aria-busy={isGoogleProcessing}
+          className="community-button auth-google"
         >
-          {/* Header */}
-          <div className="flex items-start justify-between mb-8">
-            <div className="space-y-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-600 dark:text-primary-400">
-                Pomo Cowork
-              </p>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                {isLogin ? t.auth.signIn : t.auth.createAccount}
-              </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                {t.auth.subtitle}
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
-            >
-              <X className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </button>
-          </div>
+          {isGoogleProcessing ? <Loader2 size={18} className="auth-spinner" aria-hidden="true" /> : <svg
+            aria-hidden="true"
+            focusable="false"
+            className="w-5 h-5"
+            viewBox="0 0 18 18"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M17.64 9.2045C17.64 8.56682 17.5827 7.95227 17.4764 7.36364H9V10.845H13.8436C13.635 11.97 13.0009 12.9232 12.0477 13.561V15.8195H14.9564C16.6582 14.2523 17.64 11.9455 17.64 9.2045Z"
+              fill="#4285F4"
+            />
+            <path
+              d="M9 18C11.43 18 13.4673 17.1941 14.9564 15.8195L12.0477 13.561C11.2418 14.1018 10.2109 14.4205 9 14.4205C6.65636 14.4205 4.67182 12.8373 3.96409 10.71H0.957275V13.0418C2.43818 15.9832 5.48182 18 9 18Z"
+              fill="#34A853"
+            />
+            <path
+              d="M3.96414 10.71C3.78414 10.1691 3.68187 9.59364 3.68187 9C3.68187 8.40636 3.78414 7.8309 3.96414 7.29V4.95818H0.957322C0.347732 6.17318 0 7.54773 0 9C0 10.4523 0.347732 11.8268 0.957322 13.0418L3.96414 10.71Z"
+              fill="#FBBC05"
+            />
+            <path
+              d="M9 3.57955C10.3214 3.57955 11.5077 4.03364 12.4445 4.94182L15.0218 2.36455C13.4632 0.910909 11.4259 0 9 0C5.48182 0 2.43818 2.01682 0.957275 4.95818L3.96409 7.29C4.67182 5.16273 6.65636 3.57955 9 3.57955Z"
+              fill="#EA4335"
+            />
+          </svg>}
+          <span>{isGoogleProcessing ? t.auth.connecting : t.auth.connectWithGoogle}</span>
+        </button>
 
-          {/* Google Auth */}
-          <div className="space-y-4">
+        <div className="auth-divider"><span>{t.auth.orUseEmail}</span></div>
+      </div>
+
+      {/* Error Message */}
+      {error && (
+        <div
+          role="alert"
+          className="auth-error"
+        >
+          {error}
+        </div>
+      )}
+
+      {/* Form */}
+      <form ref={formRef} noValidate onSubmit={handleSubmit} aria-busy={isLoading} className="auth-form">
+        {/* Email */}
+        <div>
+          <label htmlFor="auth-email" className="auth-label">
+            {t.auth.email}
+          </label>
+          <div className="auth-input-wrap">
+            <Mail className="auth-field-icon" aria-hidden="true" />
+            <input
+              type="email"
+              id="auth-email"
+              name="email"
+              disabled={isBusy}
+              autoComplete="email"
+              aria-invalid={Boolean(fieldErrors.email)}
+              aria-describedby={fieldErrors.email ? 'auth-email-error' : undefined}
+              value={formData.email}
+              onChange={handleInputChange}
+              className="auth-input"
+              placeholder="your@email.com"
+              required
+            />
+          </div>
+          {fieldError('email')}
+        </div>
+
+        {/* Username (for registration) */}
+        {!isLogin && (
+          <div>
+            <label htmlFor="auth-username" className="auth-label">
+              {t.auth.username}
+            </label>
+            <div className="auth-input-wrap">
+              <User className="auth-field-icon" aria-hidden="true" />
+              <input
+                type="text"
+                id="auth-username"
+                name="username"
+                disabled={isBusy}
+                autoComplete="username"
+                aria-invalid={Boolean(fieldErrors.username)}
+                aria-describedby={fieldErrors.username ? 'auth-username-error' : undefined}
+                value={formData.username}
+                onChange={handleInputChange}
+                className="auth-input"
+                placeholder={t.auth.usernamePlaceholder}
+                required={!isLogin}
+              />
+            </div>
+            {fieldError('username')}
+          </div>
+        )}
+
+        {/* Password */}
+        <div>
+          <label htmlFor="auth-password" className="auth-label">
+            {t.auth.password}
+          </label>
+          <div className="auth-input-wrap">
+            <Lock className="auth-field-icon" aria-hidden="true" />
+            <input
+              type={showPassword ? 'text' : 'password'}
+              id="auth-password"
+              name="password"
+              disabled={isBusy}
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
+              aria-invalid={Boolean(fieldErrors.password)}
+              aria-describedby={fieldErrors.password ? 'auth-password-error' : !isLogin ? 'auth-password-help' : undefined}
+              value={formData.password}
+              onChange={handleInputChange}
+              className="auth-input auth-input-password"
+              placeholder={t.auth.passwordPlaceholder}
+              required
+              minLength={4}
+            />
             <button
               type="button"
-              onClick={handleGoogleLogin}
-              disabled={isLoading || isGoogleProcessing || !googleClientId}
-              className="w-full flex items-center justify-center gap-3 border border-slate-200 dark:border-slate-800 rounded-xl py-3 text-slate-800 dark:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-800/70 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? t.auth.hidePassword : t.auth.showPassword}
+              aria-pressed={showPassword}
+              disabled={isBusy}
+              className="auth-password-toggle"
             >
-              <svg
-                aria-hidden="true"
-                focusable="false"
-                className="w-5 h-5"
-                viewBox="0 0 18 18"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M17.64 9.2045C17.64 8.56682 17.5827 7.95227 17.4764 7.36364H9V10.845H13.8436C13.635 11.97 13.0009 12.9232 12.0477 13.561V15.8195H14.9564C16.6582 14.2523 17.64 11.9455 17.64 9.2045Z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M9 18C11.43 18 13.4673 17.1941 14.9564 15.8195L12.0477 13.561C11.2418 14.1018 10.2109 14.4205 9 14.4205C6.65636 14.4205 4.67182 12.8373 3.96409 10.71H0.957275V13.0418C2.43818 15.9832 5.48182 18 9 18Z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M3.96414 10.71C3.78414 10.1691 3.68187 9.59364 3.68187 9C3.68187 8.40636 3.78414 7.8309 3.96414 7.29V4.95818H0.957322C0.347732 6.17318 0 7.54773 0 9C0 10.4523 0.347732 11.8268 0.957322 13.0418L3.96414 10.71Z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M9 3.57955C10.3214 3.57955 11.5077 4.03364 12.4445 4.94182L15.0218 2.36455C13.4632 0.910909 11.4259 0 9 0C5.48182 0 2.43818 2.01682 0.957275 4.95818L3.96409 7.29C4.67182 5.16273 6.65636 3.57955 9 3.57955Z"
-                  fill="#EA4335"
-                />
-              </svg>
-              <span>{isGoogleProcessing ? t.auth.connecting : t.auth.connectWithGoogle}</span>
+              {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
             </button>
-
-            {!showEmailForm && (
-              <div className="flex items-center justify-center gap-3 text-sm text-slate-500 dark:text-slate-400">
-                <span className="h-px w-12 bg-slate-200 dark:bg-slate-700" />
-                <button
-                  type="button"
-                  onClick={() => setShowEmailForm(true)}
-                  className="font-medium text-slate-700 dark:text-slate-200 hover:text-primary-600 dark:hover:text-primary-400"
-                >
-                  {t.auth.orUseEmail}
-                </button>
-                <span className="h-px w-12 bg-slate-200 dark:bg-slate-700" />
-              </div>
-            )}
           </div>
-
-          {/* Error Message */}
-          {error && (
-            <motion.div
-              role="alert"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="mt-4 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg text-sm"
-            >
-              {error}
-            </motion.div>
+          {!isLogin && (
+            <p id="auth-password-help" className="auth-help">
+              {t.auth.minimumPassword}
+            </p>
           )}
+          {fieldError('password')}
+        </div>
 
-          {/* Form */}
-          {showEmailForm && (
-            <form ref={formRef} noValidate onSubmit={handleSubmit} className="space-y-4 mt-8">
-              {/* Email */}
-              <div>
-                <label htmlFor="auth-email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {t.auth.email}
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                  <input
-                    type="email"
-                    id="auth-email"
-                    name="email"
-                    disabled={isLoading}
-                    autoComplete="email"
-                    aria-invalid={Boolean(fieldErrors.email)}
-                    aria-describedby={fieldErrors.email ? 'auth-email-error' : undefined}
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="input pl-10"
-                    placeholder="your@email.com"
-                    required
-                  />
-                </div>
-                {fieldError('email')}
-              </div>
-
-              {/* Username (for registration) */}
-              {!isLogin && (
-                <div>
-                  <label htmlFor="auth-username" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    {t.auth.username}
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                    <input
-                      type="text"
-                      id="auth-username"
-                      name="username"
-                      disabled={isLoading}
-                      autoComplete="username"
-                      aria-invalid={Boolean(fieldErrors.username)}
-                      aria-describedby={fieldErrors.username ? 'auth-username-error' : undefined}
-                      value={formData.username}
-                      onChange={handleInputChange}
-                      className="input pl-10"
-                      placeholder={t.auth.usernamePlaceholder}
-                      required={!isLogin}
-                    />
-                  </div>
-                  {fieldError('username')}
-                </div>
-              )}
-
-              {/* Password */}
-              <div>
-                <label htmlFor="auth-password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                  {t.auth.password}
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    id="auth-password"
-                    name="password"
-                    disabled={isLoading}
-                    autoComplete={isLogin ? 'current-password' : 'new-password'}
-                    aria-invalid={Boolean(fieldErrors.password)}
-                    aria-describedby={fieldErrors.password ? 'auth-password-error' : !isLogin ? 'auth-password-help' : undefined}
-                    value={formData.password}
-                    onChange={handleInputChange}
-                    className="input pl-10 pr-10"
-                    placeholder={t.auth.passwordPlaceholder}
-                    required
-                    minLength={4}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? t.auth.hidePassword : t.auth.showPassword}
-                    aria-pressed={showPassword}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {!isLogin && (
-                  <p id="auth-password-help" className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    {t.auth.minimumPassword}
-                  </p>
-                )}
-                {fieldError('password')}
-              </div>
-
-              {!isLogin && (
-                <div>
-                  <label htmlFor="auth-confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
-                    {t.auth.confirmPassword}
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 w-5 h-5" />
-                    <input
-                      id="auth-confirmPassword"
-                      type={showConfirmPassword ? 'text' : 'password'}
-                      name="confirmPassword"
-                      autoComplete="new-password"
-                      value={formData.confirmPassword}
-                      onChange={handleInputChange}
-                      disabled={isLoading}
-                      aria-invalid={Boolean(fieldErrors.confirmPassword)}
-                      aria-describedby={fieldErrors.confirmPassword ? 'auth-confirmPassword-error' : undefined}
-                      className="input pl-10 pr-10"
-                      placeholder={t.auth.confirmPasswordPlaceholder}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      aria-label={showConfirmPassword ? t.auth.hidePassword : t.auth.showPassword}
-                      aria-pressed={showConfirmPassword}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300"
-                    >
-                      {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                    </button>
-                  </div>
-                  {fieldError('confirmPassword')}
-                </div>
-              )}
-
-              {/* Submit Button */}
-              <motion.button
-                aria-busy={isLoading}
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary w-full py-3 text-base disabled:opacity-50 disabled:cursor-not-allowed"
-                whileHover={{ scale: isLoading ? 1 : 1.02 }}
-                whileTap={{ scale: isLoading ? 1 : 0.98 }}
+        {!isLogin && (
+          <div>
+            <label htmlFor="auth-confirmPassword" className="auth-label">
+              {t.auth.confirmPassword}
+            </label>
+            <div className="auth-input-wrap">
+              <Lock className="auth-field-icon" aria-hidden="true" />
+              <input
+                id="auth-confirmPassword"
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                autoComplete="new-password"
+                value={formData.confirmPassword}
+                onChange={handleInputChange}
+                disabled={isBusy}
+                aria-invalid={Boolean(fieldErrors.confirmPassword)}
+                aria-describedby={fieldErrors.confirmPassword ? 'auth-confirmPassword-error' : undefined}
+                className="auth-input auth-input-password"
+                placeholder={t.auth.confirmPasswordPlaceholder}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? t.auth.hidePassword : t.auth.showPassword}
+                aria-pressed={showConfirmPassword}
+                disabled={isBusy}
+                className="auth-password-toggle"
               >
-                {isLoading ? (
-                  <div className="flex items-center justify-center space-x-2">
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>{t.common.loading}...</span>
-                  </div>
-                ) : (
-                  isLogin ? t.auth.login : t.auth.register
-                )}
-              </motion.button>
-
-            </form>
-          )}
-
-          {/* Toggle Mode */}
-          {showEmailForm && (
-            <div className="mt-6 text-center space-y-2 text-xs text-slate-500 dark:text-slate-400">
-              {!isLogin && (
-                <p className="leading-5">
-                  {t.auth.termsCopy}{' '}
-                  <Link
-                    href="/terms"
-                    className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white"
-                  >
-                    {t.auth.terms}
-                  </Link>{' '}
-                  and{' '}
-                  <Link
-                    href="/privacy"
-                    className="font-medium text-slate-600 underline underline-offset-2 hover:text-slate-800 dark:text-slate-200 dark:hover:text-white"
-                  >
-                    {t.auth.privacyPolicy}
-                  </Link>.
-                </p>
-              )}
-              <p>
-                {isLogin ? t.auth.noAccount : t.auth.alreadyHaveAccount}
-                {' '}
-                <button
-                  onClick={toggleMode}
-                  className="font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
-                >
-                  {isLogin ? t.auth.register : t.auth.login}
-                </button>
-              </p>
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
             </div>
-          )}
-        </motion.div>
+            {fieldError('confirmPassword')}
+          </div>
+        )}
+
+        {/* Submit Button */}
+        <button
+          aria-busy={isLoading}
+          type="submit"
+          disabled={isBusy}
+          className="community-button community-button-primary auth-submit"
+        >
+          {isLoading ? <Loader2 size={18} className="auth-spinner" aria-hidden="true" /> : <ArrowRight size={18} aria-hidden="true" />}
+          <span>{isLoading ? t.common.loading : isLogin ? t.auth.signIn : t.auth.createAccount}</span>
+        </button>
+      </form>
+
+      {/* Toggle Mode */}
+      <div className="auth-footer">
+        {!isLogin && (
+          <p className="auth-terms">
+            {t.auth.termsCopy}{' '}
+            <Link
+              href="/terms"
+              className="auth-link"
+            >
+              {t.auth.terms}
+            </Link>{' '}
+            {t.auth.and}{' '}
+            <Link
+              href="/privacy"
+              className="auth-link"
+            >
+              {t.auth.privacyPolicy}
+            </Link>.
+          </p>
+        )}
+        <p>
+          {isLogin ? t.auth.noAccount : t.auth.alreadyHaveAccount}
+          {' '}
+          <button
+            type="button"
+            onClick={toggleMode}
+            disabled={isBusy}
+            className="auth-link auth-mode-switch"
+          >
+            {isLogin ? t.auth.register : t.auth.login}
+          </button>
+        </p>
       </div>
-    </AnimatePresence>
+    </CommunityDialog>
   )
 }
