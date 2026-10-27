@@ -38,8 +38,12 @@ const tabs: Array<{ value: UsersTab; label: string; description: string }> = [
 const countryNames = new Intl.DisplayNames(['en'], { type: 'region', fallback: 'none' })
 
 const formatCountry = (code: string | null) => {
-  if (!code || !/^[A-Z]{2}$/.test(code)) return 'Unknown'
-  return countryNames.of(code) ?? 'Unknown'
+  if (!code || !/^[A-Z]{2}$/.test(code)) return null
+  const name = countryNames.of(code)
+  if (!name) return null
+
+  const flag = String.fromCodePoint(...Array.from(code, (letter) => 0x1F1E6 + letter.charCodeAt(0) - 65))
+  return <span role="img" aria-label={name} title={name} className="text-xl">{flag}</span>
 }
 
 const formatDate = (date: Date | null) => {
@@ -209,10 +213,6 @@ export default async function UzerzPage({
               )
             })}
           </div>
-
-          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
-            Country reflects the last detected connection location. VPNs may affect it.
-          </p>
 
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
             <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Users">
