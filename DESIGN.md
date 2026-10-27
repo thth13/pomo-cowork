@@ -657,6 +657,28 @@ with a rank-colored edge and shield-shaped trophy, pixel rank name and Inter det
 tokens and `lib/ranks.ts` accent colors. It overlays without shifting or blocking the
 workspace, fits phone safe areas, and respects reduced motion and forced colors.
 
+## Upgrade to Pro
+
+PaywallModal uses CommunityDialog's upgrade-pro variant: a 720px paper panel,
+distinct sage header with a larger pixel title, a small muted productivity subtitle and borderless
+close icon with a 44px target. There is no separate hero or crown seal. Inter owns feature labels,
+plan details and prices. A fine divider separates the feature list from two native
+radio plan cards; tomato marks selection and the shared checkout button. On phones
+the columns stack, and the body scrolls beneath the always-visible close action.
+`app/community.css` owns layout; `app/appearance.css` includes the dialog in the
+shared scene-glass surface and token aliases on every route with rendered scenery.
+Dark mode, forced colors and reduced motion follow existing theme roles.
+
+The feature section has a prominent Inter heading, a compact pixel Pro badge and
+an explicit included-in-both-plans caption. All benefits, including premium wallpapers
+and unlimited habits, have equal visual emphasis with distinct outline icons,
+ink-colored labels and fine separators. All feature styling inherits pixel/scene
+tokens, and the list becomes a two-column grid on phones.
+
+The native dialog temporarily closes while AuthModal or Paddle owns the foreground,
+then returns with the selected plan preserved. Prices, trial terms and billing APIs
+retain their existing owners. Checkout errors appear inline in English/Spanish.
+
 ## Timer settings
 
 SettingsModal uses CommunityDialog's timer-settings variant: a 480px paper panel
