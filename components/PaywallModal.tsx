@@ -9,9 +9,10 @@ import { useI18n } from '@/components/I18nProvider'
 
 interface PaywallModalProps {
   onClose: () => void
+  description?: string
 }
 
-export const PaywallModal = ({ onClose }: PaywallModalProps) => {
+export const PaywallModal = ({ onClose, description }: PaywallModalProps) => {
   const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly'>('yearly')
   const [paddle, setPaddle] = useState<Paddle | undefined>()
   const [isProcessing, setIsProcessing] = useState(false)
@@ -130,7 +131,7 @@ export const PaywallModal = ({ onClose }: PaywallModalProps) => {
               {t.paywall.title}
             </h2>
             <p className="text-gray-600 dark:text-slate-300 max-w-md mx-auto">
-              {t.paywall.subtitle}
+              {description ?? t.paywall.subtitle}
             </p>
           </div>
 

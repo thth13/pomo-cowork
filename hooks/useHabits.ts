@@ -6,6 +6,10 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { habitDate, type Habit } from '@/lib/habits'
 
+export class HabitLimitError extends Error {
+  constructor() { super('HABIT_LIMIT_REACHED') }
+}
+
 export function useHabits(isVisible = true) {
   const { mutate: mutateCache } = useSWRConfig()
   const { token, user, isLoading: authLoading } = useAuthStore()
@@ -51,7 +55,11 @@ export function useHabits(isVisible = true) {
       method: id ? 'PATCH' : 'POST', headers: identity.headers,
       body: JSON.stringify(body), signal: AbortSignal.timeout(20_000),
     })
-    if (!response.ok) throw new Error('save')
+    if (!response.ok) {
+      const failure = await response.json().catch(() => null)
+      if (response.status === 403 && failure?.code === 'HABIT_LIMIT_REACHED') throw new HabitLimitError()
+      throw new Error('save')
+    }
     const habit: Habit = await response.json()
     // Use the captured request key: a login/logout while saving must never write
     // the previous owner's result into the newly selected account's cache.

@@ -2,6 +2,7 @@ export const habitsCopy = {
   en: {
     title: 'Habits', today: 'Today', subtitle: 'Small things, done day by day.',
     add: 'Add habit', name: 'Habit name', placeholder: 'Read for 20 minutes',
+    premiumRequired: 'You’ve reached the free plan’s active habit limit. Get Premium to add more habits.',
     empty: 'Start with one small habit. Add something you want to do every day.',
     emptyToday: 'No habits yet. Add your first habit to start checking in.',
     manage: 'Manage habits', done: 'completed today', streak: 'day streak', total: 'days completed',
@@ -30,6 +31,7 @@ export const habitsCopy = {
   es: {
     title: 'Hábitos', today: 'Hoy', subtitle: 'Pequeñas cosas, día a día.',
     add: 'Añadir hábito', name: 'Nombre del hábito', placeholder: 'Leer durante 20 minutos',
+    premiumRequired: 'Has alcanzado el límite de hábitos activos del plan gratuito. Consigue Premium para añadir más hábitos.',
     empty: 'Empieza con un pequeño hábito. Añade algo que quieras hacer cada día.',
     emptyToday: 'Aún no hay hábitos. Añade el primero para empezar.',
     manage: 'Gestionar hábitos', done: 'completados hoy', streak: 'días seguidos', total: 'días completados',

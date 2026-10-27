@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { resolveTaskUserId } from '@/lib/taskAuth'
 import { validHabitDate } from '@/lib/habits'
+import { canActivateHabit, habitLimitResponse, lockHabitOwner } from '@/lib/habitAccess'
 
 export async function PATCH(request: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -25,6 +26,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       return NextResponse.json({ error: 'Invalid habit update' }, { status: 400 })
     }
     const result = await prisma.$transaction(async (tx) => {
+      if (body.archived === false) await lockHabitOwner(tx, userId)
       // Lock the owned habit for both marks and archival, including concurrent requests.
       const owned = await tx.habit.updateMany({ where: { id: params.id, userId }, data: { id: params.id } })
       if (!owned.count) return { status: 404, error: 'Habit not found' }
@@ -39,6 +41,9 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
           await tx.habitCompletion.deleteMany({ where: { habitId: habit.id, date: body.date } })
         }
       } else {
+        if (habit.archived && body.archived === false && !await canActivateHabit(tx, userId)) {
+          return { status: 403, ...habitLimitResponse }
+        }
         await tx.habit.update({ where: { id: habit.id }, data: {
           ...('title' in body ? { title: body.title.trim() } : {}),
           ...('archived' in body ? { archived: body.archived } : {}),
@@ -46,7 +51,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       }
       return { status: 200, habit: await tx.habit.findUniqueOrThrow({ where: { id: habit.id }, include: { completions: { select: { date: true } } } }) }
     })
-    return NextResponse.json(result.habit ?? { error: result.error }, { status: result.status })
+    return NextResponse.json(result.habit ?? { error: result.error, code: result.code }, { status: result.status })
   } catch (error) {
     console.error('Update habit failed:', error)
     return NextResponse.json({ error: 'Could not update habit' }, { status: 500 })

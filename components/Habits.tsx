@@ -1,11 +1,13 @@
 'use client'
 
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import Link from 'next/link'
 import { Archive, Check, ChevronLeft, ChevronRight, Flame, Pencil, Plus, RotateCcw } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import { useAuthStore } from '@/store/useAuthStore'
-import { useHabits } from '@/hooks/useHabits'
+import { HabitLimitError, useHabits } from '@/hooks/useHabits'
+import { PaywallModal } from '@/components/PaywallModal'
 import { habitsCopy } from '@/lib/i18n/habits'
 import { habitStreak, shiftHabitDate, type Habit } from '@/lib/habits'
 import HabitsSkeleton from '@/components/HabitsSkeleton'
@@ -48,21 +50,28 @@ export default function Habits({ compact = false, isVisible = true }: { compact?
   const user = useAuthStore((state) => state.user)
   const [pending, setPending] = useState<string | null>(null)
   const lock = useRef(false)
-  const [message, setMessage] = useState('')
   const [saveError, setSaveError] = useState(false)
+  const [showPaywall, setShowPaywall] = useState(false)
+  const paywallTrigger = useRef<HTMLElement | null>(null)
   const [editing, setEditing] = useState<string | null>(null)
   const [offset, setOffset] = useState(0)
   const createAttempt = useRef<{ id: string; title: string; startDate: string } | null>(null)
-  useEffect(() => { setEditing(null); setMessage(''); setSaveError(false); setOffset(0); createAttempt.current = null }, [user?.id])
+  useEffect(() => { setEditing(null); setSaveError(false); setOffset(0); createAttempt.current = null }, [user?.id])
   useEffect(() => { if (!compact) document.title = `${c.title} | Pomo Cowork` }, [c.title, compact])
 
-  async function commit(body: Record<string, unknown>, id?: string, feedback: string = c.saved): Promise<boolean> {
+  async function commit(body: Record<string, unknown>, id?: string): Promise<boolean> {
     if (lock.current) return false
     lock.current = true
     setPending(id ?? 'new')
     setSaveError(false)
-    try { await save(body, id); setMessage(feedback); return true }
-    catch { setSaveError(true); return false }
+    try { await save(body, id); return true }
+    catch (error) {
+      if (error instanceof HabitLimitError) {
+        paywallTrigger.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+        setShowPaywall(true)
+      } else setSaveError(true)
+      return false
+    }
     finally { lock.current = false; setPending(null) }
   }
   const active = (habits ?? []).filter((habit) => !habit.archived)
@@ -76,14 +85,14 @@ export default function Habits({ compact = false, isVisible = true }: { compact?
   function mark(habit: Habit, date: string, history = false) {
     const checked = habit.completions.some((entry) => entry.date === date)
     const unavailable = date > today || date < habit.startDate || habit.archived
-    return <button type="button" className={`habit-check ${history ? 'habit-day' : ''}`} aria-pressed={checked} aria-label={`${checked ? c.unmark : c.mark}: ${habit.title}, ${dateLabel(date)}`} title={`${dateLabel(date)}${unavailable ? ` · ${c.unavailable}` : ''}`} disabled={!!pending || unavailable} aria-busy={pending === habit.id} onClick={() => void commit({ date, completed: !checked }, habit.id, '')}>
+    return <button type="button" className={`habit-check ${history ? 'habit-day' : ''}`} aria-pressed={checked} aria-label={`${checked ? c.unmark : c.mark}: ${habit.title}, ${dateLabel(date)}`} title={`${dateLabel(date)}${unavailable ? ` · ${c.unavailable}` : ''}`} disabled={!!pending || unavailable} aria-busy={pending === habit.id} onClick={() => void commit({ date, completed: !checked }, habit.id)}>
       {checked ? <Check size={17} aria-hidden="true" /> : <span aria-hidden="true" />}
     </button>
   }
 
   return <section className={`habits ${compact ? 'habits-compact' : ''}`} data-no-translate lang={language} aria-label={c.title}>
     <div className={compact ? 'habit-content-scroll' : undefined}>
-    <div className="habit-feedback" aria-live="polite" role="status">{saveError ? <span className="habit-error">{c.saveError}</span> : message}</div>
+    <div className="habit-feedback" aria-live="polite" role="status">{saveError && <span className="habit-error">{c.saveError}</span>}</div>
     {loading ? <HabitsSkeleton compact={compact} guest={!user || user.isAnonymous} /> : error && !habits ? <div className="habit-state" role="alert"><p>{c.loadError}</p><button className="habit-button" onClick={retry}>{c.retry}</button></div> : <>
       {error && <div className="habit-state" role="alert"><p>{c.loadError}</p><button className="habit-button" onClick={retry}>{c.retry}</button></div>}
       <div className={compact ? undefined : 'habits-overview'}>
@@ -97,7 +106,7 @@ export default function Habits({ compact = false, isVisible = true }: { compact?
               <div className="habit-name"><span>{habit.title}</span><small><Flame size={12} aria-hidden="true" />{habitStreak(habit, today).toLocaleString(language)} {c.streak}</small></div>
               {!compact && <div className="habit-row-actions">
                 <button id={`habit-edit-${habit.id}`} className="habit-icon" type="button" title={c.edit} aria-label={`${c.edit}: ${habit.title}`} disabled={!!pending} onClick={() => { setEditing(habit.id); requestAnimationFrame(() => document.getElementById('habit-edit-name')?.focus()) }}><Pencil size={16} aria-hidden="true" /></button>
-                <button className="habit-icon" type="button" title={c.archive} aria-label={`${c.archive}: ${habit.title}`} disabled={!!pending} onClick={() => void commit({ archived: true }, habit.id, c.archivedStatus).then((saved) => { if (saved) { setEditing(null); document.getElementById('habit-new-name')?.focus() } })}><Archive size={16} aria-hidden="true" /></button>
+                <button className="habit-icon" type="button" title={c.archive} aria-label={`${c.archive}: ${habit.title}`} disabled={!!pending} onClick={() => void commit({ archived: true }, habit.id).then((saved) => { if (saved) { setEditing(null); document.getElementById('habit-new-name')?.focus() } })}><Archive size={16} aria-hidden="true" /></button>
               </div>}
             </li>)}</ul>
           </>}
@@ -111,7 +120,7 @@ export default function Habits({ compact = false, isVisible = true }: { compact?
             if (!createAttempt.current || createAttempt.current.title !== title) {
               createAttempt.current = { id: crypto.randomUUID(), title, startDate: today }
             }
-            const saved = await commit(createAttempt.current, undefined, c.created)
+            const saved = await commit(createAttempt.current)
             if (saved) createAttempt.current = null
             return saved
           }} />}
@@ -131,10 +140,18 @@ export default function Habits({ compact = false, isVisible = true }: { compact?
             {habits.map((habit) => <tr key={habit.id}><th scope="row"><span>{habit.title}</span>{habit.archived && <small>{c.archived}</small>}</th>{days.map((date) => <td key={date}>{mark(habit, date, true)}</td>)}<td>{habit.completions.length.toLocaleString(language)}</td></tr>)}
           </tbody></table></div>
         </section>}
-        {archived.length > 0 && <details className="habit-archive"><summary>{c.archived} ({archived.length.toLocaleString(language)})</summary><p>{c.archiveHint}</p><ul className="habit-list">{archived.map((habit) => <li key={habit.id}><span className="habit-name">{habit.title}</span><button className="habit-button" type="button" disabled={!!pending} onClick={() => void commit({ archived: false }, habit.id, c.restored)}><RotateCcw size={14} aria-hidden="true" />{c.restore}</button></li>)}</ul></details>}
+        {archived.length > 0 && <details className="habit-archive"><summary>{c.archived} ({archived.length.toLocaleString(language)})</summary><p>{c.archiveHint}</p><ul className="habit-list">{archived.map((habit) => <li key={habit.id}><span className="habit-name">{habit.title}</span><button className="habit-button" type="button" disabled={!!pending} onClick={() => void commit({ archived: false }, habit.id)}><RotateCcw size={14} aria-hidden="true" />{c.restore}</button></li>)}</ul></details>}
       </>}
     </>}
     </div>
     {compact && <Link className="habit-button habit-manage" href="/habits">{c.manage}<ChevronRight size={16} aria-hidden="true" /></Link>}
+    {showPaywall && createPortal(<PaywallModal description={c.premiumRequired} onClose={() => {
+      setShowPaywall(false)
+      requestAnimationFrame(() => {
+        const trigger = paywallTrigger.current
+        if (trigger?.isConnected && trigger !== document.body) trigger.focus()
+        else document.getElementById('habit-new-name')?.focus()
+      })
+    }} />, document.body)}
   </section>
 }

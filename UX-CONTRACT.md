@@ -292,6 +292,17 @@ dates before creation are disabled. Current streak includes yesterday when today
 has not yet been completed. Archival preserves all history; Restore is available in
 the archive section. No permanent delete is introduced.
 
+Habit creation, editing, archival and restoration do not display success messages
+above the checklist. The existing live status region reports save failures only.
+
+Per the October 27, 2026 product decision, `lib/habitAccess.ts` allows two active
+habits without active Pro access; creating or restoring a third returns the typed
+`HABIT_LIMIT_REACHED` response. Both operations serialize on the user row within
+their transaction. Archived habits do not count, existing habits remain usable,
+and retries of an existing creation remain idempotent. Only a denied mutation
+opens the shared PaywallModal with localized habit-specific copy; the form retains
+its draft. No permanent limit label or quota counter appears in the interface.
+
 SWR owns identity-separated caching and focus/minute refresh. Pending writes preserve
 controls and show errors without claiming success. Changing identity hides the prior
 account's list. History renders all personal habits in week-sized columns; horizontal

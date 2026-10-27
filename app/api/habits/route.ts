@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { resolveTaskUserId } from '@/lib/taskAuth'
 import { validHabitDate } from '@/lib/habits'
 import { isValidAnonymousId } from '@/lib/anonymousProfile'
+import { canActivateHabit, habitLimitResponse, lockHabitOwner } from '@/lib/habitAccess'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,14 +41,28 @@ export async function POST(request: NextRequest) {
     if (body.startDate < '1970-01-01' || body.startDate > latestDate) {
       return NextResponse.json({ error: 'Invalid start date' }, { status: 400 })
     }
-    const habit = await prisma.habit.upsert({
-      where: { id: body.id },
-      create: { id: body.id, userId, title: body.title.trim(), startDate: body.startDate },
-      update: {},
-      include: { completions: { select: { date: true } } },
+    const result = await prisma.$transaction(async (tx) => {
+      await lockHabitOwner(tx, userId)
+      const existing = await tx.habit.findUnique({
+        where: { id: body.id },
+        include: { completions: { select: { date: true } } },
+      })
+      // A retry of a successful creation must still succeed at the limit.
+      if (existing) {
+        return existing.userId === userId
+          ? { status: 201, body: existing }
+          : { status: 409, body: { error: 'Invalid habit' } }
+      }
+      if (!await canActivateHabit(tx, userId)) {
+        return { status: 403, body: habitLimitResponse }
+      }
+      const habit = await tx.habit.create({
+        data: { id: body.id, userId, title: body.title.trim(), startDate: body.startDate },
+        include: { completions: { select: { date: true } } },
+      })
+      return { status: 201, body: habit }
     })
-    if (habit.userId !== userId) return NextResponse.json({ error: 'Invalid habit' }, { status: 409 })
-    return NextResponse.json(habit, { status: 201 })
+    return NextResponse.json(result.body, { status: result.status })
   } catch (error) {
     console.error('Create habit failed:', error)
     return NextResponse.json({ error: 'Could not save habit' }, { status: 500 })
