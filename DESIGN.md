@@ -438,6 +438,13 @@ History owns horizontal overflow on narrow screens; the page keeps natural scrol
 The full page owns creation, rename, reversible archive/restore and week navigation.
 English/Spanish copy follows I18nProvider via `lib/i18n/habits.ts`.
 
+The Habits workspace window opens at 330px tall, bounded by the available viewport,
+with room for three compact habit rows. Desktop resizing can shrink it to the shared
+240px minimum; the initial height is not a minimum height. Its Manage habits link stays at the bottom
+outside the scrolling content, including loading, empty and error states. Only the
+content above that link scrolls when the list outgrows the window; resizing preserves
+this layout. The compact skeleton uses the same content region and keeps the real link.
+
 ## Focus statistics dashboard
 
 Habits, projects, rooms, leaderboard and `/statistics` omit introductory page headings,

@@ -3451,8 +3451,30 @@ html[data-mini-timer] body {
   margin-top: 28px;
 }
 
+#workspace-habits {
+  height: 330px;
+}
+
+#workspace-habits .workspace-window-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
 .habits-compact {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
   padding: 11px 14px 9px;
+}
+
+.habits-compact .habit-content-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .habits-compact .habits-today {
@@ -3542,6 +3564,7 @@ html[data-mini-timer] body {
 }
 
 .habits-compact .habit-manage {
+  flex-shrink: 0;
   min-height: 36px;
   margin-top: 7px;
   padding: 7px 2px 0;
@@ -3556,6 +3579,45 @@ html[data-mini-timer] body {
   color: var(--pixel-tomato-ink);
 }
 
+.habits-skeleton .habit-check,
+.habits-skeleton .habit-icon,
+.habits-skeleton .habit-button {
+  cursor: default;
+}
+
+.habit-skeleton-heading { width: 100px; height: 24px; }
+.habit-skeleton-count { width: 90px; height: 27px; }
+.habit-skeleton-progress { height: 4px; margin: 18px 0 10px; }
+.habit-skeleton-name { width: min(160px, 80%); height: 22px; }
+.habit-skeleton-streak { width: 84px; height: 17px; }
+.habit-skeleton-icon { width: 16px; height: 16px; }
+.habit-skeleton-label { width: 90px; height: 19.5px; margin-bottom: 12px; }
+.habit-skeleton-input { height: 46px; border: 1px solid var(--pixel-line); }
+.habit-skeleton-date { width: 148px; height: 18px; }
+.habit-skeleton-current { width: 100px; }
+.habit-skeleton-weekday { width: 26px; height: 16.5px; }
+.habit-skeleton-total { width: 28px; }
+
+.habit-skeleton-guest {
+  display: grid;
+  gap: 6px;
+}
+
+.habit-skeleton-guest .personal-skeleton-line:last-child { width: 72%; }
+
+.habits-skeleton .habit-history th:not(:first-child) .personal-skeleton-line,
+.habits-skeleton .habit-history td .personal-skeleton-line {
+  margin-inline: auto;
+}
+
+.habits-skeleton .habit-history .habit-check { display: inline-block; }
+
+.habits-compact .habit-skeleton-heading { height: 19.5px; }
+.habits-compact .habit-skeleton-count { width: 72px; height: 16.5px; }
+.habits-compact .habit-skeleton-progress { height: 3px; margin: 8px 0 4px; }
+.habits-compact .habit-skeleton-name { height: 17.5px; }
+.habits-compact .habit-skeleton-streak { height: 13.5px; }
+
 @media (max-width: 860px) {
   .habits-overview {
     grid-template-columns: minmax(0, 1fr) 280px;
@@ -3563,6 +3625,10 @@ html[data-mini-timer] body {
 }
 
 @media (max-width: 719px) {
+  #workspace-habits {
+    height: 330px !important;
+  }
+
   .habits-page-content {
     padding: 92px 16px 44px;
   }
