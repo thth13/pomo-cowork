@@ -247,7 +247,7 @@ body:has(.product-scenery) :is(.garden-page, .journal-shell, .settings-page) {
   min-height: 100dvh;
   background: transparent;
 }
-body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.community-panel, .community-metrics, .rooms-global, .room-card, .room-detail-header, .pixel-panel, .lb-totals, .lb-leader, .stats-overview, .stats-panel, .insight-hero, .insight-panel, .insight-state, .insight-pro, .habits-today, .habit-create-panel, .habit-history, .habit-archive, .ranks-ladder, .ranks-example, .journal-card) {
+body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.community-panel, .community-metrics, .rooms-global, .room-card, .room-detail-header, .pixel-panel, .lb-totals, .lb-leader, .stats-overview, .stats-panel, .insight-hero, .insight-panel, .insight-state, .insight-pro, .habits-today, .habit-create-panel, .habit-statistics, .habit-history, .habit-archive, .ranks-ladder, .ranks-example, .journal-card) {
   border-color: var(--pixel-line);
   box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%), 0 12px 36px rgb(0 0 0 / 16%);
   -webkit-backdrop-filter: blur(18px) saturate(110%);
@@ -279,7 +279,7 @@ body:has(.product-scenery) :is(.notifications-panel, .rank-toast, .wrapped-dialo
 @media (forced-colors: active) {
   .product-scenery { display: none; }
   body:has(.product-scenery) :is(.garden-page, .journal-shell, .settings-page) { --pixel-page: Canvas; --pixel-paper: Canvas; --pixel-screen: Canvas; --pixel-ink: CanvasText; --pixel-muted: CanvasText; --pixel-line: CanvasText; --pixel-shadow: transparent; --pixel-accent: Highlight; --pixel-tomato-ink: Highlight; --pixel-growth: Highlight; color: CanvasText; background: Canvas; color-scheme: light; }
-  body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.community-panel, .community-metrics, .rooms-global, .room-card, .room-detail-header, .pixel-panel, .lb-totals, .lb-leader, .stats-overview, .stats-panel, .insight-hero, .insight-panel, .insight-state, .insight-pro, .habits-today, .habit-create-panel, .habit-history, .habit-archive, .ranks-ladder, .ranks-example, .journal-card) { background: Canvas; color: CanvasText; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
+  body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.community-panel, .community-metrics, .rooms-global, .room-card, .room-detail-header, .pixel-panel, .lb-totals, .lb-leader, .stats-overview, .stats-panel, .insight-hero, .insight-panel, .insight-state, .insight-pro, .habits-today, .habit-create-panel, .habit-statistics, .habit-history, .habit-archive, .ranks-ladder, .ranks-example, .journal-card) { background: Canvas; color: CanvasText; -webkit-backdrop-filter: none; backdrop-filter: none; box-shadow: none; }
 }
 
 /* One layout, two surface treatments. Portalled tasks explicitly carry this variant. */

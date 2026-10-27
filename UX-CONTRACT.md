@@ -280,6 +280,7 @@ an existing account follows existing task behavior, without merging guest data.
 | Habit CRUD and feedback | components/Habits.tsx, hooks/useHabits.ts | Shared checklist, pending locks, inline errors, stable live status, retry |
 | Habit name form | HabitNameForm in components/Habits.tsx | Labeled native text input, explicit validation, retain failed submissions |
 | Habit history dates | lib/habits.ts, Habits | Local calendar date keys, seven-day button grid, native table, no date picker |
+| Habit statistics | lib/habitStatistics.ts, components/HabitStatistics.tsx | Read-only aggregation of the same useHabits snapshot; 7/30/90-day totals, fixed 90-day calendar, five-row local ranking pagination |
 | Quick access | HomeWorkspace, WorkspaceWindow, Navbar | Existing dock/disclosure and non-modal window behavior |
 | Theme and scrollbars | app/globals.css | Existing runtime tokens, global scrollbar baseline |
 
@@ -296,6 +297,17 @@ controls and show errors without claiming success. Changing identity hides the p
 account's list. History renders all personal habits in week-sized columns; horizontal
 scrolling belongs to the table wrapper. Empty, loading, failure and success states are
 shared between the full page and workspace panel. The personal route is not indexed.
+
+Full-page statistics count currently active habits only, from each habit's start date
+through the local today (inclusive). The selected period owns completion rate,
+check-in count, perfect days, best single-habit consecutive streak and per-habit
+progress. A perfect day requires at least one scheduled habit and all of them done;
+days before creation never enter the denominator. No eligible days yields an
+unavailable rate, not a fictional percentage. The calendar always covers the last
+90 days, explicitly labeled independently of the summary period. Day selection is
+read-only, with a visible caption, arrow/Home/End keyboard movement and one tab stop.
+Archiving/restoring and successful marks update the same snapshot without extra API
+requests. The compact workspace checklist does not render statistics.
 
 Verification is static only per user instructions. Targeted ESLint and Prisma client
 generation are allowed; running the application, builds and tsc are excluded. The

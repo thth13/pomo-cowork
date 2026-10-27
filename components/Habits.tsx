@@ -9,6 +9,7 @@ import { useHabits } from '@/hooks/useHabits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import { habitStreak, shiftHabitDate, type Habit } from '@/lib/habits'
 import HabitsSkeleton from '@/components/HabitsSkeleton'
+import HabitStatistics from '@/components/HabitStatistics'
 
 function HabitNameForm({ initial = '', onSave, onCancel }: { initial?: string; onSave: (title: string) => Promise<boolean>; onCancel?: () => void }) {
   const { language } = useI18n()
@@ -118,6 +119,7 @@ export default function Habits({ compact = false, isVisible = true }: { compact?
         </aside>}
       </div>
       {!compact && <>
+        {habits && <HabitStatistics key={user?.id ?? 'guest'} habits={habits} today={today} />}
         {habits && habits.length > 0 && <section className="habit-history" aria-label={c.history}>
           <div className="habit-history-heading"><h2>{c.history}</h2><div className="habit-week-nav">
             <button className="habit-icon" type="button" aria-label={c.previous} title={c.previous} disabled={monday <= earliest} onClick={() => setOffset((value) => value - 1)}><ChevronLeft size={18} /></button>

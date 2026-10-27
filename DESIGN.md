@@ -462,6 +462,15 @@ History owns horizontal overflow on narrow screens; the page keeps natural scrol
 The full page owns creation, rename, reversible archive/restore and week navigation.
 English/Spanish copy follows I18nProvider via `lib/i18n/habits.ts`.
 
+The full page adds `HabitStatistics` between the checklist and editable weekly history.
+A sage completion-rate block with twenty square meter segments anchors a divided
+metric strip; Inter tabular figures show check-ins, perfect days and the best streak
+for 7/30/90 days. A separate 90-day activity calendar uses five sage intensities,
+checks for fully completed days, and a persistent selected-date caption. A ranked
+habit list shows five progress rows per page. These panels stack on narrow screens;
+only the calendar owns horizontal overflow. Shared pixel tokens, scenery glass,
+English/Spanish copy and the existing loading skeleton remain canonical.
+
 The Habits workspace window opens at 330px tall, bounded by the available viewport,
 with room for three compact habit rows. Desktop resizing can shrink it to the shared
 240px minimum; the initial height is not a minimum height. Its Manage habits link stays at the bottom

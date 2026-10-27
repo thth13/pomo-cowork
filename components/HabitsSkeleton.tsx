@@ -1,6 +1,7 @@
 'use client'
 
 import { useI18n } from '@/components/I18nProvider'
+import { HabitStatisticsSkeleton } from '@/components/HabitStatistics'
 
 export default function HabitsSkeleton({ compact = false, guest = false }: { compact?: boolean; guest?: boolean }) {
   const { t } = useI18n()
@@ -43,6 +44,7 @@ export default function HabitsSkeleton({ compact = false, guest = false }: { com
           </div>}
         </aside>}
       </div>
+      {!compact && <HabitStatisticsSkeleton />}
       {!compact && <section className="habit-history">
         <div className="habit-history-heading">
           <h2><span className="personal-skeleton-line habit-skeleton-heading" /></h2>
