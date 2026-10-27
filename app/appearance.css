@@ -285,7 +285,7 @@ body:has(.product-scenery) :is(.notifications-panel, .rank-toast, .wrapped-dialo
 /* One layout, two surface treatments. Portalled tasks explicitly carry this variant. */
 :is(.pomodoro-home, .seo-shell):has(.workspace-background),
 body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog, .timer-settings-dialog, .appearance-dialog),
-body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu),
+body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu, .active-session-reactions-menu),
 .task-popover[data-background-mode] {
   --scene-panel: rgb(20 28 25 / 68%);
   --scene-primary: rgb(255 255 255 / 96%);
@@ -421,10 +421,50 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
 }
 .task-popover[data-background-mode] .task-option-row[data-selected="true"] { background: var(--scene-selected); }
 
+.active-session-reactions-menu .EmojiPickerReact {
+  --epr-bg-color: transparent;
+  --epr-picker-border-radius: 0;
+}
+
+.active-session-reactions-menu .epr-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--pixel-scroll-thumb) transparent;
+}
+
+.active-session-reactions-menu .epr-body::-webkit-scrollbar {
+  width: 4px;
+}
+
+.active-session-reactions-menu .epr-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.active-session-reactions-menu .epr-body::-webkit-scrollbar-thumb {
+  border: 0;
+  border-radius: 4px;
+}
+
+@media (forced-colors: active) {
+  .active-session-reactions-menu .epr-body {
+    scrollbar-color: auto;
+  }
+}
+
+.active-session-reactions-menu .EmojiPickerReact .epr-emoji-category-label {
+  position: static;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  text-transform: none;
+}
+
 /* Feedback and native dialogs share the workspace glass, even outside its container.
    Follow the rendered scenery rather than a saved preference on unrelated routes. */
 @media (forced-colors: none) {
-  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu) {
+  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu, .active-session-reactions-menu) {
     --pixel-paper: var(--scene-task);
     --pixel-screen: var(--scene-hover);
     --pixel-ink: var(--scene-primary);
@@ -440,6 +480,25 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
     box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
     -webkit-backdrop-filter: blur(18px) saturate(110%);
     backdrop-filter: blur(18px) saturate(110%);
+  }
+  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) .active-session-reactions-menu {
+    border-radius: 3px;
+  }
+  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) .active-session-reactions-menu > div {
+    color: var(--scene-secondary);
+  }
+  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) .active-session-reactions-menu .EmojiPickerReact {
+    --epr-bg-color: transparent;
+    --epr-picker-border-color: var(--scene-border);
+    --epr-text-color: var(--scene-secondary);
+    --epr-highlight-color: var(--scene-accent);
+    --epr-category-icon-active-color: var(--scene-accent);
+    --epr-category-label-bg-color: var(--scene-task);
+    --epr-hover-bg-color: var(--scene-selected);
+    --epr-focus-bg-color: var(--scene-selected);
+    --epr-hover-bg-color-reduced-opacity: var(--scene-hover);
+    --epr-emoji-variation-picker-bg-color: var(--scene-popover);
+    --epr-picker-border-radius: 3px;
   }
   body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog, .timer-settings-dialog, .appearance-dialog) {
     --pixel-paper: var(--scene-task);

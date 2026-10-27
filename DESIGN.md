@@ -515,6 +515,18 @@ even over bright imagery while preserving visible scenery. The existing gentle p
 wash remains; no extra full-screen dark layer is added. Layout, dimensions, spacing,
 fonts and behavior are shared with normal mode. The presence rail has 24px vertical padding in both modes so its heading clears the
 panel edge; switching scenery does not resize the controls.
+ActiveSessions portals its reaction picker to `document.body` so viewport positioning
+and pointer interaction remain independent of the rail's backdrop blur and clipping.
+The picker opens 8px to the right of its trigger, falls back to the left when space
+is limited, and stays within viewport bounds. Its shell and emoji-picker variables
+reuse the shared scene glass, text, border and interaction tokens when scenery is rendered.
+The presence popup is filled edge to edge by the emoji picker, without a visible
+heading, nested surface or outer padding; its localized Reactions name remains
+available to assistive technology. The tomato action is omitted, and both the popup
+and embedded picker have no border outline. Only the emoji list scrolls, using a
+compact scrollbar with a transparent track and the shared pixel scrollbar tokens.
+Emoji category headings use quiet 12px regular text without a separate background
+or sticky behavior; the library's category geometry is retained for virtualization.
 
 All dock windows (chat, history, tasks, habits, progress, sounds and help) share
 that glass shell while scenery is active, including when opened from the mobile menu.
