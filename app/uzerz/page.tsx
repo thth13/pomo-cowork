@@ -2,6 +2,7 @@ import { userProfileHref } from '@/lib/userProfile'
 import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
+import CountryFlag from '@/components/CountryFlag'
 import { prisma } from '@/lib/db'
 import { getEffectiveMinutes } from '@/lib/sessionStats'
 
@@ -43,7 +44,7 @@ const formatCountry = (code: string | null) => {
   if (!name) return null
 
   const flag = String.fromCodePoint(...Array.from(code, (letter) => 0x1F1E6 + letter.charCodeAt(0) - 65))
-  return <span role="img" aria-label={name} title={name} className="text-xl">{flag}</span>
+  return <CountryFlag flag={flag} name={name} />
 }
 
 const formatDate = (date: Date | null) => {

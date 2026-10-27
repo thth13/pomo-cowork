@@ -571,7 +571,10 @@ Verification is static; application execution, builds and tsc are excluded by re
 
 Source: user request 2026-10-26. `/uzerz` displays Country in both existing user
 tabs as an emoji flag, with the English country name as its accessible label and
-hover title. Missing country data leaves the cell empty (user request 2026-10-27).
+tooltip. `components/CountryFlag.tsx` owns the tooltip (user request 2026-10-27):
+hover, keyboard focus and touch/click reveal it; Escape, pointer exit, blur,
+scroll and resize dismiss it. A body portal avoids table overflow clipping.
+Missing country data leaves the cell empty (user request 2026-10-27).
 The value is the last detected connection country, not nationality or residence.
 `lib/userCountry.ts` accepts Vercel's country header only on Vercel, preserves
 previous values when geolocation is missing, and avoids updating unchanged values.
