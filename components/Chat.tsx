@@ -12,6 +12,9 @@ import type { ChatMessage } from '@/types'
 import Image from 'next/image'
 import AuthModal from '@/components/AuthModal'
 import { ChatMessagesSkeleton } from '@/components/ChatSkeleton'
+import GuestAvatar from '@/components/GuestAvatar'
+import ParticipantName, { getParticipantIdentity } from '@/components/ParticipantName'
+import { useI18n } from '@/components/I18nProvider'
 
 interface TypingState {
   username: string
@@ -25,6 +28,7 @@ interface ChatProps {
 
 export default function Chat({ matchHeightSelector, isVisible = true }: ChatProps) {
   const router = useRouter()
+  const { t } = useI18n()
   const { user, token, isAuthenticated } = useAuthStore()
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const canWrite = isAuthenticated && Boolean(user && !user.isAnonymous) && Boolean(token)
@@ -408,36 +412,45 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
               minute: '2-digit'
             })
             const taskLabel = m.action?.task?.trim()
+            const { isGuest, displayName } = getParticipantIdentity(m.username, t.activeSessions.guest)
 
             return (
               <div key={m.id}>
                 {m.type === 'system' ? (
                   <div className="flex items-start space-x-3">
-                    {m.avatarUrl ? (
-                      <Image
-                        src={m.avatarUrl}
-                        alt={m.username}
-                        width={32}
-                        height={32}
-                        onClick={() => m.userId && router.push(`/user/${m.userId}`)}
-                        className="w-8 h-8 rounded-full object-cover flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                      />
-                    ) : (
-                      <div
-                        onClick={() => m.userId && router.push(`/user/${m.userId}`)}
-                        className="w-8 h-8 rounded-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
-                      >
-                        {m.username.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => m.userId && router.push(`/user/${m.userId}`)}
+                      disabled={!m.userId}
+                      aria-label={displayName}
+                      className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-default disabled:hover:opacity-100"
+                    >
+                      {m.avatarUrl ? (
+                        <Image
+                          src={m.avatarUrl}
+                          alt=""
+                          width={32}
+                          height={32}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : isGuest ? (
+                        <GuestAvatar userId={m.userId ?? m.username} />
+                      ) : (
+                        <div className="w-full h-full bg-gray-300 dark:bg-slate-600 flex items-center justify-center text-gray-700 dark:text-slate-200 font-semibold">
+                          {m.username.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </button>
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-1">
-                        <span
+                        <button
+                          type="button"
                           onClick={() => m.userId && router.push(`/user/${m.userId}`)}
-                          className="text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                          disabled={!m.userId}
+                          className="text-left text-sm font-medium text-gray-900 dark:text-white cursor-pointer hover:text-red-500 dark:hover:text-red-400 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 disabled:cursor-default disabled:hover:text-current"
                         >
-                          {m.username}
-                        </span>
+                          <ParticipantName username={m.username} guestLabel={t.activeSessions.guest} />
+                        </button>
                         <span className="text-xs text-gray-500 dark:text-slate-400">
                           {actionTime}
                         </span>

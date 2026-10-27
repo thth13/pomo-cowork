@@ -19,6 +19,7 @@ import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { useI18n } from './I18nProvider'
 import RankAvatarFrame from './RankAvatarFrame'
 import GuestAvatar from './GuestAvatar'
+import ParticipantName, { getParticipantIdentity } from './ParticipantName'
 
 interface TomatoAnimation {
   id: string
@@ -76,12 +77,8 @@ function SessionCard({
   
   const sessionStatus = session.status ?? SessionStatus.ACTIVE
   const isTimeTracking = session.type === SessionType.TIME_TRACKING
-  const isUnregistered = /^Guest(?:\s*#|-)/i.test(session.username)
-  const guestCode = session.username.replace(/^Guest(?:\s*#|-)/i, '').slice(-4).toUpperCase()
-  const displayName = isUnregistered ? `${t.activeSessions.guest} #${guestCode}` : session.username
-  const nameContent = isUnregistered ? (
-    <>{t.activeSessions.guest} <span className="guest-identity-code">#{guestCode}</span></>
-  ) : session.username
+  const { isGuest: isUnregistered, displayName } = getParticipantIdentity(session.username, t.activeSessions.guest)
+  const nameContent = <ParticipantName username={session.username} guestLabel={t.activeSessions.guest} />
 
   const statusDotClass = sessionStatus === SessionStatus.PAUSED ? 'bg-amber-400' : 'bg-green-400'
 
