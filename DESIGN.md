@@ -386,6 +386,13 @@ tokens. `lib/i18n/leaderboard.ts` owns new English/Spanish copy through I18nProv
 
 ## Personal statistics
 
+`/statistics` uses `StatisticsSkeleton` while the initial data loads. Its placeholders
+follow the dashboard order: weekly focus/rank, annual heatmap, score/DNA, weekly chart,
+records/comparison, projects and daily timeline. It reuses the live `insight-*` grids,
+panel spacing and responsive breakpoints, plus the shared skeleton shimmer tokens.
+Decorative placeholders are hidden from assistive technology behind one localized
+loading status; reduced-motion preferences disable the shimmer.
+
 `/stats` shares the homepage's garden background, compact Navbar and pixel display
 face. It remains a document-scrolling route. A single divided metric strip places
 total focus time on a sage surface; paper analytics panels use fine borders and

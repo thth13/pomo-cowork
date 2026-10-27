@@ -2,7 +2,7 @@
 
 import { useI18n } from '@/components/I18nProvider'
 
-type SkeletonVariant = 'profile' | 'projects' | 'rooms' | 'leaderboard' | 'statistics'
+type SkeletonVariant = 'profile' | 'projects' | 'rooms' | 'leaderboard'
 
 export default function PersonalPageSkeleton({ variant }: { variant: SkeletonVariant }) {
   const { t } = useI18n()

@@ -17,7 +17,7 @@ import ProjectsGalaxy from './ProjectsGalaxy'
 import DailyTimeline from './DailyTimeline'
 import { useStatisticsCopy } from './shared'
 import PersonalNavigation from '@/components/PersonalNavigation'
-import PersonalPageSkeleton from '@/components/PersonalPageSkeleton'
+import StatisticsSkeleton from './StatisticsSkeleton'
 import type { StatisticsData, StatisticsDetails } from '@/lib/statistics'
 import { createStatisticsPreview } from './preview'
 
@@ -57,7 +57,7 @@ export default function StatisticsDashboard() {
   const preview = useMemo(() => data && !data.details ? createStatisticsPreview(data, copy.previewTasks) : null, [data, copy.previewTasks])
   return <main className="insights personal-page-frame" lang={language} data-i18n-ignore>
     <PersonalNavigation />
-    {loading ? <PersonalPageSkeleton variant="statistics" />
+    {loading ? <StatisticsSkeleton />
       : !signedIn || expired ? <div className="insight-state"><Sprout size={42} strokeWidth={1.3} aria-hidden="true" /><h2>{expired ? copy.expired : copy.signInTitle}</h2><p>{copy.signInBody}</p><button type="button" className="insight-button insight-button-primary" onClick={() => setShowAuth(true)}>{copy.signIn}<ArrowUpRight size={16} aria-hidden="true" /></button></div>
       : error && !data ? <div className="insight-state" role="alert"><h2>{copy.error}</h2><p>{copy.errorBody}</p><button type="button" className="insight-button" onClick={retry}>{copy.retry}<RefreshCw size={16} aria-hidden="true" /></button></div>
       : data && details && !data.summary.totalSessions ? <div className="insight-state insight-empty"><Sprout size={52} strokeWidth={1.2} aria-hidden="true" /><h2>{copy.empty}</h2><p>{copy.emptyBody}</p><Link href="/" className="insight-button insight-button-primary">{copy.start}<ArrowUpRight size={16} aria-hidden="true" /></Link></div>
