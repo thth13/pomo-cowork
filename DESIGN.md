@@ -868,7 +868,7 @@ hover; task counts use a small list icon and number with localized accessible te
 The disclosure grid vertically centers all content and reserves equal task-count and
 focused-time columns across rows, centering each metric within its column.
 Both surfaces support inline task creation and preserve drafts on failure.
-Only `/projects` supports project creation; the workspace window has a neutral outlined
+Both surfaces support project creation; the workspace window has a neutral outlined
 Manage projects navigation button in the window header beside Close, leading to that route.
 It retains native link semantics and uses a transparent background, neutral border
 and ink text, a medium-weight label, and a trailing chevron, with distinct hover, active, and
@@ -876,12 +876,16 @@ keyboard-focus states. The projects header has 6px inner padding; the compact 28
 button is vertically centered with extra separation from Close. Coarse pointers
 retain a 44px minimum target height.
 The list starts directly below the window header without a duplicate inner heading
-or an empty divider row. The workspace adds tasks through one top input with an
-inset project chip and arrow submit button, replacing per-project entry rows.
-The chip uses a native select: application CSS owns its closed appearance; the
-browser owns the popup and keyboard interaction. Only unfinished projects are
-offered; success clears the draft and expands the destination project, failure
-preserves the draft. On `/projects`, task entry is a single transparent row with
+or an empty divider row. Both the workspace and `/projects` add tasks inside each
+expanded project's task list. The workspace's top input creates projects only:
+a single outlined row with the shared ProjectColorPicker inside the name field,
+a Create new project placeholder and arrow submit button,
+without a project chip or type selector. It reuses existing pixel tokens and the
+shared creation handler; success clears the title and expands the new project.
+Only unfinished projects accept tasks; success clears that project's draft and
+failure preserves it. The empty workspace shows “Create your first project and tasks.”
+beneath the project creation field, localized and without a link.
+Task entry is a single transparent row with
 a fine bottom border and an integrated, quiet plus button; no separate empty-task
 caption competes with its placeholder. Both surfaces use the existing pixel tokens,
 Inter text and English/Spanish locale. Native
@@ -894,8 +898,11 @@ newest creation first; lifetime focused hours do not determine list order.
 The My Projects workspace window uses circle selection buttons with a check in
 the selected circle; labels say Select project/task. Selection never starts a
 session. `/projects` hides selection buttons for both projects and child tasks.
-The timer TaskPicker only searches and selects: no action menus, creation buttons,
-inline editing or focused-hour captions. Enter selects an existing search result.
+The timer TaskPicker selects projects and tasks: no action menus, creation buttons,
+inline editing or focused-hour captions. Search is temporarily hidden, with its
+implementation retained. The empty state reads “No projects yet. Add a project in
+My Projects.” with My Projects as an underlined inline link that closes the picker and
+opens or raises the existing projects workspace window. Spanish uses localized copy.
 TaskPicker
 lists selectable projects with expandable child tasks. Project headings use
 semibold titles; child tasks use regular titles and an

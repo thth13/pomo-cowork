@@ -6,9 +6,11 @@ import { isTaskSelectionLocked } from '@/lib/taskSelection'
 
 import { RefObject, memo, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Check, ChevronDown, Plus, X } from 'lucide-react'
+import { Check, ChevronDown, X } from 'lucide-react'
 import { taskPickerCopy } from '@/lib/i18n/taskPicker'
+import { gardenCopy } from '@/lib/i18n/garden'
 import { useQuickTasks } from '@/hooks/useQuickTasks'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -16,6 +18,10 @@ import { SessionType } from '@/types'
 import { projectColorStyle } from '@/lib/projectColors'
 import { TaskOption } from '@/types/task'
 import { useI18n } from '@/components/I18nProvider'
+
+// Keep the search implementation available for a future return.
+const SHOW_PROJECT_SEARCH = false
+const PICKER_CONTROLS = 'input:not(:disabled), button:not(:disabled), a[href]'
 
 interface TaskPickerProps {
   variant?: 'default' | 'mini-timer'
@@ -49,6 +55,7 @@ export const TaskPicker = memo(function TaskPicker({
   onTaskSearchChange,
 }: TaskPickerProps) {
   const { t, language } = useI18n()
+  const router = useRouter()
   const copy = taskPickerCopy[language]
   const reducedMotion = useReducedMotion()
   const backgroundId = useAppearanceStore(state => state.backgroundId)
@@ -74,6 +81,17 @@ export const TaskPicker = memo(function TaskPicker({
   const query = taskSearch.trim()
   const exactMatch = options.find(task => task.title.toLocaleLowerCase() === query.toLocaleLowerCase())
   const close = () => { onClose(); triggerRef.current?.focus() }
+  const focusFirstControl = () => {
+    const dropdown = taskDropdownRef.current
+    const target = dropdown?.querySelector<HTMLElement>(PICKER_CONTROLS) ?? dropdown
+    target?.focus()
+  }
+  const openProjects = () => {
+    close()
+    const handled = !window.dispatchEvent(new Event('pomo:open-projects', { cancelable: true }))
+    if (!handled) router.push('/?panel=tasks')
+    if (variant === 'mini-timer') window.focus()
+  }
   const select = (task: TaskOption | null) => {
     if (isDisabled || isTaskSelectionLocked(useTimerStore.getState().currentSession)) return
     onSelectTask(task)
@@ -135,10 +153,10 @@ export const TaskPicker = memo(function TaskPicker({
             if (event.key === 'ArrowDown') {
               event.preventDefault()
               if (!isVisible) onToggle()
-              else searchRef.current?.focus()
+              else focusFirstControl()
             }
             if (isVisible && event.key === 'Tab' && !event.shiftKey) {
-              event.preventDefault(); searchRef.current?.focus()
+              event.preventDefault(); focusFirstControl()
             }
           }}
           disabled={isDisabled}
@@ -149,7 +167,6 @@ export const TaskPicker = memo(function TaskPicker({
           title={isDisabled ? copy.locked : selectedTask?.title}
           className={`current-task-trigger ${variant === 'mini-timer' ? 'mini-timer-task-trigger' : ''}`}
         >
-          {!selectedTask && <Plus size={16} aria-hidden="true" />}
           <span>{selectedTask?.parentId && selectedTask.projectTitle ? <><span style={projectColorStyle(allOptions.find(option => option.id === selectedTask.parentId)?.color)}>{selectedTask.projectTitle}</span>{' / '}</> : null}<span style={selectedTask && !selectedTask.parentId ? projectColorStyle(selectedTask.color) : undefined}>{selectedTask?.title ?? copy.prompt}</span></span>
           <ChevronDown size={14} aria-hidden="true" className={isVisible ? 'rotate-180' : ''} />
         </button>
@@ -162,6 +179,7 @@ export const TaskPicker = memo(function TaskPicker({
                 style={position}
                 id={`${pickerId}-options`}
                 role="dialog"
+                tabIndex={-1}
                 aria-label={copy.selection}
                 aria-busy={loading}
                 data-i18n-ignore
@@ -180,28 +198,28 @@ export const TaskPicker = memo(function TaskPicker({
                   if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); close(); return }
                   if ((event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
                     event.preventDefault()
-                    const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled), button:not(:disabled)'))
+                    const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>(PICKER_CONTROLS))
                     const index = controls.indexOf(event.target as HTMLElement)
                     controls[(index + (event.key === 'ArrowDown' ? 1 : -1) + controls.length) % controls.length]?.focus()
                   }
                   if (event.key === 'Tab' && !event.shiftKey) {
-                    const controls = event.currentTarget.querySelectorAll<HTMLElement>('input:not(:disabled), button:not(:disabled)')
+                    const controls = event.currentTarget.querySelectorAll<HTMLElement>(PICKER_CONTROLS)
                     if (event.target === controls[controls.length - 1]) { event.preventDefault(); close() }
                   }
-                  if (event.key === 'Tab' && event.shiftKey && event.target === searchRef.current) { event.preventDefault(); close() }
+                  if (event.key === 'Tab' && event.shiftKey && (event.target === event.currentTarget || event.target === event.currentTarget.querySelector(PICKER_CONTROLS))) { event.preventDefault(); close() }
                 }}
               >
-                <form noValidate className="task-search" onSubmit={event => {
+                <form noValidate hidden={!SHOW_PROJECT_SEARCH} style={SHOW_PROJECT_SEARCH ? undefined : { display: 'none' }} className="task-search" onSubmit={event => {
                   event.preventDefault()
                   if (loading || loadError) return
                   if (exactMatch) select(exactMatch)
                   else if (options[0]) select(options[0])
                 }}>
-                  <input ref={searchRef} autoFocus value={taskSearch}
+                  <input ref={searchRef} disabled={!SHOW_PROJECT_SEARCH} autoFocus={SHOW_PROJECT_SEARCH} value={taskSearch}
                     onChange={event => onTaskSearchChange(event.target.value)}
                     onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }}
                     aria-label={copy.search} placeholder={copy.search} />
-                  {taskSearch && <button type="button" aria-label={copy.clear} onClick={() => { onTaskSearchChange(''); searchRef.current?.focus() }}><X size={16} /></button>}
+                  {taskSearch && <button type="button" disabled={!SHOW_PROJECT_SEARCH} aria-label={copy.clear} onClick={() => { onTaskSearchChange(''); searchRef.current?.focus() }}><X size={16} /></button>}
                 </form>
                 <div className="task-popover-list">
                   {loading ? <p className="task-popover-message" role="status">{copy.loading}</p> : loadError ? (
@@ -229,7 +247,11 @@ export const TaskPicker = memo(function TaskPicker({
                         </div>
                       )
                     })}
-                    {!options.length && !query && <p className="task-popover-message">{copy.empty}</p>}
+                    {!options.length && !query && <p className="task-popover-message">{copy.empty}{' '}<a href="/?panel=tasks" className="underline underline-offset-2 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={event => {
+                      if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+                      event.preventDefault()
+                      openProjects()
+                    }}>{gardenCopy[language].tasks}</a>.</p>}
                     {!options.length && query && <p className="task-popover-message">{t.timer.noMatchingTasks}</p>}
                   </>}
                 </div>

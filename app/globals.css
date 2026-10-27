@@ -4708,6 +4708,9 @@ html[data-mini-timer] body {
 .focus-project-todos li { display: flex; align-items: center; gap: 8px; min-height: 36px; }
 .focus-project-todos label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; cursor: pointer; font-size: 13px; overflow-wrap: anywhere; }
 .focus-project-todos input[type=checkbox] { flex: none; accent-color: var(--pixel-tomato); width: 16px; height: 16px; }
+.focus-task-checkbox { position: relative; display: inline-flex; flex: none; width: 16px; height: 16px; }
+.focus-task-checkbox[data-pending=true] input { opacity: 0; }
+.focus-task-checkbox > svg { position: absolute; inset: 0; color: var(--pixel-muted); pointer-events: none; }
 .focus-project-todos .is-complete span { text-decoration: line-through; color: var(--pixel-muted); }
 .focus-projects .focus-task-actions-trigger { flex-shrink: 0; width: 28px; height: 32px; }
 .focus-task-rename { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; flex: 1; min-width: 0; }
@@ -4722,20 +4725,14 @@ html[data-mini-timer] body {
 .workspace-window-header-link:active { background: var(--pixel-screen); border-color: var(--pixel-ink); }
 .workspace-window-header-link:focus-visible { outline: 2px solid var(--pixel-ink); outline-offset: 2px; }
 #workspace-tasks .focus-projects { padding: 0 12px 8px; }
-.focus-task-composer { display: flex; align-items: center; gap: 5px; margin: 12px 0 4px; padding: 5px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); }
-.focus-task-composer:focus-within { border-color: var(--pixel-muted); }
-.focus-task-composer input { flex: 1; min-width: 0; width: 100%; padding: 6px 4px; border: 0; background: transparent; color: var(--pixel-ink); font-size: 13px; }
-.focus-task-composer input::placeholder { color: var(--pixel-muted); opacity: 1; }
-.focus-projects .focus-task-composer input:focus-visible { outline: none; }
-.focus-task-project-chip { position: relative; flex: 0 1 112px; min-width: 68px; }
-.focus-task-project-chip select { appearance: none; width: 100%; min-height: 32px; padding: 5px 23px 5px 8px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-screen); color: var(--pixel-ink); font: inherit; font-size: 11px; text-overflow: ellipsis; cursor: pointer; }
-.focus-task-project-chip select:hover:not(:disabled) { border-color: var(--pixel-muted); }
-.focus-task-project-chip select:focus-visible { outline: 1px solid var(--pixel-muted); outline-offset: 1px; }
-.focus-task-project-chip select:disabled { opacity: .5; cursor: not-allowed; }
-.focus-task-project-chip svg { position: absolute; right: 7px; top: 50%; transform: translateY(-50%); color: var(--pixel-muted); pointer-events: none; }
-.focus-task-composer button { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; background: var(--pixel-screen); color: var(--pixel-ink); }
-.focus-task-composer button:active:not(:disabled) { color: var(--pixel-accent); }
-@media (pointer: coarse) { .focus-task-composer button { width: 44px; height: 44px; } .focus-task-project-chip select { min-height: 44px; } }
+.focus-project-composer { display: flex; align-items: center; gap: 5px; margin: 12px 0 4px; padding: 5px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); }
+.focus-project-composer:focus-within { border-color: var(--pixel-muted); }
+.focus-project-composer input { flex: 1; min-width: 0; width: 100%; padding: 6px 4px; border: 0; background: transparent; color: var(--pixel-ink); font: inherit; font-size: 13px; }
+.focus-project-composer input::placeholder { color: var(--pixel-muted); opacity: 1; }
+.focus-project-composer > button[type=submit] { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; background: var(--pixel-screen); color: var(--pixel-ink); }
+.focus-projects .focus-project-composer > button[type=submit]:hover:not(:disabled) { background: var(--pixel-shadow); }
+.focus-project-composer > button[type=submit]:active:not(:disabled) { color: var(--pixel-accent); }
+@media (pointer: coarse) { .focus-project-composer > button[type=submit] { width: 44px; height: 44px; } }
 .focus-task-create { display: flex; align-items: center; gap: 4px; margin-top: 6px; border-bottom: 1px solid var(--pixel-line); }
 .focus-task-create:focus-within { border-bottom-color: var(--pixel-accent); }
 .focus-task-create input { flex: 1; min-width: 0; width: 100%; padding: 8px 0; border: 0; border-radius: 0; background: transparent; color: var(--pixel-ink); font: inherit; font-size: 13px; }
@@ -4744,6 +4741,10 @@ html[data-mini-timer] body {
 .focus-task-create button { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 32px; height: 32px; padding: 0; border: 0; background: transparent; color: var(--pixel-muted); }
 .focus-task-create button:active:not(:disabled) { color: var(--pixel-accent); }
 .focus-project-empty { font-size: 13px; color: var(--pixel-muted); padding: 8px 0; }
+.focus-project-empty a { color: var(--pixel-ink); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.focus-project-empty a:hover { color: var(--pixel-tomato-ink); }
+.focus-project-empty a:active { color: var(--pixel-accent); }
+.focus-project-empty a:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 2px; }
 .focus-project-confirm { padding: 8px; font-size: 13px; }
 .focus-project-confirm p { margin-bottom: 8px; }
 .focus-project-confirm button + button { margin-left: 8px; }
@@ -4838,6 +4839,8 @@ html[data-mini-timer] body {
 .project-name-field > input { display: block; width: 100%; padding-left: 42px; padding-right: 10px; }
 .focus-project-create .project-name-field > input { padding-left: 42px; padding-right: 10px; }
 .project-name-field > .project-color-trigger { position: absolute; left: 3px; top: 50%; transform: translateY(-50%); width: 36px; height: 32px; max-height: calc(100% - 4px); padding: 0; display: grid; place-items: center; border: 0; background: transparent; cursor: pointer; }
+.focus-project-composer .project-name-field > input { padding-left: 32px; }
+.focus-project-composer .project-name-field > .project-color-trigger { left: 0; width: 28px; }
 .project-color-dot { display: block; width: 18px; height: 18px; border-radius: 50%; background: currentColor; color: var(--pixel-muted); border: 1px solid currentColor; }
 .project-color-menu { position: fixed; inset: auto; margin: 0; z-index: 10000; width: 162px; max-height: calc(100dvh - 16px); overflow-y: auto; padding: 8px; display: grid; grid-template-columns: repeat(5, 24px); gap: 6px; background: var(--pixel-paper); color: var(--pixel-ink); border: 1px solid var(--pixel-line); border-radius: 3px; box-shadow: 3px 3px 0 var(--pixel-shadow); }
 .project-color-menu[role=menu] > button[role=menuitemradio] { display: grid; place-items: center; width: 24px; height: 24px; min-height: 24px; padding: 0; border: 0; border-radius: 50%; cursor: pointer; background: transparent; transform: none; }

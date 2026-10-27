@@ -197,6 +197,25 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   }, [])
 
   useEffect(() => {
+    const openProjects = (event?: Event) => {
+      event?.preventDefault()
+      setOpenPanels(current => current.includes('tasks') ? current : [...current, 'tasks'])
+      setPanelOrder(current => [...current.filter(panel => panel !== 'tasks'), 'tasks'])
+      requestAnimationFrame(() => {
+        document.querySelector<HTMLButtonElement>('#workspace-tasks .workspace-window-handle')?.focus({ preventScroll: true })
+      })
+    }
+    window.addEventListener('pomo:open-projects', openProjects)
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('panel') === 'tasks') {
+      openProjects()
+      url.searchParams.delete('panel')
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash)
+    }
+    return () => window.removeEventListener('pomo:open-projects', openProjects)
+  }, [])
+
+  useEffect(() => {
     // Регистрация Service Worker для фонового таймера
     registerServiceWorker()
   }, [])

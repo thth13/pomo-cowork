@@ -1,7 +1,7 @@
 'use client'
 
 import { Fragment, useId, useRef, useState } from 'react'
-import { ArrowUpRight, ChevronDown, Check, ListTodo, Plus, Play, Trash2, X } from 'lucide-react'
+import { ArrowUpRight, ChevronDown, Check, ListTodo, Loader2, Plus, Play, Trash2, X } from 'lucide-react'
 import CommunityDialog from '@/components/CommunityDialog'
 import ProjectColorPicker from '@/components/ProjectColorPicker'
 import { projectColorStyle } from '@/lib/projectColors'
@@ -20,6 +20,20 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
   const text = (en: string, spanish: string) => es ? spanish : en
   const dateFormatter = new Intl.DateTimeFormat(language, { day: 'numeric', month: 'short', year: 'numeric' })
   const { loading, loadError, saving, error, mutate, retry } = useQuickTasks(isVisible)
+  const [pendingAction, setPendingAction] = useState<string | null>(null)
+
+  function mutateWithFeedback(action: string, operation: Parameters<typeof mutate>[0]) {
+    return mutate(async () => {
+      setPendingAction(action)
+      try {
+        return await operation()
+      } finally {
+        setPendingAction(null)
+      }
+    })
+  }
+
+  const creatingProject = pendingAction === 'create-project'
   const options = useTimerStore(state => state.taskOptions)
   const selected = useTimerStore(state => state.selectedTask)
   const session = useTimerStore(state => state.currentSession)
@@ -28,9 +42,6 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
   const [renameColor, setRenameColor] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [expanded, setExpanded] = useState<string[]>([])
-  const [newTask, setNewTask] = useState('')
-  const [taskProjectId, setTaskProjectId] = useState('')
-  const taskInputRef = useRef<HTMLInputElement>(null)
   const listRef = useRef<HTMLElement>(null)
   const projectButtonRefs = useRef<Record<string, HTMLButtonElement | null>>({})
   const [deleteTarget, setDeleteTarget] = useState<TaskOption | null>(null)
@@ -56,36 +67,20 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
     if (!editingTask || !title || saving) return
     const target = editingTask
     setTaskRenameError(false)
-    const result = await mutate(async () => ({ task: await taskService.update(target.id, { title }) }))
+    const result = await mutateWithFeedback(`rename:${target.id}`, async () => ({ task: await taskService.update(target.id, { title }) }))
     if (!result) { setTaskRenameError(true); return }
     finishTaskRename(target.id)
     setDeleteStatus(`${text('Task renamed', 'Tarea renombrada')}: ${title}`)
   }
   const projects = options.filter(item => !item.parentId).sort(compareTaskActivity)
-  const availableProjects = projects.filter(project => !project.completed)
-  const taskProject = availableProjects.find(project => project.id === taskProjectId)
-    ?? availableProjects.find(project => project.id === (selected?.parentId ?? selected?.id))
-    ?? availableProjects[0]
   const startTask = useTimerActionsStore(state => state.startTask)
   const timerBusy = useTimerActionsStore(state => state.busy)
-
-  async function createTask() {
-    const title = newTask.trim()
-    if (!title || !taskProject || saving || loading || loadError) return
-    const parentId = taskProject.id
-    const result = await mutate(async () => ({ task: await taskService.create({ title, parentId }) }))
-    if (result) {
-      setNewTask('')
-      setTaskProjectId(parentId)
-      setExpanded(previous => previous.includes(parentId) ? previous : [...previous, parentId])
-      taskInputRef.current?.focus()
-    }
-  }
 
   async function create(parentId?: string) {
     const title = (parentId ? drafts[parentId] : name)?.trim()
     if (!title || saving) return
-    const result = await mutate(async () => ({ task: await taskService.create({ title, ...(parentId ? { parentId } : { color }) }) }))
+    if (parentId && (loading || loadError || !projects.some(project => project.id === parentId && !project.completed))) return
+    const result = await mutateWithFeedback(parentId ? `create-task:${parentId}` : 'create-project', async () => ({ task: await taskService.create({ title, ...(parentId ? { parentId } : { color }) }) }))
     if (result) {
       if (parentId) setDrafts(previous => ({ ...previous, [parentId]: '' }))
       else { setName(''); setColor(null); if ('task' in result) setExpanded(previous => [...previous, result.task.id]) }
@@ -96,7 +91,7 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
     if (!deleteTarget || saving) return
     const target = deleteTarget
     setDeleteError(false)
-    const result = await mutate(async () => {
+    const result = await mutateWithFeedback(`delete:${target.id}`, async () => {
       await taskService.remove(target.id)
       return { deletedId: target.id }
     })
@@ -117,7 +112,7 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
     const title = renameTitle.trim()
     if (!renameTarget || !title || saving) return
     setRenameError(false)
-    const result = await mutate(async () => ({ task: await taskService.update(renameTarget.id, { title, color: renameColor }) }))
+    const result = await mutateWithFeedback(`rename:${renameTarget.id}`, async () => ({ task: await taskService.update(renameTarget.id, { title, color: renameColor }) }))
     if (!result) { setRenameError(true); return }
     setRenameTarget(null)
     setDeleteStatus(`${text('Project renamed', 'Proyecto renombrado')}: ${title}`)
@@ -133,47 +128,48 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
               if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault()
             }}>
               <input autoFocus aria-label={text('Task name', 'Nombre de la tarea')} value={taskTitle} disabled={saving} onFocus={event => event.currentTarget.select()} onChange={event => setTaskTitle(event.target.value)} />
-              <button type="submit" disabled={saving || !taskTitle.trim()} aria-label={text('Save task name', 'Guardar nombre de la tarea')} title={text('Save', 'Guardar')}><Check size={15} aria-hidden="true" /></button>
+              <button type="submit" disabled={saving || !taskTitle.trim()} aria-busy={pendingAction === `rename:${todo.id}`} aria-label={text('Save task name', 'Guardar nombre de la tarea')} title={text('Save', 'Guardar')}>{pendingAction === `rename:${todo.id}` ? <Loader2 size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Check size={15} aria-hidden="true" />}</button>
               <button type="button" disabled={saving} onClick={() => finishTaskRename(todo.id)} aria-label={text('Cancel renaming', 'Cancelar cambio de nombre')} title={text('Cancel', 'Cancelar')}><X size={15} aria-hidden="true" /></button>
               {taskRenameError && <p role="alert">{text('Could not rename the task. Please try again.', 'No se pudo renombrar la tarea. Inténtalo de nuevo.')}</p>}
             </form> : <label className={todo.completed ? 'is-complete' : ''}>
-              <input type="checkbox" checked={Boolean(todo.completed)} disabled={saving} onChange={() => void mutate(async () => ({ task: await taskService.update(todo.id, { completed: !todo.completed }) }))} />
+              <span className="focus-task-checkbox" data-pending={pendingAction === `complete:${todo.id}`}>
+                <input type="checkbox" checked={Boolean(todo.completed)} disabled={saving} aria-busy={pendingAction === `complete:${todo.id}`} onChange={() => void mutateWithFeedback(`complete:${todo.id}`, async () => ({ task: await taskService.update(todo.id, { completed: !todo.completed }) }))} />
+                {pendingAction === `complete:${todo.id}` && <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" />}
+              </span>
               <span>{todo.title}</span>
             </label>}
             {showSelectionButtons && <button type="button" className="focus-project-icon focus-timer-task" data-active={session?.taskRecordId === todo.id} disabled={Boolean(session) || timerBusy || !startTask || saving || todo.completed || project.completed} aria-label={`${text('Start timer for task', 'Iniciar temporizador para tarea')}: ${todo.title}`} title={session ? text('Stop the current session before starting another task.', 'Detén la sesión actual antes de iniciar otra tarea.') : text('Select this task and start the timer', 'Seleccionar esta tarea e iniciar el temporizador')} onClick={() => { if (startTask) void startTask(todo) }}><Play size={16} aria-hidden="true" /></button>}
             {editingTask?.id !== todo.id && <ProjectActions kind="task" title={todo.title} disabled={saving || Boolean(editingTask)} onRename={() => { setEditingTask(todo); setTaskTitle(todo.title); setTaskRenameError(false); setDeleteStatus('') }} onDelete={() => { setDeleteTarget(todo); setDeleteError(false); setDeleteStatus('') }} />}
           </li>)}
         </ul>
-        {allowProjectCreation && <form noValidate className="focus-task-create" onSubmit={event => { event.preventDefault(); void create(project.id) }}>
-          <input aria-label={`${text('New task', 'Nueva tarea')}: ${project.title}`} placeholder={text('Add a task…', 'Añadir una tarea…')} value={drafts[project.id] ?? ''} disabled={saving || project.completed} onChange={event => setDrafts(previous => ({ ...previous, [project.id]: event.target.value }))} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
-          <button type="submit" disabled={saving || project.completed || !drafts[project.id]?.trim()} aria-label={text('Add task', 'Añadir tarea')} title={text('Add task', 'Añadir tarea')}><Plus size={16} aria-hidden="true" /></button>
-        </form>}
+        <form noValidate className="focus-task-create" onSubmit={event => { event.preventDefault(); void create(project.id) }}>
+          <input aria-label={`${text('Add new task', 'Añadir nueva tarea')}: ${project.title}`} placeholder={text('Add new task…', 'Añadir nueva tarea…')} value={drafts[project.id] ?? ''} disabled={saving || loading || loadError || project.completed} onChange={event => setDrafts(previous => ({ ...previous, [project.id]: event.target.value }))} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
+          <button type="submit" disabled={saving || loading || loadError || project.completed || !drafts[project.id]?.trim()} aria-busy={pendingAction === `create-task:${project.id}`} aria-label={text('Add task', 'Añadir tarea')} title={text('Add task', 'Añadir tarea')}>{pendingAction === `create-task:${project.id}` ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}</button>
+        </form>
       </div>
     )
   }
 
   return <section ref={listRef} tabIndex={-1} className="focus-projects" data-i18n-ignore aria-label={text('Projects', 'Proyectos')} aria-busy={loading || saving}>
+    {!allowProjectCreation && <form noValidate className="focus-project-composer" onSubmit={event => { event.preventDefault(); void create() }}>
+      <div className="project-name-field">
+        <input aria-label={text('Project name', 'Nombre del proyecto')} placeholder={text('Create new project…', 'Crear nuevo proyecto…')} value={name} disabled={saving} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
+        <ProjectColorPicker value={color} onChange={setColor} disabled={saving} />
+      </div>
+      <button type="submit" disabled={saving || !name.trim()} aria-busy={creatingProject} aria-label={creatingProject ? text('Saving', 'Guardando') : text('Add project', 'Añadir proyecto')} title={text('Add project', 'Añadir proyecto')}>{creatingProject ? <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowUpRight size={18} aria-hidden="true" />}</button>
+    </form>}
     {allowProjectCreation && <form noValidate className="focus-project-create" onSubmit={event => { event.preventDefault(); void create() }}>
       <div className="project-name-field">
         <input aria-label={text('Project name', 'Nombre del proyecto')} placeholder={text('New project…', 'Nuevo proyecto…')} value={name} disabled={saving} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
         <ProjectColorPicker value={color} onChange={setColor} disabled={saving} />
       </div>
-      <button type="submit" disabled={saving || !name.trim()}><Plus size={16} />{text('Add project', 'Añadir proyecto')}</button>
-    </form>}
-    {!allowProjectCreation && <form noValidate className="focus-task-composer" onSubmit={event => { event.preventDefault(); void createTask() }}>
-      <input ref={taskInputRef} aria-label={text('Add new task', 'Añadir nueva tarea')} placeholder={text('Add new task…', 'Añadir nueva tarea…')} value={newTask} disabled={saving || loading || loadError || !taskProject} onChange={event => setNewTask(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
-      <div className="focus-task-project-chip">
-        <select aria-label={text('Project for new task', 'Proyecto de la nueva tarea')} value={taskProject?.id ?? ''} disabled={saving || loading || loadError || !availableProjects.length} onChange={event => setTaskProjectId(event.target.value)}>
-          {!availableProjects.length && <option value="">{text('Project', 'Proyecto')}</option>}
-          {availableProjects.map(project => <option key={project.id} value={project.id}>{project.title}</option>)}
-        </select>
-        <ChevronDown size={12} aria-hidden="true" />
-      </div>
-      <button type="submit" disabled={saving || loading || loadError || !newTask.trim() || !taskProject} aria-label={text('Add task', 'Añadir tarea')} title={text('Add task', 'Añadir tarea')}><ArrowUpRight size={18} aria-hidden="true" /></button>
+      <button type="submit" disabled={saving || !name.trim()} aria-busy={creatingProject}>{creatingProject ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}{text('Add project', 'Añadir proyecto')}</button>
     </form>}
     {loadError && <p role="alert">{text('Could not load projects.', 'No se pudieron cargar los proyectos.')} <button type="button" onClick={retry}>{text('Try again', 'Reintentar')}</button></p>}
     {error && !deleteTarget && !renameTarget && !editingTask && <p role="alert">{text('Could not save changes. Please try again.', 'No se pudieron guardar los cambios. Inténtalo de nuevo.')}</p>}
-    {!loading && !loadError && !projects.length && <p className="focus-project-empty">{allowProjectCreation ? text('Add your first project, then break it into tasks.', 'Añade tu primer proyecto y divídelo en tareas.') : text('No projects yet. Add one in Manage projects.', 'Aún no hay proyectos. Añade uno en Gestionar proyectos.')}</p>}
+    {!loading && !loadError && !projects.length && <p className="focus-project-empty">
+      {allowProjectCreation ? text('Add your first project, then break it into tasks.', 'Añade tu primer proyecto y divídelo en tareas.') : text('Create your first project and tasks.', 'Crea tu primer proyecto y sus tareas.')}
+    </p>}
     {layout === 'table' ? <div className="focus-project-table-scroll" role="region" aria-label={text('Projects', 'Proyectos')} tabIndex={0}>
       <table className="focus-project-table">
         <caption className="sr-only">{text('Projects, creation dates, tasks and focused time', 'Proyectos, fechas de creación, tareas y tiempo de concentración')}</caption>
@@ -227,14 +223,14 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
         </li>
       })}
     </ul>}
-    {saving && <p role="status">{text('Saving…', 'Guardando…')}</p>}
+    <span className="sr-only" role="status">{saving ? text('Saving…', 'Guardando…') : ''}</span>
     <p className="sr-only" role="status">{deleteStatus}</p>
     <CommunityDialog variant="project-action" open={Boolean(deleteTarget)} title={deleteTarget?.parentId ? text('Delete task?', '¿Eliminar tarea?') : text('Delete project?', '¿Eliminar proyecto?')} description={deleteTarget?.parentId ? text('This task will be permanently deleted. This cannot be undone.', 'Esta tarea se eliminará permanentemente. No se puede deshacer.') : text('This project and all its tasks will be permanently deleted. This cannot be undone.', 'Este proyecto y todas sus tareas se eliminarán permanentemente. No se puede deshacer.')} busy={saving} onClose={() => { if (!saving) setDeleteTarget(null) }}>
       <p className="break-words">{deleteTarget?.title}</p>
       {deleteError && <p role="alert">{deleteTarget?.parentId ? text('Could not delete the task. Please try again.', 'No se pudo eliminar la tarea. Inténtalo de nuevo.') : text('Could not delete the project. Please try again.', 'No se pudo eliminar el proyecto. Inténtalo de nuevo.')}</p>}
       <div className="community-dialog-actions">
         <button type="button" className="community-button" autoFocus disabled={saving} onClick={() => setDeleteTarget(null)}>{text('Cancel', 'Cancelar')}</button>
-        <button type="button" className="community-button community-button-danger" disabled={saving} aria-busy={saving} onClick={() => void deleteTask()}><Trash2 size={16} aria-hidden="true" />{deleteTarget?.parentId ? text('Delete task', 'Eliminar tarea') : text('Delete project', 'Eliminar proyecto')}</button>
+        <button type="button" className="community-button community-button-danger" disabled={saving} aria-busy={saving} onClick={() => void deleteTask()}>{pendingAction === `delete:${deleteTarget?.id}` ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Trash2 size={16} aria-hidden="true" />}{deleteTarget?.parentId ? text('Delete task', 'Eliminar tarea') : text('Delete project', 'Eliminar proyecto')}</button>
       </div>
     </CommunityDialog>
     <CommunityDialog variant="project-action" open={Boolean(renameTarget)} title={text('Edit project', 'Editar proyecto')} busy={saving} onClose={() => { if (!saving) setRenameTarget(null) }}>
@@ -248,7 +244,10 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
         {renameError && <p role="alert">{text('Could not save changes. Please try again.', 'No se pudieron guardar los cambios. Inténtalo de nuevo.')}</p>}
         <div className="community-dialog-actions">
           <button type="button" className="community-button" disabled={saving} onClick={() => setRenameTarget(null)}>{text('Cancel', 'Cancelar')}</button>
-          <button type="submit" className="community-button community-button-primary" disabled={saving || !renameTitle.trim()} aria-busy={saving}>{text('Save changes', 'Guardar cambios')}</button>
+          <button type="submit" className="community-button community-button-primary relative" disabled={saving || !renameTitle.trim()} aria-busy={pendingAction === `rename:${renameTarget?.id}`}>
+            <span className={pendingAction === `rename:${renameTarget?.id}` ? 'opacity-0' : undefined}>{text('Save changes', 'Guardar cambios')}</span>
+            {pendingAction === `rename:${renameTarget?.id}` && <span className="absolute inset-0 grid place-items-center" aria-hidden="true"><Loader2 size={16} className="animate-spin motion-reduce:animate-none" /></span>}
+          </button>
         </div>
       </form>
     </CommunityDialog>
