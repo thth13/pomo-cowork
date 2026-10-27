@@ -76,6 +76,11 @@ Artwork retains its limited palette; the scene background is desaturated in both
 
 ## Layout and components
 
+The `/uzerz` directory overlays a small green online dot at the bottom right of each
+avatar, including initial placeholders. `UserOnlineIndicator` reads the shared
+connection store, follows live presence updates, and hides while disconnected.
+Its accessible text and tooltip use the active locale's existing online label.
+
 The Chrome extension is a 360px pocket timer in the same paper/sage/tomato palette.
 It uses a compact inset LCD, tabular Courier digits and system body typography so it
 requires no remote fonts. It reuses the site's favicon assets. The account row,

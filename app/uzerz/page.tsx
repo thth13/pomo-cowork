@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 import CountryFlag from '@/components/CountryFlag'
+import UserOnlineIndicator from '@/components/UserOnlineIndicator'
 import { prisma } from '@/lib/db'
 import { getEffectiveMinutes } from '@/lib/sessionStats'
 
@@ -250,19 +251,22 @@ export default async function UzerzPage({
                             href={userProfileHref(user)}
                             className="flex min-w-[220px] items-center gap-3"
                           >
-                            {user.avatarUrl ? (
-                              <Image
-                                src={user.avatarUrl}
-                                alt={user.username}
-                                width={40}
-                                height={40}
-                                className="h-10 w-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white dark:bg-white dark:text-slate-900">
-                                {getInitial(user.username)}
-                              </span>
-                            )}
+                            <span className="relative h-10 w-10 shrink-0">
+                              {user.avatarUrl ? (
+                                <Image
+                                  src={user.avatarUrl}
+                                  alt={user.username}
+                                  width={40}
+                                  height={40}
+                                  className="h-10 w-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-black text-white dark:bg-white dark:text-slate-900">
+                                  {getInitial(user.username)}
+                                </span>
+                              )}
+                              <UserOnlineIndicator userId={user.id} />
+                            </span>
                             <span className="min-w-0">
                               <span className="block truncate font-bold text-slate-900 dark:text-white">
                                 {user.username}
