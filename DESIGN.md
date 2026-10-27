@@ -517,6 +517,12 @@ blurred, slightly darkened and inert, with one sticky Pro upgrade card over the 
 preview. Each panel retains its own clipped blur. The real
 summary and footer keep their actual totals; sample data stays client-side and never
 replaces API data. Basic accounts with no sessions also receive this preview.
+Above that preview, basic accounts see `SessionOverview`: an unblurred paper panel
+with all-time focused time, work-session count and average duration.
+Three equally weighted metrics share one compact row with fine vertical dividers,
+muted icon labels and tabular Inter values, keeping emphasis on the weekly hero.
+On mobile metrics become compact rows with right-aligned values. Empty accounts see zero totals,
+an unavailable average and a timer link.
 
 ## Personal timer appearance
 

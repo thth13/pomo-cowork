@@ -8,6 +8,7 @@ import { PaywallModal } from '@/components/PaywallModal'
 import { useStatistics } from '@/hooks/useStatistics'
 import { ranksCopy } from '@/lib/i18n/ranks'
 import FocusHero from './FocusHero'
+import SessionOverview from './SessionOverview'
 import FocusHeatmap from './FocusHeatmap'
 import FocusDNA, { FocusScore } from './FocusDNA'
 import FocusMountain from './FocusMountain'
@@ -64,6 +65,7 @@ export default function StatisticsDashboard() {
       : data ? <>
         {error && <div className="insight-refresh-error" role="status">{copy.refreshingError}<button type="button" className="insight-text-link" onClick={retry}>{copy.retry}</button></div>}
         <FocusHero data={data} />
+        {data.access === 'basic' && <SessionOverview data={data} />}
         {details ? <StatisticsSections data={data} details={details} /> : preview?.details ? <div className="insight-locked-preview">
           <StatisticsSections data={preview} details={preview.details} locked />
           <div className="insight-preview-overlay">

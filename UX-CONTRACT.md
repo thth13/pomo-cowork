@@ -333,6 +333,11 @@ analytics require active Pro access, checked on the new endpoint. Navbar, AuthMo
 I18nProvider, global scrollbar tokens, and `lib/ranks.ts` remain canonical owners.
 There are no writes, schema migrations, new billing rules, or fabricated user records.
 
+Basic accounts also see an all-time work-session summary below the weekly overview,
+using only the real API summary: total focused minutes, total sessions
+and average focused minutes per session. No sessions means zero totals,
+an unavailable average and a link to start focusing. This panel is outside the Pro preview.
+
 `lib/statistics.ts` aggregates positive effective minutes using `lib/sessionStats.ts`,
 including manual stops and time tracking. Completion counts include only COMPLETED
 focus sessions. The browser's IANA timezone determines calendar attribution; weeks

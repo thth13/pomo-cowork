@@ -29,6 +29,8 @@ export const statisticsCopy = {
     proTitle: 'Get the full picture of your focus.', proBody: 'Explore your Focus Map, personal records, daily rhythm, and more with Pro.', proAction: 'Explore Pro',
     unlockTitle: 'Unlock with Pro', unlockAction: 'Get Pro', previewLabel: 'Sample statistics', previewTasks: ['Deep work', 'Learning', 'Planning', 'Creative work'],
     updated: 'Updated', timezone: 'Your time zone', totalFocus: 'Total focused', completed: 'Completed sessions',
+    sessionOverview: 'Your work sessions', sessionOverviewCaption: 'A summary of your recorded focus sessions.', totalWorkSessions: 'Total work sessions',
+    sessionOverviewNote: 'Includes Pomodoro and time tracking. Manually stopped sessions count toward total sessions and focused time. Breaks and pauses are excluded from focused time.',
     ranks: { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum', emerald: 'Emerald', diamond: 'Diamond', master: 'Master', grandmaster: 'Grandmaster', champion: 'Champion' },
   },
   es: {
@@ -61,6 +63,8 @@ export const statisticsCopy = {
     proTitle: 'Descubre la historia completa de tu enfoque.', proBody: 'Explora tu mapa de enfoque, récords personales, ritmo diario y mucho más con Pro.', proAction: 'Descubrir Pro',
     unlockTitle: 'Desbloquea con Pro', unlockAction: 'Obtener Pro', previewLabel: 'Estadísticas de ejemplo', previewTasks: ['Trabajo profundo', 'Aprendizaje', 'Planificación', 'Trabajo creativo'],
     updated: 'Actualizado', timezone: 'Tu zona horaria', totalFocus: 'Enfoque total', completed: 'Sesiones completadas',
+    sessionOverview: 'Tus sesiones de trabajo', sessionOverviewCaption: 'Un resumen de tus sesiones de enfoque registradas.', totalWorkSessions: 'Sesiones de trabajo totales',
+    sessionOverviewNote: 'Incluye Pomodoro y cronómetro. Las sesiones detenidas manualmente cuentan en el total de sesiones y el tiempo de enfoque. Los descansos y las pausas se excluyen del tiempo de enfoque.',
     ranks: { bronze: 'Bronce', silver: 'Plata', gold: 'Oro', platinum: 'Platino', emerald: 'Esmeralda', diamond: 'Diamante', master: 'Maestro', grandmaster: 'Gran maestro', champion: 'Campeón' },
   },
 } as const
