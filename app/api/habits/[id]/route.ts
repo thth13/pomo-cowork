@@ -29,12 +29,12 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
       if (body.archived === false) await lockHabitOwner(tx, userId)
       // Lock the owned habit for both marks and archival, including concurrent requests.
       const owned = await tx.habit.updateMany({ where: { id: params.id, userId }, data: { id: params.id } })
-      if (!owned.count) return { status: 404, error: 'Habit not found' }
+      if (!owned.count) return { status: 404, body: { error: 'Habit not found' } }
       const habit = await tx.habit.findUniqueOrThrow({ where: { id: params.id } })
       if (marking) {
         // Allow today's date in every timezone; the client disallows future local dates.
         const latestDate = new Date(Date.now() + 14 * 60 * 60 * 1000).toISOString().slice(0, 10)
-        if (habit.archived || body.date < habit.startDate || body.date > latestDate) return { status: 400, error: 'Date unavailable' }
+        if (habit.archived || body.date < habit.startDate || body.date > latestDate) return { status: 400, body: { error: 'Date unavailable' } }
         if (body.completed) {
           await tx.habitCompletion.upsert({ where: { habitId_date: { habitId: habit.id, date: body.date } }, create: { habitId: habit.id, date: body.date }, update: {} })
         } else {
@@ -42,16 +42,16 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
         }
       } else {
         if (habit.archived && body.archived === false && !await canActivateHabit(tx, userId)) {
-          return { status: 403, ...habitLimitResponse }
+          return { status: 403, body: habitLimitResponse }
         }
         await tx.habit.update({ where: { id: habit.id }, data: {
           ...('title' in body ? { title: body.title.trim() } : {}),
           ...('archived' in body ? { archived: body.archived } : {}),
         } })
       }
-      return { status: 200, habit: await tx.habit.findUniqueOrThrow({ where: { id: habit.id }, include: { completions: { select: { date: true } } } }) }
+      return { status: 200, body: await tx.habit.findUniqueOrThrow({ where: { id: habit.id }, include: { completions: { select: { date: true } } } }) }
     })
-    return NextResponse.json(result.habit ?? { error: result.error, code: result.code }, { status: result.status })
+    return NextResponse.json(result.body, { status: result.status })
   } catch (error) {
     console.error('Update habit failed:', error)
     return NextResponse.json({ error: 'Could not update habit' }, { status: 500 })

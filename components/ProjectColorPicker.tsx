@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
@@ -25,7 +25,7 @@ export default function ProjectColorPicker({ value, onChange, disabled = false }
     setPosition(null)
     if (restore) trigger.current?.focus({ preventScroll: true })
   }
-  function updatePosition() {
+  const updatePosition = useCallback(() => {
     const rect = trigger.current?.getBoundingClientRect()
     if (!rect) return
     const width = menu.current?.offsetWidth ?? 162
@@ -38,7 +38,7 @@ export default function ProjectColorPicker({ value, onChange, disabled = false }
     const preferredTop = rect.bottom + height + 4 > bottom ? rect.top - height - 4 : rect.bottom + 4
     const next = { left: Math.max(left, Math.min(rect.right - width, right - width)), top: Math.max(top, Math.min(preferredTop, bottom - height)) }
     setPosition(previous => previous?.left === next.left && previous?.top === next.top ? previous : next)
-  }
+  }, [choices.length])
   function open() {
     updatePosition()
   }
@@ -51,7 +51,7 @@ export default function ProjectColorPicker({ value, onChange, disabled = false }
     updatePosition()
     palette.querySelector<HTMLButtonElement>('[aria-checked="true"]')?.focus({ preventScroll: true })
     return () => { if (palette.matches(':popover-open')) palette.hidePopover() }
-  }, [isOpen])
+  }, [isOpen, updatePosition])
   useEffect(() => {
     if (!position) return
     const outside = (event: PointerEvent) => {
@@ -72,7 +72,7 @@ export default function ProjectColorPicker({ value, onChange, disabled = false }
       window.visualViewport?.removeEventListener('resize', reposition)
       window.visualViewport?.removeEventListener('scroll', reposition)
     }
-  }, [position])
+  }, [position, updatePosition])
   useEffect(() => { if (disabled) setPosition(null) }, [disabled])
   return <>
     <button ref={trigger} type="button" className="project-color-trigger" disabled={disabled} aria-label={`${label}: ${es ? selected.es : selected.en}`} title={label} aria-haspopup="menu" aria-expanded={Boolean(position)} aria-controls={position ? id : undefined} onClick={() => position ? close(true) : open()} onKeyDown={event => {
