@@ -581,6 +581,15 @@ and ID; missing/deleted accounts are unknown. Times explicitly use Europe/Kyiv a
 follows English/Spanish. The table scrolls horizontally on narrow screens and
 reuses existing admin utilities and community buttons without changing tokens.
 
+Each event has a Delete action, authorized by the same admin check in the DELETE
+handler. CommunityDialog's project-action variant confirms the event's user,
+action, page and Kyiv time and warns that deletion is permanent. Cancel receives
+initial focus. Pending deletion blocks duplicate requests and dismissal; failures
+remain inside the dialog with retry. Requests time out after 15 seconds and abort
+on account change/unmount. Success announces deletion, reloads the current page
+(the GET handler clamps empty final pages), and focuses Refresh. Deleting an already
+removed event succeeds idempotently. Verification remains static per user request.
+
 ## Admin Premium grants
 
 Source: user request dated 2026-10-06; `app/api/admin/pro-users/route.ts` owns

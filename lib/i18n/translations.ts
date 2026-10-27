@@ -160,6 +160,7 @@ export const translations = {
     },
     activeSessions: {
       elapsed: 'elapsed',
+      guest: 'Guest',
       longBreak: 'Long break',
       noActiveSessions: 'No active sessions',
       noActiveSessionsDescription: 'Start the timer to see your activity here!',
@@ -496,6 +497,7 @@ export const translations = {
     },
     activeSessions: {
       elapsed: 'transcurrido',
+      guest: 'Invitado',
       longBreak: 'Descanso largo',
       noActiveSessions: 'No hay sesiones activas',
       noActiveSessionsDescription: '¡Inicia el temporizador para ver tu actividad aquí!',

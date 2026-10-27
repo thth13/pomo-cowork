@@ -2482,6 +2482,22 @@ body:has(.workspace-page) {
   border-radius: inherit;
 }
 
+.guest-avatar {
+  display: block;
+  width: 100%;
+  height: 100%;
+  color: var(--pixel-growth);
+  background: var(--pixel-screen);
+}
+
+.guest-identity-code {
+  opacity: 0.65;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
 .coworker-tile-details {
   display: grid;
   flex: 1;

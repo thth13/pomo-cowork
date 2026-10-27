@@ -149,6 +149,11 @@ The desktop page grid stays fixed during a 280ms
 width transition, and reduced motion disables transitions. The disclosure remains
 available in the empty state. Colors reuse pixel and local scenery roles.
 Only real sessions appear in the rail and online count; mock participants are removed.
+Guest session names use the localized Guest label and the final four characters of
+their existing username, with a quiet monospace suffix. `GuestAvatar` replaces the
+shared G placeholder with a mirrored pixel portrait derived from the user ID, using
+the existing screen and growth tokens. Both session layouts reuse this treatment;
+stored usernames and profile routes retain their original identity.
 Coworkers form a vertical list with 40px avatars on the left and names, activities,
 time, status and a remaining-time meter on the right. Time tracking shows elapsed time
 without a fictional remaining-time meter. The current user keeps a tomato edge accent and

@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
 import { userProfileHref } from '@/lib/userProfile'
+import CommunityDialog from '@/components/CommunityDialog'
 
 interface PaywallEventEntry {
   id: string
@@ -40,6 +41,75 @@ export default function AdminPaywallEvents() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<'auth' | 'forbidden' | 'load' | null>(null)
   const [revision, setRevision] = useState(0)
+  const [selectedEntry, setSelectedEntry] = useState<PaywallEventEntry | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [deleted, setDeleted] = useState(false)
+  const deleteController = useRef<AbortController | null>(null)
+  const refreshButton = useRef<HTMLButtonElement>(null)
+  const focusAfterDelete = useRef(false)
+
+  useEffect(() => {
+    setSelectedEntry(null)
+    setDeleteError(null)
+    setDeleted(false)
+    setDeleting(false)
+    return () => {
+      deleteController.current?.abort()
+      deleteController.current = null
+    }
+  }, [token])
+
+  useEffect(() => {
+    if (!loading && focusAfterDelete.current) {
+      focusAfterDelete.current = false
+      refreshButton.current?.focus({ preventScroll: true })
+    }
+  }, [loading])
+
+  async function deleteEntry() {
+    if (!selectedEntry || deleteController.current) return
+    const controller = new AbortController()
+    deleteController.current = controller
+    const timeout = window.setTimeout(() => controller.abort(), 15000)
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      const authToken = token ?? localStorage.getItem('token')
+      if (!authToken) {
+        setDeleteError(es ? 'Inicia sesión de nuevo para eliminar eventos.' : 'Sign in again to delete events.')
+        return
+      }
+      const response = await fetch(`/api/admin/paywall-events?id=${encodeURIComponent(selectedEntry.id)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${authToken}` },
+        signal: controller.signal,
+      })
+      if (deleteController.current !== controller) return
+      if (!response.ok) {
+        setDeleteError(response.status === 401
+          ? (es ? 'Inicia sesión de nuevo para eliminar eventos.' : 'Sign in again to delete events.')
+          : response.status === 403
+            ? (es ? 'Solo los administradores pueden eliminar eventos.' : 'Only administrators can delete events.')
+            : (es ? 'No se pudo eliminar el evento. Vuelve a intentarlo.' : 'Could not delete event. Try again.'))
+        return
+      }
+      setSelectedEntry(null)
+      setDeleted(true)
+      focusAfterDelete.current = true
+      setRevision(value => value + 1)
+    } catch {
+      if (deleteController.current === controller) {
+        setDeleteError(es ? 'No se pudo confirmar la eliminación. Vuelve a intentarlo.' : 'Could not confirm deletion. Try again.')
+      }
+    } finally {
+      window.clearTimeout(timeout)
+      if (deleteController.current === controller) {
+        deleteController.current = null
+        setDeleting(false)
+      }
+    }
+  }
 
   useEffect(() => {
     const controller = new AbortController()
@@ -106,9 +176,13 @@ export default function AdminPaywallEvents() {
             {es ? 'Aperturas y clics en el pago, del más reciente al más antiguo.' : 'Modal opens and checkout clicks, newest first.'}
           </p>
         </div>
-        <button type="button" className={buttonClass} disabled={loading} onClick={() => setRevision(value => value + 1)}>
+        <button ref={refreshButton} type="button" className={buttonClass} disabled={loading || deleting} onClick={() => setRevision(value => value + 1)}>
           {es ? 'Actualizar' : 'Refresh'}
         </button>
+      </div>
+
+      <div role="status" className="text-sm text-slate-600 dark:text-slate-300">
+        {deleted && (es ? 'Evento eliminado.' : 'Event deleted.')}
       </div>
 
       <div className="min-h-[16rem] rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" aria-busy={loading}>
@@ -123,7 +197,7 @@ export default function AdminPaywallEvents() {
               <caption className="sr-only">{es ? 'Actividad de Upgrade to Pro' : 'Upgrade to Pro activity'}</caption>
               <thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                 <tr>
-                  {[es ? 'Usuario' : 'User', es ? 'Acción' : 'Action', 'Plan', es ? 'Página' : 'Page', es ? 'Fecha (Kyiv)' : 'Time (Kyiv)'].map(label => (
+                  {[es ? 'Usuario' : 'User', es ? 'Acción' : 'Action', 'Plan', es ? 'Página' : 'Page', es ? 'Fecha (Kyiv)' : 'Time (Kyiv)', es ? 'Gestionar' : 'Manage'].map(label => (
                     <th key={label} scope="col" className="px-4 py-3 font-semibold">{label}</th>
                   ))}
                 </tr>
@@ -143,6 +217,15 @@ export default function AdminPaywallEvents() {
                     <td className="px-4 py-3">{entry.plan === 'yearly' ? (es ? 'Anual' : 'Yearly') : entry.plan === 'monthly' ? (es ? 'Mensual' : 'Monthly') : '—'}</td>
                     <td className="max-w-xs break-words px-4 py-3">{entry.pagePath}</td>
                     <td className="whitespace-nowrap px-4 py-3 tabular-nums"><time dateTime={entry.createdAt}>{new Intl.DateTimeFormat(es ? 'es-ES' : 'en-GB', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Europe/Kyiv' }).format(new Date(entry.createdAt))}</time></td>
+                    <td className="px-4 py-3">
+                      <button type="button" className={`${buttonClass} text-red-600 dark:text-red-400`} disabled={deleting} onClick={() => {
+                        setDeleteError(null)
+                        setDeleted(false)
+                        setSelectedEntry(entry)
+                      }}>
+                        {es ? 'Eliminar' : 'Delete'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -155,11 +238,33 @@ export default function AdminPaywallEvents() {
         <nav className="flex flex-wrap items-center justify-between gap-3 text-sm" aria-label={es ? 'Páginas de eventos' : 'Event pages'}>
           <span role="status">{(data.page - 1) * data.pageSize + 1}–{Math.min(data.page * data.pageSize, data.total)} / {data.total}</span>
           <div className="flex gap-2">
-            <button type="button" className={buttonClass} disabled={data.page <= 1} onClick={() => goToPage(data.page - 1)}>{es ? 'Anterior' : 'Previous'}</button>
-            <button type="button" className={buttonClass} disabled={data.page * data.pageSize >= data.total} onClick={() => goToPage(data.page + 1)}>{es ? 'Siguiente' : 'Next'}</button>
+            <button type="button" className={buttonClass} disabled={deleting || data.page <= 1} onClick={() => goToPage(data.page - 1)}>{es ? 'Anterior' : 'Previous'}</button>
+            <button type="button" className={buttonClass} disabled={deleting || data.page * data.pageSize >= data.total} onClick={() => goToPage(data.page + 1)}>{es ? 'Siguiente' : 'Next'}</button>
           </div>
         </nav>
       )}
+      <CommunityDialog
+        open={!!selectedEntry}
+        title={es ? '¿Eliminar evento?' : 'Delete event?'}
+        description={es ? 'Este evento se eliminará permanentemente. Esta acción no se puede deshacer.' : 'This event will be permanently deleted. This cannot be undone.'}
+        variant="project-action"
+        busy={deleting}
+        onClose={() => { if (!deleting) setSelectedEntry(null) }}
+      >
+        {selectedEntry && <p className="break-words text-sm text-slate-600 dark:text-slate-300">
+          {selectedEntry.user?.username ?? (es ? 'Usuario desconocido' : 'Unknown user')}
+          {' · '}{selectedEntry.event === 'paywall_open' ? (es ? 'Abrió la ventana' : 'Opened modal') : (es ? 'Clic en continuar al pago' : 'Clicked Continue to checkout')}
+          {' · '}{selectedEntry.pagePath}
+          {' · '}{new Intl.DateTimeFormat(es ? 'es-ES' : 'en-GB', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Europe/Kyiv' }).format(new Date(selectedEntry.createdAt))} (Kyiv)
+        </p>}
+        {deleteError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{deleteError}</p>}
+        <div className="mt-4 flex justify-end gap-3" aria-busy={deleting}>
+          <button type="button" className={buttonClass} disabled={deleting} onClick={() => setSelectedEntry(null)}>{es ? 'Cancelar' : 'Cancel'}</button>
+          <button type="button" className={`${buttonClass} min-w-[7rem] text-red-600 dark:text-red-400`} disabled={deleting} onClick={() => void deleteEntry()}>
+            {deleting ? (es ? 'Eliminando…' : 'Deleting…') : (es ? 'Eliminar' : 'Delete')}
+          </button>
+        </div>
+      </CommunityDialog>
     </section>
   )
 }

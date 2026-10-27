@@ -18,6 +18,7 @@ import EmojiPicker from 'emoji-picker-react'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { useI18n } from './I18nProvider'
 import RankAvatarFrame from './RankAvatarFrame'
+import GuestAvatar from './GuestAvatar'
 
 interface TomatoAnimation {
   id: string
@@ -76,6 +77,11 @@ function SessionCard({
   const sessionStatus = session.status ?? SessionStatus.ACTIVE
   const isTimeTracking = session.type === SessionType.TIME_TRACKING
   const isUnregistered = /^Guest(?:\s*#|-)/i.test(session.username)
+  const guestCode = session.username.replace(/^Guest(?:\s*#|-)/i, '').slice(-4).toUpperCase()
+  const displayName = isUnregistered ? `${t.activeSessions.guest} #${guestCode}` : session.username
+  const nameContent = isUnregistered ? (
+    <>{t.activeSessions.guest} <span className="guest-identity-code">#{guestCode}</span></>
+  ) : session.username
 
   const statusDotClass = sessionStatus === SessionStatus.PAUSED ? 'bg-amber-400' : 'bg-green-400'
 
@@ -259,21 +265,21 @@ function SessionCard({
         <Link
           href={userProfileHref({ id: session.userId, username: session.username, isAnonymous: isUnregistered })}
           className="coworker-tile-profile"
-          aria-label={`${session.username}${session.isPro ? ' · Pro' : ''} · ${t.activeSessions.online} · ${statusLabel} · ${session.task || ''} · ${formatTime(elapsedSeconds)}`}
-          title={`${session.username}${session.isPro ? ' · Pro' : ''}${isCurrentUser ? ` (${t.activeSessions.you})` : ''} · ${statusLabel} · ${session.task || ''}`}
+          aria-label={`${displayName}${session.isPro ? ' · Pro' : ''} · ${t.activeSessions.online} · ${statusLabel} · ${session.task || ''} · ${formatTime(elapsedSeconds)}`}
+          title={`${displayName}${session.isPro ? ' · Pro' : ''}${isCurrentUser ? ` (${t.activeSessions.you})` : ''} · ${statusLabel} · ${session.task || ''}`}
         >
           <span className="coworker-tile-portrait">
             <span className="coworker-tile-avatar">
               {session.avatarUrl ? (
                 <Image src={session.avatarUrl} alt="" width={64} height={64} className="h-full w-full object-cover" />
-              ) : session.username.charAt(0).toUpperCase()}
+              ) : isUnregistered ? <GuestAvatar userId={session.userId} /> : session.username.charAt(0).toUpperCase()}
             </span>
             <span className="coworker-tile-online bg-green-400" aria-hidden="true" />
           </span>
           <span className="coworker-tile-mini-time" aria-hidden="true"><Clock size={10} />{formatTime(elapsedSeconds)}</span>
           <span className="coworker-tile-details">
             <span className="coworker-tile-identity">
-              <span className="coworker-tile-name">{session.username}</span>
+              <span className="coworker-tile-name">{nameContent}</span>
               {session.isPro && <Crown className="coworker-tile-pro" size={12} aria-hidden="true" />}
             </span>
             <span className="coworker-tile-task">{session.task || getSessionTypeLabel(session.type)}</span>
@@ -286,7 +292,7 @@ function SessionCard({
               <span
                 className="coworker-tile-progress"
                 role="progressbar"
-                aria-label={`${session.username}: ${t.activeSessions.remaining}`}
+                aria-label={`${displayName}: ${t.activeSessions.remaining}`}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={Math.round(progressPercent)}
@@ -302,7 +308,7 @@ function SessionCard({
           <button
             type="button"
             className="coworker-tile-menu"
-            aria-label={`${t.activeSessions.reactions}: ${session.username}`}
+            aria-label={`${t.activeSessions.reactions}: ${displayName}`}
             onClick={(event) => onContextMenu(event, session.userId, cardRef.current ?? event.currentTarget)}
           ><MoreHorizontal size={18} aria-hidden="true" /></button>
         )}
@@ -362,11 +368,13 @@ function SessionCard({
               {session.avatarUrl ? (
                 <Image
                   src={session.avatarUrl}
-                  alt={session.username}
+                  alt={displayName}
                   width={48}
                   height={48}
                   className="h-full w-full object-cover"
                 />
+              ) : isUnregistered ? (
+                <GuestAvatar userId={session.userId} />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-gray-300 text-sm font-semibold text-gray-700 dark:bg-slate-500 dark:text-slate-200 sm:text-base">
                   {session.username.charAt(0).toUpperCase()}
@@ -377,7 +385,7 @@ function SessionCard({
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 sm:mb-2 flex-wrap">
-              <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">{session.username}</h3>
+              <h3 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white truncate">{nameContent}</h3>
               {isCurrentUser && (
                 <span className="text-xs px-2 py-0.5 sm:py-1 rounded-full font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 whitespace-nowrap">
                   {t.activeSessions.you}

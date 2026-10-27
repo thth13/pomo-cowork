@@ -5,6 +5,32 @@ import { isAdminUser } from '@/lib/admin'
 
 export const dynamic = 'force-dynamic'
 
+export async function DELETE(request: NextRequest) {
+  try {
+    const token = getTokenFromHeader(request.headers.get('authorization'))
+    const payload = token ? verifyToken(token) : null
+    if (!payload) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const admin = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, email: true },
+    })
+    if (!admin || !isAdminUser(admin)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    const id = request.nextUrl.searchParams.get('id')?.trim()
+    if (!id) return NextResponse.json({ error: 'Event ID is required' }, { status: 400 })
+
+    // Idempotent when another administrator has already removed this event.
+    await prisma.paywallEvent.deleteMany({ where: { id } })
+    return new NextResponse(null, { status: 204 })
+  } catch (error) {
+    console.error('Delete paywall event error:', error)
+    return NextResponse.json({ error: 'Could not delete event' }, { status: 500 })
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     const token = getTokenFromHeader(request.headers.get('authorization'))
