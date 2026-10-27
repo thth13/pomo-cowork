@@ -1,3 +1,4 @@
+import { recordUserCountry } from '@/lib/userCountry'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
@@ -107,6 +108,8 @@ export async function POST(request: NextRequest) {
         { status: 401 }
       )
     }
+
+    await recordUserCountry(request, userId)
 
     const normalizedStartedAt = (() => {
       if (startedAt === undefined) return undefined

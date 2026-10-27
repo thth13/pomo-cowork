@@ -1,3 +1,4 @@
+import { recordUserCountry } from '@/lib/userCountry'
 import { registerAnonymousUser } from '@/lib/registerAnonymousUser'
 import { validateRegistration, type RegistrationFieldErrors } from '@/lib/registrationValidation'
 import { Prisma } from '@prisma/client'
@@ -155,6 +156,8 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    await recordUserCountry(request, user.id)
+
     await recordReferralSignup(referralCode, user.id)
 
     // Generate JWT token
@@ -165,7 +168,7 @@ export async function POST(request: NextRequest) {
     })
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = user
+    const { password: _, countryCode: _countryCode, ...userWithoutPassword } = user
 
     return NextResponse.json({
       user: userWithoutPassword,

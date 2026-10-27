@@ -12,6 +12,7 @@ type UserRow = {
   id: string
   username: string
   avatarUrl: string | null
+  countryCode: string | null
   createdAt: Date
   lastSeenAt: Date | null
   totalMinutes: number
@@ -33,6 +34,13 @@ const tabs: Array<{ value: UsersTab; label: string; description: string }> = [
     description: 'Anonymous users who have not created a full account yet.',
   },
 ]
+
+const countryNames = new Intl.DisplayNames(['en'], { type: 'region', fallback: 'none' })
+
+const formatCountry = (code: string | null) => {
+  if (!code || !/^[A-Z]{2}$/.test(code)) return 'Unknown'
+  return countryNames.of(code) ?? 'Unknown'
+}
 
 const formatDate = (date: Date | null) => {
   if (!date) return 'Never'
@@ -78,6 +86,7 @@ async function getUsers(isAnonymous: boolean): Promise<UserRow[]> {
       id: true,
       username: true,
       avatarUrl: true,
+      countryCode: true,
       createdAt: true,
       lastSeenAt: true,
       sessions: {
@@ -109,6 +118,7 @@ async function getUsers(isAnonymous: boolean): Promise<UserRow[]> {
       id: user.id,
       username: user.username,
       avatarUrl: user.avatarUrl,
+      countryCode: user.countryCode,
       createdAt: user.createdAt,
       lastSeenAt: user.lastSeenAt,
       totalMinutes,
@@ -200,12 +210,17 @@ export default async function UzerzPage({
             })}
           </div>
 
+          <p className="mb-3 text-xs text-slate-500 dark:text-slate-400">
+            Country reflects the last detected connection location. VPNs may affect it.
+          </p>
+
           <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto" tabIndex={0} role="region" aria-label="Users">
               <table className="min-w-full divide-y divide-slate-200 text-left text-sm dark:divide-slate-800">
                 <thead className="bg-slate-100/80 text-xs uppercase tracking-wider text-slate-500 dark:bg-slate-900 dark:text-slate-400">
                   <tr>
                     <th className="px-5 py-4 font-bold">User</th>
+                    <th scope="col" className="px-5 py-4 font-bold">Country</th>
                     <th className="px-5 py-4 font-bold">Registered</th>
                     <th className="px-5 py-4 font-bold">Last seen</th>
                     <th className="px-5 py-4 text-right font-bold">Focus time</th>
@@ -218,7 +233,7 @@ export default async function UzerzPage({
                     <tr>
                       <td
                         className="px-5 py-12 text-center text-sm font-semibold text-slate-500 dark:text-slate-400"
-                        colSpan={6}
+                        colSpan={7}
                       >
                         No users found.
                       </td>
@@ -254,6 +269,9 @@ export default async function UzerzPage({
                               <span className="block truncate text-xs text-slate-400">{user.id}</span>
                             </span>
                           </Link>
+                        </td>
+                        <td className="whitespace-nowrap px-5 py-4 text-slate-600 dark:text-slate-300">
+                          {formatCountry(user.countryCode)}
                         </td>
                         <td className="whitespace-nowrap px-5 py-4 text-slate-600 dark:text-slate-300">
                           {formatKyivDateTime(user.createdAt)}

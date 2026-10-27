@@ -1,3 +1,4 @@
+import { recordUserCountry } from '@/lib/userCountry'
 import { registerAnonymousUser } from '@/lib/registerAnonymousUser'
 import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
@@ -66,7 +67,7 @@ const verifyGoogleToken = async (token: string): Promise<GoogleTokenPayload | nu
 }
 
 const buildUserPayload = (user: UserWithSettings) => {
-  const { password: _, ...userWithoutPassword } = user
+  const { password: _, countryCode: _countryCode, ...userWithoutPassword } = user
   return userWithoutPassword
 }
 
@@ -163,6 +164,8 @@ export async function POST(request: NextRequest) {
         include: { settings: true },
       })
     }
+
+    await recordUserCountry(request, user.id)
 
     await recordReferralSignup(referralCode, user.id)
 

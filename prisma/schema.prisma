@@ -15,6 +15,7 @@ model User {
   avatarUrl            String?
   description          String?
   displayName          String?
+  countryCode          String?   @db.VarChar(2)
   location             String?
   websiteUrl           String?
   githubUrl            String?

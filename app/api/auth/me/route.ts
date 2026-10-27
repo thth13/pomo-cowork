@@ -1,3 +1,4 @@
+import { recordUserCountry } from '@/lib/userCountry'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
@@ -40,10 +41,12 @@ export async function GET(request: NextRequest) {
       )
     }
 
+    await recordUserCountry(request, user.id)
+
     const syncedUser = await syncExpiredProStatus(user)
 
     // Remove password from response
-    const { password: _, ...userWithoutPassword } = syncedUser
+    const { password: _, countryCode: _countryCode, ...userWithoutPassword } = syncedUser
 
     return NextResponse.json(userWithoutPassword)
 

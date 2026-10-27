@@ -560,3 +560,16 @@ in the timer picker follow the project color; child-task titles keep their norma
 color. API validation and a database constraint reject
 independent task colors and unknown palette values. Existing ownership checks apply.
 Verification is static; application execution, builds and tsc are excluded by request.
+
+## User connection country
+
+Source: user request 2026-10-26. `/uzerz` displays Country in both existing user
+tabs, using its existing English table presentation and Unknown for missing data.
+The value is the last detected connection country, not nationality or residence.
+`lib/userCountry.ts` accepts Vercel's country header only on Vercel, preserves
+previous values when geolocation is missing, and avoids updating unchanged values.
+Email/Google sign-in, registration, auth checks and session starts record it.
+Auth responses omit the field; public profile selections remain unchanged.
+Apply `20261026120000_add_user_country` before deploying the new application.
+Local development has no trusted country header and leaves the field unset.
+Runtime verification remains user-owned; no builds, app starts or tsc.
