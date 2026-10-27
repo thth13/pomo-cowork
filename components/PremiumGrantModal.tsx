@@ -76,7 +76,7 @@ function AccountPremiumGrantModal({ token }: { token: string }) {
   }
 
   return (
-    <CommunityDialog open={!!notification} title={copy.title} description={copy.description}
+    <CommunityDialog open={!!notification} variant="premium-grant" title={copy.title} description={copy.description}
       busy={saving} onClose={() => { void dismiss() }}>
       <Crown size={32} className="mb-4 text-amber-500" aria-hidden="true" />
       <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">{notification?.message}</p>

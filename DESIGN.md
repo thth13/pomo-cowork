@@ -1050,3 +1050,11 @@ pixel surface, ink, muted and border roles. `app/community.css` owns layout and
 routes with rendered scenery. Local aliases also cover fields, error contrast and
 scrollbars in either app theme. The header stays visible while the body scrolls on
 short screens; phone inputs use 16px text. Forced colors retains system surfaces.
+
+## Premium grant dialog
+
+CommunityDialog's `premium-grant` variant shares the `paywall-dialog` header,
+pixel title typography, close control and scene-glass treatment with the Premium
+purchase dialog. It keeps a compact 520px width and padded, scrollable message body.
+Glass uses the existing scenery tokens in `app/appearance.css` when scenery is
+rendered; plain backgrounds and forced colors retain the shared opaque surfaces.

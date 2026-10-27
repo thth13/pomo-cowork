@@ -9,7 +9,7 @@ export default function CommunityDialog({ open, title, description, busy = false
   title: string
   description?: string
   busy?: boolean
-  variant?: 'default' | 'timer-settings' | 'monthly-wrapped' | 'achievement' | 'kofi-support' | 'project-action' | 'upgrade-pro' | 'auth'
+  variant?: 'default' | 'timer-settings' | 'monthly-wrapped' | 'achievement' | 'kofi-support' | 'project-action' | 'upgrade-pro' | 'premium-grant' | 'auth'
   dismissOnBackdrop?: boolean
   onClose: () => void
   children: ReactNode
@@ -30,7 +30,7 @@ export default function CommunityDialog({ open, title, description, busy = false
       if (trigger?.isConnected) trigger.focus({ preventScroll: true })
     }
   }, [open, variant])
-  return <dialog ref={ref} className={`community-dialog${variant === 'timer-settings' ? ' timer-settings-dialog' : variant === 'monthly-wrapped' ? ' wrapped-dialog' : variant === 'achievement' ? ' achievement-dialog' : variant === 'kofi-support' ? ' kofi-support-dialog' : variant === 'project-action' ? ' project-action-dialog' : variant === 'upgrade-pro' ? ' paywall-dialog' : variant === 'auth' ? ' auth-dialog' : ''}`} aria-labelledby={headingId} aria-describedby={description ? descriptionId : undefined} lang={language} data-no-translate
+  return <dialog ref={ref} className={`community-dialog${variant === 'timer-settings' ? ' timer-settings-dialog' : variant === 'monthly-wrapped' ? ' wrapped-dialog' : variant === 'achievement' ? ' achievement-dialog' : variant === 'kofi-support' ? ' kofi-support-dialog' : variant === 'project-action' ? ' project-action-dialog' : variant === 'upgrade-pro' ? ' paywall-dialog' : variant === 'premium-grant' ? ' paywall-dialog premium-grant-dialog' : variant === 'auth' ? ' auth-dialog' : ''}`} aria-labelledby={headingId} aria-describedby={description ? descriptionId : undefined} lang={language} data-no-translate
     onMouseDown={event => { backdropPress.current = event.target === event.currentTarget }}
     onClick={event => {
       if (dismissOnBackdrop && !busy && backdropPress.current && event.target === event.currentTarget) onClose()

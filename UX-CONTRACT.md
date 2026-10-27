@@ -576,7 +576,9 @@ and its PREMIUM_GRANTED notification persist in one database transaction. An alr
 lifetime-Pro account receives no new grant or notification.
 
 PremiumGrantModal is mounted globally for registered accounts and uses CommunityDialog
-for focus containment, Escape and close behavior. It loads the oldest unread grant on
+for focus containment, Escape and close behavior. Its `premium-grant` variant reuses
+the Premium purchase header and scenery glass, with a compact width and scrolling body.
+It loads the oldest unread grant on
 login, window focus, visibility return and every 30 seconds while visible. The message
 is plain text with preserved line breaks; fixed dialog copy follows English/Spanish.
 Closing acknowledges via the existing owner-scoped notification PATCH endpoint; failed
