@@ -1,181 +1,96 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { motion } from 'framer-motion'
-import { Upload, X, User } from 'lucide-react'
+import { useRef, useState } from 'react'
+import { Upload, User, X } from 'lucide-react'
 import Image from 'next/image'
+import { useI18n } from '@/components/I18nProvider'
 
 interface AvatarUploaderProps {
   currentAvatar?: string
   onFileSelect: (file: File | null) => void
   previewUrl?: string | null
+  removed?: boolean
+  disabled?: boolean
+  onUndoRemove?: () => void
 }
 
-export default function AvatarUploader({ currentAvatar, onFileSelect, previewUrl }: AvatarUploaderProps) {
-  const [preview, setPreview] = useState<string | null>(previewUrl || currentAvatar || null)
+export default function AvatarUploader({ currentAvatar, onFileSelect, previewUrl, removed = false, disabled = false, onUndoRemove }: AvatarUploaderProps) {
+  const { t } = useI18n()
+  const copy = t.settingsProfile
+  const [error, setError] = useState('')
   const [isDragging, setIsDragging] = useState(false)
-  const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const preview = previewUrl || currentAvatar
 
-  // Синхронизируем превью с пропсами
-  useEffect(() => {
-    setPreview(previewUrl || currentAvatar || null)
-  }, [previewUrl, currentAvatar])
-
-  const handleFileSelect = (file: File) => {
-    setError(null)
-
-    // Валидация
+  const selectFile = (file: File) => {
+    if (disabled) return
     if (!file.type.startsWith('image/')) {
-      setError('Please select an image file')
+      setError(copy.invalidImage)
       return
     }
-
     if (file.size > 4.5 * 1024 * 1024) {
-      setError('File is too large (max 4.5MB)')
+      setError(copy.fileTooLarge)
       return
     }
-
-    // Создаём локальное превью
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setPreview(reader.result as string)
-    }
-    reader.readAsDataURL(file)
-
-    // Передаём файл наверх
+    setError('')
     onFileSelect(file)
   }
 
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(false)
-
-    const file = e.dataTransfer.files[0]
-    if (file) {
-      handleFileSelect(file)
-    }
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-    setIsDragging(true)
-  }
-
-  const handleDragLeave = () => {
-    setIsDragging(false)
-  }
-
-  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      handleFileSelect(file)
-    }
-  }
-
-  const handleRemove = () => {
-    setPreview(null)
-    onFileSelect(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ''
-    }
-  }
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.25 }}
-      className="group relative isolate w-full overflow-hidden rounded-2xl border border-slate-200 bg-gradient-to-br from-white/95 via-white to-slate-50 shadow-lg ring-1 ring-black/5 backdrop-blur-sm dark:border-slate-700 dark:from-slate-900/80 dark:via-slate-900/80 dark:to-slate-950"
-    >
-      <div className="pointer-events-none absolute inset-x-10 -top-24 h-48 rounded-full bg-primary-500/10 blur-3xl dark:bg-primary-400/10" />
-
-      <div className="relative flex w-full flex-col items-center gap-6 p-6 text-center md:items-start md:text-left">
-        <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">
-            Profile avatar
-          </p>
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
-            Freshen up your presence
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Drop a crisp square image for the best look. We recommend at least 256×256px.
-          </p>
-        </div>
-
-        <div className="relative">
-          <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-3xl border border-slate-200 bg-slate-100 shadow-inner transition-all duration-300 group-hover:shadow-xl dark:border-slate-700 dark:bg-slate-800">
-            {preview ? (
-              <Image src={preview} alt="Avatar preview" width={128} height={128} className="h-full w-full object-cover" />
-            ) : (
-              <User className="h-14 w-14 text-slate-400 dark:text-slate-500" />
-            )}
-          </div>
-
-          {preview && (
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full border border-white/60 bg-white/90 text-slate-600 shadow-md transition hover:-translate-y-0.5 hover:border-red-500/50 hover:bg-red-500 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 dark:border-slate-800 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:border-red-500/60"
-            >
-              <X className="h-4 w-4" />
-            </button>
+    <div className="settings-avatar-card" data-i18n-ignore>
+      <div>
+        <p className="settings-profile-eyebrow">{copy.avatarHeading}</p>
+        <h3>{copy.avatarTitle}</h3>
+        <p className="settings-avatar-description">{copy.avatarDescription}</p>
+      </div>
+      <div className="settings-avatar-preview">
+        <div className="settings-avatar-image">
+          {preview ? (
+            <Image src={preview} alt={copy.avatarAlt} width={128} height={128} className="h-full w-full object-cover" />
+          ) : (
+            <User size={48} aria-hidden="true" />
           )}
         </div>
-
-        <motion.div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onClick={() => fileInputRef.current?.click()}
-          className={`group flex w-full cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed p-5 transition-all duration-200 md:items-start ${
-            isDragging
-              ? 'border-primary-400 bg-primary-50/90 shadow-sm dark:border-primary-400/70 dark:bg-primary-900/20'
-              : 'border-slate-300/80 hover:border-primary-400 hover:bg-primary-50/40 dark:border-slate-600 dark:hover:border-primary-500 dark:hover:bg-primary-900/10'
-          }`}
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileInput}
-            className="hidden"
-          />
-
-          <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900">
-              <Upload className="h-5 w-5" />
-            </span>
-            <div className="text-left">
-              <p className="hidden text-sm font-medium text-slate-700 dark:text-slate-200 sm:block">
-                Drag & drop your avatar
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                PNG, JPG, GIF up to 20MB
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            className="inline-flex items-center justify-center rounded-full bg-primary-500 px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-primary-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/70"
-          >
-            Choose a file
-          </button>
-        </motion.div>
-
-        {error && (
-          <motion.p
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full rounded-lg border border-red-400/30 bg-red-50/60 p-3 text-sm text-red-600 shadow-sm dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-300"
-          >
-            {error}
-          </motion.p>
-        )}
+        {preview && <button type="button" disabled={disabled} className="settings-avatar-undo" aria-label={copy.removePhoto} title={copy.removePhoto} onClick={() => {
+          onFileSelect(null)
+          setError('')
+        }}><X size={16} aria-hidden="true" /></button>}
       </div>
-    </motion.div>
+      {removed && <div className="settings-profile-hint">
+        <p>{copy.removalHint}</p>
+        <button type="button" disabled={disabled} className="underline underline-offset-4 hover:no-underline" onClick={onUndoRemove}>{copy.undo}</button>
+      </div>}
+      <div
+        className={`settings-avatar-dropzone${isDragging ? ' is-dragging' : ''}`}
+        onDragOver={(event) => { event.preventDefault(); if (!disabled) setIsDragging(true) }}
+        onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setIsDragging(false) }}
+        onDrop={(event) => {
+          event.preventDefault()
+          setIsDragging(false)
+          const file = event.dataTransfer.files[0]
+          if (file) selectFile(file)
+        }}
+      >
+        <div className="settings-avatar-drop-label">
+          <span className="settings-avatar-upload-icon"><Upload size={19} aria-hidden="true" /></span>
+          <div><p>{copy.dropPhoto}</p><small>{copy.photoHint}</small></div>
+        </div>
+        <button type="button" disabled={disabled} className="settings-avatar-change" onClick={() => fileInputRef.current?.click()}>{copy.chooseFile}</button>
+      </div>
+      {error && <p className="text-xs text-red-600 dark:text-red-400" role="alert">{error}</p>}
+      <input
+        ref={fileInputRef}
+        type="file"
+        disabled={disabled}
+        accept="image/*"
+        aria-label={copy.changePhoto}
+        className="hidden"
+        onChange={(event) => {
+          const file = event.target.files?.[0]
+          event.target.value = ''
+          if (file) selectFile(file)
+        }}
+      />
+    </div>
   )
 }

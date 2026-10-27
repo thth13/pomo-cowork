@@ -83,7 +83,7 @@ export async function PUT(request: NextRequest) {
     const data = await request.json()
 
     // Handle user profile updates
-    if (data.username !== undefined || data.email !== undefined || data.description !== undefined) {
+    if (data.username !== undefined || data.email !== undefined || data.description !== undefined || data.removeAvatar === true) {
       const updateData: any = {}
       
       if (data.username !== undefined) {
@@ -125,6 +125,10 @@ export async function PUT(request: NextRequest) {
 
       if (data.description !== undefined) {
         updateData.description = data.description
+      }
+
+      if (data.removeAvatar === true) {
+        updateData.avatarUrl = null
       }
 
       await prisma.user.update({

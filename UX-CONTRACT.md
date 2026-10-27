@@ -48,6 +48,7 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Timer appearance | AppearanceSettings, WorkspaceBackground, useAppearanceStore | Native modal and radio choices; images apply and persist after loading; shared timer digit style and optional image/video scenery |
 | Statistics Select/Listbox | Native select in app/stats/page.tsx | OS-owned popup for the finite annual heatmap year range; browser geometry and keyboard behavior accepted |
 | Locale | I18nProvider | English and Spanish, including new companion copy |
+| Language Select/Listbox | Native select in LanguageSwitcher, settings variant | English/Spanish from I18nProvider; changes apply immediately and persist in this browser through the existing provider. Native OS popup geometry and keyboard behavior accepted; separate from Save settings |
 | Homepage navigation | Navbar compact variant | Shared navigation disclosure; outside click and Escape dismiss; Escape restores trigger focus; guests retain navigation and login |
 | Workspace dock tooltips | HomeWorkspace / app/globals.css | Localized panel labels appear to the right on pointer hover or keyboard focus, remain hoverable, and dismiss on Escape, blur, pointer exit or activation; mobile menu keeps visible labels |
 | Timer help | PomodoroOverview / WorkspaceWindow | Full heading and overview render in the initial server HTML independently of workspace loading/auth; one persistent copy in the window. Question-mark dock button opens it; close, Escape or dock toggles dismiss; always closed on page load and excluded from saved open panels |
@@ -417,6 +418,12 @@ switch variant and retains the existing theme store and persistence. RankAvatarF
 remain the frame and progress owners; no new account requests or data are introduced.
 
 ## Timer settings presentation
+
+The settings profile avatar cross stages removal locally. Save settings sends
+`removeAvatar: true` to the authenticated `PUT /api/settings`, which clears only
+that user's avatar URL. Inline Undo restores the photo before saving; failed saves
+retain the pending removal. Avatar controls disable during save. Removing a photo
+does not delete the stored image object.
 
 SettingsModal reuses CommunityDialog with the timer-settings variant. Native modal
 behavior owns focus containment, inert background, Escape and focus restoration;

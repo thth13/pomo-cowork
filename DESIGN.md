@@ -111,7 +111,7 @@ a sage header, pixel Menu caption, compact Inter navigation, consistent outline 
 fine section dividers and a soft tomato inset marker for the current page. ThemeToggle's
 menu variant uses a square sun/moon switch on the same tokens. Desktop account details
 live in the avatar preview; narrow and no-hover layouts also show them in the menu. It reuses Navbar navigation, account actions, notifications, online status and
-theme controls; guests can navigate and sign in. The leaderboard, statistics, user profiles,
+theme controls; guests can navigate and sign in. The settings page, leaderboard, statistics, user profiles,
 public @profiles, project list, project create/edit and public project pages reuse this
 compact menu; other routes retain their header. Journal pages with compact navigation
 reserve 84px plus the top safe-area inset above their content, matching leaderboard.
@@ -242,6 +242,25 @@ variant retains CommunityDialog behavior while excluding scene glass styling. Th
 is at least 44px high with visible keyboard focus. Below 720px the support trigger is hidden.
 English/Spanish accessible labels follow
 I18nProvider through gardenCopy; Ko-fi owns the embedded form's language and content.
+
+The settings page reuses the compact Navbar, PersonalNavigation and personal-page frame
+from statistics. Profile, timer, notifications, subscription and Save sections use flat
+paper panels, fine token borders and square controls. Settings appears in the shared
+PersonalNavigation with active-page styling; there is no separate visible page heading
+or promotional Control center hero. `app/settings/settings.css` owns this route
+presentation and consumes the shared runtime tokens. CommunityDialog owns subscription
+cancellation confirmation; existing save and billing operations remain unchanged.
+The profile panel follows the user's earlier reference: Account eyebrow, Own your
+presence title and username chip; a 320px bordered avatar card sits beside stacked
+username, email and description fields. The avatar card has a 128px preview, dashed
+dropzone and pill-shaped file button. A sage visibility note sits below the fields.
+On mobile the columns stack. AvatarUploader validates images against the existing
+4.5 MB limit. The preview's cross marks the photo for removal on Save settings;
+an inline Undo restores the current photo before saving. Avatar controls disable
+while saving.
+The bottom-right language control reuses LanguageSwitcher as a compact inline label
+and native select without a surrounding panel or description; English/Spanish changes
+apply immediately through I18nProvider.
 
 ## Native mini timer
 

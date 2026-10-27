@@ -12,6 +12,7 @@ const destinations = [
   { href: '/rooms', label: { en: 'Rooms', es: 'Salas' }, matches: (pathname: string) => pathname.startsWith('/rooms') },
   { href: '/leaderboard', label: { en: 'Leaderboard', es: 'Clasificación' }, matches: (pathname: string) => pathname === '/leaderboard' },
   { href: '/statistics', label: { en: 'Statistics', es: 'Estadísticas' }, matches: (pathname: string) => pathname === '/statistics' },
+  { href: '/settings', label: { en: 'Settings', es: 'Ajustes' }, matches: (pathname: string) => pathname === '/settings' },
 ]
 
 export default function PersonalNavigation() {
