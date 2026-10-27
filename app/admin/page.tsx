@@ -9,6 +9,10 @@ const AdminReferralManager = dynamic(() => import('@/components/AdminReferralMan
   ssr: false,
 })
 
+const AdminPaywallEvents = dynamic(() => import('@/components/AdminPaywallEvents'), {
+  ssr: false,
+})
+
 export default function AdminPage() {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
 
@@ -38,6 +42,7 @@ export default function AdminPage() {
           </p>
         </div>
         <AdminReferralManager />
+        <AdminPaywallEvents />
       </main>
     </div>
   )

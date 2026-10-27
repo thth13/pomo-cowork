@@ -71,10 +71,27 @@ model User {
   chatMessages         ChatMessage[]     @relation("ChatMessages")
   referralLinks        ReferralLink[]
   referralSignups      ReferralSignup[]
+  paywallEvents        PaywallEvent[]
   wallMessagesReceived UserWallMessage[] @relation("WallProfileUser")
   wallMessagesSent     UserWallMessage[] @relation("WallAuthorUser")
 
   @@map("users")
+}
+
+model PaywallEvent {
+  id              String   @id @default(cuid())
+  event           String   @db.VarChar(40)
+  plan            String?  @db.VarChar(10)
+  pagePath        String   @db.VarChar(500)
+  isAuthenticated Boolean
+  userId          String?
+  createdAt       DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([event, createdAt])
+  @@index([userId, createdAt])
+  @@map("paywall_events")
 }
 
 model ReferralLink {

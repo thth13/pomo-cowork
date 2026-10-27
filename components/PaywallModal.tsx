@@ -9,6 +9,7 @@ import { initializePaddle, Paddle, CheckoutEventNames, Environments } from '@pad
 import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from '@/components/AuthModal'
 import { useI18n } from '@/components/I18nProvider'
+import { logPaywallEvent } from '@/lib/paywallEvents'
 
 interface PaywallModalProps {
   onClose: () => void
@@ -26,7 +27,14 @@ export const PaywallModal = ({ onClose, description }: PaywallModalProps) => {
   const { isAuthenticated, token, checkAuth, user } = useAuthStore()
   const { t } = useI18n()
   const paywallTranslationsRef = useRef(t.paywall)
+  const hasLoggedOpen = useRef(false)
   paywallTranslationsRef.current = t.paywall
+
+  useEffect(() => {
+    if (hasLoggedOpen.current) return
+    hasLoggedOpen.current = true
+    void logPaywallEvent('paywall_open')
+  }, [])
 
   const features = [
     { id: 'wallpapers', label: t.paywall.premiumWallpapers, icon: ImageIcon },
@@ -97,6 +105,7 @@ export const PaywallModal = ({ onClose, description }: PaywallModalProps) => {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleCheckout = async () => {
+    void logPaywallEvent('paywall_checkout_click', selectedPlan)
     if (!isAuthenticated) {
       setIsAuthModalOpen(true)
       return

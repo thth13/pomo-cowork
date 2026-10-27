@@ -567,6 +567,20 @@ preserves values and focuses the first invalid field once inputs are enabled.
 Confirmation is required only for email registration, stays masked by default, and is
 never stored. Pending submissions disable inputs and block duplicate requests.
 
+## Admin paywall activity
+
+Source: user request dated 2026-10-27; `app/api/admin/paywall-events/route.ts`
+uses `lib/admin.ts` authorization before exposing event or account data.
+`AdminPaywallEvents` shows opens and checkout clicks newest first, 50 per page;
+the `paywallPage` URL parameter preserves navigation. Refresh and retry share the
+Refresh control. Loading, empty, error, expired-session and forbidden states are
+inline; requests abort on account/page changes and time out after 15 seconds.
+Account identity comes from the verified event token, never a client-supplied user ID.
+Registered accounts show username, email and ID; anonymous accounts show username
+and ID; missing/deleted accounts are unknown. Times explicitly use Europe/Kyiv and copy
+follows English/Spanish. The table scrolls horizontally on narrow screens and
+reuses existing admin utilities and community buttons without changing tokens.
+
 ## Admin Premium grants
 
 Source: user request dated 2026-10-06; `app/api/admin/pro-users/route.ts` owns
