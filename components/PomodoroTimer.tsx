@@ -4,7 +4,6 @@ import { isTaskSelectionLocked } from '@/lib/taskSelection'
 
 import { usePetStore } from '@/store/usePetStore'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { useSWRConfig } from 'swr'
 import { Settings } from 'lucide-react'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useTimerActionsStore } from '@/store/useTimerActionsStore'
@@ -12,12 +11,16 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { useSocket } from '@/hooks/useSocket'
 import { useWakeLock } from '@/hooks/useWakeLock'
+import { useSessionRestore } from '@/hooks/useSessionRestore'
+import { useTimerSync } from '@/hooks/useTimerSync'
 import { saveTimerDurations, isValidTimerDurations, TIMER_SETTINGS_STORAGE_KEY } from '@/services/timerSettingsService'
+import { usePageVisibility } from '@/hooks/usePageVisibility'
 import { useAutoStart } from '@/hooks/useAutoStart'
-import { SessionStatus, SessionType, type PomodoroSession } from '@/types'
+import { SessionStatus, SessionType } from '@/types'
 import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUser'
 import { sendMessageToServiceWorker } from '@/lib/serviceWorker'
 import { sessionService, SessionData } from '@/services/sessionService'
+import { taskService } from '@/services/taskService'
 import { useNotifications } from '@/hooks/useNotifications'
 import { TaskOption } from '@/types/task'
 import ProjectPicker from '@/components/journal/ProjectPicker'
@@ -193,7 +196,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     startSession,
     pauseSession,
     resumeSession,
+    completeSession,
     cancelSession,
+    restoreSession,
     previewSessionType,
     initializeWithSettings,
     taskOptions,
@@ -210,7 +215,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     setCurrentRoom,
     resetToGlobal,
   } = useRoomStore()
-  const { emitSessionStart, emitSessionSync, emitSessionPause, emitSessionEnd } = useSocket()
+  const { emitSessionStart, emitSessionSync, emitSessionPause, emitSessionEnd, emitTimerTick } = useSocket()
 
   const [timerState, dispatchTimer] = useReducer(
     timerReducer,
@@ -233,7 +238,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     isAutoStartEnabled,
     isTimeTrackerMode,
   } = timerState
+  const completedSessionIdRef = useRef<string | null>(null)
   const startRequestIdRef = useRef(0)
+  const lastStoppedSessionIdRef = useRef<string | null>(null)
   const canTriggerAction = useThrottle(1000)
   const [settingsSaveError, setSettingsSaveError] = useState('')
   const [isPausing, setIsPausing] = useState(false)
@@ -317,11 +324,27 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
   useWakeLock(Boolean(isRunning && currentSession))
 
-  const { mutate } = useSWRConfig()
-  const mutateSessions = useCallback(() => {
-    const account = useAuthStore.getState().user
-    return account && !account.isAnonymous ? mutate(['/api/timer', account.id]) : Promise.resolve()
-  }, [mutate])
+  const { mutateSessions } = useSessionRestore({
+    user,
+    currentSession,
+    restoreSession,
+    setSessionType,
+    emitSessionSync,
+    ignoreSessionIdRef: lastStoppedSessionIdRef,
+    busy: isStarting || isStopping || isPausing || isResuming,
+    onRemoteMode: type => setIsTimeTrackerMode(type === SessionType.TIME_TRACKING),
+    onRemoteEnd: (completed, type) => {
+      clearAutoStart()
+      if (completed) completeSession()
+      else cancelSession()
+      const completedCount = useTimerStore.getState().completedSessions
+      const nextType = completed && type === SessionType.WORK
+        ? completedCount > 0 && completedCount % useTimerStore.getState().longBreakAfter === 0 ? SessionType.LONG_BREAK : SessionType.SHORT_BREAK
+        : SessionType.WORK
+      setSessionType(nextType)
+      previewSessionType(isTimeTrackerMode ? SessionType.TIME_TRACKING : nextType)
+    },
+  })
 
   const { showNotification, playSound } = useNotifications(
     notificationEnabled,
@@ -358,10 +381,8 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
   }, [workDuration, shortBreak, longBreak, longBreakAfter, setSettingsForm])
 
   useEffect(() => {
-    if (!currentSession) return
-    setSessionType(currentSession.type)
-    setIsTimeTrackerMode(currentSession.type === SessionType.TIME_TRACKING)
-  }, [currentSession, setSessionType, setIsTimeTrackerMode])
+    completedSessionIdRef.current = null
+  }, [currentSession?.id])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -548,7 +569,6 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
           currentSession: {
             ...state.currentSession,
             id: dbSession.id,
-            presenceToken: dbSession.presenceToken,
             projectId: dbSession.projectId,
             workProjectId: dbSession.workProjectId,
             taskRecordId: dbSession.taskRecordId,
@@ -569,7 +589,6 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
       const sessionData = {
         id: dbSession.id,
-        presenceToken: dbSession.presenceToken,
         roomId: currentRoomId,
         task: taskName,
         duration,
@@ -798,11 +817,10 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
             currentSession: {
               ...state.currentSession,
               id: dbSession.id,
-              presenceToken: dbSession.presenceToken,
               projectId: dbSession.projectId,
-              workProjectId: dbSession.workProjectId,
-              taskRecordId: dbSession.taskRecordId,
-              projectName: dbSession.projectName,
+            workProjectId: dbSession.workProjectId,
+            taskRecordId: dbSession.taskRecordId,
+            projectName: dbSession.projectName,
               startedAt: optimisticStartedAt,
             },
           }
@@ -820,7 +838,6 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         // Emit to WebSocket with real session ID
         const sessionData = {
           id: dbSession.id,
-          presenceToken: dbSession.presenceToken,
           roomId: currentRoomId,
           task: taskName,
           duration,
@@ -923,8 +940,6 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         pausedAt: new Date().toISOString(),
         timeRemaining: currentTimeRemaining,
       })
-      const persistedPause = useTimerStore.getState().currentSession
-      if (persistedPause?.id === sessionId) emitSessionSync({ ...persistedPause, username, avatarUrl, timeRemaining: currentTimeRemaining })
       void mutateSessions()
     } catch (error) {
       console.error('Failed to pause session:', error)
@@ -1011,8 +1026,6 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         timeRemaining: currentTimeRemaining,
         startedAt: resumedStartedAt,
       })
-      const persistedResume = useTimerStore.getState().currentSession
-      if (persistedResume?.id === sessionId) emitSessionSync({ ...persistedResume, username, avatarUrl, timeRemaining: currentTimeRemaining })
       void mutateSessions()
     } catch (error) {
       console.error('Failed to resume session:', error)
@@ -1055,6 +1068,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     try {
       if (currentSession) {
         const sessionId = currentSession.id
+        lastStoppedSessionIdRef.current = sessionId
         const startedAtMs = currentSession.startedAt ? new Date(currentSession.startedAt).getTime() : null
         const isEarlyStop = startedAtMs ? Date.now() - startedAtMs < 60 * 1000 : false
         const currentTimeRemaining = useTimerStore.getState().timeRemaining
@@ -1105,6 +1119,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
           console.error('Failed to update session:', error)
         }
       } else {
+        lastStoppedSessionIdRef.current = null
         cancelSession()
       }
     } finally {
@@ -1120,9 +1135,56 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     }
   }
 
-  const handleSessionComplete = useCallback((sessionSnapshot: PomodoroSession) => {
+  const handleSessionComplete = useCallback(async () => {
     clearAutoStart()
-    const completedType = sessionSnapshot.type
+    if (!currentSession) {
+      return
+    }
+
+    if (completedSessionIdRef.current === currentSession.id) {
+      return
+    }
+
+    completedSessionIdRef.current = currentSession.id
+
+    const completedType = currentSession.type
+    const sessionSnapshot = currentSession
+    
+    try {
+      await sessionService.complete(sessionSnapshot.id)
+      if (completedType === SessionType.WORK || completedType === SessionType.TIME_TRACKING) {
+        usePetStore.getState().reward(sessionSnapshot.id, sessionSnapshot.duration)
+      }
+      void mutateSessions()
+
+      console.log('Checking pomodoro increment conditions:', {
+        completedType,
+        isWork: completedType === SessionType.WORK,
+        selectedTask,
+      })
+      
+      if (
+        completedType === SessionType.WORK &&
+        selectedTask &&
+        selectedTask.id
+      ) {
+        try {
+          console.log('Incrementing pomodoro for task:', selectedTask.id)
+          await taskService.incrementPomodoro(selectedTask.id)
+          console.log('Pomodoro counter incremented successfully for task:', selectedTask.id)
+        } catch (error) {
+          console.error('Failed to increment task pomodoro:', error)
+        }
+      } else {
+        console.log('Skipping pomodoro increment - conditions not met')
+      }
+    } catch (error) {
+      console.error('Failed to update session:', error)
+    }
+    
+    emitSessionEnd(sessionSnapshot.id, 'completed')
+    
+    completeSession()
 
     const auth = useAuthStore.getState()
     if (
@@ -1146,7 +1208,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     }
 
     if (onSessionComplete) {
-      void Promise.resolve().then(onSessionComplete).catch(error => console.error('Failed to refresh completed session:', error))
+      console.log('Calling onSessionComplete callback')
+      await onSessionComplete()
+      console.log('onSessionComplete callback finished')
     }
 
     const completionTitle = (() => {
@@ -1184,6 +1248,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     previewSessionType(nextType)
   }, [
     clearAutoStart,
+    completeSession,
+    currentSession,
+    emitSessionEnd,
     getNextSessionType,
     getSessionDuration,
     getSessionTypeLabel,
@@ -1193,8 +1260,10 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     playSound,
     previewSessionType,
     scheduleAutoStart,
+    selectedTask,
     showNotification,
     setSessionType,
+    mutateSessions,
     t.timer.longBreakCompleted,
     t.timer.completed,
     t.timer.nextSessionReady,
@@ -1203,26 +1272,39 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     t.timer.workCompleted,
   ])
 
-  useEffect(() => {
-    const presentation = {
-      timerWindow: pictureInPicture.pipWindow,
-      onCompleted: handleSessionComplete,
-      onRemoteMode: (type: SessionType) => {
-        setSessionType(type)
-        setIsTimeTrackerMode(type === SessionType.TIME_TRACKING)
-      },
-      onRemoteEnd: (completed: boolean, type: SessionType) => {
-        clearAutoStart()
-        const nextType = completed ? getNextSessionType(type) : SessionType.WORK
-        setSessionType(nextType)
-        previewSessionType(isTimeTrackerMode ? SessionType.TIME_TRACKING : nextType)
-      },
+  useTimerSync({
+    timerWindow: pictureInPicture.pipWindow,
+    currentSession,
+    isRunning,
+    onSessionComplete: handleSessionComplete,
+    emitTimerTick,
+  })
+
+  const handleVisibilityRecalculate = useCallback(() => {
+    const session = useTimerStore.getState().currentSession
+    const running = useTimerStore.getState().isRunning
+
+    if (session && running) {
+      const startTime = new Date(session.startedAt).getTime()
+      const now = Date.now()
+      const elapsed = Math.floor((now - startTime) / 1000)
+      const totalDuration = session.duration * 60
+      const newTimeRemaining = Math.max(0, totalDuration - elapsed)
+
+      const currentTimeRemaining = useTimerStore.getState().timeRemaining
+
+      if (Math.abs(newTimeRemaining - currentTimeRemaining) > 2) {
+        useTimerStore.setState({ timeRemaining: newTimeRemaining })
+        console.log('Time recalculated on tab focus:', newTimeRemaining)
+      }
+
+      if (newTimeRemaining === 0) {
+        handleSessionComplete()
+      }
     }
-    useTimerActionsStore.setState({ presentation })
-    return () => {
-      if (useTimerActionsStore.getState().presentation === presentation) useTimerActionsStore.setState({ presentation: null })
-    }
-  }, [pictureInPicture.pipWindow, handleSessionComplete, setSessionType, setIsTimeTrackerMode, clearAutoStart, getNextSessionType, previewSessionType, isTimeTrackerMode])
+  }, [handleSessionComplete])
+
+  usePageVisibility(handleVisibilityRecalculate)
 
   const getSessionTypeColor = (type: SessionType): string => {
     switch (type) {

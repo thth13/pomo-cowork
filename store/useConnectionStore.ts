@@ -1,11 +1,8 @@
 import { create } from 'zustand'
-import type { RoomAccessSnapshot } from '@/types'
 
 interface ConnectionState {
   isConnected: boolean
   isChecking: boolean
-  roomAccess: RoomAccessSnapshot | null
-  setRoomAccess: (access: RoomAccessSnapshot | null) => void
   onlineUserIds: Record<string, true>
   onlineUserCount: number
   anonymousOnlineCount: number
@@ -22,8 +19,6 @@ interface ConnectionState {
 export const useConnectionStore = create<ConnectionState>((set) => ({
   isConnected: false,
   isChecking: true,
-  roomAccess: null,
-  setRoomAccess: (roomAccess) => set({ roomAccess }),
   onlineUserIds: {},
   onlineUserCount: 0,
   anonymousOnlineCount: 0,

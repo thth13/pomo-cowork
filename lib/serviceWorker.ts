@@ -49,7 +49,7 @@ function waitForServiceWorker(worker: ServiceWorker): Promise<void> {
 }
 
 export function sendMessageToServiceWorker(message: any) {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator) || !navigator.serviceWorker.controller) {
+  if (typeof window === 'undefined' || !navigator.serviceWorker.controller) {
     console.warn('Service Worker controller not available')
     return
   }
@@ -58,7 +58,7 @@ export function sendMessageToServiceWorker(message: any) {
 }
 
 export function listenToServiceWorker(callback: (message: any) => void) {
-  if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return () => {}
+  if (typeof window === 'undefined') return () => {}
 
   const handler = (event: MessageEvent) => {
     callback(event.data)

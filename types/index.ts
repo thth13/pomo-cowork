@@ -32,8 +32,6 @@ export interface UserSettings {
 }
 
 export interface PomodoroSession {
-  /** Private guest publishing capability; never include in public presence. */
-  presenceToken?: string
   id: string
   userId: string
   user?: User
@@ -151,8 +149,6 @@ export interface TimerState {
 }
 
 export interface ActiveSession {
-  /** Outbound only; the socket server strips credentials from snapshots. */
-  presenceToken?: string
   id: string
   userId: string
   username: string
@@ -200,21 +196,6 @@ export interface ChatMessage {
     duration?: number
     task?: string
   }
-}
-
-export interface ChatHistoryRequest {
-  requestId: string
-  roomId: string | null
-}
-
-export interface ChatHistoryResponse extends ChatHistoryRequest {
-  messages: ChatMessage[]
-}
-
-export interface RoomAccessSnapshot {
-  version: number | null
-  status: 'loading' | 'ready' | 'error'
-  roomIds: string[]
 }
 
 export interface UserSearchResult {

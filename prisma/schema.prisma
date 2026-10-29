@@ -172,26 +172,12 @@ model Room {
   sessions     PomodoroSession[]
   invites      RoomInvite[]
   chatMessages ChatMessage[]
-  challenge    RoomChallenge?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([ownerId])
   @@map("rooms")
-}
-
-model RoomChallenge {
-  id            String   @id @default(cuid())
-  roomId        String   @unique
-  title         String   @db.VarChar(80)
-  targetMinutes Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  room Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
-
-  @@map("room_challenges")
 }
 
 model RoomMember {

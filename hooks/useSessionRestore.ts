@@ -1,6 +1,7 @@
 import { MutableRefObject, useCallback, useEffect, useRef } from 'react'
 import useSWR from 'swr'
 import { PomodoroSession, SessionStatus, SessionType, User } from '@/types'
+import { sessionService } from '@/services/sessionService'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { sendMessageToServiceWorker } from '@/lib/serviceWorker'
@@ -39,6 +40,7 @@ export function useSessionRestore(options: UseSessionRestoreOptions) {
   const latest = useRef(options)
   latest.current = options
   const userId = options.user && !options.user.isAnonymous ? options.user.id : null
+  const completionAttempts = useRef(new Map<string, { retryAt: number; pending: boolean }>())
   const lastAppliedSnapshot = useRef<AccountTimerSnapshot | null>(null)
   const { data, mutate } = useSWR<AccountTimerSnapshot>(userId ? ['/api/timer', userId] : null, async () => {
     const localFingerprint = fingerprint()
@@ -99,17 +101,29 @@ export function useSessionRestore(options: UseSessionRestoreOptions) {
     const remaining = session.status === SessionStatus.PAUSED
       ? Math.max(0, session.remainingSeconds ?? session.duration * 60)
       : Math.max(0, session.duration * 60 - Math.floor((data.serverNow - new Date(session.startedAt).getTime()) / 1000))
-    const changed = current?.id !== session.id || current.status !== session.status || current.startedAt !== session.startedAt || current.pausedAt !== session.pausedAt || current.updatedAt !== session.updatedAt
+    if (remaining === 0 && session.status === SessionStatus.ACTIVE) {
+      const key = `${user.id}:${session.id}`
+      const attempt = completionAttempts.current.get(key) ?? { retryAt: 0, pending: false }
+      if (!attempt.pending && Date.now() >= attempt.retryAt) {
+        attempt.pending = true
+        completionAttempts.current.set(key, attempt)
+        void sessionService.complete(session.id, session.updatedAt).then(() => mutate()).catch(() => {
+          attempt.retryAt = Date.now() + 15000
+        }).finally(() => { attempt.pending = false })
+      }
+      return
+    }
+    const changed = current?.id !== session.id || current.status !== session.status || current.startedAt !== session.startedAt || current.pausedAt !== session.pausedAt
     if (!changed) return
     restoreSession({ ...session, timeRemaining: remaining })
     setSessionType(session.type)
     onRemoteMode?.(session.type)
-    if (session.status === SessionStatus.ACTIVE && remaining > 0) {
+    if (session.status === SessionStatus.ACTIVE) {
       sendMessageToServiceWorker({ type: 'START_TIMER', payload: { sessionId: session.id, duration: session.duration, timeRemaining: remaining, startedAt: session.startedAt } })
     } else {
       sendMessageToServiceWorker({ type: 'STOP_TIMER' })
     }
-    if (remaining > 0) emitSessionSync({ ...session, username: user.username, avatarUrl: user.avatarUrl, timeRemaining: remaining })
+    emitSessionSync({ ...session, username: user.username, avatarUrl: user.avatarUrl, timeRemaining: remaining })
   }, [data, userId, options.busy, mutate])
 
   const mutateSessions = useCallback(() => mutate(), [mutate])

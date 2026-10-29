@@ -1,4 +1,4 @@
-import { PomodoroSession, SessionStatus, SessionType } from '@/types'
+import { PomodoroSession, SessionType } from '@/types'
 import { getOrCreateAnonymousId } from '@/lib/anonymousUser'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -28,10 +28,7 @@ const buildHeaders = (token?: string | null) => {
 }
 
 interface SessionUpdateResult {
-  status?: SessionStatus
-  alreadyRemoved?: boolean
   progression?: {
-    awardedNow?: boolean
     experience: number
     currentStreak: number
     longestStreak: number
@@ -160,7 +157,7 @@ export const sessionService = {
     return result
   },
 
-  async complete(id: string, expectedUpdatedAt?: string, completedAt = new Date().toISOString()) {
+  async complete(id: string, expectedUpdatedAt?: string) {
     if (id.startsWith('temp_')) {
       return null
     }
@@ -175,8 +172,8 @@ export const sessionService = {
       const body: Record<string, any> = {
         ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}),
         status: 'COMPLETED',
-        completedAt,
-        endedAt: completedAt,
+        completedAt: new Date().toISOString(),
+        endedAt: new Date().toISOString(),
         pausedAt: null,
         timeRemaining: 0,
       }
@@ -189,7 +186,6 @@ export const sessionService = {
         method: 'PUT',
         headers: buildHeaders(token),
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(20000),
       })
 
       if (!response.ok) {
@@ -198,8 +194,6 @@ export const sessionService = {
 
       const result = await response.json()
       notifyTimerChanged(owner)
-      if (useAuthStore.getState().token !== token ||
-          (useAuthStore.getState().user?.id ?? getOrCreateAnonymousId()) !== owner) return result as SessionUpdateResult
       return applySessionProgression(result)
     })()
 

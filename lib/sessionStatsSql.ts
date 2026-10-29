@@ -4,10 +4,8 @@ const sessionColumn = (tableAlias: string, column: string) =>
   Prisma.raw(`"${tableAlias}"."${column}"`)
 
 export const getEffectiveSessionMinutesSql = (tableAlias: string) => {
-  // Widen before arithmetic, including for legacy rows accepted without limits.
-  // Casting the result of duration * 60 would happen after an int4 overflow.
-  const duration = Prisma.sql`${sessionColumn(tableAlias, 'duration')}::bigint`
-  const remainingSeconds = Prisma.sql`${sessionColumn(tableAlias, 'remainingSeconds')}::bigint`
+  const duration = sessionColumn(tableAlias, 'duration')
+  const remainingSeconds = sessionColumn(tableAlias, 'remainingSeconds')
   const startedAt = sessionColumn(tableAlias, 'startedAt')
   const endedAt = sessionColumn(tableAlias, 'endedAt')
   const completedAt = sessionColumn(tableAlias, 'completedAt')
@@ -36,7 +34,7 @@ export const getEffectiveSessionMinutesSql = (tableAlias: string) => {
           ELSE GREATEST(
             0,
             ROUND((${duration} * 60 - ${remainingSeconds}) / 60.0)
-          )::bigint
+          )::integer
         END
       WHEN COALESCE(${completedAt}, ${endedAt}) IS NOT NULL
       THEN
@@ -80,7 +78,7 @@ export const getEffectiveSessionMinutesSql = (tableAlias: string) => {
                   )
                 ) / 60.0
               )
-            )::bigint
+            )::integer
           END
         )
       ELSE GREATEST(0, ${duration})

@@ -4,38 +4,13 @@ import { useCallback, useEffect } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
-import { SessionStatus, type ActiveSession, type ChatHistoryRequest, type ChatHistoryResponse, type ChatMessage, type RoomAccessSnapshot, type User } from '@/types'
+import { SessionStatus, type ActiveSession, type ChatMessage, type User } from '@/types'
 import { useConnectionStore } from '@/store/useConnectionStore'
-import { useRoomStore } from '@/store/useRoomStore'
 import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUser'
 
 // Singleton socket to avoid multiple connections per tab
 let sharedSocket: Socket | null = null
 let initialized = false
-let roomAccessVersion = 0
-let roomAccessTimeout: ReturnType<typeof setTimeout> | null = null
-
-const clearRoomAccessTimeout = () => {
-  if (roomAccessTimeout) clearTimeout(roomAccessTimeout)
-  roomAccessTimeout = null
-}
-const watchRoomAccess = () => {
-  if (roomAccessTimeout) return
-  const version = roomAccessVersion
-  roomAccessTimeout = setTimeout(() => {
-    roomAccessTimeout = null
-    if (version === roomAccessVersion && useConnectionStore.getState().roomAccess?.status !== 'ready') {
-      useConnectionStore.getState().setRoomAccess({ version, status: 'error', roomIds: [] })
-    }
-  }, 12000)
-}
-const resetRoomAccess = () => {
-  roomAccessVersion += 1
-  clearRoomAccessTimeout()
-  useConnectionStore.getState().setRoomAccess(null)
-  useTimerStore.getState().setActiveSessions([])
-  watchRoomAccess()
-}
 
 type SessionEnd = {
   sessionId: string
@@ -78,9 +53,9 @@ const flushSessionEvents = () => {
 
 const getSocketUrl = () => process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:4000'
 
-const buildPresencePayload = (user: User | null): { userId: string | null; anonymousId?: string | null; username?: string; avatarUrl?: string | null; token?: string } => {
+const buildPresencePayload = (user: User | null): { userId: string | null; anonymousId?: string | null; username?: string; avatarUrl?: string | null } => {
   if (user?.id) {
-    return { userId: user.id, username: user.username ?? undefined, avatarUrl: user.avatarUrl ?? null, anonymousId: null, token: useAuthStore.getState().token ?? undefined }
+    return { userId: user.id, username: user.username ?? undefined, avatarUrl: user.avatarUrl ?? null, anonymousId: null }
   }
   const anonymousId = getOrCreateAnonymousId()
   return { userId: null, anonymousId, username: getAnonymousUsername(), avatarUrl: null }
@@ -89,10 +64,8 @@ const buildPresencePayload = (user: User | null): { userId: string | null; anony
 // Every session snapshot carries the latest public profile data.
 const withSessionProfile = (session: ActiveSession): ActiveSession => {
   const user = useAuthStore.getState().user
-  const current = useTimerStore.getState().currentSession
   return {
     ...session,
-    presenceToken: session.presenceToken ?? (current?.id === session.id ? current.presenceToken : undefined) ?? sessionSnapshots.get(session.id)?.presenceToken,
     userId: session.userId,
     username: user?.username ?? getAnonymousUsername(),
     avatarUrl: user?.avatarUrl,
@@ -151,8 +124,7 @@ const initSocketOnce = () => {
 
   // Socket.IO fires connect on both initial connection and every reconnect.
   socket.on('connect', () => {
-    resetRoomAccess()
-    socket.emit('join-presence', { ...buildPresencePayload(useAuthStore.getState().user), accessVersion: roomAccessVersion })
+    socket.emit('join-presence', buildPresencePayload(useAuthStore.getState().user))
     flushSessionEvents()
     syncCurrentSession()
     socket.emit('get-active-sessions')
@@ -162,8 +134,7 @@ const initSocketOnce = () => {
 
   // Subscribe once, regardless of how many components use this hook.
   useAuthStore.subscribe((state, previous) => {
-    if (state.user === previous.user && state.token === previous.token) return
-    if (state.user?.id !== previous.user?.id || state.token !== previous.token) resetRoomAccess()
+    if (state.user === previous.user) return
     let timer = useTimerStore.getState()
     const convertedId = state.convertedAnonymousId
     if (state.user && convertedId && convertedId !== state.user.id) {
@@ -190,7 +161,7 @@ const initSocketOnce = () => {
       }
     }
     if (!socket.connected) return
-    socket.emit('join-presence', { ...buildPresencePayload(state.user), accessVersion: roomAccessVersion })
+    socket.emit('join-presence', buildPresencePayload(state.user))
     flushSessionEvents()
     syncCurrentSession()
   })
@@ -199,31 +170,9 @@ const initSocketOnce = () => {
     if (useTimerStore.getState().currentSession?.id === sessionId) syncCurrentSession()
   })
 
-  socket.on('session-update', (sessions: ActiveSession[], access?: RoomAccessSnapshot) => {
-    if (!access || access.version !== roomAccessVersion) return
-    if (!['loading', 'ready', 'error'].includes(access.status) || !Array.isArray(access.roomIds)) return
-    const previousAccess = useConnectionStore.getState().roomAccess
-    useConnectionStore.getState().setRoomAccess(access)
-    if (access.status === 'loading') watchRoomAccess()
-    else clearRoomAccessTimeout()
+  socket.on('session-update', (sessions: ActiveSession[]) => {
     setActiveSessions(sessions)
-    if (access.status === 'ready' && previousAccess?.status !== 'ready') {
-      window.dispatchEvent(new Event('pomo:room-access-restored'))
-    }
   })
-
-  // New membership and room privacy changes must not wait for the access cache.
-  const refreshSessionAccess = () => {
-    if (socket.connected && document.visibilityState === 'visible') {
-      socket.emit('get-active-sessions', { refreshAccess: true })
-      syncCurrentSession()
-    }
-  }
-  useRoomStore.subscribe((state, previous) => {
-    if (state.currentRoomId !== previous.currentRoomId) refreshSessionAccess()
-  })
-  window.addEventListener('focus', refreshSessionAccess)
-  document.addEventListener('visibilitychange', refreshSessionAccess)
 
   socket.on('user-online', (data: { userId: string, online: boolean }) => {
     updateUserPresence(data.userId, data.online)
@@ -239,8 +188,6 @@ const initSocketOnce = () => {
   })
 
   socket.on('connect_error', () => {
-    clearRoomAccessTimeout()
-    useConnectionStore.getState().setRoomAccess(null)
     setActiveSessions([])
     resetPresence()
     setConnectionStatus(false)
@@ -248,8 +195,6 @@ const initSocketOnce = () => {
   })
 
   socket.on('disconnect', () => {
-    clearRoomAccessTimeout()
-    useConnectionStore.getState().setRoomAccess(null)
     setActiveSessions([])
     setConnectionStatus(false)
     resetPresence()
@@ -262,16 +207,6 @@ export function useSocket() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     initSocketOnce()
-  }, [])
-
-  const refreshActiveSessions = useCallback(() => {
-    if (sharedSocket?.connected) {
-      if (useConnectionStore.getState().roomAccess?.status !== 'ready') {
-        useConnectionStore.getState().setRoomAccess({ version: roomAccessVersion, status: 'loading', roomIds: [] })
-        watchRoomAccess()
-      }
-      sharedSocket.emit('get-active-sessions', { refreshAccess: true })
-    }
   }, [])
 
   const emitSessionStart = (sessionData: ActiveSession) => {
@@ -294,7 +229,7 @@ export function useSocket() {
   }, [])
 
   const emitSessionPause = (sessionId: string) => {
-    if (sharedSocket?.connected) sharedSocket.emit('session-pause', { sessionId, presenceToken: sessionSnapshots.get(sessionId)?.presenceToken })
+    if (sharedSocket?.connected) sharedSocket.emit('session-pause', sessionId)
   }
 
   const emitSessionEnd = (
@@ -312,17 +247,17 @@ export function useSocket() {
   }
 
   const emitTimerTick = (sessionId: string, timeRemaining: number) => {
-    if (sharedSocket?.connected) sharedSocket.emit('timer-tick', { sessionId, timeRemaining, presenceToken: sessionSnapshots.get(sessionId)?.presenceToken })
+    if (sharedSocket?.connected) sharedSocket.emit('timer-tick', { sessionId, timeRemaining })
   }
 
   // Chat API
-  const sendChatMessage = (payload: { text: string; messageId: string; username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
+  const sendChatMessage = (payload: { text: string; username?: string; avatarUrl?: string | null; userId?: string | null; roomId?: string | null }) => {
     const { user, token, isAuthenticated } = useAuthStore.getState()
     if (!isAuthenticated || !user || user.isAnonymous || !token) return
     sharedSocket?.emit('chat-send', { ...payload, token })
   }
 
-  const requestChatHistory = (payload: ChatHistoryRequest) => {
+  const requestChatHistory = (payload?: { roomId?: string | null }) => {
     sharedSocket?.emit('chat-history', payload)
   }
 
@@ -334,11 +269,11 @@ export function useSocket() {
     sharedSocket?.off('chat-new', handler)
   }
 
-  const onChatHistory = (handler: (response: ChatHistoryResponse) => void) => {
+  const onChatHistory = (handler: (messages: ChatMessage[]) => void) => {
     sharedSocket?.on('chat-history', handler)
   }
 
-  const offChatHistory = (handler: (response: ChatHistoryResponse) => void) => {
+  const offChatHistory = (handler: (messages: ChatMessage[]) => void) => {
     sharedSocket?.off('chat-history', handler)
   }
 
@@ -407,7 +342,6 @@ export function useSocket() {
   }
 
   return {
-    refreshActiveSessions,
     emitSessionStart,
     emitSessionSync,
     emitSessionPause,

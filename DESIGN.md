@@ -646,26 +646,12 @@ composition: restrained pixel headings, readable Inter content, square avatars,
 compact metric strips and offset panel shadows. Room-owned gradients remain available
 inside the room header. Personal timer scenery retains its existing scope.
 
-The directory separates the global desk from the room grid. Room detail puts live
-coworkers beside a daily group goal, followed by rankings and personal contribution.
-Its signature is the number of members who reached today's goal, with each person's
-own progress immediately below. The seven-day chart distinguishes room totals from
-the viewer's contribution, with exact values in a disclosure. Membership management
-stays in a separate disclosure below the working content. On phones the order is
-live activity, daily goal, personal contribution, rankings, then seven-day activity.
-Profiles put the activity map and wall beside recent sessions. Panels stack on phones, with horizontal overflow confined to
+The directory separates the global desk from the room grid. Room detail puts members
+beside contribution and weekly activity panels; profiles put the activity map and wall
+beside recent sessions. Panels stack on phones, with horizontal overflow confined to
 the yearly map. Chart colors follow theme tokens and avoid entrance animation.
 English/Spanish copy belongs to `lib/i18n/community.ts`, excluding these surfaces from
 DOM translation. `/profile` redirects authenticated users to their real public profile.
-
-RoomDashboard and RoomLiveActivity own their responsive CSS modules and reuse
-community panels, buttons, CommunityDialog, square avatars, Inter text, pixel goal/timer
-figures and the existing runtime tokens. Room-specific English/Spanish copy lives in
-lib/i18n/roomEngagement.ts, roomActivity.ts and roomPage.ts. No palette or font changes.
-The header offers Focus in this room and Invite friends; share opens the native shared
-dialog with a selectable link, copy feedback and optional system share sheet.
-Room headings use direct labels without motivational subtitles. The focus action
-shows help only when an active session prevents switching or leaving the room.
 
 The public profile shares the leaderboard's floating compact Navbar, including
 loading/error states. Its content reserves 84px plus the top safe area, reduced to
@@ -1091,29 +1077,3 @@ pixel title typography, close control and scene-glass treatment with the Premium
 purchase dialog. It keeps a compact 520px width and padded, scrollable message body.
 Glass uses the existing scenery tokens in `app/appearance.css` when scenery is
 rendered; plain backgrounds and forced colors retain the shared opaque surfaces.
-
-
-## Project planning preview — simplified workspace
-
-The `/projects/demo` preview uses one opaque reading surface, including with a scenic
-background selected. Scenery remains visible around the workspace. `app/globals.css`
-captures the canonical light/dark palette as `--pixel-solid-*` aliases at the root
-and dark-theme boundary; `ProjectDemo.module.css` maps these back to local pixel
-roles. No new color values or global scenery changes are introduced. The workspace
-uses Inter for content and labels; the running timer retains pixel digits.
-
-The header shows title, status, owner and quiet project actions. Compact metrics
-precede the four existing tabs. The plan contains a compact stage selector and task
-list, without the duplicate journal preview or per-task session squares. Session
-counts remain readable text. The next-session card has one primary focus action;
-its checklist and description expand on demand. Schedule/settings use a native
-closed disclosure, while deadline overruns stay visible outside it. On narrow
-screens the focus card precedes the task list. Buttons explicitly override the
-journal shell's generic button styles so text actions stay unboxed and the primary
-focus action retains its contrasting fill. Theme and keyboard states use local
-opaque tokens; the existing modal, timer and toast owners remain unchanged.
-
-Verification: targeted ESLint passed. No application, build, tests or tsc were run.
-The strict repository UI audit is blocked by an existing undecided native-select
-ownership finding in `app/stats/page.tsx`, outside this preview. Browser appearance
-and interaction verification remain user-owned.

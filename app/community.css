@@ -1,26 +1,4 @@
 .community-page { min-height: 100dvh; color: var(--pixel-ink); }
-.room-hub-page .community-layout { width: min(1240px, 100%); }
-.room-hub-page .room-detail-header { margin-bottom: 16px; }
-.room-hub-page .community-intro { align-items: center; }
-.room-hub-page .community-intro h1 { font-size: clamp(18px, 2.5vw, 26px); }
-.room-hub-focus-hint { margin: 0 0 20px; font-size: 12px; line-height: 1.8; color: var(--pixel-muted); }
-.room-hub-focus-hint .community-link { min-height: 32px; }
-.room-hub-page .room-hub-members { margin-top: 24px; padding: 0; }
-.room-hub-members > summary { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; cursor: pointer; list-style: none; font-size: 15px; font-weight: 600; }
-.room-hub-members > summary::-webkit-details-marker { display: none; }
-.room-hub-members > summary > span { display: flex; align-items: center; gap: 10px; }
-.room-hub-members > summary:hover { background: var(--pixel-screen); }
-.room-hub-members > summary:active { background: var(--pixel-shadow); }
-.room-hub-members > summary:focus-visible { outline: 2px solid var(--pixel-ink); outline-offset: 3px; }
-.room-hub-members[open] > summary { border-bottom: 1px solid var(--pixel-line); }
-.room-hub-members[open] > summary > svg { transform: rotate(180deg); }
-.room-hub-members-body { padding: 20px 24px; }
-.room-share-status { min-height: 24px; margin-top: 12px; color: var(--pixel-growth); font-size: 12px; }
-@media (max-width: 600px) {
-  .room-hub-page .community-intro { align-items: stretch; }
-  .room-hub-page .room-detail-header { padding: 18px; }
-  .room-hub-members > summary, .room-hub-members-body { padding: 16px; }
-}
 .profile-page .community-layout { padding-top: calc(84px + env(safe-area-inset-top)); }
 .community-layout { width: min(1160px, 100%); margin-inline: auto; padding: 104px 28px 64px; }
 .community-layout.personal-page-frame { width: min(var(--personal-page-width), calc(100% - 56px)); min-height: calc(100dvh - var(--personal-page-top)); padding-top: var(--personal-page-top); padding-bottom: var(--personal-page-bottom); }

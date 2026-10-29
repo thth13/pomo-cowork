@@ -4,8 +4,6 @@ import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { resolveExistingOrAnonymousUserId } from '@/lib/anonymousServer'
 import { SessionType, SessionStatus } from '@/types'
-import { MAX_SESSION_MINUTES } from '@/lib/sessionLimits'
-import { createSessionPresenceToken } from '@/lib/sessionPresence'
 
 export const dynamic = 'force-dynamic'
 
@@ -90,7 +88,6 @@ export async function POST(request: NextRequest) {
       !task.trim() ||
       !Number.isInteger(duration) ||
       duration < 1 ||
-      duration > MAX_SESSION_MINUTES ||
       !SESSION_TYPES.has(type)
     ) {
       return NextResponse.json(
@@ -144,12 +141,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Invalid room' }, { status: 400 })
       }
 
-      if (room.privacy === 'PRIVATE' && userId !== room.ownerId) {
-        const membership = await prisma.roomMember.findUnique({
-          where: { roomId_userId: { roomId: room.id, userId } },
-          select: { id: true },
-        })
-        if (!membership) {
+      if (room.privacy === 'PRIVATE') {
+        if (userId !== room.ownerId) {
           return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
         }
       }
@@ -225,9 +218,7 @@ export async function POST(request: NextRequest) {
       })
     })
 
-    return NextResponse.json({ ...session, presenceToken: createSessionPresenceToken(session.id, session.userId) }, {
-      headers: { 'Cache-Control': 'private, no-store' },
-    })
+    return NextResponse.json(session)
 
   } catch (error) {
     if (error instanceof Error && error.message === 'TIMER_CONFLICT') return NextResponse.json({ error: 'STALE' }, { status: 409 })

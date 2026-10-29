@@ -4,7 +4,7 @@
 
 - User redesign request: pixel identity, sprout companion, care and work as food.
 - README.md: coworking timer, tasks, real-time presence and statistics.
-- services/sessionService.ts and components/TimerRuntime.tsx: shared session lifecycle and completion; PomodoroTimer owns its controls and presentation.
+- services/sessionService.ts and components/PomodoroTimer.tsx: session lifecycle and completion.
 - store/useTimerStore.ts: running/paused state and countdown.
 - Existing API routes remain authoritative for permissions, billing and user data.
   This change introduces no server schema or authorization changes.
@@ -24,7 +24,7 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Study planner local timer | useLocalStudyTimer, StudyPlanner | Prepare session then Start focus; pause/resume/reset; complete countdown marks one session; manually prepare/start a break. Existing account timer is untouched. Leaving resets the local clock |
 | Study planner departure guard | UnsavedChangesGuard English copy/style variant, beforeunload | Existing native dialog owner intercepts navigation while a timer is prepared or persistence is unresolved; Stay here retains state. Browser unload warning is limited to those conditions |
 | Homepage room switch | RoomSwitch, useRoomStore, useTimerStore | Compact native button outside and above the Active Sessions panel when a current/last room exists; toggles Global/last room and preserves the existing running-session lock. Other routes retain the timer control |
-| Timer / session transitions | TimerRuntime, PomodoroTimer, TimerControls, useTimerStore, sessionService | One application-level clock/restoration/completion owner; controls keep start/pause/resume/stop, mounted timer presentation owns next-mode UI and auto-start |
+| Timer / session transitions | PomodoroTimer, TimerControls, useTimerStore, sessionService | Preserve existing start/pause/resume/stop/complete operations |
 | Local practice timers | PracticeTimer, practiceTimerConfig, useLocalStudyTimer | Ten independent in-memory page instances; Start/Pause/Resume/Reset; manual stage preparation and start; 1–180 whole-minute overrides; Flowmodoro count-up prepares elapsed/5 rest, minimum one minute. No persistence, account timer, sessions, stats, audio or analytics calls. Finished status is announced without per-second live updates. Leaving/reloading clears state. See docs/seo-practice-pages.md for boundaries and manual checks |
 | Native mini timer | useDocumentPictureInPicture, TimerPictureInPicture, TimerActions | User-opened Document Picture-in-Picture window; portal shares timer state, locale, action handlers and pending flags; closing never stops the session |
 | Chrome extension | chrome-extension/background.js, app/api/timer, useSessionRestore | Account-authenticated popup and background worker control the server session without an open site; Pro gating, server completion rewards and guarded transitions are shared |
@@ -41,7 +41,7 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Scrollbar | app/globals.css | Global visible baseline, theme tokens and forced-color fallback |
 | Notifications | useNotifications / NotificationToast | Existing global session feedback |
 | Progress / rank | TodayContribution / lib/ranks.ts / useAuthStore | Dock opens existing progress panel; localized current XP rank is available in its accessible name and tooltip |
-| Presence surface | ActiveSessions / HomeWorkspace / RoomLiveActivity | Homepage retains its permanent coworker rail. RoomLiveActivity filters the shared socket snapshot by viewed room, distinguishes focus/break/pause, and hides disconnected or unauthorized data. Loading and failed access checks cannot display an empty-room count. Viewing does not switch the timer workspace |
+| Presence surface | ActiveSessions / HomeWorkspace | Homepage uses a permanent right-side rail with flat coworker rows; stacks below the centered timer on narrow screens. Up to 719px, a 44px up/down disclosure smoothly collapses the full list into a horizontal avatar/elapsed-time strip; the visible title is omitted, accessible names remain. Sessions stay mounted and profile links remain available; reduced motion disables animation. Room screens retain panel variant |
 | Companion feedback | PocketGarden | Local, stable role=status region; no overlay or focus stealing |
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
@@ -557,13 +557,6 @@ guest submits. User-authored messages and typing require a registered account;
 and reading chat remain available to guests. A failed message save restores the draft
 without broadcasting an unsaved message. Verification remains static per user policy.
 
-Chat history is scoped to the room, account and current load. Socket fallback
-responses carry both room ID and request ID; stale, uncorrelated or duplicate
-responses cannot clear a newer history, including when an old response is empty.
-Closing/reopening Chat starts a new load; pagination from an earlier load is ignored.
-Restoring socket room access reloads the open room's HTTP history to recover messages
-missed while access checks were unavailable.
-
 ## Email registration validation
 
 AuthModal owns sign-up fields and inline, English/Spanish error feedback through
@@ -664,72 +657,3 @@ the entered values and focus the first invalid field. English/Spanish labels fol
 I18nProvider, including the conjunction in the existing registration terms copy.
 Visual tokens and rendered-scenery detection follow DESIGN.md and appearance.css.
 Verification is static; app execution, builds and tsc remain user-owned.
-
-## Room activity and shared progress
-
-Source: room redesign request 2026-10-27; domain rules and deployment are recorded
-in `docs/rooms.md`. `lib/rooms/stats.ts` owns recorded focus aggregates;
-`app/api/rooms/[id]/challenge/route.ts` owns goal validation, owner authorization,
-transactional ownership checks and concurrent-edit detection. A room goal is the
-same target for each current participant, renewed daily at midnight UTC.
-
-RoomDashboard owns rankings, challenge creation/editing, personal contribution,
-and the seven-day chart. Its native button group selects Today/This week/All time;
-this transient view choice stays local and never changes the shared room link.
-Daily values are available in a native disclosure and semantic table. Shared
-CommunityDialog owns the challenge editor and draft-discard confirmation; fields
-have inline errors and first-error focus. Account changes close private drafts and
-isolate fetched statistics. Background refresh preserves labeled stale data, while
-lost access hides it. Goal success and copy feedback use local polite status regions.
-
-RoomLiveActivity uses the existing shared socket without mutating currentRoom.
-Private room data is filtered on the server according to authenticated room access;
-client checks supplement that boundary. The current timer must finish before
-switching to another workspace. Focus in this room opens the canonical timer without
-implicitly starting a task. RoomShareDialog shares only the room URL and explains
-private membership requirements; Google sign-in returns to the originating room.
-Owner departure confirms ownership transfer, or deletion when no other member exists.
-
-TimerRuntime stays mounted under AuthProvider across room navigation. It owns session
-restoration, Service Worker/local-clock synchronization, deduplicated completion and
-bounded retries. A completed session uses its actual countdown deadline for recorded
-focus attribution. Next-mode UI, signup prompts and auto-start belong to the mounted
-PomodoroTimer presentation; leaving that screen removes those callbacks. Paused
-sessions cannot complete from a stale worker message, and a late save for another
-account/session cannot clear the current timer.
-
-The session completion transaction also increments the bound task's Pomodoro count
-once for a completed WORK session. Concurrent tabs, retries and extension completions
-use the same transition. The legacy separate increment request is acknowledged without
-writing, so an older tab cannot count the newly completed session a second time.
-
-Socket session snapshots carry access-check status and an account/connection version.
-RoomLiveActivity presents unavailable/loading/error separately from a verified empty
-room, keeps the focus count hidden until verification succeeds, and offers retry on
-failure. Access loss remains fail-closed; no database presence fallback is used.
-Publishing is verified separately: registered identity comes from the bearer token,
-and a guest must present a private capability issued when that session was created.
-Connected-session events load the authorized session's room, task, profile and timing
-through `/api/sessions/[id]/presence`; claimed identity/room fields never become live
-data. The database validates connected publishers; it does not populate online lists.
-Pause/tick events cannot modify another publisher's session. Identity changes and
-superseded reads invalidate pending checks; transient failures cannot publish a claim.
-
-Chat merges HTTP/socket history and pagination with current messages by persisted ID,
-preserves live arrivals and pending own messages, and retains removal tombstones for
-the current load. Socket publishing verifies a saved message's author and content
-before reusing its ID. Room/account changes invalidate pending history and send UI
-updates; a late send error cannot restore another room's draft.
-
-Challenge eligibility reads the owner, members and goal from one RepeatableRead
-snapshot, and rechecks private-room access against that snapshot.
-
-Room details and participants refresh together from the authorized snapshot returned
-by `GET /api/rooms/[id]/members`. Owner controls follow the refreshed owner ID without
-a page reload. Successful member removal cancels older reads before revalidating;
-responses for a different room or account cannot replace the current snapshot.
-Background refresh preserves an open settings draft and runs on focus, reconnect,
-visibility return and every minute while visible.
-
-Visual and behavior verification is static for this task. Builds, application startup,
-tsc and runtime testing remain user-owned.
