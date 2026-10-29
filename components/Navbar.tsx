@@ -323,22 +323,9 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     setIsMobileMenuOpen(false)
   }
 
-  const openAvatarNotifications = () => {
-    setIsAccountPreviewOpen(false)
-    setIsMenuOpen(false)
-    setIsMobileMenuOpen(false)
-    setIsNotificationsOpen(true)
-    void fetchNotifications().catch(() => undefined)
-  }
-
-  const unreadLabel = unreadCount > 0
-    ? (language === 'es' ? `Notificaciones sin leer: ${unreadCount}` : `Unread notifications: ${unreadCount}`)
-    : ''
-  const avatarUnreadBadge = isAuthenticated && user && unreadCount > 0 ? (
-    <span className="avatar-unread-badge" role="img" aria-label={unreadLabel}>
-      {unreadCount > 99 ? '99+' : unreadCount}
-    </span>
-  ) : null
+  const menuLabel = unreadCount > 0
+    ? `${gardenCopy[language].menu}, ${language === 'es' ? 'notificaciones sin leer' : 'unread notifications'}: ${unreadCount}`
+    : gardenCopy[language].menu
   const rankProgress = getRankProgress(user?.experience)
   const accountDetails = user ? (
     <div className="workspace-account-details">
@@ -388,32 +375,18 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
           <div className="workspace-navigation-control">
             <div
               className="workspace-account"
-              onMouseEnter={() => { if (!isMobileMenuOpen && unreadCount === 0) setIsAccountPreviewOpen(true) }}
+              onMouseEnter={() => { if (!isMobileMenuOpen) setIsAccountPreviewOpen(true) }}
               onMouseLeave={() => setIsAccountPreviewOpen(false)}
-              onFocus={() => { if (!isMobileMenuOpen && unreadCount === 0) setIsAccountPreviewOpen(true) }}
+              onFocus={() => { if (!isMobileMenuOpen) setIsAccountPreviewOpen(true) }}
               onBlur={(event) => {
                 if (!event.currentTarget.contains(event.relatedTarget)) setIsAccountPreviewOpen(false)
               }}
             >
               {isAuthenticated && user ? (
-                unreadCount > 0 ? (
-                  <button type="button" className="workspace-account-trigger"
-                    aria-label={unreadLabel} aria-haspopup="true" aria-expanded={isNotificationsOpen}
-                    onClick={openAvatarNotifications}>
-                  <RankAvatarFrame experience={user.experience} thickness={2} className="h-8 w-8">
-                    {user.avatarUrl ? (
-                      <Image src={user.avatarUrl} alt="" width={32} height={32} className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="workspace-account-fallback"><User size={17} aria-hidden="true" /></span>
-                    )}
-                  </RankAvatarFrame>
-                  {avatarUnreadBadge}
-                  </button>
-                ) : (
                 <Link prefetch={false}
                   href={userProfileHref(user)}
                   className="workspace-account-trigger"
-                  aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`}
+                  aria-label={`${t.nav.profile}: ${user.username}`}
                   aria-describedby={isAccountPreviewOpen ? accountPreviewId : undefined}
                   onClick={() => { setIsAccountPreviewOpen(false); setIsMobileMenuOpen(false) }}
                 >
@@ -424,31 +397,12 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                       <span className="workspace-account-fallback"><User size={17} aria-hidden="true" /></span>
                     )}
                   </RankAvatarFrame>
-                  {avatarUnreadBadge}
                 </Link>
-                )
               ) : (
                 <button type="button" className="workspace-account-trigger" aria-label={t.nav.login} title={t.nav.login}
                   onClick={() => { setIsMobileMenuOpen(false); setIsAuthModalOpen(true) }}>
                   <span className="workspace-account-guest"><User size={19} aria-hidden="true" /></span>
                 </button>
-              )}
-              {isAuthenticated && user && !isMobileMenuOpen && (
-                <NotificationsMenu
-                  variant="mobile"
-                  inline
-                  hideTrigger
-                  isOpen={isNotificationsOpen}
-                  unreadCount={unreadCount}
-                  notificationsLoading={notificationsLoading}
-                  notifications={notifications}
-                  inviteAction={inviteAction}
-                  onToggle={() => setIsNotificationsOpen(false)}
-                  onAcceptInvite={acceptInvite}
-                  onDeclineInvite={declineInvite}
-                  onNotificationClick={handleNotificationClick}
-                  containerRef={mobileNotificationsRef}
-                />
               )}
               {isAuthenticated && user && isAccountPreviewOpen && !isMobileMenuOpen && (
                 <div className="workspace-account-preview">
@@ -460,6 +414,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               ref={compactTriggerRef}
               type="button"
               className="workspace-navigation-trigger"
+              aria-label={menuLabel}
               data-workspace-menu-trigger={compact ? '' : undefined}
               aria-expanded={isMobileMenuOpen}
               aria-controls={compactMenuId}
@@ -471,6 +426,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             >
               {isMobileMenuOpen ? <X size={19} aria-hidden="true" /> : <Menu size={19} aria-hidden="true" />}
               <span>{gardenCopy[language].menu}</span>
+              {unreadCount > 0 && <span className="menu-unread-badge" aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>}
             </button>
           </div>
         )}
@@ -559,11 +515,11 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                   <div className="relative" ref={menuRef}>
                     <button
                       type="button"
-                      onClick={() => { if (unreadCount > 0) openAvatarNotifications(); else setIsMenuOpen(prev => !prev) }}
+                      onClick={() => setIsMenuOpen(prev => !prev)}
                       className="relative w-10 h-10 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold transition-transform hover:scale-105"
-                      aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`}
+                      aria-label={`${t.nav.profile}: ${user.username}`}
                       aria-haspopup="true"
-                      aria-expanded={unreadCount > 0 ? isNotificationsOpen : isMenuOpen}
+                      aria-expanded={isMenuOpen}
                     >
                       <RankAvatarFrame
                         experience={user.experience}
@@ -580,8 +536,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                           </span>
                         )}
                       </RankAvatarFrame>
-                      {avatarUnreadBadge}
-                      {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
+                          {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
                         <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
                           <Crown className="w-3 h-3" />
                         </span>
@@ -671,9 +626,12 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 <button
                   type="button"
                   onClick={() => setIsMobileMenuOpen(prev => !prev)}
-                  className="w-9 h-9 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all"
+                  aria-label={menuLabel}
+                  aria-expanded={isMobileMenuOpen}
+                  className="relative w-9 h-9 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-700 dark:text-slate-200 hover:bg-gray-200 dark:hover:bg-slate-600 transition-all"
                 >
                   {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                  {unreadCount > 0 && <span className="menu-unread-badge" aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>}
                 </button>
               </>
             ) : (
@@ -732,7 +690,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
             {!compact && isAuthenticated && user && (
             <div className="px-4 py-3 mb-2 bg-gray-50 dark:bg-slate-700 rounded-xl">
               <div className="flex items-center space-x-3">
-                <button type="button" aria-label={unreadLabel || `${t.nav.profile}: ${user.username}`} onClick={() => { if (unreadCount > 0) openAvatarNotifications(); else router.push(userProfileHref(user)) }} className="relative w-11 h-11 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold">
+                <button type="button" aria-label={`${t.nav.profile}: ${user.username}`} onClick={() => router.push(userProfileHref(user))} className="relative w-11 h-11 rounded-full overflow-visible text-gray-700 dark:text-slate-200 font-semibold">
                   <RankAvatarFrame
                     experience={user.experience}
                     thickness={3}
@@ -746,7 +704,6 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                       </span>
                     )}
                   </RankAvatarFrame>
-                  {avatarUnreadBadge}
                   {user.isPro && (!user.proExpiresAt || new Date(user.proExpiresAt) > new Date()) && (
                     <span className="absolute -top-1 -right-1 inline-flex items-center justify-center rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-900 shadow-lg w-5 h-5">
                       <Crown className="w-3 h-3" />

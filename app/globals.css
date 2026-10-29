@@ -1671,6 +1671,7 @@ body:has(.workspace-page) {
 }
 
 .workspace-navigation-trigger {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1682,6 +1683,30 @@ body:has(.workspace-page) {
   border-radius: 0 2px 2px 0;
   font-size: 12px;
   cursor: pointer;
+}
+
+.menu-unread-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 5px;
+  border: 2px solid var(--pixel-paper);
+  border-radius: 999px;
+  background: #ef4444;
+  color: #fff;
+  font: 700 11px/1 Inter, sans-serif;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+@media (forced-colors: active) {
+  .menu-unread-badge { background: Highlight; color: HighlightText; border-color: Canvas; forced-color-adjust: none; }
 }
 
 .workspace-navigation-trigger:hover,
@@ -5148,41 +5173,6 @@ html[data-mini-timer] body {
   .task-popover,
   .task-popover-list {
     scrollbar-color: auto;
-  }
-}
-
-/* Shared unread count sits below the Pro crown without resizing the avatar. */
-.avatar-unread-badge {
-  position: absolute;
-  right: -4px;
-  bottom: -3px;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border: 2px solid var(--pixel-paper);
-  border-radius: 999px;
-  background: #dc2626;
-  color: #fff;
-  font: 700 10px/1 Inter, sans-serif;
-  font-variant-numeric: tabular-nums;
-  pointer-events: none;
-}
-
-.workspace-account-trigger .avatar-unread-badge {
-  right: 2px;
-  bottom: 2px;
-}
-
-@media (forced-colors: active) {
-  .avatar-unread-badge {
-    background: Highlight;
-    color: HighlightText;
-    border-color: Canvas;
-    forced-color-adjust: none;
   }
 }
 

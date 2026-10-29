@@ -60,13 +60,15 @@ export default function NotificationsMenu({
         type="button"
         onClick={onToggle}
         className={buttonClassName}
-        aria-label="Notifications"
+        aria-label={unreadCount > 0
+          ? `${notificationsCopy[language].title}: ${unreadCount} ${notificationsCopy[language].unread.toLowerCase()}`
+          : notificationsCopy[language].title}
         aria-haspopup="true"
         aria-expanded={isOpen}
       >
         <FontAwesomeIcon icon={faEnvelope} className="text-base" />
         {unreadCount > 0 && (
-          <span className={badgeClassName}>{unreadCount > 99 ? '99+' : unreadCount}</span>
+          <span className={badgeClassName} aria-hidden="true">{unreadCount > 99 ? '99+' : unreadCount}</span>
         )}
       </button>}
 

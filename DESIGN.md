@@ -995,10 +995,12 @@ custom whole minutes, and a silent visual finish without automatic breaks. It do
 not record sessions. The existing `exam` and `reading` variants retain their behavior.
 `docs/seo-tools-expansion.md` records intent boundaries, research and manual checks.
 
-The Navbar account avatar carries a shared red circular unread-notification count
-in compact, desktop and mobile account views. `.avatar-unread-badge` in globals.css
-uses white Inter numerals on #dc2626 with a paper border; its bottom-right placement
-clears the Pro crown and does not resize navigation. Zero hides the badge.
+Menu buttons also show a prominent red 22px count badge (capped at 99+) while unread notifications exist; opening
+the menu alone does not clear it. Their accessible names include the unread count.
+Unread counts belong to NotificationsMenu's envelope trigger and panel header in
+compact, desktop and mobile navigation. Zero hides the count. Account avatars retain
+profile/account actions and preview behavior regardless of unread notifications;
+they never display notification badges or open the notification panel.
 
 ## Focus projects and tasks
 

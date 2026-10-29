@@ -437,9 +437,11 @@ remains available in the existing progress/profile views after the toast disappe
 
 ## Compact account navigation
 
-Navbar owns the shared two-part account/menu control. With unread notifications, the avatar is a button opening the existing notifications
-panel (and its containing menu in compact navigation). Without unread notifications,
-it retains the profile link or account menu; guests retain the AuthModal button. Its account
+Navbar owns the shared two-part account/menu control. Unread counts appear only on
+the NotificationsMenu trigger and panel header, including inside compact navigation.
+Menu buttons show a red count badge (capped at 99+) while the unread count is positive,
+with the full count in their accessible name; the badge clears when notifications are marked read.
+The avatar always retains its profile link or account menu; guests retain the AuthModal button. Its account
 preview opens on hover/focus, stays reachable under the pointer and closes on pointer
 exit, blur, Escape or activation. Opening navigation dismisses the preview. The same
 account details appear in the menu on narrow/no-hover devices for touch access.
