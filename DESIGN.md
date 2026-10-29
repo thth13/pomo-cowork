@@ -535,7 +535,7 @@ optional scenery; `public/backgrounds/README.md` records new asset paths and gen
 `lib/appearance.ts` owns the catalog; `app/appearance.css` owns its shared presentation.
 Scenery appears on home, search timer pages and product routes: rooms, leaderboard,
 both statistics pages, habits, profiles, ranks, settings and journal screens.
-Existing room gradients remain inside room headers. Personal choice is shared per
+Room headers use the shared neutral surface without room-owned gradients. Personal choice is shared per
 browser; access to the three new landscapes, three gradients and five additional fonts
 follows the active account's Pro entitlement. Magic Academy, Forest Campfire and
 Autumn Breeze also require active Pro access. The original choices stay free.
@@ -643,8 +643,9 @@ scenery and retains system surfaces. No new palette or global theme change is ne
 `/user/[id]`, `/rooms` and `/rooms/[id]` share the garden background, compact Navbar,
 cream/sage surfaces and existing pixel tokens. `app/community.css` owns their scoped
 composition: restrained pixel headings, readable Inter content, square avatars,
-compact metric strips and offset panel shadows. Room-owned gradients remain available
-inside the room header. Personal timer scenery retains its existing scope.
+compact metric strips and offset panel shadows. Room headers use the shared neutral
+surface; room creation and settings do not expose a color choice. Stored room colors
+have no visual effect. Personal timer scenery retains its existing scope.
 
 The directory separates the global desk from the room grid. Room detail puts members
 beside contribution and weekly activity panels; profiles put the activity map and wall
@@ -1106,6 +1107,13 @@ scrollbars in either app theme. The header stays visible while the body scrolls 
 short screens; phone inputs use 16px text. Forced colors retains system surfaces.
 
 ## Premium grant dialog
+
+The room's Invite friends and Room settings dialogs use CommunityDialog's
+`room-invite` and `room-settings` variants, sharing the paywall title bar, pixel
+heading, close control and scene-glass treatment. Both keep a compact 520px width
+with a padded, scrollable body and matching mobile spacing. Invite friends keeps
+inline search results; Room settings reuses the existing name and privacy fields
+and save, cancel and delete actions.
 
 CommunityDialog's `premium-grant` variant shares the `paywall-dialog` header,
 pixel title typography, close control and scene-glass treatment with the Premium

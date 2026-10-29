@@ -7,9 +7,10 @@ import Image from 'next/image'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import Link from 'next/link'
-import { Check, Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Sprout, Target, Trash2, TrendingUp, UserPlus, Users, X } from 'lucide-react'
+import { Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Sprout, Target, Trash2, TrendingUp, UserPlus, Users, X } from 'lucide-react'
 import CommunityDialog from '@/components/CommunityDialog'
 import RoomDailyChallenge from '@/components/RoomDailyChallenge'
+import RoomPageSkeleton from '@/components/RoomPageSkeleton'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
 import Navbar from '@/components/Navbar'
@@ -17,7 +18,6 @@ import PersonalNavigation from '@/components/PersonalNavigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { Room, RoomMember, RoomPrivacy, RoomStats } from '@/types'
-import { getRoomGradientClass, ROOM_GRADIENT_OPTIONS, RoomGradientKey } from '@/lib/roomGradient'
 
 interface UserSearchItem {
   id: string
@@ -72,13 +72,13 @@ export default function RoomPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [roomSettings, setRoomSettings] = useState<{ name: string; privacy: RoomPrivacy; backgroundGradientKey: RoomGradientKey | null }>({
+  const [roomSettings, setRoomSettings] = useState<{ name: string; privacy: RoomPrivacy }>({
     name: '',
     privacy: RoomPrivacy.PUBLIC,
-    backgroundGradientKey: null,
   })
   const [roomSaving, setRoomSaving] = useState(false)
   const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false)
+  const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [isChallengeOpen, setIsChallengeOpen] = useState(false)
   const [joining, setJoining] = useState(false)
   const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<string | null>(null)
@@ -178,7 +178,6 @@ export default function RoomPage() {
       setRoomSettings({
         name: roomData.name,
         privacy: roomData.privacy,
-        backgroundGradientKey: (roomData.backgroundGradientKey as RoomGradientKey | null | undefined) ?? null,
       })
 
       let membersList: RoomMember[] = []
@@ -270,7 +269,7 @@ export default function RoomPage() {
     const q = userQuery.trim()
     setUserResults([])
     setSearchError(false)
-    if (q.length < 2 || isComposing || !isOwner) { setUserLoading(false); return }
+    if (q.length < 2 || isComposing || !isOwner || !isInviteOpen) { setUserLoading(false); return }
     const controller = new AbortController()
     let active = true
     setUserLoading(true)
@@ -292,7 +291,7 @@ export default function RoomPage() {
       }
     }, 300)
     return () => { active = false; controller.abort(); window.clearTimeout(debounce); window.clearTimeout(timeout) }
-  }, [userQuery, isComposing, isOwner])
+  }, [userQuery, isComposing, isOwner, isInviteOpen])
 
   const filteredUserResults = useMemo(() => {
     const existingUserIds = new Set<string>()
@@ -304,7 +303,7 @@ export default function RoomPage() {
   }, [members, room?.ownerId, userResults])
 
   const isUserDropdownOpen =
-    isOwner && !isComposing && !userDropdownSuppressed && userQuery.trim().length >= 2
+    isOwner && isInviteOpen && !isComposing && !userDropdownSuppressed && userQuery.trim().length >= 2
 
   useEffect(() => {
     if (!isUserDropdownOpen) return
@@ -453,7 +452,6 @@ export default function RoomPage() {
         body: JSON.stringify({
           name,
           privacy: roomSettings.privacy,
-          backgroundGradientKey: roomSettings.backgroundGradientKey,
         }),
       })
 
@@ -469,7 +467,6 @@ export default function RoomPage() {
       setRoomSettings({
         name: updated.name,
         privacy: updated.privacy,
-        backgroundGradientKey: (updated.backgroundGradientKey as RoomGradientKey | null | undefined) ?? null,
       })
       setIsRoomSettingsOpen(false)
     } catch (e) {
@@ -478,7 +475,7 @@ export default function RoomPage() {
     } finally {
       setRoomSaving(false)
     }
-  }, [getToken, roomId, roomSettings.backgroundGradientKey, roomSettings.name, roomSettings.privacy, setCurrentRoom, roomSaving, copy.loginRequired, copy.nameRequired, copy.saveError])
+  }, [getToken, roomId, roomSettings.name, roomSettings.privacy, setCurrentRoom, roomSaving, copy.loginRequired, copy.nameRequired, copy.saveError])
 
   const onDeleteRoom = useCallback(async () => {
     if (!roomId) return
@@ -510,15 +507,6 @@ export default function RoomPage() {
       setDeleting(false)
     }
   }, [getToken, roomId, router, setCurrentRoom, copy.loginRequired, copy.deleteError])
-
-  const roomGradientKeyForPreview = isRoomSettingsOpen
-    ? roomSettings.backgroundGradientKey
-    : (room?.backgroundGradientKey ?? null)
-
-  const roomGradientClass = useMemo(
-    () => getRoomGradientClass(roomId, roomGradientKeyForPreview),
-    [roomGradientKeyForPreview, roomId]
-  )
 
   const weeklyChartOptions: Highcharts.Options = useMemo(
     () => ({
@@ -576,19 +564,20 @@ export default function RoomPage() {
       <Navbar compact />
       <main className="community-layout personal-page-frame">
         <PersonalNavigation />
-        {error && !isRoomSettingsOpen && !isConfirmDeleteOpen && !confirmRemoveMemberId && <div className="community-error" role="alert">{error}</div>}
-        {loading ? <div className="community-panel community-state" role="status"><span className="community-spinner" aria-hidden="true" />{copy.loading}</div> : !room ? (
+        {error && !isInviteOpen && !isRoomSettingsOpen && !isConfirmDeleteOpen && !confirmRemoveMemberId && <div className="community-error" role="alert">{error}</div>}
+        {loading ? <RoomPageSkeleton /> : !room ? (
           <div className="community-panel community-state"><DoorOpen aria-hidden="true" /><h1>{copy.roomLoadError}</h1><button type="button" className="community-button" onClick={() => void loadAll()}>{copy.retry}</button></div>
         ) : <>
-          <header className={`room-detail-header ${roomGradientClass ?? ''}`}>
+          <header className="room-detail-header">
+            {isOwner && <button type="button" onClick={() => { setError(null); setRoomSettings({ name: room.name, privacy: room.privacy }); setIsRoomSettingsOpen(true) }} className="community-icon-button room-settings-button" title={copy.settings} aria-label={copy.settings}><Settings size={18} aria-hidden="true" /></button>}
             <div className="community-intro">
               <div><p className="community-eyebrow"><DoorOpen size={15} aria-hidden="true" />{copy.room}</p><h1>{room.name}</h1>
                 <div className="community-actions mt-3"><span className="community-badge">{room.privacy === RoomPrivacy.PRIVATE ? <Lock size={12} aria-hidden="true" /> : <Globe2 size={12} aria-hidden="true" />}{room.privacy === RoomPrivacy.PRIVATE ? copy.private : copy.public}</span><span className="community-badge"><Users size={12} aria-hidden="true" />{members.length} {copy.participantPlural}</span>{isOwner && <span className="community-badge">{copy.owner}</span>}</div>
               </div>
               <div className="community-actions">
                 {canJoinRoom && <button type="button" onClick={onJoinRoom} disabled={joining} aria-busy={joining} className="community-button community-button-primary"><UserPlus size={16} aria-hidden="true" />{copy.join}</button>}
+                {isOwner && <button type="button" onClick={() => { setError(null); setUserDropdownSuppressed(false); setIsInviteOpen(true) }} className="community-button"><UserPlus size={16} aria-hidden="true" />{copy.inviteFriends}</button>}
                 {isOwner && <button type="button" onClick={() => setIsChallengeOpen(true)} className="community-button"><Target size={16} aria-hidden="true" />{copy.challenge.setGoal}</button>}
-                {isOwner && <button type="button" onClick={() => { setError(null); setRoomSettings({ name: room.name, privacy: room.privacy, backgroundGradientKey: (room.backgroundGradientKey as RoomGradientKey | null) ?? null }); setIsRoomSettingsOpen(true) }} className="community-button"><Settings size={16} aria-hidden="true" />{copy.settings}</button>}
                 {canLeaveRoom && <button type="button" onClick={onLeaveRoom} disabled={leaving} aria-busy={leaving} className="community-button"><LogOut size={16} aria-hidden="true" />{copy.leave}</button>}
               </div>
             </div>
@@ -601,14 +590,7 @@ export default function RoomPage() {
           <div className="community-columns">
             <section className="community-panel">
               <header className="community-panel-heading"><h2><Users size={18} aria-hidden="true" />{copy.participants}</h2><span className="community-badge">{members.length}</span></header>
-              {isOwner && <div ref={userSearchRef} className="community-search" onKeyDown={event => { if (event.key === 'Escape') { setUserDropdownSuppressed(true); inviteInputRef.current?.focus() } }}>
-                <label htmlFor="room-invite-search">{copy.invite}</label>
-                <input id="room-invite-search" ref={inviteInputRef} value={userQuery} onChange={event => { setUserDropdownSuppressed(false); setUserQuery(event.target.value) }} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={() => setIsComposing(false)} placeholder={copy.inviteHint} autoComplete="off" />
-                {userQuery && <button type="button" className="community-search-clear" aria-label={copy.clear} onClick={() => { setUserQuery(''); setUserResults([]); setUserDropdownSuppressed(false); inviteInputRef.current?.focus() }}><X size={16} aria-hidden="true" /></button>}
-                {isUserDropdownOpen && <div className="community-search-results" aria-label={copy.invite}>
-                  {userLoading ? <p role="status">{copy.searching}</p> : searchError ? <p role="status">{copy.searchError}</p> : filteredUserResults.length === 0 ? <p role="status">{copy.noUsers}</p> : filteredUserResults.map(person => <button key={person.id} type="button" disabled={Boolean(addingUserId)} aria-busy={addingUserId === person.id} onClick={() => void onAddUser(person.username, person.id)}><UserAvatar avatarUrl={person.avatarUrl} username={person.username} size={32} /><span>{person.username}</span><UserPlus size={15} aria-hidden="true" /></button>)}
-                </div>}
-              </div>}
+
               {members.length === 0 ? <p className="community-muted">{copy.noParticipants}</p> : members.map(member => <div className="community-person" key={member.id}>
                 <Link href={userProfileHref(member.user)} className="community-person-link"><UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} /><span className="community-person-copy"><strong>{member.user.username}</strong><small>{member.role === 'OWNER' ? copy.owner : copy.member}</small></span></Link>
                 {isOwner && member.user.id !== user?.id && member.role !== 'OWNER' && <button type="button" className="community-icon-button" disabled={Boolean(removingMemberId)} title={copy.remove} aria-label={`${copy.remove}: ${member.user.username}`} onClick={() => { setError(null); setConfirmRemoveMemberId(member.id) }}><X size={16} aria-hidden="true" /></button>}
@@ -630,7 +612,19 @@ export default function RoomPage() {
           </div>
         </>}
       </main>
-      {inviteToast && <div className="community-toast" role="status">{inviteToast}</div>}
+      {inviteToast && !isInviteOpen && <div className="community-toast" role="status">{inviteToast}</div>}
+      <CommunityDialog open={isOwner && isInviteOpen} variant="room-invite" title={copy.inviteFriends} busy={Boolean(addingUserId)} onClose={() => setIsInviteOpen(false)}>
+        <div ref={userSearchRef} className="community-search room-invite-search" onKeyDown={event => { if (event.key === 'Escape' && isUserDropdownOpen) { event.preventDefault(); event.stopPropagation(); setUserDropdownSuppressed(true); inviteInputRef.current?.focus() } }}>
+          <label htmlFor="room-invite-search">{copy.invite}</label>
+          <input id="room-invite-search" ref={inviteInputRef} autoFocus value={userQuery} onChange={event => { setUserDropdownSuppressed(false); setUserQuery(event.target.value) }} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={() => setIsComposing(false)} placeholder={copy.inviteHint} autoComplete="off" />
+          {userQuery && <button type="button" className="community-search-clear" aria-label={copy.clear} onClick={() => { setUserQuery(''); setUserResults([]); setUserDropdownSuppressed(false); inviteInputRef.current?.focus() }}><X size={16} aria-hidden="true" /></button>}
+          {isUserDropdownOpen && <div className="community-search-results" aria-label={copy.invite}>
+            {userLoading ? <p role="status">{copy.searching}</p> : searchError ? <p role="status">{copy.searchError}</p> : filteredUserResults.length === 0 ? <p role="status">{copy.noUsers}</p> : filteredUserResults.map(person => <button key={person.id} type="button" disabled={Boolean(addingUserId)} aria-busy={addingUserId === person.id} onClick={() => void onAddUser(person.username, person.id)}><UserAvatar avatarUrl={person.avatarUrl} username={person.username} size={32} /><span>{person.username}</span><UserPlus size={15} aria-hidden="true" /></button>)}
+          </div>}
+        </div>
+        {inviteToast && <p className="community-muted" role="status">{inviteToast}</p>}
+        {error && <p className="community-error" role="alert">{error}</p>}
+      </CommunityDialog>
       <CommunityDialog open={Boolean(confirmRemoveMemberId)} title={copy.removeTitle} description={copy.removeHint} busy={Boolean(removingMemberId)} onClose={() => setConfirmRemoveMemberId(null)}>
         <p className="community-muted">{members.find(member => member.id === confirmRemoveMemberId)?.user.username}</p>
         {error && <p className="community-error" role="alert">{error}</p>}
@@ -640,11 +634,10 @@ export default function RoomPage() {
         <p className="community-muted">{room?.name}</p>{error && <p className="community-error" role="alert">{error}</p>}
         <div className="community-dialog-actions"><button type="button" className="community-button" disabled={deleting} onClick={() => setIsConfirmDeleteOpen(false)}>{copy.cancel}</button><button type="button" className="community-button community-button-danger" disabled={deleting} onClick={onDeleteRoom}>{deleting ? copy.deleting : copy.delete}</button></div>
       </CommunityDialog>
-      <CommunityDialog open={isOwner && isRoomSettingsOpen} title={copy.settings} busy={roomSaving} onClose={() => setIsRoomSettingsOpen(false)}>
+      <CommunityDialog open={isOwner && isRoomSettingsOpen} variant="room-settings" title={copy.settings} busy={roomSaving} onClose={() => setIsRoomSettingsOpen(false)}>
         <form noValidate onSubmit={event => { event.preventDefault(); void onSaveRoomSettings() }}>
           <label className="community-field"><span>{copy.name}</span><input ref={roomNameRef} value={roomSettings.name} aria-invalid={error === copy.nameRequired} aria-describedby={error ? "room-settings-error" : undefined} disabled={roomSaving} onChange={event => setRoomSettings(s => ({ ...s, name: event.target.value }))} /></label>
           <fieldset className="community-privacy" disabled={roomSaving}><legend>{copy.privacy}</legend><div>{[RoomPrivacy.PUBLIC, RoomPrivacy.PRIVATE].map(privacy => <label key={privacy}><input type="radio" name="room-privacy" checked={roomSettings.privacy === privacy} onChange={() => setRoomSettings(s => ({ ...s, privacy }))} /><span>{privacy === RoomPrivacy.PUBLIC ? copy.public : copy.private}<small>{privacy === RoomPrivacy.PUBLIC ? copy.publicHint : copy.privateHint}</small></span></label>)}</div></fieldset>
-          <fieldset disabled={roomSaving}><legend className="community-muted">{copy.background}</legend><div className="room-background-options">{ROOM_GRADIENT_OPTIONS.map(option => <button key={option.key} type="button" className={option.className} title={option.label} aria-label={option.label} aria-pressed={roomSettings.backgroundGradientKey === option.key} onClick={() => setRoomSettings(s => ({ ...s, backgroundGradientKey: option.key }))}>{roomSettings.backgroundGradientKey === option.key && <Check size={18} aria-hidden="true" />}</button>)}</div></fieldset>
           {error && <p id="room-settings-error" className="community-error mt-4" role="alert">{error}</p>}
           <div className="community-dialog-actions"><button type="button" className="community-button community-button-danger" disabled={roomSaving} onClick={() => { setError(null); setIsRoomSettingsOpen(false); setIsConfirmDeleteOpen(true) }}><Trash2 size={15} aria-hidden="true" />{copy.delete}</button><button type="button" className="community-button" disabled={roomSaving} onClick={() => setIsRoomSettingsOpen(false)}>{copy.cancel}</button><button type="submit" className="community-button community-button-primary" disabled={roomSaving}>{roomSaving ? copy.saving : copy.save}</button></div>
         </form>

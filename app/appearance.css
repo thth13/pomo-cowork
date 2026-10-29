@@ -254,7 +254,6 @@ body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.community-pane
   backdrop-filter: blur(18px) saturate(110%);
 }
 body:has(.product-scenery) .lb-totals { background: var(--pixel-paper); padding: 18px 12px; border: 1px solid var(--pixel-line); }
-body:has(.product-scenery) .room-detail-header { box-shadow: inset 0 0 0 999px rgb(12 18 16 / 52%), 0 12px 36px rgb(0 0 0 / 16%); }
 body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.community-intro h1, .lb-intro h1, .stats-intro h1, .insight-intro h1, .habits-heading h1, .ranks-intro h1, .journal-main h1) {
   text-shadow: 0 2px 12px rgb(0 0 0 / 55%);
 }
