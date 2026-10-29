@@ -178,8 +178,8 @@ const initSocketOnce = () => {
     updateUserPresence(data.userId, data.online)
   })
 
-  socket.on('online-users', (payload: { userIds?: string[]; userCount?: number; anonymousCount?: number; total?: number }) => {
-    if (payload.userIds) setOnlineUsersFromList(payload.userIds)
+  socket.on('online-users', (payload: { userIds?: string[]; anonymousIds?: string[]; userCount?: number; anonymousCount?: number; total?: number }) => {
+    if (payload.userIds) setOnlineUsersFromList(payload.userIds, payload.anonymousIds)
     setPresenceCounts({
       userCount: payload.userCount,
       anonymousCount: payload.anonymousCount,

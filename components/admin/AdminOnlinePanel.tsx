@@ -42,7 +42,7 @@ export default function AdminOnlinePanel() {
     </nav>}
     {connected && <p className="admin-online-panel-note">
       {data && data.total > data.rows.length ? `Showing ${(data.page - 1) * data.pageSize + 1}–${Math.min(data.page * data.pageSize, data.total)} of ${data.total} accounts. ` : ''}
-      Live presence{anonymousCount > 0 ? ` · ${anonymousCount} anonymous visitors outside the account list` : ''}
+      Live presence{anonymousCount > 0 ? ` · ${anonymousCount} anonymous visitors online` : ''}
     </p>}
   </section>
 }

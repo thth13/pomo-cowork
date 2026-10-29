@@ -9,7 +9,7 @@ interface ConnectionState {
   totalOnlineCount: number
   setIsChecking: (isChecking: boolean) => void
   setConnectionStatus: (isConnected: boolean) => void
-  setOnlineUsersFromList: (userIds: string[]) => void
+  setOnlineUsersFromList: (userIds: string[], anonymousIds?: string[]) => void
   setPresenceCounts: (counts: { userCount?: number; anonymousCount?: number; total?: number }) => void
   updateUserPresence: (userId: string, online: boolean) => void
   resetPresence: () => void
@@ -25,8 +25,8 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
   totalOnlineCount: 0,
   setIsChecking: (isChecking) => set({ isChecking }),
   setConnectionStatus: (isConnected) => set({ isConnected, isChecking: false }),
-  setOnlineUsersFromList: (userIds) => {
-    const normalized = userIds.reduce<Record<string, true>>((acc, id) => {
+  setOnlineUsersFromList: (userIds, anonymousIds = []) => {
+    const normalized = [...userIds, ...anonymousIds].reduce<Record<string, true>>((acc, id) => {
       acc[id] = true
       return acc
     }, {})
@@ -60,7 +60,10 @@ export const useConnectionStore = create<ConnectionState>((set) => ({
       delete next[userId]
     }
 
-    const userCount = Object.keys(next).length
+    // Incremental user-online events are for registered accounts only.
+    // The shared ID lookup also contains guests from the presence snapshot.
+    const wasOnline = state.onlineUserIds[userId] === true
+    const userCount = Math.max(0, state.onlineUserCount + Number(online) - Number(wasOnline))
     return {
       onlineUserIds: next,
       onlineUserCount: userCount,

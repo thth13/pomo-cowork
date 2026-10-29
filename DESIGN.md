@@ -76,6 +76,21 @@ Artwork retains its limited palette; the scene background is desaturated in both
 
 ## Layout and components
 
+Daily goal has its own Target button in the homepage dock and mobile tools menu.
+It reuses WorkspaceWindow for saved geometry, keyboard controls and focus return.
+The compact Inter counter sits above a twenty-segment meter in the existing tomato
+tokens; reaching the target switches the meter to growth green and shows a check
+and explicit completion text. The display includes actual/target values, percentage,
+remaining work and today's completed Pomodoros/focus minutes. No circular meter or
+new palette is introduced. `app/daily-goal.css` owns its styles and inherits the
+workspace scene-glass token mapping, dark theme and global scrollbar behavior.
+The inline editor offers Pomodoros or hours, four presets, explicit Save/Cancel and
+Remove; validation and storage failures retain the draft. English/Spanish copy lives
+in `lib/i18n/dailyGoal.ts`. The former embedded goal in Your progress moves here;
+rank, streak and community totals stay in their existing window.
+The Today row appears only with a saved goal. Counting and browser-storage footnotes
+are omitted from the window to keep the surface compact.
+
 The `/uzerz` directory overlays a small green online dot at the bottom right of each
 avatar, including initial placeholders. `UserOnlineIndicator` reads the shared
 connection store, follows live presence updates, and hides while disconnected.
@@ -1187,7 +1202,8 @@ Below the primary overview metrics, a compact white Online users panel lists liv
 account names with initial avatars, green presence dots, and profile links. Its
 220px maximum scroll height keeps the overview compact. The first 50 accounts are
 alphabetical; View all users opens the full online table. Loading, retry, empty and
-disconnected states are explicit, and anonymous connections remain a separate note.
+disconnected states are explicit. Guests with persisted profiles appear in the account
+list; the separate anonymous count includes all connected guests.
 
 Admin refinements: primary acquisition cards explicitly say Today new users and
 Today new anonymous users. Country cells reuse CountryFlag with emoji and a country

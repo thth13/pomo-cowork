@@ -21,12 +21,13 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid lastSeenAt' }, { status: 400 })
     }
 
-    const user = await prisma.user.update({
+    // Visitors may not have a persisted profile yet. Presence must not create one.
+    const result = await prisma.user.updateMany({
       where: { id: userId },
       data: { lastSeenAt }
     })
 
-    return NextResponse.json({ success: true, lastSeenAt: user.lastSeenAt })
+    return NextResponse.json({ success: true, lastSeenAt: result.count > 0 ? lastSeenAt : null })
   } catch (error) {
     console.error('Error updating lastSeenAt:', error)
     return NextResponse.json(

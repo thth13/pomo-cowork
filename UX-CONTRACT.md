@@ -43,6 +43,7 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Notifications | useNotifications / NotificationToast | Existing global session feedback |
 | Notification history | NotificationsMenu, app/notifications, /api/notifications | Permanent View all notifications link opens owner-scoped history, including read records. Newest first with stable createdAt/id ordering; Load more fetches 30 records via an owner-validated cursor. Opening history alone does not mark records read. Explicit Mark as read and invitation accept/decline persist through existing endpoints; confirmed mutations update rows and the Navbar badge through notifications-updated. Pending invitations retain actions even if already read. Wrapped opens via the existing provider; profile and accepted-room links use existing destinations. SWR scopes cache by token, refreshes on focus/events, retains rows on load-more failure and offers retry. Loading, empty, failed and signed-out states are explicit; expired sessions offer AuthModal. Dates use the active locale and browser timezone |
 | Progress / rank | TodayContribution / lib/ranks.ts / useAuthStore | Dock opens existing progress panel; localized current XP rank is available in its accessible name and tooltip |
+| Personal daily goal | DailyGoal / useDailyGoal / useTodayStats / /api/stats/today | Dedicated dock/mobile-menu WorkspaceWindow. Existing browser-local day_goal_USER (or guest) storage is retained, including legacy numeric goals. Targets are 1–99 whole completed Pomodoros or 0.5–24 hours; Save commits, Cancel preserves the stored goal, storage errors preserve the draft. Same-tab and cross-tab changes synchronize. Goal repeats daily; progress uses the viewer's local-day start/end and session startedAt. Only completed WORK sessions count as Pomodoros; effective time includes completed/stopped WORK and TIME_TRACKING sessions. Guest totals use the existing anonymous identity resolver without creating users or admitting registered IDs. Ranking/community rules remain unchanged. Both progress windows share auth/day-scoped SWR data and refresh after sessions, on focus/reconnect, every five minutes while visible and at local midnight. Errors provide Retry; unknown totals never render as measured zero. |
 | Presence surface | ActiveSessions / HomeWorkspace | Homepage uses a permanent right-side rail with flat coworker rows; stacks below the centered timer on narrow screens. Up to 719px, a 44px up/down disclosure smoothly collapses the full list into a horizontal avatar/elapsed-time strip; the visible title is omitted, accessible names remain. Sessions stay mounted and profile links remain available; reduced motion disables animation. Room screens retain panel variant |
 | Companion feedback | PocketGarden | Local, stable role=status region; no overlay or focus stealing |
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
@@ -738,3 +739,13 @@ Ties select the most recent period, and an empty dataset yields null record card
 Aggregation runs in PostgreSQL rather than downloading session history. The endpoint
 is uncached and loaded only for All metrics. The overview remains available, while
 All metrics reuses its current-statistics cards without its online-user list.
+
+## Anonymous presence
+
+Source: user request dated 2026-10-29. Socket presence snapshots include anonymous
+IDs alongside registered IDs; the shared connection store exposes both for online
+indicators and admin lists while keeping registered and guest counts separate.
+Guest last seen uses the existing User.lastSeenAt field, updated on first connection
+and last disconnection (including stale-connection cleanup). Updates never create
+profiles; historical missing timestamps remain unknown until a new visit.
+No schema changes or migrations. Verification is static per user instructions.

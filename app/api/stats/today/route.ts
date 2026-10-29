@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client'
 import { NextRequest, NextResponse } from 'next/server'
-import { getTokenFromHeader, verifyToken } from '@/lib/auth'
+import { getTokenFromHeader } from '@/lib/auth'
+import { resolveExistingOrAnonymousUserId } from '@/lib/anonymousServer'
 import { prisma } from '@/lib/db'
 import { getEffectiveSessionMinutesSql } from '@/lib/sessionStatsSql'
 
@@ -47,7 +48,9 @@ export async function GET(request: NextRequest) {
     }
 
     const token = getTokenFromHeader(request.headers.get('authorization'))
-    const currentUserId = token ? verifyToken(token)?.userId ?? null : null
+    const currentUserId = await resolveExistingOrAnonymousUserId(
+      prisma, token, request.nextUrl.searchParams.get('anonymousId')
+    )
     const effectiveMinutes = getEffectiveSessionMinutesSql('s')
 
     if (!currentUserId) {
@@ -115,6 +118,17 @@ export async function GET(request: NextRequest) {
           )::integer AS "rank"
         FROM "userStats"
       ),
+      "personalStats" AS (
+        SELECT
+          COUNT(*) FILTER (
+            WHERE "type" = 'WORK' AND "status" = 'COMPLETED'
+          )::integer AS "pomodoros",
+          COALESCE(SUM("minutes") FILTER (
+            WHERE "type" IN ('WORK', 'TIME_TRACKING')
+          ), 0)::integer AS "focusMinutes"
+        FROM "periodSessions"
+        WHERE "userId" = ${currentUserId}
+      ),
       "communityStats" AS (
         SELECT
           COUNT(*) FILTER (
@@ -138,9 +152,10 @@ export async function GET(request: NextRequest) {
         "c"."focusMinutes",
         "c"."activeUsers",
         "r"."rank" AS "currentUserRank",
-        "r"."pomodoros" AS "currentUserPomodoros",
-        "r"."focusMinutes" AS "currentUserFocusMinutes"
+        "p"."pomodoros" AS "currentUserPomodoros",
+        "p"."focusMinutes" AS "currentUserFocusMinutes"
       FROM "communityStats" AS "c"
+      CROSS JOIN "personalStats" AS "p"
       LEFT JOIN "rankedUsers" AS "r" ON "r"."id" = ${currentUserId}
     `)
 

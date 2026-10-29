@@ -238,6 +238,7 @@ const addAnonymousConnection = (anonymousId: string, socketId: string) => {
     const prevCount = anonymousConnectionCounts.get(prev) ?? 0
     if (prevCount <= 1) {
       anonymousConnectionCounts.delete(prev)
+      void updateLastSeenAt(prev)
     } else {
       anonymousConnectionCounts.set(prev, prevCount - 1)
     }
@@ -246,6 +247,7 @@ const addAnonymousConnection = (anonymousId: string, socketId: string) => {
   const next = (anonymousConnectionCounts.get(anonymousId) ?? 0) + 1
   anonymousConnectionCounts.set(anonymousId, next)
   anonymousSockets.set(socketId, anonymousId)
+  if (next === 1) void updateLastSeenAt(anonymousId)
 }
 
 const removeAnonymousConnectionBySocket = (socketId: string) => {
@@ -264,6 +266,7 @@ const removeAnonymousConnectionBySocket = (socketId: string) => {
   const next = current - 1
   if (next <= 0) {
     anonymousConnectionCounts.delete(anonymousId)
+    void updateLastSeenAt(anonymousId)
   } else {
     anonymousConnectionCounts.set(anonymousId, next)
   }
@@ -343,6 +346,7 @@ setInterval(() => {
   anonymousConnectionCounts.forEach((_, anonId) => {
     if (!activeAnonymousSockets.has(anonId)) {
       anonymousConnectionCounts.delete(anonId)
+      void updateLastSeenAt(anonId)
       cleaned = true
     }
   })
@@ -359,6 +363,7 @@ const emitPresenceSnapshot = () => {
   const anonymousCount = anonymousConnectionCounts.size
   io.emit('online-users', {
     userIds: Array.from(onlineUsers.keys()),
+    anonymousIds: Array.from(anonymousConnectionCounts.keys()),
     userCount: onlineUsers.size,
     anonymousCount,
     total: activeSocketCount
@@ -856,6 +861,7 @@ io.on('connection', (socket) => {
     const anonymousCount = anonymousConnectionCounts.size
     socket.emit('online-users', {
       userIds: Array.from(onlineUsers.keys()),
+      anonymousIds: Array.from(anonymousConnectionCounts.keys()),
       userCount: onlineUsers.size,
       anonymousCount,
       total: onlineUsers.size + anonymousCount

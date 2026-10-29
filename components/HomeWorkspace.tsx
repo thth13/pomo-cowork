@@ -14,10 +14,12 @@ const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: (
 import TaskList, { TaskListRef } from '@/components/TaskList'
 import WorkHistory from '@/components/WorkHistory'
 import TodayContribution from '@/components/TodayContribution'
+import DailyGoal from '@/components/DailyGoal'
+import { dailyGoalCopy } from '@/lib/i18n/dailyGoal'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks, ChevronRight, Headphones } from 'lucide-react'
+import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks, ChevronRight, Headphones, Target } from 'lucide-react'
 import Habits from '@/components/Habits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
@@ -28,11 +30,11 @@ import { useAmbientSounds } from '@/hooks/useAmbientSounds'
 import { ambientSoundsCopy } from '@/lib/i18n/ambientSounds'
 import ResetWrappedNotificationButton from '@/components/wrapped/ResetWrappedNotificationButton'
 
-type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits' | 'sounds'
+type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits' | 'sounds' | 'goal'
 const WORKING_COLLAPSED_STORAGE_KEY = 'pomo:working:collapsed:v1'
 const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v2'
 const isPanelId = (value: unknown): value is PanelId =>
-  value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits' || value === 'sounds'
+  value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits' || value === 'sounds' || value === 'goal'
 
 export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore()
@@ -61,6 +63,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     { id: 'history', title: copy.history, icon: History },
     { id: 'tasks', title: copy.tasks, icon: ListTodo },
     { id: 'habits', title: habitsCopy[language].title, icon: ListChecks },
+    { id: 'goal', title: dailyGoalCopy[language].title, icon: Target },
     { id: 'progress', title: t.todayContribution.yourProgress, icon: Medal },
     { id: 'sounds', title: ambientSoundsCopy[language].title, icon: Headphones },
     { id: 'about', title: copy.aboutTimer, icon: HelpCircle },
@@ -327,7 +330,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
           Retain visited bodies so closing a window preserves drafts. */}
       {panels.map(({ id, title }, index) => workspaceLoading && id !== 'about' ? null : (
         <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id) && (id !== 'about' || !isAuthenticated)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)} headerAction={id === 'tasks' ? <Link href="/projects" prefetch={false} className="workspace-window-header-link"><span>{language === 'es' ? 'Gestionar proyectos' : 'Manage projects'}</span><ChevronRight size={14} aria-hidden="true" /></Link> : undefined}>
-          {(id === 'about' || openPanels.includes(id) || panelOrder.includes(id)) && (id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact isVisible={openPanels.includes(id)} /> : id === 'tasks' ? <TaskList ref={taskListRef} isVisible={openPanels.includes(id)} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution isVisible={openPanels.includes(id)} /> : <WorkHistory isVisible={openPanels.includes(id)} />)}
+          {(id === 'about' || openPanels.includes(id) || panelOrder.includes(id)) && (id === 'goal' ? <DailyGoal isVisible={openPanels.includes(id)} /> : id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact isVisible={openPanels.includes(id)} /> : id === 'tasks' ? <TaskList ref={taskListRef} isVisible={openPanels.includes(id)} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution isVisible={openPanels.includes(id)} /> : <WorkHistory isVisible={openPanels.includes(id)} />)}
         </WorkspaceWindow>
       ))}
     </div>
