@@ -580,7 +580,8 @@ never stored. Pending submissions disable inputs and block duplicate requests.
 
 Source: user request dated 2026-10-27; `app/api/admin/paywall-events/route.ts`
 uses `lib/admin.ts` authorization before exposing event or account data.
-`AdminPaywallEvents` shows opens and checkout clicks newest first, 50 per page;
+`AdminPaywallEvents` shows opens, checkout clicks and Support Pomo button clicks
+(`support_pomo_click`, added per user request dated 2026-10-29) newest first, 50 per page;
 the `paywallPage` URL parameter preserves navigation. Refresh and retry share the
 Refresh control. Loading, empty, error, expired-session and forbidden states are
 inline; requests abort on account/page changes and time out after 15 seconds.

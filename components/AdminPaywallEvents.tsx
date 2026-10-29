@@ -10,7 +10,7 @@ import CommunityDialog from '@/components/CommunityDialog'
 
 interface PaywallEventEntry {
   id: string
-  event: 'paywall_open' | 'paywall_checkout_click'
+  event: 'paywall_open' | 'paywall_checkout_click' | 'support_pomo_click'
   plan: 'monthly' | 'yearly' | null
   pagePath: string
   isAuthenticated: boolean
@@ -32,6 +32,11 @@ export default function AdminPaywallEvents() {
   const token = useAuthStore(state => state.token)
   const { language } = useI18n()
   const es = language === 'es'
+  const eventLabels: Record<PaywallEventEntry['event'], string> = {
+    paywall_open: es ? 'Abrió la ventana' : 'Opened modal',
+    paywall_checkout_click: es ? 'Clic en continuar al pago' : 'Clicked Continue to checkout',
+    support_pomo_click: es ? 'Clic en Support Pomo Cowork' : 'Clicked Support Pomo Cowork',
+  }
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -170,10 +175,10 @@ export default function AdminPaywallEvents() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 id="paywall-events-title" className="text-lg font-semibold text-slate-900 dark:text-white">
-            {es ? 'Actividad de Upgrade to Pro' : 'Upgrade to Pro activity'}
+            {es ? 'Actividad de Upgrade to Pro y Support Pomo' : 'Upgrade to Pro and Support Pomo activity'}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            {es ? 'Aperturas y clics en el pago, del más reciente al más antiguo.' : 'Modal opens and checkout clicks, newest first.'}
+            {es ? 'Aperturas, clics en el pago y en Support Pomo, del más reciente al más antiguo.' : 'Modal opens, checkout clicks and Support Pomo clicks, newest first.'}
           </p>
         </div>
         <button ref={refreshButton} type="button" className={buttonClass} disabled={loading || deleting} onClick={() => setRevision(value => value + 1)}>
@@ -189,12 +194,12 @@ export default function AdminPaywallEvents() {
         {loading && <p className="p-6 text-sm" role="status">{es ? 'Cargando eventos…' : 'Loading events…'}</p>}
         {error && <p className="p-6 text-sm text-red-600 dark:text-red-400" role="alert">{errorMessage}</p>}
         {!loading && !error && data?.events.length === 0 && (
-          <p className="p-6 text-sm text-slate-500">{es ? 'Aún no hay eventos. Aparecerán cuando alguien abra Upgrade to Pro.' : 'No events yet. They will appear when someone opens Upgrade to Pro.'}</p>
+          <p className="p-6 text-sm text-slate-500">{es ? 'Aún no hay eventos. Aparecerán cuando alguien abra Upgrade to Pro o haga clic en Support Pomo.' : 'No events yet. They will appear when someone opens Upgrade to Pro or clicks Support Pomo.'}</p>
         )}
         {!loading && !error && !!data?.events.length && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
-              <caption className="sr-only">{es ? 'Actividad de Upgrade to Pro' : 'Upgrade to Pro activity'}</caption>
+              <caption className="sr-only">{es ? 'Actividad de Upgrade to Pro y Support Pomo' : 'Upgrade to Pro and Support Pomo activity'}</caption>
               <thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-950 dark:text-slate-400">
                 <tr>
                   {[es ? 'Usuario' : 'User', es ? 'Acción' : 'Action', 'Plan', es ? 'Página' : 'Page', es ? 'Fecha (Kyiv)' : 'Time (Kyiv)', es ? 'Gestionar' : 'Manage'].map(label => (
@@ -213,7 +218,7 @@ export default function AdminPaywallEvents() {
                         {!entry.isAuthenticated && <div className="text-xs text-slate-500 dark:text-slate-400">{es ? 'Invitado' : 'Guest'}</div>}
                       </> : <span className="text-slate-500">{es ? 'Usuario desconocido' : 'Unknown user'}</span>}
                     </td>
-                    <td className="px-4 py-3">{entry.event === 'paywall_open' ? (es ? 'Abrió la ventana' : 'Opened modal') : (es ? 'Clic en continuar al pago' : 'Clicked Continue to checkout')}</td>
+                    <td className="px-4 py-3">{eventLabels[entry.event]}</td>
                     <td className="px-4 py-3">{entry.plan === 'yearly' ? (es ? 'Anual' : 'Yearly') : entry.plan === 'monthly' ? (es ? 'Mensual' : 'Monthly') : '—'}</td>
                     <td className="max-w-xs break-words px-4 py-3">{entry.pagePath}</td>
                     <td className="whitespace-nowrap px-4 py-3 tabular-nums"><time dateTime={entry.createdAt}>{new Intl.DateTimeFormat(es ? 'es-ES' : 'en-GB', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Europe/Kyiv' }).format(new Date(entry.createdAt))}</time></td>
@@ -253,7 +258,7 @@ export default function AdminPaywallEvents() {
       >
         {selectedEntry && <p className="break-words text-sm text-slate-600 dark:text-slate-300">
           {selectedEntry.user?.username ?? (es ? 'Usuario desconocido' : 'Unknown user')}
-          {' · '}{selectedEntry.event === 'paywall_open' ? (es ? 'Abrió la ventana' : 'Opened modal') : (es ? 'Clic en continuar al pago' : 'Clicked Continue to checkout')}
+          {' · '}{eventLabels[selectedEntry.event]}
           {' · '}{selectedEntry.pagePath}
           {' · '}{new Intl.DateTimeFormat(es ? 'es-ES' : 'en-GB', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Europe/Kyiv' }).format(new Date(selectedEntry.createdAt))} (Kyiv)
         </p>}

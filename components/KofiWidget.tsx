@@ -6,6 +6,7 @@ import CommunityDialog from '@/components/CommunityDialog'
 import { useI18n } from '@/components/I18nProvider'
 import { gardenCopy } from '@/lib/i18n/garden'
 import { useAuthStore } from '@/store/useAuthStore'
+import { logPaywallEvent } from '@/lib/paywallEvents'
 
 const SUPPORT_COLOR = '#52664B'
 const SUPPORT_TEXT = 'Support Pomo Cowork'
@@ -32,7 +33,10 @@ export default function KofiWidget() {
           style={{ backgroundColor: SUPPORT_COLOR }}
           aria-label={copy.supportKofi}
           aria-haspopup="dialog"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            void logPaywallEvent('support_pomo_click')
+            setOpen(true)
+          }}
         >
           <span className="kofitext">
             {/* eslint-disable-next-line @next/next/no-img-element */}

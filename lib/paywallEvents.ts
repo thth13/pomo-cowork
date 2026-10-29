@@ -1,7 +1,7 @@
 import { useAuthStore } from '@/store/useAuthStore'
 
 export async function logPaywallEvent(
-  event: 'paywall_open' | 'paywall_checkout_click',
+  event: 'paywall_open' | 'paywall_checkout_click' | 'support_pomo_click',
   plan?: 'monthly' | 'yearly',
 ) {
   try {
@@ -17,7 +17,7 @@ export async function logPaywallEvent(
     })
     if (!response.ok) console.error('Could not save paywall event:', response.status)
   } catch (error) {
-    // Analytics failures must not interrupt opening the modal or checking out.
+    // Analytics failures must not interrupt opening a modal or checking out.
     console.error('Could not save paywall event:', error)
   }
 }

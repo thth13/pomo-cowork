@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null)
   if (
     !body ||
-    (body.event !== 'paywall_open' && body.event !== 'paywall_checkout_click') ||
+    (body.event !== 'paywall_open' && body.event !== 'paywall_checkout_click' && body.event !== 'support_pomo_click') ||
     typeof body.pagePath !== 'string' ||
     !body.pagePath.startsWith('/') ||
     body.pagePath.length > 500 ||
