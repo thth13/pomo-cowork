@@ -153,12 +153,6 @@ export default function RoomsPage() {
       return
     }
 
-    setCurrentRoom({
-      id: room.id,
-      name: room.name,
-      backgroundGradientKey: room.backgroundGradientKey ?? null,
-    })
-
     router.push(`/rooms/${room.id}?join=1`)
   }
 

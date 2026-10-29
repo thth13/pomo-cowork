@@ -4,12 +4,13 @@ import { PomodoroSession, SessionStatus, SessionType, User } from '@/types'
 import { sessionService } from '@/services/sessionService'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
+import { useRoomStore } from '@/store/useRoomStore'
 import { sendMessageToServiceWorker } from '@/lib/serviceWorker'
 import { isTimerSettingsSavePending } from '@/services/timerSettingsService'
 import { subscribeTimerChanges } from '@/lib/timerEvents'
 
 interface AccountTimerSnapshot {
-  session: PomodoroSession | null
+  session: (PomodoroSession & { room?: { id: string; name: string; backgroundGradientKey: string | null } | null }) | null
   lastSession: PomodoroSession | null
   serverNow: number
   user: { id: string; username: string; canTimeTrack: boolean; settings: User['settings'] }
@@ -114,8 +115,15 @@ export function useSessionRestore(options: UseSessionRestoreOptions) {
       return
     }
     const changed = current?.id !== session.id || current.status !== session.status || current.startedAt !== session.startedAt || current.pausedAt !== session.pausedAt
+    if (changed) restoreSession({ ...session, timeRemaining: remaining })
+    // Restore the room as well, including when the timer itself is unchanged.
+    const rooms = useRoomStore.getState()
+    if (session.roomId && session.room) {
+      rooms.setCurrentRoom(session.room)
+    } else if (!session.roomId) {
+      rooms.resetToGlobal()
+    }
     if (!changed) return
-    restoreSession({ ...session, timeRemaining: remaining })
     setSessionType(session.type)
     onRemoteMode?.(session.type)
     if (session.status === SessionStatus.ACTIVE) {

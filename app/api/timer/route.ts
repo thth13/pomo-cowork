@@ -21,7 +21,11 @@ export async function GET(request: NextRequest) {
     const user = await account(request)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: noCache })
     const [session, lastSession] = await Promise.all([
-      prisma.pomodoroSession.findFirst({ where: { userId: user.id, status: { in: ['ACTIVE', 'PAUSED'] } }, orderBy: { createdAt: 'desc' } }),
+      prisma.pomodoroSession.findFirst({
+        where: { userId: user.id, status: { in: ['ACTIVE', 'PAUSED'] } },
+        orderBy: { createdAt: 'desc' },
+        include: { room: { select: { id: true, name: true, backgroundGradientKey: true } } },
+      }),
       prisma.pomodoroSession.findFirst({ where: { userId: user.id, status: { in: ['COMPLETED', 'CANCELLED'] } }, orderBy: { endedAt: 'desc' } }),
     ])
     return NextResponse.json({

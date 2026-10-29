@@ -189,11 +189,11 @@ export default function RoomPage() {
         setMembers([])
       }
 
-      // Only set as current room if user joined or is already a member
+      // Select only after membership is confirmed; the store preserves a running timer's room.
       const userIsMember = user?.id ? membersList.some((m) => m.user.id === user.id) : false
-      // if (shouldJoinOnOpen || userIsMember) {
-      //   setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
-      // }
+      if (shouldJoinOnOpen && userIsMember) {
+        setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
+      }
 
       if (shouldJoinOnOpen) {
         router.replace(`/rooms/${roomId}`)
@@ -211,7 +211,7 @@ export default function RoomPage() {
     } finally {
       setLoading(false)
     }
-  }, [getToken, headers, roomId, router, shouldJoinOnOpen, user?.id, copy.joinError, copy.roomLoadError])
+  }, [getToken, headers, roomId, router, shouldJoinOnOpen, user?.id, setCurrentRoom, copy.joinError, copy.roomLoadError])
 
   useEffect(() => {
     loadAll()

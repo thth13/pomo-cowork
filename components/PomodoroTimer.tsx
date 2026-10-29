@@ -923,7 +923,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
       emitSessionSync({
         id: sessionId,
-        roomId: currentRoomId,
+        roomId: sessionSnapshot.roomId ?? null,
         task: sessionSnapshot.task,
         duration: sessionSnapshot.duration,
         type: sessionSnapshot.type,
@@ -958,7 +958,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
       emitSessionSync({
         id: sessionId,
-        roomId: currentRoomId,
+        roomId: sessionSnapshot.roomId ?? null,
         task: sessionSnapshot.task,
         duration: sessionSnapshot.duration,
         type: sessionSnapshot.type,
@@ -1008,7 +1008,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
       emitSessionSync({
         id: sessionId,
-        roomId: currentRoomId,
+        roomId: sessionSnapshot.roomId ?? null,
         task: sessionSnapshot.task,
         duration: sessionSnapshot.duration,
         type: sessionSnapshot.type,
@@ -1037,7 +1037,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       emitSessionPause(sessionId)
       emitSessionSync({
         id: sessionId,
-        roomId: currentRoomId,
+        roomId: sessionSnapshot.roomId ?? null,
         task: sessionSnapshot.task,
         duration: sessionSnapshot.duration,
         type: sessionSnapshot.type,

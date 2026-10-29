@@ -3,6 +3,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { RoomPrivacy } from '@/types'
+import { useTimerStore } from './useTimerStore'
 
 export interface RoomSummary {
   id: string
@@ -38,6 +39,19 @@ export const useRoomStore = create<RoomStore>()(
       lastRoomBackgroundGradientKey: null,
 
       setCurrentRoom: (room) => {
+        const { isRunning, currentSession } = useTimerStore.getState()
+        // Membership changes must not move a running timer to another room.
+        if (isRunning && currentSession && (currentSession.roomId ?? null) !== (room?.id ?? null)) {
+          if (room) {
+            set({
+              lastRoomId: room.id,
+              lastRoomName: room.name,
+              lastRoomBackgroundGradientKey: room.backgroundGradientKey ?? null,
+            })
+          }
+          return
+        }
+
         if (!room) {
           // Explicitly clearing the current room (e.g. leaving/deleting) also clears the last room.
           set({
@@ -61,6 +75,9 @@ export const useRoomStore = create<RoomStore>()(
       },
 
       resetToGlobal: () => {
+        const { isRunning, currentSession } = useTimerStore.getState()
+        if (isRunning && currentSession?.roomId) return
+
         // Switch to Global but keep lastRoom* so UI can toggle back.
         set({ currentRoomId: null, currentRoomName: GLOBAL_ROOM_NAME, currentRoomBackgroundGradientKey: null })
       },
