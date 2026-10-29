@@ -8,7 +8,7 @@ import { useRouter } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { useSocket } from '@/hooks/useSocket'
-import type { ChatMessage } from '@/types'
+import type { ChatHistoryRequest, ChatHistoryResponse, ChatMessage } from '@/types'
 import Image from 'next/image'
 import AuthModal from '@/components/AuthModal'
 import { ChatMessagesSkeleton } from '@/components/ChatSkeleton'
@@ -25,6 +25,23 @@ interface ChatProps {
   matchHeightSelector?: string
   isVisible?: boolean
 }
+
+interface HistoryLoad extends ChatHistoryRequest {
+  token: string | null
+  awaitingSocket: boolean
+  removedIds: Set<string>
+}
+
+function mergeMessages(history: ChatMessage[], current: ChatMessage[], load: HistoryLoad) {
+  const byId = new Map<string, ChatMessage>()
+  for (const message of [...history, ...current]) {
+    if ((message.roomId ?? null) === load.roomId && !load.removedIds.has(message.id)) byId.set(message.id, message)
+  }
+  return Array.from(byId.values()).sort((a, b) => a.timestamp - b.timestamp || a.id.localeCompare(b.id))
+}
+
+// Shared across mounts so reopening Chat cannot reuse an outstanding request ID.
+let historyRequestSequence = 0
 
 export default function Chat({ matchHeightSelector, isVisible = true }: ChatProps) {
   const router = useRouter()
@@ -51,6 +68,7 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [historyVersion, setHistoryVersion] = useState(0)
   const [hasMore, setHasMore] = useState(true)
   const [typing, setTyping] = useState<TypingState | null>(null)
   const listRef = useRef<HTMLDivElement | null>(null)
@@ -59,6 +77,7 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const [oldestMessageId, setOldestMessageId] = useState<string | null>(null)
   const currentRoomIdRef = useRef<string | null>(currentRoomId ?? null)
+  const historyLoadRef = useRef<HistoryLoad | null>(null)
 
   useEffect(() => {
     if (!isVisible) return
@@ -116,22 +135,34 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
 
   useEffect(() => {
     if (!isVisible) return
-    const handleHistory = (history: ChatMessage[]) => {
-      const roomId = currentRoomIdRef.current
-      setMessages(history.filter((m) => (m.roomId ?? null) === roomId))
+    const handleHistory = (response: ChatHistoryResponse) => {
+      const load = historyLoadRef.current
+      // A room switch can load its history via HTTP while an older socket
+      // request is still waiting for access. Never infer scope from messages.
+      if (!load?.awaitingSocket || !response ||
+          response.requestId !== load.requestId || response.roomId !== load.roomId ||
+          (useRoomStore.getState().currentRoomId ?? null) !== load.roomId ||
+          useAuthStore.getState().token !== load.token || !Array.isArray(response.messages)) return
+      load.awaitingSocket = false
+      setMessages(current => mergeMessages(response.messages, current, load))
+      // Socket history is a bounded cache and has no database pagination cursor.
+      setHasMore(false)
+      setOldestMessageId(null)
       setLoading(false)
       scrollToBottom()
     }
 
     const handleNew = (msg: ChatMessage) => {
-      const roomId = currentRoomIdRef.current
-      if ((msg.roomId ?? null) !== roomId) return
-      setMessages((prev) => [...prev.slice(-99), msg])
+      const load = historyLoadRef.current
+      if (!load || (useRoomStore.getState().currentRoomId ?? null) !== load.roomId ||
+          useAuthStore.getState().token !== load.token || (msg.roomId ?? null) !== load.roomId) return
+      setMessages(current => mergeMessages(current, [msg], load))
       scrollToBottomSmooth()
 
     }
 
     const handleRemove = (messageId: string) => {
+      historyLoadRef.current?.removedIds.add(messageId)
       setMessages((prev) => prev.filter((msg) => msg.id !== messageId))
     }
 
@@ -163,32 +194,65 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
 
   useEffect(() => {
     if (!isVisible) return
+    const onAccessRestored = () => {
+      if (useRoomStore.getState().currentRoomId) setHistoryVersion(value => value + 1)
+    }
+    window.addEventListener('pomo:room-access-restored', onAccessRestored)
+    return () => window.removeEventListener('pomo:room-access-restored', onAccessRestored)
+  }, [isVisible])
+
+  useEffect(() => {
+    if (!isVisible) return
     const controller = new AbortController()
+    const load: HistoryLoad = {
+      requestId: `${Date.now()}:${++historyRequestSequence}`,
+      roomId: currentRoomId ?? null,
+      token,
+      awaitingSocket: false,
+      removedIds: new Set(),
+    }
+    historyLoadRef.current = load
+    const isCurrentLoad = () => !controller.signal.aborted && historyLoadRef.current === load &&
+      (useRoomStore.getState().currentRoomId ?? null) === load.roomId && useAuthStore.getState().token === load.token
+    const requestSocketHistory = () => {
+      if (!isCurrentLoad()) return
+      load.awaitingSocket = true
+      requestChatHistory({ requestId: load.requestId, roomId: load.roomId })
+    }
     // On opening or room change: reset and reload history
     setLoading(true)
+    setLoadingMore(false)
     setMessages([])
     setHasMore(true)
     setOldestMessageId(null)
 
     const roomQuery = currentRoomId ? `&roomId=${encodeURIComponent(currentRoomId)}` : ''
-    fetch(`/api/chat/messages?take=20${roomQuery}`, { signal: controller.signal })
+    fetch(`/api/chat/messages?take=20${roomQuery}`, {
+      signal: controller.signal,
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      cache: 'no-store',
+    })
       .then((r) => r.ok ? r.json() : null)
       .then((data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } | null) => {
-        if (controller.signal.aborted) return
+        if (!isCurrentLoad()) return
         if (data?.items) {
-          setMessages(data.items)
+          load.awaitingSocket = false
+          setMessages(current => mergeMessages(data.items, current, load))
           setHasMore(data.hasMore)
           setOldestMessageId(data.nextCursor)
           setLoading(false)
           scrollToBottom()
         } else {
-          requestChatHistory({ roomId: currentRoomId ?? null })
+          requestSocketHistory()
         }
       })
-      .catch(() => { if (!controller.signal.aborted) requestChatHistory({ roomId: currentRoomId ?? null }) })
-    return () => controller.abort()
+      .catch(requestSocketHistory)
+    return () => {
+      controller.abort()
+      if (historyLoadRef.current === load) historyLoadRef.current = null
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentRoomId, isVisible])
+  }, [currentRoomId, isVisible, token, historyVersion])
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
@@ -207,16 +271,21 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
   }
 
   const loadMoreMessages = useCallback(async () => {
-    if (!hasMore || loadingMore || !oldestMessageId) return
+    const load = historyLoadRef.current
+    if (!load || !hasMore || loadingMore || !oldestMessageId) return
 
     setLoadingMore(true)
     
     try {
       const roomQuery = currentRoomId ? `&roomId=${encodeURIComponent(currentRoomId)}` : ''
-      const response = await fetch(`/api/chat/messages?take=20&cursor=${oldestMessageId}${roomQuery}`)
+      const response = await fetch(`/api/chat/messages?take=20&cursor=${oldestMessageId}${roomQuery}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        cache: 'no-store',
+      })
       if (!response.ok) throw new Error('Failed to load messages')
       
       const data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } = await response.json()
+      if (historyLoadRef.current !== load || useAuthStore.getState().token !== token || useRoomStore.getState().currentRoomId !== currentRoomId) return
       
       // Сохраняем текущую высоту скролла
       const scrollContainer = listRef.current
@@ -226,7 +295,7 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
       const oldScrollTop = scrollContainer.scrollTop
       
       // Добавляем старые сообщения в начало
-      setMessages(prev => [...data.items, ...prev])
+      setMessages(prev => mergeMessages(data.items, prev, load))
       setHasMore(data.hasMore)
       setOldestMessageId(data.nextCursor)
       
@@ -240,9 +309,9 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
     } catch (error) {
       console.error('Error loading more messages:', error)
     } finally {
-      setLoadingMore(false)
+      if (historyLoadRef.current === load) setLoadingMore(false)
     }
-  }, [hasMore, loadingMore, oldestMessageId, currentRoomId])
+  }, [hasMore, loadingMore, oldestMessageId, currentRoomId, token])
 
   // Обработчик скролла для определения когда загружать старые сообщения
   useEffect(() => {
@@ -268,6 +337,11 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
     }
     const text = input.trim()
     if (!text) return
+    const load = historyLoadRef.current
+    if (!load) return
+    const isCurrentLoad = () => historyLoadRef.current === load && useAuthStore.getState().token === load.token &&
+      (useRoomStore.getState().currentRoomId ?? null) === load.roomId
+    if (!isCurrentLoad()) return
 
     // Optimistic UI update
     const optimisticMessage: ChatMessage = {
@@ -303,13 +377,13 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
       if (response.ok) {
         const savedMessage = await response.json() as ChatMessage
         // Replace optimistic message with real one
-        setMessages(prev => prev.map(m =>
-          m.id === optimisticMessage.id
-            ? { ...savedMessage, avatarUrl: savedMessage.avatarUrl ?? user?.avatarUrl }
-            : m
+        if (isCurrentLoad()) setMessages(prev => mergeMessages(
+          prev.filter(m => m.id !== optimisticMessage.id),
+          [{ ...savedMessage, avatarUrl: savedMessage.avatarUrl ?? user?.avatarUrl }], load,
         ))
         // Send via socket for other users
-        sendChatMessage({
+        if (useAuthStore.getState().token === load.token) sendChatMessage({
+          messageId: savedMessage.id,
           text,
           userId: user?.id || null,
           roomId: currentRoomId ?? null,
@@ -317,14 +391,16 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
           avatarUrl: user?.avatarUrl ?? null
         })
       } else {
-        if (response.status === 401 || response.status === 403) setIsAuthModalOpen(true)
+        if (isCurrentLoad() && (response.status === 401 || response.status === 403)) setIsAuthModalOpen(true)
         throw new Error('Failed to save message')
       }
     } catch (error) {
       console.error('Error saving message:', error)
       // Remove optimistic message on error
-      setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id))
-      setInput(current => current || text)
+      if (isCurrentLoad()) {
+        setMessages(prev => prev.filter(m => m.id !== optimisticMessage.id))
+        setInput(current => current || text)
+      }
     }
   }
 

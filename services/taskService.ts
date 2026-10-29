@@ -44,17 +44,4 @@ export const taskService = {
   update: (id: string, data: { title?: string; color?: string | null; completed?: boolean }) =>
     requestTask<TaskRecord>(`/${encodeURIComponent(id)}`, 'PUT', data),
   remove: (id: string) => requestTask<{ success: boolean }>(`/${encodeURIComponent(id)}`, 'DELETE'),
-  async incrementPomodoro(taskId: string) {
-    const token = useAuthStore.getState().token ?? undefined
-
-    const response = await fetch(`/api/tasks/${taskId}`, {
-      method: 'PUT',
-      headers: buildHeaders(token),
-      body: JSON.stringify({ incrementPomodoro: true }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Failed to increment pomodoro for task ${taskId}, status ${response.status}`)
-    }
-  },
 }

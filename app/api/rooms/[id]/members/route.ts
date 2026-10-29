@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 
@@ -8,60 +9,54 @@ interface InviteBody {
   username?: string
 }
 
-const canAccessRoom = async (roomId: string, token: string | null) => {
-  const payload = token ? verifyToken(token) : null
-  const userId = payload?.userId ?? null
-
-  const room = await prisma.room.findFirst({
-    where: {
-      id: roomId,
-      ...(userId
-        ? {
-            OR: [
-              { privacy: 'PUBLIC' },
-              { ownerId: userId },
-              { members: { some: { userId } } },
-            ],
-          }
-        : { privacy: 'PUBLIC' }),
-    },
-    select: { id: true },
-  })
-
-  return { ok: Boolean(room), userId }
-}
-
-// GET /api/rooms/[id]/members - List room participants (public or member/owner)
+// GET /api/rooms/[id]/members - Room and participants from one authorized snapshot.
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const authHeader = request.headers.get('authorization')
     const token = getTokenFromHeader(authHeader)
 
-    const access = await canAccessRoom(params.id, token)
-    if (!access.ok) {
-      return NextResponse.json({ error: 'Not found' }, { status: 404 })
-    }
+    const payload = token ? verifyToken(token) : null
+    const userId = payload?.userId ?? null
 
-    const members = await prisma.roomMember.findMany({
-      where: { roomId: params.id },
-      orderBy: { createdAt: 'asc' },
+    // Ownership transfers update the room and membership together. Read both,
+    // including the access check, at the same version even with relation queries.
+    const snapshot = await prisma.$transaction(tx => tx.room.findFirst({
+      where: {
+        id: params.id,
+        ...(userId
+          ? { OR: [{ privacy: 'PUBLIC' }, { ownerId: userId }, { members: { some: { userId } } }] }
+          : { privacy: 'PUBLIC' }),
+      },
       select: {
         id: true,
-        roomId: true,
-        userId: true,
-        role: true,
+        name: true,
+        privacy: true,
+        ownerId: true,
+        backgroundGradientKey: true,
         createdAt: true,
-        user: {
+        updatedAt: true,
+        members: {
+          orderBy: { createdAt: 'asc' },
           select: {
             id: true,
-            username: true,
-            avatarUrl: true,
+            roomId: true,
+            userId: true,
+            role: true,
+            createdAt: true,
+            user: {
+              select: { id: true, username: true, avatarUrl: true },
+            },
           },
         },
       },
-    })
+    }), { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead })
 
-    return NextResponse.json({ members })
+    if (!snapshot) {
+      return NextResponse.json({ error: 'Not found' }, { status: 404 })
+    }
+
+    const { members, ...room } = snapshot
+    return NextResponse.json({ room, members }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
     console.error('List room members error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

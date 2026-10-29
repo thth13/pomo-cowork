@@ -8,6 +8,18 @@ export const dynamic = 'force-dynamic'
 const MAX_LEN = 1000
 const PAGE_SIZE = 20
 
+async function privateRoomParticipant(roomId: string, ownerId: string, authorization: string | null) {
+  const token = getTokenFromHeader(authorization)
+  const payload = token ? verifyToken(token) : null
+  if (!payload) return null
+  if (payload.userId === ownerId) return payload.userId
+  const member = await prisma.roomMember.findUnique({
+    where: { roomId_userId: { roomId, userId: payload.userId } },
+    select: { userId: true },
+  })
+  return member?.userId ?? null
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const cursor = searchParams.get('cursor')
@@ -31,11 +43,8 @@ export async function GET(request: Request) {
     }
 
     if (room.privacy === 'PRIVATE') {
-      const authHeader = request.headers.get('authorization')
-      const token = getTokenFromHeader(authHeader)
-      const payload = token ? verifyToken(token) : null
-
-      if (!payload || payload.userId !== room.ownerId) {
+      const participantId = await privateRoomParticipant(room.id, room.ownerId, request.headers.get('authorization'))
+      if (!participantId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }
@@ -156,15 +165,17 @@ export async function POST(request: Request) {
     }
 
     if (room.privacy === 'PRIVATE') {
-      const authHeader = request.headers.get('authorization')
-      const token = getTokenFromHeader(authHeader)
-      const payload = token ? verifyToken(token) : null
-
-      const allowedByOwnerToken = Boolean(payload && payload.userId === room.ownerId)
-      const allowedSystemOwnerId = Boolean(isSystem && userId && userId === room.ownerId)
-
-      if (!allowedByOwnerToken && !allowedSystemOwnerId) {
+      const participantId = await privateRoomParticipant(room.id, room.ownerId, request.headers.get('authorization'))
+      if (!participantId) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      }
+      if (isSystem) {
+        // System events in private rooms need the same verified identity as chat.
+        // A supplied owner/member ID is not proof of room access.
+        const author = await prisma.user.findUnique({ where: { id: participantId }, select: { id: true, username: true } })
+        if (!author) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+        userId = author.id
+        username = author.username
       }
     }
   }

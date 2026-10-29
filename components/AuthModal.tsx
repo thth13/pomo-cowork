@@ -6,6 +6,7 @@ import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react
 import CommunityDialog from '@/components/CommunityDialog'
 import { useAuthStore } from '@/store/useAuthStore'
 import { reportConversion } from '@/lib/gtm'
+import { rememberRoomAuthReturn } from '@/lib/roomAuthReturn'
 import { useI18n } from '@/components/I18nProvider'
 import { registrationFields, validateRegistration, type RegistrationField, type RegistrationFieldErrors } from '@/lib/registrationValidation'
 
@@ -163,6 +164,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       setError(t.auth.googleNotConfigured)
       return
     }
+
+    rememberRoomAuthReturn()
 
     reportConversion()
 

@@ -118,7 +118,9 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       ? Math.max(0, storedRemaining)
       : Math.max(0, totalDuration - elapsed)
 
-    if (remaining > 0) {
+    // Expired active sessions still need the application runtime to persist
+    // completion, including after opening a room directly or restoring a tab.
+    if (remaining > 0 || session.status === SessionStatus.ACTIVE) {
       set({
         currentSession: {
           ...session,

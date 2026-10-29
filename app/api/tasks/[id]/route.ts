@@ -29,6 +29,13 @@ export async function PUT(
       return NextResponse.json({ error: 'Invalid incrementPomodoro value' }, { status: 400 })
     }
 
+    // Older tabs still send this after completing a session. The completion
+    // transaction now owns the counter; acknowledge without counting it again.
+    if (incrementPomodoro) {
+      const task = await prisma.task.findFirst({ where: { id: params.id, userId } })
+      return task ? NextResponse.json(task) : NextResponse.json({ error: 'Task not found' }, { status: 404 })
+    }
+
     if (title !== undefined && (typeof title !== 'string' || !title.trim())) {
       return NextResponse.json({ error: 'Invalid title' }, { status: 400 })
     }
@@ -65,19 +72,12 @@ export async function PUT(
         userId,
       },
       data: {
-        ...(incrementPomodoro && {
-          completedPomodoros: {
-            increment: 1
-          }
-        }),
-        ...(!incrementPomodoro && {
-          ...(color !== undefined && { color }),
-          ...(title !== undefined && { title: title.trim() }),
-          ...(description !== undefined && { description }),
-          ...(pomodoros !== undefined && { pomodoros }),
-          ...(priority !== undefined && { priority }),
-          ...(completed !== undefined && { completed })
-        })
+        ...(color !== undefined && { color }),
+        ...(title !== undefined && { title: title.trim() }),
+        ...(description !== undefined && { description }),
+        ...(pomodoros !== undefined && { pomodoros }),
+        ...(priority !== undefined && { priority }),
+        ...(completed !== undefined && { completed })
       }
     })
 

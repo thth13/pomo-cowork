@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db'
 import { verifyToken, getTokenFromHeader } from '@/lib/auth'
 import { resolveExistingOrAnonymousUserId } from '@/lib/anonymousServer'
 import { SessionStatus, SessionType } from '@/types'
+import { MAX_SESSION_MINUTES, MAX_SESSION_SECONDS } from '@/lib/sessionLimits'
 import {
   calculateExperienceReward,
   getRank,
@@ -106,7 +107,7 @@ export async function PUT(
     }
 
     if (timeRemaining !== undefined) {
-      if (!Number.isInteger(timeRemaining) || timeRemaining < 0) {
+      if (!Number.isInteger(timeRemaining) || timeRemaining < 0 || timeRemaining > MAX_SESSION_SECONDS) {
         return NextResponse.json({ error: 'Invalid timeRemaining' }, { status: 400 })
       }
       updateData.remainingSeconds = timeRemaining
@@ -128,7 +129,7 @@ export async function PUT(
     }
 
     if (duration !== undefined) {
-      if (!Number.isInteger(duration) || duration < 0) {
+      if (!Number.isInteger(duration) || duration < 0 || duration > MAX_SESSION_MINUTES) {
         return NextResponse.json({ error: 'Invalid duration' }, { status: 400 })
       }
       updateData.duration = duration
@@ -283,6 +284,16 @@ export async function PUT(
             },
           }),
         ])
+
+        // The session transition and its task counter commit together. Terminal
+        // sessions return above, so retries and concurrent tabs cannot count twice.
+        const countedTaskId = updatedSession.taskRecordId ?? updatedSession.workProjectId
+        if (updatedSession.status === SessionStatus.COMPLETED && updatedSession.type === SessionType.WORK && countedTaskId) {
+          await tx.task.updateMany({
+            where: { id: countedTaskId, userId: effectiveUserId },
+            data: { completedPomodoros: { increment: 1 } },
+          })
+        }
 
         if ((status === SessionStatus.COMPLETED || isTrackingStop) && extendsStreak && !user.isAnonymous) {
           await recordFocusAchievements(tx, effectiveUserId)

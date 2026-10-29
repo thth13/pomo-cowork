@@ -3,16 +3,15 @@
 import { useEffect } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
-import { useSocket } from '@/hooks/useSocket'
+import TimerRuntime from '@/components/TimerRuntime'
+import { registerServiceWorker } from '@/lib/serviceWorker'
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
   const { checkAuth } = useAuthStore()
   
-  // Initialize socket connection at app level
-  useSocket()
-
   useEffect(() => {
     checkAuth()
+    void registerServiceWorker()
   }, [checkAuth])
 
   useEffect(() => {
@@ -41,5 +40,5 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     })
   }, [])
 
-  return <>{children}</>
+  return <><TimerRuntime />{children}</>
 }

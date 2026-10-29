@@ -344,6 +344,21 @@
   --pixel-scroll-active: #a7bc91;
 }
 
+/* Opaque workspace surfaces retain the base light/dark theme over scenery. */
+:root, .dark {
+  --pixel-solid-page: var(--pixel-page);
+  --pixel-solid-paper: var(--pixel-paper);
+  --pixel-solid-screen: var(--pixel-screen);
+  --pixel-solid-ink: var(--pixel-ink);
+  --pixel-solid-muted: var(--pixel-muted);
+  --pixel-solid-line: var(--pixel-line);
+  --pixel-solid-accent: var(--pixel-accent);
+  --pixel-solid-growth: var(--pixel-growth);
+  --pixel-solid-tomato-ink: var(--pixel-tomato-ink);
+  --pixel-solid-tomato-soft: var(--pixel-tomato-soft);
+  --pixel-solid-shadow: var(--pixel-shadow);
+}
+
 * {
   scrollbar-color: var(--pixel-scroll-thumb) var(--pixel-scroll-track);
   scrollbar-width: thin;

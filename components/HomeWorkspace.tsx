@@ -7,7 +7,7 @@ import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
 import RoomSwitch from '@/components/RoomSwitch'
-import { registerServiceWorker } from '@/lib/serviceWorker'
+import { consumeRoomAuthReturn } from '@/lib/roomAuthReturn'
 import dynamic from 'next/dynamic'
 import ChatSkeleton from '@/components/ChatSkeleton'
 const Chat = dynamic(() => import('@/components/Chat'), { ssr: false, loading: () => <ChatSkeleton /> })
@@ -155,10 +155,16 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
         
         // Перепроверяем авторизацию
         void checkAuth().then(() => {
-          const raw = sessionStorage.getItem('pomo:extensionAuthReturn')
-          if (!raw) return
-          sessionStorage.removeItem('pomo:extensionAuthReturn')
+          if (!useAuthStore.getState().isAuthenticated) return
+          const roomReturn = consumeRoomAuthReturn()
+          if (roomReturn) {
+            window.location.replace(roomReturn)
+            return
+          }
           try {
+            const raw = sessionStorage.getItem('pomo:extensionAuthReturn')
+            if (!raw) return
+            sessionStorage.removeItem('pomo:extensionAuthReturn')
             const saved = JSON.parse(raw)
             const destination = new URL(saved.path, window.location.origin)
             if (useAuthStore.getState().isAuthenticated && destination.origin === window.location.origin && destination.pathname === '/extension/authorize' && Date.now() - saved.createdAt < 10 * 60000) window.location.replace(destination.pathname + destination.search)
@@ -213,11 +219,6 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash)
     }
     return () => window.removeEventListener('pomo:open-projects', openProjects)
-  }, [])
-
-  useEffect(() => {
-    // Регистрация Service Worker для фонового таймера
-    registerServiceWorker()
   }, [])
 
   const handleSessionComplete = async () => {

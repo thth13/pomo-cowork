@@ -3,7 +3,7 @@ import express from 'express'
 import type { Server } from 'http'
 import http from 'http'
 import cors from 'cors'
-import { Server as IOServer } from 'socket.io'
+import { Server as IOServer, type Socket as IOSocket } from 'socket.io'
 import axios from 'axios'
 
 dotenv.config()
@@ -20,6 +20,7 @@ interface PomodoroSession {
   type: string
   timeRemaining: number
   startedAt: string
+  updatedAt?: string
   duration: number
   status?: 'PAUSED' | 'ACTIVE' | 'COMPLETED' | 'CANCELLED'
   socketId?: string
@@ -97,7 +98,9 @@ const getChatHistoryForRoom = (roomId?: string | null) => {
 const pushChatMessageForRoom = (message: ChatMessage) => {
   const key = getRoomKey(message.roomId ?? null)
   const arr = chatMessagesByRoom.get(key) ?? []
-  arr.push(message)
+  const existing = arr.findIndex(item => item.id === message.id)
+  if (existing === -1) arr.push(message)
+  else arr[existing] = message
   if (arr.length > MAX_CHAT_HISTORY) {
     arr.splice(0, arr.length - MAX_CHAT_HISTORY)
   }
@@ -157,7 +160,7 @@ const clearReactionsTargetingUser = (userId: string, ioServer: IOServer) => {
 const API_URL = process.env.API_URL || 'http://localhost:3000'
 
 // Function to save system messages to database via API
-const saveSystemMessageToDB = async (message: ChatMessage) => {
+const saveSystemMessageToDB = async (message: ChatMessage, token?: string | null) => {
   try {
     const apiUrl = process.env.API_URL || 'http://localhost:3000'
     const response = await axios.post(`${apiUrl}/api/chat/messages`, {
@@ -166,10 +169,10 @@ const saveSystemMessageToDB = async (message: ChatMessage) => {
       roomId: message.roomId ?? null,
       type: 'system',
       action: message.action
-    }, { timeout: 10000 })
+    }, { timeout: 10000, headers: token ? { Authorization: `Bearer ${token}` } : undefined })
     return response.data as { id: string } | null
   } catch (error) {
-    console.error('Failed to save system message to database:', error)
+    console.error('Failed to save system message to database:', axios.isAxiosError(error) ? error.response?.status ?? error.code : 'unknown')
     return null
   }
 }
@@ -286,6 +289,140 @@ const serializeSessions = () =>
     status: session.status
   }))
 
+interface RoomViewerAccess {
+  token: string | null
+  clientVersion: number | null
+  status: 'loading' | 'ready' | 'error'
+  generation: number
+  roomIds: Set<string>
+  expiresAt: number
+  lastAttempt: number
+  pending: Promise<void> | null
+  refreshRequested: boolean
+}
+
+const roomViewerAccess = new Map<string, RoomViewerAccess>()
+const ROOM_ACCESS_TTL_MS = 30_000
+
+const viewerCanAccessRoom = (socketId: string, roomId?: string | null) => {
+  const normalized = normalizeRoomId(roomId)
+  if (!normalized) return true
+  const access = roomViewerAccess.get(socketId)
+  return Boolean(access && access.expiresAt > Date.now() && access.roomIds.has(normalized))
+}
+
+const emitSessionSnapshot = (socket: IOSocket, snapshot = serializeSessions()) => {
+  if (!socket.connected) return
+  const access = roomViewerAccess.get(socket.id)
+  const status = access?.status === 'error' ? 'error'
+    : access?.status === 'ready' && access.expiresAt > Date.now() ? 'ready' : 'loading'
+  socket.emit('session-update', snapshot.filter(session => viewerCanAccessRoom(socket.id, session.roomId)), {
+    version: access?.clientVersion ?? null,
+    status,
+    roomIds: status === 'ready' && access ? [...access.roomIds] : [],
+  })
+}
+
+// Only the authenticated API decides access. Presence user IDs are client claims.
+const refreshRoomAccess = (socket: IOSocket, force = false): Promise<void> => {
+  const access = roomViewerAccess.get(socket.id)
+  if (!access || !socket.connected) return Promise.resolve()
+  if (access.pending) {
+    if (force) access.refreshRequested = true
+    return access.pending
+  }
+  if (!force && access.expiresAt > Date.now() + 5000) return Promise.resolve()
+  const generation = access.generation
+  const token = access.token
+  if (access.status !== 'ready' || access.expiresAt <= Date.now()) {
+    access.status = 'loading'
+    emitSessionSnapshot(socket)
+  }
+  const delay = Math.max(0, access.lastAttempt + 1000 - Date.now())
+  const request: Promise<void> = (async () => {
+    if (delay > 0) await new Promise<void>(resolve => setTimeout(resolve, delay))
+    if (!socket.connected || access.generation !== generation) return
+    access.lastAttempt = Date.now()
+    try {
+      const { data } = await axios.get<Array<{ id: string }>>(`${API_URL}/api/rooms`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        timeout: 5000,
+      })
+      if (!socket.connected || roomViewerAccess.get(socket.id) !== access || access.generation !== generation) return
+      if (!Array.isArray(data)) throw new Error('Invalid room access response')
+      access.roomIds = new Set(data.filter(room => room && typeof room.id === 'string').map(room => room.id))
+      access.expiresAt = Date.now() + ROOM_ACCESS_TTL_MS
+      access.status = 'ready'
+    } catch {
+      if (!socket.connected || roomViewerAccess.get(socket.id) !== access || access.generation !== generation) return
+      access.roomIds.clear()
+      access.status = 'error'
+      // Fail closed and bound retries if the application API is unavailable.
+      access.expiresAt = Date.now() + 10_000
+    }
+    emitSessionSnapshot(socket)
+  })().finally(() => {
+    if (access.pending === request) access.pending = null
+    if (socket.connected && roomViewerAccess.get(socket.id) === access && (access.generation !== generation || access.refreshRequested)) {
+      access.refreshRequested = false
+      void refreshRoomAccess(socket, true)
+    }
+  })
+  access.pending = request
+  return request
+}
+
+const setRoomAccessToken = (socket: IOSocket, value?: string | null, clientVersion?: number) => {
+  const token = typeof value === 'string' && value.length <= 8192 && value ? value : null
+  const previous = roomViewerAccess.get(socket.id)
+  const version = typeof clientVersion === 'number' && Number.isSafeInteger(clientVersion) && clientVersion > 0
+    ? clientVersion : previous?.clientVersion ?? null
+  if (!previous) {
+    roomViewerAccess.set(socket.id, { token, clientVersion: version, status: 'loading', generation: 0, roomIds: new Set(), expiresAt: 0, lastAttempt: 0, pending: null, refreshRequested: false })
+  } else if (previous.token !== token || previous.clientVersion !== version) {
+    previous.token = token
+    previous.clientVersion = version
+    previous.status = 'loading'
+    previous.generation += 1
+    previous.roomIds.clear()
+    previous.expiresAt = 0
+    emitSessionSnapshot(socket)
+  }
+  void refreshRoomAccess(socket)
+}
+
+const canReadRoom = async (socket: IOSocket, roomId?: string | null) => {
+  if (!normalizeRoomId(roomId)) return socket.connected
+  if (!viewerCanAccessRoom(socket.id, roomId)) {
+    await refreshRoomAccess(socket, true)
+    // A token change or forced membership refresh may have superseded that read.
+    await roomViewerAccess.get(socket.id)?.pending
+  }
+  return socket.connected && viewerCanAccessRoom(socket.id, roomId)
+}
+
+const broadcastSessionSnapshots = () => {
+  const snapshot = serializeSessions()
+  for (const socket of io.sockets.sockets.values()) {
+    emitSessionSnapshot(socket, snapshot)
+    void refreshRoomAccess(socket)
+  }
+}
+
+const emitRoomEvent = (event: string, payload: unknown, roomId?: string | null, exceptSocketId?: string) => {
+  for (const socket of io.sockets.sockets.values()) {
+    if (socket.id !== exceptSocketId && viewerCanAccessRoom(socket.id, roomId)) socket.emit(event, payload)
+  }
+}
+
+setInterval(() => {
+  for (const socket of io.sockets.sockets.values()) {
+    const access = roomViewerAccess.get(socket.id)
+    if (access && access.expiresAt <= Date.now()) emitSessionSnapshot(socket)
+    void refreshRoomAccess(socket)
+  }
+}, 5000)
+
 // Periodic cleanup of outdated sessions (every minute)
 setInterval(() => {
   for (const [id, activity] of sessionActivity) {
@@ -305,7 +442,7 @@ setInterval(() => {
   })
 
   if (cleaned > 0) {
-    io.emit('session-update', serializeSessions())
+    broadcastSessionSnapshots()
   }
 }, 60000)
 
@@ -373,32 +510,54 @@ interface ChatAuthor {
 }
 
 io.on('connection', (socket) => {
+  let chatHistoryRequest = 0
+  let presenceGeneration = 0
+  let presenceReady: Promise<void> = Promise.resolve()
+  let presenceFailed = false
+  let retryPresence: (() => Promise<void>) | null = null
+  let sessionSyncSequence = 0
   // Share short-lived verification between typing events and message sends.
   let chatAuth: { token: string; expiresAt: number; author: Promise<ChatAuthor | null> } | null = null
-  const getChatAuthor = async (token?: string): Promise<ChatAuthor | null> => {
+  const resolveAuthor = async (token?: string): Promise<ChatAuthor | null> => {
     if (typeof token !== 'string' || !token) return null
     if (!chatAuth || chatAuth.token !== token || chatAuth.expiresAt <= Date.now()) {
       const author = axios.get<ChatAuthor>(`${API_URL}/api/auth/me`, {
         headers: { Authorization: `Bearer ${token}` },
         timeout: 5000,
-      }).then(({ data }) => data.id && !data.isAnonymous ? data : null).catch(() => null)
-      chatAuth = { token, expiresAt: Date.now() + 30_000, author }
+      }).then(({ data }) => data.id && !data.isAnonymous ? data : null).catch(error => {
+        if (axios.isAxiosError(error) && [401, 403, 404].includes(error.response?.status ?? 0)) return null
+        throw new Error('Identity verification unavailable')
+      })
+      const attempt = { token, expiresAt: Date.now() + 30_000, author }
+      chatAuth = attempt
+      void author.catch(() => { if (chatAuth === attempt) chatAuth = null })
     }
-    const author = await chatAuth.author
+    return chatAuth.author
+  }
+  const ensurePresence = async () => {
+    await presenceReady
+    if (presenceFailed && retryPresence) {
+      presenceReady = retryPresence()
+      await presenceReady
+    }
+    if (presenceFailed) throw new Error('Identity verification unavailable')
+  }
+  const getChatAuthor = async (token?: string): Promise<ChatAuthor | null> => {
+    try { await ensurePresence() } catch { return null }
+    const author = await resolveAuthor(token).catch(() => null)
     if (!socket.connected || !author || socketUserMap.get(socket.id) !== author.id || anonymousSockets.has(socket.id)) return null
     return author
   }
   emitPresenceSnapshot()
   
   // Online sessions are owned exclusively by connected clients.
-  socket.emit('session-update', serializeSessions())
+  setRoomAccessToken(socket, null)
+  emitSessionSnapshot(socket)
 
-  socket.on('join-presence', (payload?: { userId: string | null; anonymousId?: string | null; username?: string | null; avatarUrl?: string | null }) => {
-    const userId = payload?.userId ?? null
-    const anonymousId = payload?.anonymousId ?? null
-    const username = payload?.username ?? null
-    const avatarUrl = payload?.avatarUrl ?? null
-
+  const applyPresence = (author: ChatAuthor | null, anonymousId: string | null) => {
+    const userId = author?.id ?? null
+    const username = author?.username
+    const avatarUrl = author?.avatarUrl
     const previousUserId = socketUserMap.get(socket.id)
     const previousAnonymousId = anonymousSockets.get(socket.id)
     if (previousUserId && previousUserId !== userId) {
@@ -411,7 +570,7 @@ io.on('connection', (socket) => {
       sessions.forEach((session, sessionId) => {
         if (session.socketId === socket.id) sessions.delete(sessionId)
       })
-      io.emit('session-update', serializeSessions())
+      broadcastSessionSnapshots()
     }
 
     if (userId) {
@@ -435,20 +594,74 @@ io.on('connection', (socket) => {
     }
 
     emitPresenceSnapshot()
+  }
+
+  socket.on('join-presence', (payload?: { token?: string; anonymousId?: string | null; accessVersion?: number }) => {
+    const token = typeof payload?.token === 'string' && payload.token && payload.token.length <= 8192 ? payload.token : undefined
+    const anonymousId = typeof payload?.anonymousId === 'string' &&
+      /^anon_(?:\d+_[a-z0-9]+|[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i.test(payload.anonymousId)
+      ? payload.anonymousId : null
+    const previousAccess = roomViewerAccess.get(socket.id)
+    const identityChanged = (previousAccess?.token ?? null) !== (token ?? null) ||
+      (!token && (anonymousSockets.get(socket.id) ?? null) !== anonymousId)
+    if (identityChanged || (typeof payload?.accessVersion === 'number' && payload.accessVersion !== previousAccess?.clientVersion)) presenceGeneration += 1
+    const generation = presenceGeneration
+    if (identityChanged) applyPresence(null, null)
+    setRoomAccessToken(socket, token, payload?.accessVersion)
+    presenceFailed = false
+    retryPresence = async () => {
+      try {
+        const author = token ? await resolveAuthor(token) : null
+        if (!socket.connected || generation !== presenceGeneration) return
+        presenceFailed = false
+        applyPresence(author, token ? null : anonymousId)
+      } catch {
+        if (!socket.connected || generation !== presenceGeneration) return
+        presenceFailed = true
+        applyPresence(null, null)
+      }
+    }
+    presenceReady = retryPresence()
   })
 
-  socket.on('chat-send', async (payload: { text: string; token?: string; roomId?: string | null }) => {
+  const verifyPublishedSession = async (id: string, presenceToken?: string) => {
+    const generation = presenceGeneration
+    await ensurePresence()
+    if (!socket.connected || generation !== presenceGeneration) return null
+    const ownerId = socketUserMap.get(socket.id) ?? anonymousSockets.get(socket.id)
+    if (!ownerId || typeof id !== 'string' || !id || id.length > 128) return null
+    const token = roomViewerAccess.get(socket.id)?.token ?? null
+    try {
+      const { data } = await axios.post<{ userId: string; session: PomodoroSession | null }>(
+        `${API_URL}/api/sessions/${encodeURIComponent(id)}/presence`,
+        { anonymousId: anonymousSockets.get(socket.id), presenceToken },
+        { headers: token ? { Authorization: `Bearer ${token}` } : undefined, timeout: 5000 },
+      )
+      if (!socket.connected || generation !== presenceGeneration || data.userId !== ownerId ||
+          (data.session && (data.session.id !== id || data.session.userId !== ownerId))) return null
+      return { ...data, token }
+    } catch (error) {
+      if (axios.isAxiosError(error) && [400, 401, 403, 404].includes(error.response?.status ?? 0)) return null
+      throw new Error('Session verification unavailable')
+    }
+  }
+
+  socket.on('chat-send', async (payload: { text: string; messageId?: string; token?: string; roomId?: string | null }) => {
+    const initialGeneration = roomViewerAccess.get(socket.id)?.generation
     const normalizedRoomId = normalizeRoomId(payload?.roomId ?? null)
     const rawText = (payload?.text ?? '').toString().slice(0, 1000)
     if (!rawText.trim()) return
 
     const author = await getChatAuthor(payload?.token)
-    if (!author) return
+    if (!author || initialGeneration !== roomViewerAccess.get(socket.id)?.generation) return
+    setRoomAccessToken(socket, payload.token)
+    const generation = roomViewerAccess.get(socket.id)?.generation
+    if (!await canReadRoom(socket, normalizedRoomId) || socketUserMap.get(socket.id) !== author.id || roomViewerAccess.get(socket.id)?.token !== payload.token || generation !== roomViewerAccess.get(socket.id)?.generation) return
     const userId = author.id
     const username = author.username
     const avatarUrl = author.avatarUrl || undefined
 
-    const localMessage: ChatMessage = {
+    let localMessage: ChatMessage = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       userId,
       username,
@@ -458,85 +671,109 @@ io.on('connection', (socket) => {
       timestamp: Date.now()
     }
 
+    if (payload.messageId !== undefined) {
+      if (typeof payload.messageId !== 'string' || !payload.messageId || payload.messageId.length > 128) return
+      try {
+        const { data } = await axios.get<ChatMessage>(`${API_URL}/api/chat/messages/${encodeURIComponent(payload.messageId)}`, {
+          headers: { Authorization: `Bearer ${payload.token}` }, timeout: 5000,
+        })
+        if (!socket.connected || data.userId !== author.id || data.id !== payload.messageId ||
+            normalizeRoomId(data.roomId) !== normalizedRoomId || generation !== roomViewerAccess.get(socket.id)?.generation ||
+            socketUserMap.get(socket.id) !== author.id) return
+        localMessage = data
+      } catch { return }
+    }
+
     // Store locally and broadcast
     pushChatMessageForRoom(localMessage)
     
     // Broadcast to all other clients (not sender)
-    socket.broadcast.emit('chat-new', localMessage)
+    emitRoomEvent('chat-new', localMessage, normalizedRoomId, socket.id)
   })
 
-  socket.on('chat-history', (payload?: { roomId?: string | null }) => {
+  socket.on('chat-history', async (payload?: { roomId?: string | null; requestId?: string }) => {
+    const requestId = payload?.requestId
+    if (requestId !== undefined && (typeof requestId !== 'string' || !requestId || requestId.length > 128)) return
+    const requestSequence = ++chatHistoryRequest
+    const generation = roomViewerAccess.get(socket.id)?.generation
     const roomId = normalizeRoomId(payload?.roomId ?? null)
-    socket.emit('chat-history', getChatHistoryForRoom(roomId))
+    const allowed = await canReadRoom(socket, roomId)
+    if (!socket.connected || requestSequence !== chatHistoryRequest || generation !== roomViewerAccess.get(socket.id)?.generation) return
+    const messages = allowed ? getChatHistoryForRoom(roomId) : []
+    // Empty and denied histories still identify the request they answer. Keep
+    // array responses for older clients during the app/socket deployment.
+    socket.emit('chat-history', requestId ? { requestId, roomId, messages } : messages)
   })
 
   socket.on('chat-typing', async (payload: { isTyping: boolean; token?: string; roomId?: string | null }) => {
+    const initialGeneration = roomViewerAccess.get(socket.id)?.generation
     const author = await getChatAuthor(payload?.token)
-    if (!author) return
+    if (!author || initialGeneration !== roomViewerAccess.get(socket.id)?.generation) return
     const username = author.username
     const roomId = normalizeRoomId(payload?.roomId ?? null)
-    socket.broadcast.emit('chat-typing', {
+    setRoomAccessToken(socket, payload.token)
+    const generation = roomViewerAccess.get(socket.id)?.generation
+    if (!await canReadRoom(socket, roomId) || socketUserMap.get(socket.id) !== author.id || roomViewerAccess.get(socket.id)?.token !== payload.token || generation !== roomViewerAccess.get(socket.id)?.generation) return
+    emitRoomEvent('chat-typing', {
       username,
       isTyping: Boolean(payload?.isTyping),
       roomId
-    })
+    }, roomId, socket.id)
   })
 
+  // Preserve this connection's start/end order while API verification is async.
+  // Unverified IDs only queue locally; they cannot occupy another socket's operation.
+  const lifecycleRequests = new Map<string, Promise<void>>()
   const registerSessionEvent = <T,>(
     event: string,
     operations: Map<string, Promise<void>>,
-    identify: (payload: T) => { id: string; userId?: string },
-    handle: (payload: T) => Promise<void>,
+    identify: (payload: T) => { id: string; presenceToken?: string },
+    prepare: (payload: T, session: PomodoroSession | null) => T | null,
+    handle: (payload: T, operationToken: string | null) => Promise<void>,
   ) => {
     socket.on(event, (payload: T, acknowledge?: (accepted: boolean) => void) => {
-      const { id, userId } = identify(payload)
-      const ownerId = socketUserMap.get(socket.id) ?? anonymousSockets.get(socket.id)
-      const existingOwner = sessionActivity.get(id)?.session.userId ?? sessions.get(id)?.userId
-      if (!id || !ownerId || userId !== ownerId || (existingOwner && existingOwner !== ownerId)) {
-        if (typeof acknowledge === 'function') acknowledge(false)
+      const { id, presenceToken } = identify(payload)
+      if (typeof id !== 'string' || !id || id.length > 128) {
+        if (typeof acknowledge === 'function') acknowledge(true)
         return
       }
-      let operation = operations.get(id)
-      if (!operation) {
-        // Install before executing so simultaneous retries share the same work.
-        operation = Promise.resolve().then(() => handle(payload))
-        operations.set(id, operation)
-      }
-      operation.then(() => {
+      const generation = presenceGeneration
+      const request = Promise.resolve(lifecycleRequests.get(id)).catch(() => {}).then(async () => {
+        if (!socket.connected || generation !== presenceGeneration) return
+        const verified = await verifyPublishedSession(id, presenceToken)
+        if (!verified) return
+        let operation = operations.get(id)
+        if (!operation) {
+          const cached = sessions.get(id) ?? sessionActivity.get(id)?.session
+          const session = verified.session ?? (cached?.userId === verified.userId ? cached : null)
+          // Deleted sessions may be retracted from our verified cache, never created.
+          const prepared = prepare(payload, event === 'session-start' ? verified.session : session)
+          if (prepared) {
+            operation = Promise.resolve().then(() => handle(prepared, verified.token))
+            operations.set(id, operation)
+            void operation.catch(() => { if (operations.get(id) === operation) operations.delete(id) })
+          }
+        }
+        await operation
+      })
+      lifecycleRequests.set(id, request)
+      void request.then(() => {
         if (typeof acknowledge === 'function') acknowledge(true)
-      }).catch((error) => {
-        operations.delete(id)
-        console.error(`Failed ${event} for ${id}:`, error)
+      }, () => {
+        // Transient API failures retry without publishing unverified claims.
         if (typeof acknowledge === 'function') acknowledge(false)
+      }).finally(() => {
+        if (lifecycleRequests.get(id) === request) lifecycleRequests.delete(id)
       })
     })
   }
 
   registerSessionEvent('session-start', startOperations,
-    (data: PomodoroSession & { activityOnly?: boolean }) => ({ id: data.id, userId: data.userId }),
-    async (sessionData) => {
-    // Remove any existing sessions for this user/socket to prevent duplicates
-    const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
+    (data: PomodoroSession & { activityOnly?: boolean; presenceToken?: string }) => ({ id: data?.id, presenceToken: data?.presenceToken }),
+    (_payload, session) => session ? { ...session, activityOnly: true } : null,
+    async (sessionData, operationToken) => {
+    const userId = sessionData.userId
     const anonymousId = anonymousSockets.get(socket.id)
-
-    if (!sessionData.activityOnly) {
-      if (userId) {
-        clearReactionsTargetingUser(userId, io)
-      }
-
-      // Clean up any existing sessions for this user
-      sessions.forEach((existingSession, existingSessionId) => {
-        const isSameUser = (
-          (userId && existingSession.userId === userId) ||
-          (anonymousId && existingSession.socketId === socket.id)
-        )
-
-        if (isSameUser && existingSessionId !== sessionData.id) {
-          console.log(`Removing duplicate session ${existingSessionId} for user ${userId || anonymousId}`)
-          sessions.delete(existingSessionId)
-        }
-      })
-    }
 
     const startTime = new Date(sessionData.startedAt).getTime() || Date.now()
     const sessionRecord: PomodoroSession = {
@@ -547,7 +784,7 @@ io.on('connection', (socket) => {
       startTime,
     }
 
-    // Send system message about session start - use data from sessionData
+    // Session and profile fields were verified against the application API.
     let username = sessionData.username || 'Guest'
     let avatarUrl = sessionData.avatarUrl
 
@@ -609,14 +846,10 @@ io.on('connection', (socket) => {
 
     // Publish immediately; chat persistence must not delay or resurrect a session.
     sessionActivity.set(sessionData.id, { session: sessionRecord, touchedAt: Date.now() })
-    // Retried/offline starts create activity only; the current snapshot owns presence.
-    if (!sessionData.activityOnly && !endOperations.has(sessionData.id)) {
-      sessions.set(sessionData.id, sessionRecord)
-      io.emit('session-update', serializeSessions())
-    }
+    // Activity does not create online presence; only a verified connected sync does.
 
     // Save to database
-    const savedMessage = await saveSystemMessageToDB(systemMessage)
+    const savedMessage = await saveSystemMessageToDB(systemMessage, operationToken)
     if (savedMessage?.id) {
       systemMessage.id = savedMessage.id
     }
@@ -637,109 +870,86 @@ io.on('connection', (socket) => {
       }
     }
 
-    io.emit('chat-new', systemMessage)
+    emitRoomEvent('chat-new', systemMessage, systemMessage.roomId)
 
-    io.emit('session-update', serializeSessions())
+    broadcastSessionSnapshots()
   })
 
-  socket.on('session-sync', async (payload: PomodoroSession & { token?: string }) => {
-    // Keep credentials out of stored sessions and broadcasts.
-    const { token, ...sessionData } = payload
-    const ownerId = socketUserMap.get(socket.id) ?? anonymousSockets.get(socket.id)
-    const existingOwner = sessionActivity.get(sessionData.id)?.session.userId ?? sessions.get(sessionData.id)?.userId
-    if (!ownerId || sessionData.userId !== ownerId || endOperations.has(sessionData.id)) return
-    if (existingOwner && existingOwner !== ownerId) {
-      if (!existingOwner.startsWith('anon_') || !token) return
-      const author = await getChatAuthor(token)
-      if (!author || author.id !== ownerId) return
-      // Registration changes the database owner. Verify it before transferring cache ownership.
-      const ownedSessions = await axios.get<Array<{ id: string; userId: string }>>(`${API_URL}/api/sessions?activeOnly=1`, {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 5000,
-      }).then(({ data }) => data).catch(() => [])
-      if (!socket.connected || socketUserMap.get(socket.id) !== ownerId ||
-          !ownedSessions.some(session => session.id === sessionData.id && session.userId === ownerId) ||
-          endOperations.has(sessionData.id)) return
-      const activity = sessionActivity.get(sessionData.id)
-      if (activity) {
-        activity.session = { ...activity.session, userId: ownerId, username: author.username, avatarUrl: author.avatarUrl ?? undefined }
+  const syncPublishedSession = async (id: string, presenceToken?: string) => {
+    const sequence = ++sessionSyncSequence
+    try {
+      const verified = await verifyPublishedSession(id, presenceToken)
+      if (!verified || sequence !== sessionSyncSequence || endOperations.has(id)) return
+      const session = verified.session
+      const previous = sessions.get(id)
+      // Another tab may have published a newer server version while this read
+      // was in flight. Never roll pause/resume or a new session back.
+      if (session && [...sessions.values()].some(existing => existing.userId === session.userId &&
+          (existing.updatedAt ?? '') > (session.updatedAt ?? ''))) return
+      if (!session || !['ACTIVE', 'PAUSED'].includes(session.status ?? '') || session.timeRemaining <= 0) {
+        if (sessions.get(id)?.userId === verified.userId) {
+          sessions.delete(id)
+          broadcastSessionSnapshots()
+        }
+        return
       }
-      for (const history of chatMessagesByRoom.values()) {
-        for (const message of history) {
-          if (message.userId !== existingOwner) continue
-          message.userId = ownerId
-          message.username = author.username
-          message.avatarUrl = author.avatarUrl ?? undefined
+      const activity = sessionActivity.get(id)
+      if (activity && activity.session.userId !== session.userId) {
+        // A server-verified guest conversion may transfer this one session.
+        activity.session = { ...activity.session, ...session }
+        for (const history of chatMessagesByRoom.values()) {
+          const message = history.find(item => item.id === activity.session.chatMessageId)
+          if (message) {
+            message.userId = session.userId
+            message.username = session.username
+            message.avatarUrl = session.avatarUrl
+          }
         }
       }
+      sessions.forEach((existing, sessionId) => {
+        if (existing.userId === session.userId && sessionId !== id) sessions.delete(sessionId)
+      })
+      sessions.set(id, {
+        ...session,
+        socketId: socket.id,
+        startTime: Date.now() - (session.duration * 60 - session.timeRemaining) * 1000,
+        chatMessageId: activity?.session.chatMessageId ?? previous?.chatMessageId,
+        lastUpdate: Date.now(),
+      })
+      broadcastSessionSnapshots()
+    } catch {
+      // A failed API lookup cannot publish client-supplied data. Later ticks,
+      // focus and reconnect will revalidate the connected session.
     }
-    // Remove any existing sessions for this user/socket to prevent duplicates
-    const userId = sessionData.userId || (socketUserMap.get(socket.id) ?? null)
-    const anonymousId = anonymousSockets.get(socket.id)
-    
-    // Clean up any existing sessions for this user (but don't remove the one we're syncing)
-    sessions.forEach((existingSession, existingSessionId) => {
-      const isSameUser = (
-        (userId && existingSession.userId === userId) ||
-        (anonymousId && existingSession.socketId === socket.id)
-      )
-      
-      if (isSameUser && existingSessionId !== sessionData.id) {
-        console.log(`Removing duplicate session ${existingSessionId} during sync for user ${userId || anonymousId}`)
-        sessions.delete(existingSessionId)
-      }
-    })
+  }
 
-    const existingSession = sessions.get(sessionData.id)
-
-    // Sync existing session without sending system message
-    const effectiveTimeRemaining = typeof sessionData.timeRemaining === 'number'
-      ? sessionData.timeRemaining
-      : existingSession?.timeRemaining ?? sessionData.duration * 60
-
-    const syncStartTime = Date.now() - (sessionData.duration * 60 * 1000 - effectiveTimeRemaining * 1000)
-
-    sessions.set(sessionData.id, {
-      ...sessionData,
-      status: sessionData.status ?? existingSession?.status ?? 'ACTIVE',
-      timeRemaining: effectiveTimeRemaining,
-      socketId: socket.id,
-      startTime: syncStartTime,
-      chatMessageId: sessionActivity.get(sessionData.id)?.session.chatMessageId ?? existingSession?.chatMessageId,
-      username: sessionData.username || userNames.get(userId ?? '') || 'Guest',
-      avatarUrl: sessionData.avatarUrl,
-      lastUpdate: Date.now(),
-    })
-
-    io.emit('session-update', serializeSessions())
+  socket.on('session-sync', (payload?: { id?: string; presenceToken?: string }) => {
+    if (typeof payload?.id === 'string') void syncPublishedSession(payload.id, payload.presenceToken)
   })
 
-  socket.on('session-pause', (sessionId: string) => {
-    const session = sessions.get(sessionId)
-    if (!session) {
-      return
-    }
-
-    session.status = 'PAUSED'
-    io.emit('session-update', serializeSessions())
+  socket.on('session-pause', (payload?: string | { sessionId?: string; presenceToken?: string }) => {
+    const id = typeof payload === 'string' ? payload : payload?.sessionId
+    if (typeof id === 'string') void syncPublishedSession(id, typeof payload === 'object' ? payload.presenceToken : undefined)
   })
 
   registerSessionEvent('session-end', endOperations,
-    (payload: { sessionId: string; reason?: 'manual' | 'completed' | 'reset'; removeActivity?: boolean; session?: Omit<PomodoroSession, 'startTime'> }) => ({
-      id: payload.sessionId,
-      userId: payload.session?.userId ?? sessionActivity.get(payload.sessionId)?.session.userId ?? sessions.get(payload.sessionId)?.userId,
+    (payload: { sessionId: string; reason?: 'manual' | 'completed' | 'reset'; removeActivity?: boolean; session?: Omit<PomodoroSession, 'startTime'> & { presenceToken?: string } }) => ({
+      id: payload?.sessionId,
+      presenceToken: payload?.session?.presenceToken,
     }),
-    async (payload) => {
+    (payload, session) => session ? { sessionId: session.id, session,
+      reason: session.status === 'COMPLETED' ? 'completed' as const : 'manual' as const, removeActivity: payload.removeActivity === true } : null,
+    async (payload, operationToken) => {
     const sessionId = payload?.sessionId
     const reason = payload?.reason ?? 'manual'
     const onlineSession = sessions.get(sessionId)
     // Presence ends immediately, even while the start message is being saved.
     sessions.delete(sessionId)
-    io.emit('session-update', serializeSessions())
+    broadcastSessionSnapshots()
     // Start persistence may still be in flight when Stop or reconnect arrives.
     await startOperations.get(sessionId)
     const activity = sessionActivity.get(sessionId)
-    const snapshot = onlineSession ?? payload.session ?? activity?.session
+    const snapshot = payload.session ?? onlineSession ?? activity?.session
     const session: PomodoroSession | undefined = snapshot ? {
       ...snapshot,
       chatMessageId: activity?.session.chatMessageId ?? onlineSession?.chatMessageId,
@@ -795,7 +1005,7 @@ io.on('connection', (socket) => {
       
       // Save to database (best-effort)
       const tempId = systemMessage.id
-      const saved = await saveSystemMessageToDB(systemMessage)
+      const saved = await saveSystemMessageToDB(systemMessage, operationToken)
       if (saved?.id) {
         systemMessage.id = saved.id
 
@@ -811,7 +1021,7 @@ io.on('connection', (socket) => {
         }
       }
       
-      io.emit('chat-new', systemMessage)
+      emitRoomEvent('chat-new', systemMessage, systemMessage.roomId)
     }
 
     if (shouldRemoveActivity && session.chatMessageId) {
@@ -824,32 +1034,19 @@ io.on('connection', (socket) => {
           chatMessagesByRoom.set(key, history)
         }
       }
-      io.emit('chat-remove', session.chatMessageId)
+      emitRoomEvent('chat-remove', session.chatMessageId, session.roomId)
       await deleteSystemMessageFromDB(session.chatMessageId, session.id)
     }
 
   })
 
-  socket.on('timer-tick', (payload?: { sessionId: string; timeRemaining: number }) => {
-    if (!payload?.sessionId) return
-    const session = sessions.get(payload.sessionId)
-    if (!session) {
-      return
-    }
-
-    // Update time and bind to current socket (if user returned)
-    session.timeRemaining = Number(payload.timeRemaining) || 0
-    session.lastUpdate = Date.now()
-    session.startTime = Date.now() - (session.duration * 60 - session.timeRemaining) * 1000
-    session.socketId = socket.id
-
-    if (payload.timeRemaining % 30 === 0) {
-      io.emit('session-update', serializeSessions())
-    }
+  socket.on('timer-tick', (payload?: { sessionId?: string; presenceToken?: string }) => {
+    if (typeof payload?.sessionId === 'string') void syncPublishedSession(payload.sessionId, payload.presenceToken)
   })
 
-  socket.on('get-active-sessions', () => {
-    socket.emit('session-update', serializeSessions())
+  socket.on('get-active-sessions', (payload?: { refreshAccess?: boolean }) => {
+    emitSessionSnapshot(socket)
+    void refreshRoomAccess(socket, payload?.refreshAccess === true)
   })
 
   socket.on('get-online-users', () => {
@@ -924,6 +1121,7 @@ io.on('connection', (socket) => {
   })
 
   socket.on('disconnect', () => {
+    roomViewerAccess.delete(socket.id)
     const userId = socketUserMap.get(socket.id)
     if (userId) {
       socketUserMap.delete(socket.id)
@@ -942,7 +1140,7 @@ io.on('connection', (socket) => {
       }
     })
     if (disconnectedSessionIds.length > 0) {
-      io.emit('session-update', serializeSessions())
+      broadcastSessionSnapshots()
       // Another connected tab may still be running the same timer.
       for (const sessionId of disconnectedSessionIds) {
         socket.broadcast.emit('session-sync-request', sessionId)
@@ -971,13 +1169,14 @@ app.post('/chat/remove', (req, res) => {
     for (const [key, history] of chatMessagesByRoom.entries()) {
       const index = history.findIndex((message) => message.id === id)
       if (index !== -1) {
+        const roomId = history[index].roomId
         history.splice(index, 1)
         chatMessagesByRoom.set(key, history)
+        emitRoomEvent('chat-remove', id, roomId)
         break
       }
     }
     removedIds.push(id)
-    io.emit('chat-remove', id)
   })
 
   res.json({ removed: removedIds })
