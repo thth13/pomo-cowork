@@ -1,5 +1,15 @@
 export const communityCopy = {
   en: {
+    challenge: {
+      heading: 'Daily goal', dailyTarget: 'Target', ofTarget: 'of {minutes} min', setGoal: 'Set daily goal', customTarget: 'Custom target (minutes)',
+      goal: 'Focus for {minutes} minutes today', minutes: 'min', team: 'Team completion',
+      empty: 'Join this room and finish a focus session to start your daily progress.',
+      loading: 'Loading today’s challenge…', loadError: 'Could not refresh the challenge. Try again.',
+      settings: 'Edit daily challenge', title: 'Challenge name', target: 'Daily target (minutes)',
+      invalidTitle: 'Enter a name with 1–80 characters.', invalidTarget: 'Enter a whole number from 5 to 480.',
+      saveError: 'Could not save the challenge. Your changes are still here.', saved: 'Daily challenge saved.',
+      complete: 'Daily goal completed', you: 'You', more: 'Show more participants',
+    },
     back: 'Back to timer', community: 'The coworking corner', rooms: 'Rooms',
     roomsHint: 'A shared place to settle in and get things done.', current: 'Your workspace',
     createRoom: 'Create room', createHint: 'Give your shared workspace a name and choose who can join.',
@@ -44,6 +54,16 @@ export const communityCopy = {
     wallLoadError: 'Could not load messages.', wallSendError: 'Could not post your message.', wallDeleteError: 'Could not delete the message.', messageRequired: 'Write a message first.',
   },
   es: {
+    challenge: {
+      heading: 'Objetivo diario', dailyTarget: 'Meta', ofTarget: 'de {minutes} min', setGoal: 'Establecer objetivo diario', customTarget: 'Objetivo personalizado (minutos)',
+      goal: 'Concéntrate durante {minutes} minutos hoy', minutes: 'min', team: 'Objetivos completados',
+      empty: 'Únete a esta sala y termina una sesión para empezar tu progreso diario.',
+      loading: 'Cargando el reto de hoy…', loadError: 'No se pudo actualizar el reto. Reinténtalo.',
+      settings: 'Editar reto diario', title: 'Nombre del reto', target: 'Objetivo diario (minutos)',
+      invalidTitle: 'Escribe un nombre de entre 1 y 80 caracteres.', invalidTarget: 'Introduce un número entero entre 5 y 480.',
+      saveError: 'No se pudo guardar el reto. Tus cambios se conservan.', saved: 'Reto diario guardado.',
+      complete: 'Objetivo diario completado', you: 'Tú', more: 'Mostrar más participantes',
+    },
     back: 'Volver al temporizador', community: 'El rincón de coworking', rooms: 'Salas',
     roomsHint: 'Un espacio compartido para concentrarse y avanzar.', current: 'Tu espacio de trabajo',
     createRoom: 'Crear sala', createHint: 'Ponle un nombre a tu espacio y elige quién puede unirse.',

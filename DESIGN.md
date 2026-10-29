@@ -653,6 +653,41 @@ the yearly map. Chart colors follow theme tokens and avoid entrance animation.
 English/Spanish copy belongs to `lib/i18n/community.ts`, excluding these surfaces from
 DOM translation. `/profile` redirects authenticated users to their real public profile.
 
+Room detail uses the shared PersonalNavigation header and personal-page-frame spacing,
+matching Statistics and the own-profile page, including loading and error states.
+Rooms is the active navigation item; there is no separate All rooms breadcrumb.
+
+Room detail starts its activity column with `RoomDailyChallenge`: a trophy heading
+labelled “Daily goal” in English, without a Daily badge or explanatory paragraph,
+with the custom goal name directly below the heading and settings on the right.
+There is no separate Target block; participant rows follow the header directly.
+Participant rows align avatars and names to the left and worked minutes with the
+target on one line in a right column, with a full-width meter below the row content.
+The header wraps its actions on narrow phones. The card uses
+participant focus meters in the existing growth color, completion
+checkmarks and a team-completion meter. Ten participants appear initially; Show more
+reveals the next ten. Names wrap on narrow screens. Shared CommunityDialog, community
+form/button styles and the room's existing status toast own challenge editing and
+feedback. English/Spanish copy lives in `communityCopy.challenge`.
+The existing RoomChallenge table stores an owner-editable name and 5–480-minute goal.
+Rooms without configuration have no challenge card or automatic goal. An owner-only
+Set daily goal button in the room header opens the shared dialog with empty fields; saving
+creates the challenge, and the same button can edit an existing goal. Progress is
+derived from finished/stopped WORK and TIME_TRACKING sessions in that room using
+sessionStats effective minutes and completion-date attribution. Current members and
+the owner participate; departed members do not count toward team completion. A common
+UTC day resets at midnight without deleting history. Editing the goal applies today
+and on future days without resetting earned minutes. The card refreshes every 30
+seconds while visible, on window focus, membership changes, saves and UTC rollover;
+loading and retry states stay inside the card.
+
+The goal editor uses CommunityDialog's `daily-goal` variant, sharing the Premium
+purchase dialog's sage header, pixel title, close button, scrollable body and scenery
+tokens at a compact 520px width. The explanatory paragraph is omitted. Daily targets
+use one Daily target minute input with compact 25, 50, 100 and 150-minute
+shortcut buttons directly underneath, without a separate preset heading. The buttons
+have a visible pressed state. Presets only fill the draft; Save commits the goal.
+
 The public profile shares the leaderboard's floating compact Navbar, including
 loading/error states. Its content reserves 84px plus the top safe area, reduced to
 80px at widths up to 800px. Shared Navbar styles own menu positioning and overlays.

@@ -7,11 +7,13 @@ import Image from 'next/image'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import Link from 'next/link'
-import { ArrowLeft, Check, Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Sprout, Trash2, TrendingUp, UserPlus, Users, X } from 'lucide-react'
+import { Check, Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Sprout, Target, Trash2, TrendingUp, UserPlus, Users, X } from 'lucide-react'
 import CommunityDialog from '@/components/CommunityDialog'
+import RoomDailyChallenge from '@/components/RoomDailyChallenge'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
 import Navbar from '@/components/Navbar'
+import PersonalNavigation from '@/components/PersonalNavigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useRoomStore } from '@/store/useRoomStore'
 import { Room, RoomMember, RoomPrivacy, RoomStats } from '@/types'
@@ -77,6 +79,7 @@ export default function RoomPage() {
   })
   const [roomSaving, setRoomSaving] = useState(false)
   const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false)
+  const [isChallengeOpen, setIsChallengeOpen] = useState(false)
   const [joining, setJoining] = useState(false)
   const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<string | null>(null)
   const [isConfirmDeleteOpen, setIsConfirmDeleteOpen] = useState(false)
@@ -571,8 +574,8 @@ export default function RoomPage() {
   return (
     <div className="community-page garden-page" lang={language} data-no-translate>
       <Navbar compact />
-      <main className="community-layout">
-        <Link href="/rooms?list=1" className="community-link room-detail-breadcrumb"><ArrowLeft size={15} aria-hidden="true" />{copy.allRooms}</Link>
+      <main className="community-layout personal-page-frame">
+        <PersonalNavigation />
         {error && !isRoomSettingsOpen && !isConfirmDeleteOpen && !confirmRemoveMemberId && <div className="community-error" role="alert">{error}</div>}
         {loading ? <div className="community-panel community-state" role="status"><span className="community-spinner" aria-hidden="true" />{copy.loading}</div> : !room ? (
           <div className="community-panel community-state"><DoorOpen aria-hidden="true" /><h1>{copy.roomLoadError}</h1><button type="button" className="community-button" onClick={() => void loadAll()}>{copy.retry}</button></div>
@@ -584,6 +587,7 @@ export default function RoomPage() {
               </div>
               <div className="community-actions">
                 {canJoinRoom && <button type="button" onClick={onJoinRoom} disabled={joining} aria-busy={joining} className="community-button community-button-primary"><UserPlus size={16} aria-hidden="true" />{copy.join}</button>}
+                {isOwner && <button type="button" onClick={() => setIsChallengeOpen(true)} className="community-button"><Target size={16} aria-hidden="true" />{copy.challenge.setGoal}</button>}
                 {isOwner && <button type="button" onClick={() => { setError(null); setRoomSettings({ name: room.name, privacy: room.privacy, backgroundGradientKey: (room.backgroundGradientKey as RoomGradientKey | null) ?? null }); setIsRoomSettingsOpen(true) }} className="community-button"><Settings size={16} aria-hidden="true" />{copy.settings}</button>}
                 {canLeaveRoom && <button type="button" onClick={onLeaveRoom} disabled={leaving} aria-busy={leaving} className="community-button"><LogOut size={16} aria-hidden="true" />{copy.leave}</button>}
               </div>
@@ -611,6 +615,7 @@ export default function RoomPage() {
               </div>)}
             </section>
             <div className="community-stack">
+              <RoomDailyChallenge key={room.id} roomId={room.id} token={getToken()} isOwner={isOwner} userId={user?.id} membershipKey={members.map(member => member.user.id).sort().join(',')} onSaved={showInviteToast} open={isOwner && isChallengeOpen} onOpen={() => setIsChallengeOpen(true)} onClose={() => setIsChallengeOpen(false)} />
               <section className="community-panel">
                 <header className="community-panel-heading"><div><h2><Sprout size={18} aria-hidden="true" />{copy.topUsers}</h2><p>{copy.topHint}</p></div></header>
                 {stats?.topUsers?.length ? stats.topUsers.map(person => <div className="community-person" key={person.id}>
