@@ -203,6 +203,25 @@ Notifications keep one initial unread-badge request, coalesce update events, and
 revalidate stale data every five minutes while the tab is visible. Achievement sync
 also uses a five-minute fallback plus debounced session/task events. Wrapped reuses
 the loaded monthly report while toast delivery waits for another overlay to close.
+The NotificationsMenu includes a permanent View all notifications link to `/notifications`
+in a separated footer below the list: a compact muted text link with a small right arrow,
+including when the unread list is empty. The history page reuses compact Navbar,
+PersonalNavigation (as on Statistics and Profile), the personal-page frame and existing pixel notification rows.
+Notifications share one bordered paper/glass block with fine dividers between rows.
+Compact type badges sit after the notification title, with the date aligned right
+and wrapping below on narrow screens. Type badges use green invitations, gold rank upgrades, blue wall messages, purple
+Premium grants and tomato recaps; local accents mix with the runtime ink token to
+adapt to light, dark and scenery themes. Bold titles, inset message rules and emphasized
+sender/month metadata separate content roles without adding cards inside the list.
+Wall messages omit the profile action; Open recap reuses the primary notification
+action button with a calendar icon, visible border and comfortable padding.
+Unread rows have a darker surface; read-state text is screen-reader-only, with no
+visible read timestamp or explanatory page subtitle. AppearanceProvider includes this
+route in shared scenery: the list uses the existing translucent product palette and blur,
+with a darker unread variant and a forced-colors outline fallback.
+Inter owns dense content and the pixel face is reserved for the page heading.
+English/Spanish copy lives in `lib/i18n/notifications.ts`. Runtime theme tokens own
+all page colors; narrow screens wrap metadata and actions without horizontal scrolling.
 Navbar links disable automatic route prefetch so destinations load on navigation.
 Open/closed state persists in `pomo:windows:open:v2` and restores before the workspace
 appears. Existing v1 preferences migrate; only floating panels are restored. Only known panel IDs are restored; unavailable storage falls back to memory.

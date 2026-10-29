@@ -1,0 +1,28 @@
+export const notificationsCopy = {
+  en: {
+    title: 'Notifications',
+    viewAll: 'View all notifications', unread: 'Unread', read: 'Read',
+    markRead: 'Mark as read', loading: 'Loading notifications…', more: 'Load more',
+    empty: 'No notifications yet', emptyHint: 'Your invitations, messages and milestones will appear here.',
+    error: 'Could not load notifications.', actionError: 'Could not update this notification. Try again.',
+    retry: 'Try again', signIn: 'Sign in', signInHint: 'Sign in to see your notifications.',
+    expired: 'Your session has expired. Sign in again to continue.',
+    accept: 'Accept', decline: 'Decline', openRoom: 'Open room', openProfile: 'View profile', openRecap: 'Open recap',
+    working: 'Saving…', room: 'Room', from: 'From',
+    types: { ROOM_INVITE: 'Room invitation', WALL_MESSAGE: 'Wall message', RANK_UP: 'Rank up', MONTHLY_WRAPPED: 'Monthly recap', PREMIUM_GRANTED: 'Premium access' },
+    statuses: { PENDING: 'Pending', ACCEPTED: 'Accepted', DECLINED: 'Declined' },
+  },
+  es: {
+    title: 'Notificaciones',
+    viewAll: 'Ver todas las notificaciones', unread: 'Sin leer', read: 'Leída',
+    markRead: 'Marcar como leída', loading: 'Cargando notificaciones…', more: 'Cargar más',
+    empty: 'Todavía no hay notificaciones', emptyHint: 'Tus invitaciones, mensajes y logros aparecerán aquí.',
+    error: 'No se pudieron cargar las notificaciones.', actionError: 'No se pudo actualizar esta notificación. Inténtalo de nuevo.',
+    retry: 'Reintentar', signIn: 'Iniciar sesión', signInHint: 'Inicia sesión para ver tus notificaciones.',
+    expired: 'Tu sesión ha caducado. Inicia sesión de nuevo para continuar.',
+    accept: 'Aceptar', decline: 'Rechazar', openRoom: 'Abrir sala', openProfile: 'Ver perfil', openRecap: 'Abrir resumen',
+    working: 'Guardando…', room: 'Sala', from: 'De',
+    types: { ROOM_INVITE: 'Invitación a sala', WALL_MESSAGE: 'Mensaje en el muro', RANK_UP: 'Nuevo rango', MONTHLY_WRAPPED: 'Resumen mensual', PREMIUM_GRANTED: 'Acceso Premium' },
+    statuses: { PENDING: 'Pendiente', ACCEPTED: 'Aceptada', DECLINED: 'Rechazada' },
+  },
+} as const

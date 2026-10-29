@@ -19,10 +19,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
+    const history = request.nextUrl.searchParams.get('scope') === 'all'
+    const cursorId = history ? request.nextUrl.searchParams.get('cursor') : null
+    const cursor = cursorId ? await prisma.notification.findFirst({
+      where: { id: cursorId, userId: payload.userId },
+      select: { id: true, createdAt: true },
+    }) : null
+    if (cursorId && !cursor) {
+      return NextResponse.json({ error: 'Invalid cursor' }, { status: 400 })
+    }
+    const limit = history ? 30 : 20
     const notifications = await prisma.notification.findMany({
-      where: { userId: payload.userId, readAt: null },
-      orderBy: { createdAt: 'desc' },
-      take: 20,
+      where: {
+        userId: payload.userId,
+        ...(!history ? { readAt: null } : {}),
+        ...(cursor ? { OR: [
+          { createdAt: { lt: cursor.createdAt } },
+          { createdAt: cursor.createdAt, id: { lt: cursor.id } },
+        ] } : {}),
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: limit + 1,
       select: {
         id: true,
         type: true,
@@ -59,7 +76,13 @@ export async function GET(request: NextRequest) {
       },
     })
 
-    return NextResponse.json({ unreadCount: notifications.length, notifications })
+    const unreadCount = await prisma.notification.count({ where: { userId: payload.userId, readAt: null } })
+    const items = notifications.slice(0, limit)
+    return NextResponse.json({
+      unreadCount,
+      notifications: items,
+      nextCursor: notifications.length > limit ? items[items.length - 1].id : null,
+    }, { headers: { 'Cache-Control': 'no-store' } })
   } catch (error) {
     console.error('List notifications error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })

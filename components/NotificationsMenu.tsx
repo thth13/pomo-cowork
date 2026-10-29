@@ -5,6 +5,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEnvelope, faTrophy } from '@fortawesome/free-solid-svg-icons'
 import { ClipLoader } from 'react-spinners'
 import Image from 'next/image'
+import Link from 'next/link'
+import { ArrowRight } from 'lucide-react'
+import { notificationsCopy } from '@/lib/i18n/notifications'
 import type { NotificationItem } from '@/types'
 import type { RefObject } from 'react'
 
@@ -70,7 +73,7 @@ export default function NotificationsMenu({
       {isOpen && (
         <div className={`${inline ? "workspace-navigation-notification-list" : "absolute right-0 mt-3 w-80 z-50"} notifications-panel`}>
           <div className="notifications-panel-header">
-            <p>Notifications</p>
+            <p>{notificationsCopy[language].title}</p>
             {unreadCount > 0 && <span>{unreadCount > 99 ? '99+' : unreadCount}</span>}
           </div>
 
@@ -173,6 +176,12 @@ export default function NotificationsMenu({
               })}
             </div>
           )}
+          <div className="notifications-panel-footer">
+            <Link href="/notifications" prefetch={false} onClick={onToggle} className="notifications-history-link">
+              <span>{notificationsCopy[language].viewAll}</span>
+              <ArrowRight size={12} aria-hidden="true" />
+            </Link>
+          </div>
         </div>
       )}
     </div>

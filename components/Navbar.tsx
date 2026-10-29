@@ -127,7 +127,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
       notificationsFetchedAt.current = Date.now()
       const all = Array.isArray(data.notifications) ? data.notifications : []
       const visible = all.filter((n) => n.readAt === null)
-      setUnreadCount(visible.length)
+      setUnreadCount(data.unreadCount)
       setNotifications(visible)
     } catch {
       // Keep the last inbox/badge; opening it or the next interval can retry.

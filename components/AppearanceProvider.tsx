@@ -6,7 +6,7 @@ import WorkspaceBackground from '@/components/WorkspaceBackground'
 import { APPEARANCE_STORAGE_KEY, useAppearanceStore } from '@/store/useAppearanceStore'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const sceneryRoutes = /^\/(?:rooms|leaderboard|stats|statistics|habits|profile|user|ranks|settings|feed|discover|journal|projects)(?:\/|$)/
+const sceneryRoutes = /^\/(?:rooms|leaderboard|stats|statistics|habits|profile|user|ranks|settings|notifications|feed|discover|journal|projects)(?:\/|$)/
 
 export function AppearanceProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
