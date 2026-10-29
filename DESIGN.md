@@ -1141,3 +1141,46 @@ pixel title typography, close control and scene-glass treatment with the Premium
 purchase dialog. It keeps a compact 520px width and padded, scrollable message body.
 Glass uses the existing scenery tokens in `app/appearance.css` when scenery is
 rendered; plain backgrounds and forced colors retain the shared opaque surfaces.
+
+
+## Administration dashboard
+
+`/admin` is an intentional visual exception requested by the user: a conventional,
+white dashboard, independent of the public pixel identity and the saved dark theme.
+`app/admin/admin.css` owns scoped `--admin-*` tokens: white surface (#ffffff), cool
+canvas (#f5f7fa), fine border (#e4e8ee), ink (#172033), secondary (#475569), muted
+(#64748b), blue action (#2563eb), hover (#1d4ed8), pale blue (#eff6ff), and blue
+border (#bfdbfe). Admin components consume these tokens directly; local pixel aliases
+adapt the existing CommunityDialog and scrollbar primitives without changing public
+tokens. Typography inherits Inter; headings use restrained semibold, data uses
+tabular numerals. Cards have 12px corners, controls 8px, and subtle soft shadows.
+
+A 240px white sidebar groups Overview, Referral links, Pro users, Support inbox,
+and Paywall activity. Below 800px it becomes horizontally scrollable navigation;
+content retains natural document scrolling and event tables scroll horizontally.
+Overview uses real API counts, with a dash until each dataset loads. The existing
+English admin register is retained; activity retains its English/Spanish support.
+Public donation and feedback widgets are suppressed while this shell is present.
+
+Admin overview adds today/month-to-date registered-account creation counts, today's
+session starts (all timer types), total paywall actions, habit totals with active and
+archived counts, and wall-message totals. Calendar boundaries use Europe/Kyiv.
+New All users, Online users, Wall messages, and Habits sections reuse the same white
+admin tokens and horizontally scrollable tables with 50-row pagination. All users
+includes registered/guest filters and the directory's focus metrics. Habit rows show
+owner, title, status, start date, completion count and creation time. Wall messages
+retain full text and link both author and profile owner. Live presence comes from the
+existing socket store; disconnection is explicit, never presented as zero users.
+
+The overview leads with four highlighted metrics: Currently online, New users, New
+anonymous users, and Paywall activity. They use the existing pale-blue surface, blue
+top border, outline icons, and larger numerals. New accounts use today in Kyiv;
+paywall retains its all-time recorded-event count. Live online includes accounts
+and anonymous connections and shows a dash while disconnected. Other metrics remain
+below in neutral white cards.
+
+Below the primary overview metrics, a compact white Online users panel lists live
+account names with initial avatars, green presence dots, and profile links. Its
+220px maximum scroll height keeps the overview compact. The first 50 accounts are
+alphabetical; View all users opens the full online table. Loading, retry, empty and
+disconnected states are explicit, and anonymous connections remain a separate note.

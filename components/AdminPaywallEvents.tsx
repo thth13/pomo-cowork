@@ -161,7 +161,7 @@ export default function AdminPaywallEvents() {
   function goToPage(nextPage: number) {
     const params = new URLSearchParams(searchParams.toString())
     params.set('paywallPage', String(nextPage))
-    router.replace(`${pathname}?${params}`, { scroll: false })
+    router.replace(`${pathname}?${params}#events`, { scroll: false })
   }
 
   const errorMessage = error === 'auth'
@@ -171,13 +171,13 @@ export default function AdminPaywallEvents() {
       : (es ? 'No se pudieron cargar los eventos. Vuelve a intentarlo.' : 'Could not load events. Try again.')
 
   return (
-    <section className="mt-10 space-y-4" aria-labelledby="paywall-events-title" data-no-translate>
+    <section className="space-y-4" aria-labelledby="paywall-events-title" data-no-translate>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 id="paywall-events-title" className="text-lg font-semibold text-slate-900 dark:text-white">
+          <h2 id="paywall-events-title" className="text-lg font-semibold text-[var(--admin-ink)]">
             {es ? 'Actividad de Upgrade to Pro y Support Pomo' : 'Upgrade to Pro and Support Pomo activity'}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-xs text-[var(--admin-muted)]">
             {es ? 'Aperturas, clics en el pago y en Support Pomo, del más reciente al más antiguo.' : 'Modal opens, checkout clicks and Support Pomo clicks, newest first.'}
           </p>
         </div>
@@ -186,44 +186,44 @@ export default function AdminPaywallEvents() {
         </button>
       </div>
 
-      <div role="status" className="text-sm text-slate-600 dark:text-slate-300">
+      <div role="status" className="text-sm text-[var(--admin-secondary)]">
         {deleted && (es ? 'Evento eliminado.' : 'Event deleted.')}
       </div>
 
-      <div className="min-h-[16rem] rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900" aria-busy={loading}>
+      <div className="min-h-[16rem] rounded-xl border border-[var(--admin-line)] bg-[var(--admin-surface)]" aria-busy={loading}>
         {loading && <p className="p-6 text-sm" role="status">{es ? 'Cargando eventos…' : 'Loading events…'}</p>}
-        {error && <p className="p-6 text-sm text-red-600 dark:text-red-400" role="alert">{errorMessage}</p>}
+        {error && <p className="p-6 text-sm text-red-600" role="alert">{errorMessage}</p>}
         {!loading && !error && data?.events.length === 0 && (
-          <p className="p-6 text-sm text-slate-500">{es ? 'Aún no hay eventos. Aparecerán cuando alguien abra Upgrade to Pro o haga clic en Support Pomo.' : 'No events yet. They will appear when someone opens Upgrade to Pro or clicks Support Pomo.'}</p>
+          <p className="p-6 text-sm text-[var(--admin-muted)]">{es ? 'Aún no hay eventos. Aparecerán cuando alguien abra Upgrade to Pro o haga clic en Support Pomo.' : 'No events yet. They will appear when someone opens Upgrade to Pro or clicks Support Pomo.'}</p>
         )}
         {!loading && !error && !!data?.events.length && (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <caption className="sr-only">{es ? 'Actividad de Upgrade to Pro y Support Pomo' : 'Upgrade to Pro and Support Pomo activity'}</caption>
-              <thead className="bg-slate-50 text-xs text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+              <thead className="bg-[var(--admin-subtle)] text-xs text-[var(--admin-muted)]">
                 <tr>
                   {[es ? 'Usuario' : 'User', es ? 'Acción' : 'Action', 'Plan', es ? 'Página' : 'Page', es ? 'Fecha (Kyiv)' : 'Time (Kyiv)', es ? 'Gestionar' : 'Manage'].map(label => (
                     <th key={label} scope="col" className="px-4 py-3 font-semibold">{label}</th>
                   ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-800">
+              <tbody className="divide-y divide-[var(--admin-line)]">
                 {data.events.map(entry => (
                   <tr key={entry.id}>
                     <td className="max-w-xs break-words px-4 py-3">
                       {entry.user ? <>
-                        <Link href={userProfileHref(entry.user)} className="font-semibold underline decoration-slate-300 underline-offset-4 hover:text-rose-700 focus-visible:outline focus-visible:outline-2 dark:hover:text-rose-300">{entry.user.username}</Link>
-                        {!entry.user.isAnonymous && <div className="text-xs text-slate-500 dark:text-slate-400">{entry.user.email}</div>}
-                        <div className="text-xs text-slate-500 dark:text-slate-400">ID: {entry.user.id}</div>
-                        {!entry.isAuthenticated && <div className="text-xs text-slate-500 dark:text-slate-400">{es ? 'Invitado' : 'Guest'}</div>}
-                      </> : <span className="text-slate-500">{es ? 'Usuario desconocido' : 'Unknown user'}</span>}
+                        <Link href={userProfileHref(entry.user)} className="font-semibold underline decoration-[var(--admin-line)] underline-offset-4 hover:text-[var(--admin-accent-hover)] focus-visible:outline focus-visible:outline-2">{entry.user.username}</Link>
+                        {!entry.user.isAnonymous && <div className="text-xs text-[var(--admin-muted)]">{entry.user.email}</div>}
+                        <div className="text-xs text-[var(--admin-muted)]">ID: {entry.user.id}</div>
+                        {!entry.isAuthenticated && <div className="text-xs text-[var(--admin-muted)]">{es ? 'Invitado' : 'Guest'}</div>}
+                      </> : <span className="text-[var(--admin-muted)]">{es ? 'Usuario desconocido' : 'Unknown user'}</span>}
                     </td>
                     <td className="px-4 py-3">{eventLabels[entry.event]}</td>
                     <td className="px-4 py-3">{entry.plan === 'yearly' ? (es ? 'Anual' : 'Yearly') : entry.plan === 'monthly' ? (es ? 'Mensual' : 'Monthly') : '—'}</td>
                     <td className="max-w-xs break-words px-4 py-3">{entry.pagePath}</td>
                     <td className="whitespace-nowrap px-4 py-3 tabular-nums"><time dateTime={entry.createdAt}>{new Intl.DateTimeFormat(es ? 'es-ES' : 'en-GB', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Europe/Kyiv' }).format(new Date(entry.createdAt))}</time></td>
                     <td className="px-4 py-3">
-                      <button type="button" className={`${buttonClass} text-red-600 dark:text-red-400`} disabled={deleting} onClick={() => {
+                      <button type="button" className={`${buttonClass} text-red-600`} disabled={deleting} onClick={() => {
                         setDeleteError(null)
                         setDeleted(false)
                         setSelectedEntry(entry)
@@ -256,16 +256,16 @@ export default function AdminPaywallEvents() {
         busy={deleting}
         onClose={() => { if (!deleting) setSelectedEntry(null) }}
       >
-        {selectedEntry && <p className="break-words text-sm text-slate-600 dark:text-slate-300">
+        {selectedEntry && <p className="break-words text-sm text-[var(--admin-secondary)]">
           {selectedEntry.user?.username ?? (es ? 'Usuario desconocido' : 'Unknown user')}
           {' · '}{eventLabels[selectedEntry.event]}
           {' · '}{selectedEntry.pagePath}
           {' · '}{new Intl.DateTimeFormat(es ? 'es-ES' : 'en-GB', { dateStyle: 'medium', timeStyle: 'medium', timeZone: 'Europe/Kyiv' }).format(new Date(selectedEntry.createdAt))} (Kyiv)
         </p>}
-        {deleteError && <p role="alert" className="text-sm text-red-600 dark:text-red-400">{deleteError}</p>}
+        {deleteError && <p role="alert" className="text-sm text-red-600">{deleteError}</p>}
         <div className="mt-4 flex justify-end gap-3" aria-busy={deleting}>
           <button type="button" className={buttonClass} disabled={deleting} onClick={() => setSelectedEntry(null)}>{es ? 'Cancelar' : 'Cancel'}</button>
-          <button type="button" className={`${buttonClass} min-w-[7rem] text-red-600 dark:text-red-400`} disabled={deleting} onClick={() => void deleteEntry()}>
+          <button type="button" className={`${buttonClass} min-w-[7rem] text-red-600`} disabled={deleting} onClick={() => void deleteEntry()}>
             {deleting ? (es ? 'Eliminando…' : 'Deleting…') : (es ? 'Eliminar' : 'Delete')}
           </button>
         </div>

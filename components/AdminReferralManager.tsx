@@ -11,7 +11,7 @@ import type {
   SubscriptionPlan,
   SupportMessageEntry,
 } from '@/types'
-import { X } from 'lucide-react'
+import { ArrowUpRight, Link2, Crown, MessageSquare, MousePointer2, X } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
@@ -37,8 +37,12 @@ const getBaseUrl = () => {
   return window.location.origin
 }
 
-export default function AdminReferralManager() {
-  const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore()
+export type AdminSection = 'overview' | 'referrals' | 'users' | 'support' | 'events' | 'directory' | 'online' | 'wall' | 'habits'
+
+export default function AdminReferralManager({ section = 'referrals' }: { section?: AdminSection }) {
+  const { isAuthenticated, isLoading, checkAuth } = useAuthStore()
+  const [referralsLoading, setReferralsLoading] = useState(false)
+  const [loaded, setLoaded] = useState({ referrals: false, users: false, support: false })
   const [items, setItems] = useState<ReferralLink[]>([])
   const [label, setLabel] = useState('')
   const [code, setCode] = useState('')
@@ -91,6 +95,7 @@ export default function AdminReferralManager() {
   }, [checkAuth, isAuthenticated, isLoading])
 
   const fetchItems = async () => {
+    setReferralsLoading(true)
     try {
       const token = localStorage.getItem('token')
       const response = await fetch('/api/admin/referrals', {
@@ -106,10 +111,13 @@ export default function AdminReferralManager() {
 
       const data = (await response.json()) as ReferralLink[]
       setItems(data)
+      setLoaded(prev => ({ ...prev, referrals: true }))
     } catch (err) {
       setToastType('error')
       setToastMessage(err instanceof Error ? err.message : 'Failed to load referrals')
       setShowToast(true)
+    } finally {
+      setReferralsLoading(false)
     }
   }
 
@@ -136,6 +144,7 @@ export default function AdminReferralManager() {
 
       const data = (await response.json()) as SupportMessageEntry[]
       setSupportMessages(data)
+      setLoaded(prev => ({ ...prev, support: true }))
     } catch (err) {
       setToastType('error')
       setToastMessage(err instanceof Error ? err.message : 'Failed to load support messages')
@@ -168,6 +177,7 @@ export default function AdminReferralManager() {
 
       const data = (await response.json()) as ProUserEntry[]
       setProUsers(data)
+      setLoaded(prev => ({ ...prev, users: true }))
     } catch (err) {
       setToastType('error')
       setToastMessage(err instanceof Error ? err.message : 'Failed to load pro users')
@@ -447,24 +457,47 @@ export default function AdminReferralManager() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="admin-manager">
+      <section hidden={section !== 'overview'} aria-label="Overview">
+        <div className="admin-metrics">
+          {[
+            { title: 'Referral links', value: loaded.referrals ? items.length : '—', icon: Link2, href: '#referrals', note: 'Campaigns and partners' },
+            { title: 'Referral clicks', value: loaded.referrals ? items.reduce((sum, item) => sum + item.clicksCount, 0) : '—', icon: MousePointer2, href: '#referrals', note: 'Across all referral links' },
+            { title: 'Pro users', value: loaded.users ? proUsers.length : '—', icon: Crown, href: '#users', note: 'Active Premium accounts' },
+            { title: 'Support messages', value: loaded.support ? supportMessages.length : '—', icon: MessageSquare, href: '#support', note: 'Messages from your community' },
+          ].map(({ title, value, icon: Icon, href, note }) => (
+            <a href={href} className="admin-metric" key={title}>
+              <span className="admin-metric-label">{title}<Icon size={18} aria-hidden="true" /></span>
+              <strong>{typeof value === 'number' ? value.toLocaleString('en-US') : value}</strong>
+              <span className="admin-metric-note">{note}<ArrowUpRight size={15} aria-hidden="true" /></span>
+            </a>
+          ))}
+        </div>
+        <div className="admin-overview-panel">
+          <div className="admin-panel-heading"><h2>Workspace management</h2><p>Manage growth, membership, and community feedback.</p><button type="button" className="admin-refresh" disabled={referralsLoading || proUsersLoading || supportLoading} onClick={() => { void fetchItems(); void fetchProUsers(); void fetchSupportMessages() }}>Refresh overview</button></div>
+          {[
+            { href: '#referrals', icon: Link2, title: 'Referral campaigns', description: 'Create links and review clicks, signups, and purchases.' },
+            { href: '#users', icon: Crown, title: 'Premium membership', description: 'Review active Pro accounts and grant Premium access.' },
+            { href: '#support', icon: MessageSquare, title: 'Community support', description: 'Read messages and open the sender’s profile.' },
+            { href: '#events', icon: MousePointer2, title: 'Paywall activity', description: 'Review paywall opens, checkout clicks, and support clicks.' },
+          ].map(({ href, icon: Icon, title, description }) => (
+            <a className="admin-shortcut" href={href} key={href}><span className="admin-shortcut-icon"><Icon size={20} aria-hidden="true" /></span><span><strong>{title}</strong><span>{description}</span></span><ArrowUpRight size={18} aria-hidden="true" /></a>
+          ))}
+        </div>
+      </section>
+      <section hidden={section !== 'referrals'} className="space-y-6" aria-label="Referral links">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Referral links</h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <h2 className="text-lg font-semibold text-[var(--admin-ink)]">Referral links</h2>
+          <p className="text-xs text-[var(--admin-muted)]">
             Create, track, and manage referral codes for campaigns and partners.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {user ? (
-            <span className="rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">
-              {user.email}
-            </span>
-          ) : null}
           <button
             type="button"
             onClick={() => setIsCreateOpen((prev) => !prev)}
-            className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-rose-50 px-4 py-2 text-xs font-semibold text-rose-700 shadow-sm transition hover:border-rose-300 hover:bg-rose-100 dark:border-rose-900/40 dark:bg-rose-950/40 dark:text-rose-200"
+            className="inline-flex items-center justify-center rounded-xl border border-[var(--admin-accent-line)] bg-[var(--admin-accent-soft)] px-4 py-2 text-xs font-semibold text-[var(--admin-accent-hover)] shadow-sm transition hover:border-[var(--admin-accent-line)] hover:bg-[var(--admin-accent-soft)]"
           >
             {isCreateOpen ? 'Hide create' : 'Create link'}
           </button>
@@ -478,34 +511,34 @@ export default function AdminReferralManager() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
-            className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70"
+            className="rounded-2xl border border-[var(--admin-line)] bg-[var(--admin-surface)] p-6 shadow-sm backdrop-blur"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
-                <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Create referral link</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <h3 className="text-lg font-semibold text-[var(--admin-ink)]">Create referral link</h3>
+                <p className="text-xs text-[var(--admin-muted)]">
                   Optional: set a label or custom code (4-32 chars, letters, numbers, _ or -).
                 </p>
               </div>
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <label className="space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+              <label className="space-y-2 text-sm font-medium text-[var(--admin-secondary)]">
                 Label
                 <input
                   value={label}
                   onChange={(event) => setLabel(event.target.value)}
                   placeholder="Partner or campaign"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-rose-500 dark:focus:ring-rose-500/40"
+                  className="w-full rounded-xl border border-[var(--admin-line)] bg-[var(--admin-surface)] px-4 py-2 text-sm text-[var(--admin-ink)] shadow-sm focus:border-[var(--admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--admin-accent-line)]"
                 />
               </label>
-              <label className="space-y-2 text-sm font-medium text-slate-600 dark:text-slate-300">
+              <label className="space-y-2 text-sm font-medium text-[var(--admin-secondary)]">
                 Custom code
                 <input
                   value={code}
                   onChange={(event) => setCode(event.target.value)}
                   placeholder="Optional"
-                  className="w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-rose-400 focus:outline-none focus:ring-2 focus:ring-rose-200 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-rose-500 dark:focus:ring-rose-500/40"
+                  className="w-full rounded-xl border border-[var(--admin-line)] bg-[var(--admin-surface)] px-4 py-2 text-sm text-[var(--admin-ink)] shadow-sm focus:border-[var(--admin-accent)] focus:outline-none focus:ring-2 focus:ring-[var(--admin-accent-line)]"
                 />
               </label>
             </div>
@@ -515,7 +548,7 @@ export default function AdminReferralManager() {
                 type="button"
                 onClick={handleCreate}
                 disabled={isSubmitting}
-                className="inline-flex items-center justify-center rounded-xl bg-rose-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:bg-rose-300"
+                className="inline-flex items-center justify-center rounded-xl bg-[var(--admin-accent)] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--admin-accent-hover)] disabled:cursor-not-allowed disabled:bg-[var(--admin-accent-line)]"
               >
                 {isSubmitting ? 'Creating...' : 'Create link'}
               </button>
@@ -524,44 +557,44 @@ export default function AdminReferralManager() {
         ) : null}
       </AnimatePresence>
 
-      <div className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
+      <div className="rounded-2xl border border-[var(--admin-line)] bg-[var(--admin-surface)] p-6 shadow-sm backdrop-blur">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Existing links</h2>
-          <span className="text-xs text-slate-400">{items.length} total</span>
+          <h2 className="text-lg font-semibold text-[var(--admin-ink)]">Existing links</h2>
+          <span className="text-xs text-[var(--admin-muted)]">{items.length} total</span>
         </div>
 
-        <div className="mt-4 divide-y divide-slate-200/70 dark:divide-slate-800/80">
-          {items.length === 0 ? (
-            <div className="py-6 text-sm text-slate-500 dark:text-slate-400">No referral links yet.</div>
+        <div className="mt-4 divide-y divide-[var(--admin-line)]">
+          {referralsLoading && !loaded.referrals ? <p role="status" className="py-6 text-sm text-[var(--admin-muted)]">Loading referral links…</p> : items.length === 0 ? (
+            <div className="py-6 text-sm text-[var(--admin-muted)]">No referral links yet.</div>
           ) : (
             items.map((item) => {
               const url = `${baseUrl}/?ref=${item.code}`
               return (
-                <div key={item.id} className="group relative grid gap-4 py-5 sm:grid-cols-[1fr_auto] sm:items-center">
+                <div key={item.id} className="group relative grid gap-4 py-5 sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-3">
-                      <p className="text-base font-semibold text-slate-900 dark:text-white">
+                      <p className="text-base font-semibold text-[var(--admin-ink)]">
                         {item.label ?? 'Untitled'}
                       </p>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                      <span className="rounded-full bg-[var(--admin-subtle)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
                         {item.code}
                       </span>
-                      <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                      <span className="text-xs font-semibold text-[var(--admin-muted)]">
                         Earned: {moneyFormatter.format(item.earnedAmount)}
                       </span>
                     </div>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-[var(--admin-muted)]">
                       Created by {item.createdBy.email}
                     </p>
                     <div className="flex flex-wrap items-center gap-3">
-                      <div className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 shadow-sm dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-200">
-                        <span className="h-2 w-2 rounded-full bg-amber-500" />
+                      <div className="flex items-center gap-2 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700 shadow-sm">
+                        <span className="h-2 w-2 rounded-full bg-[var(--admin-accent)]" />
                         Unique clicks: {item.clicksCount}
                       </div>
                       <button
                         type="button"
                         onClick={() => void handleSignupsToggle(item.id)}
-                        className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800 dark:border-emerald-900/40 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:border-emerald-800"
+                        className="flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:text-emerald-800"
                       >
                         <span className="h-2 w-2 rounded-full bg-emerald-500" />
                         Signups: {item.signupsCount}
@@ -572,7 +605,7 @@ export default function AdminReferralManager() {
                       <button
                         type="button"
                         onClick={() => void handlePurchasesToggle(item.id)}
-                        className="flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm transition hover:border-violet-300 hover:text-violet-800 dark:border-violet-900/40 dark:bg-violet-950/40 dark:text-violet-200 dark:hover:border-violet-800"
+                        className="flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700 shadow-sm transition hover:border-violet-300 hover:text-violet-800"
                       >
                         <span className="h-2 w-2 rounded-full bg-violet-500" />
                         Purchases: {item.purchasesCount}
@@ -588,7 +621,7 @@ export default function AdminReferralManager() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -6 }}
                           transition={{ duration: 0.2 }}
-                          className="rounded-xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300"
+                          className="rounded-xl border border-[var(--admin-line)] bg-[var(--admin-surface)] p-3 text-xs text-[var(--admin-secondary)] shadow-sm"
                         >
                           {signupsByReferral[item.id]?.length ? (
                             <motion.ul
@@ -613,7 +646,7 @@ export default function AdminReferralManager() {
                                 >
                                   <Link
                                     href={userProfileHref(entry.user)}
-                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-slate-100 bg-white/70 px-3 py-2 text-left transition hover:border-emerald-200 hover:bg-emerald-50/40 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-emerald-900/50"
+                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--admin-subtle)] bg-[var(--admin-surface)] px-3 py-2 text-left transition hover:border-emerald-200 hover:bg-emerald-50/40"
                                   >
                                     <div className="flex min-w-0 items-center gap-3">
                                       {entry.user.avatarUrl ? (
@@ -626,20 +659,20 @@ export default function AdminReferralManager() {
                                           height={32}
                                         />
                                       ) : (
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--admin-line)] text-[11px] font-semibold text-[var(--admin-secondary)]">
                                           {entry.user.username.slice(0, 2).toUpperCase()}
                                         </div>
                                       )}
                                       <div className="min-w-0">
-                                        <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                                        <p className="truncate text-sm font-semibold text-[var(--admin-ink)]">
                                           {entry.user.username}
                                         </p>
-                                        <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                        <p className="truncate text-[11px] text-[var(--admin-muted)]">
                                           {entry.user.email}
                                         </p>
                                       </div>
                                     </div>
-                                    <span className="text-[11px] text-slate-400">
+                                    <span className="text-[11px] text-[var(--admin-muted)]">
                                       {new Date(entry.signupCreatedAt).toLocaleDateString('en-GB', {
                                         day: '2-digit',
                                         month: 'short',
@@ -663,7 +696,7 @@ export default function AdminReferralManager() {
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -6 }}
                           transition={{ duration: 0.2 }}
-                          className="rounded-xl border border-slate-200 bg-white/80 p-3 text-xs text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 dark:text-slate-300"
+                          className="rounded-xl border border-[var(--admin-line)] bg-[var(--admin-surface)] p-3 text-xs text-[var(--admin-secondary)] shadow-sm"
                         >
                           {purchasesByReferral[item.id]?.length ? (
                             <motion.ul
@@ -688,7 +721,7 @@ export default function AdminReferralManager() {
                                 >
                                   <Link
                                     href={userProfileHref(entry.user)}
-                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-slate-100 bg-white/70 px-3 py-2 text-left transition hover:border-violet-200 hover:bg-violet-50/40 dark:border-slate-800 dark:bg-slate-950/60 dark:hover:border-violet-900/50"
+                                    className="flex w-full items-center justify-between gap-3 rounded-lg border border-[var(--admin-subtle)] bg-[var(--admin-surface)] px-3 py-2 text-left transition hover:border-violet-200 hover:bg-violet-50/40"
                                   >
                                     <div className="flex min-w-0 items-center gap-3">
                                       {entry.user.avatarUrl ? (
@@ -701,20 +734,20 @@ export default function AdminReferralManager() {
                                           height={32}
                                         />
                                       ) : (
-                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[11px] font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--admin-line)] text-[11px] font-semibold text-[var(--admin-secondary)]">
                                           {entry.user.username.slice(0, 2).toUpperCase()}
                                         </div>
                                       )}
                                       <div className="min-w-0">
-                                        <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                                        <p className="truncate text-sm font-semibold text-[var(--admin-ink)]">
                                           {entry.user.username}
                                         </p>
-                                        <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
+                                        <p className="truncate text-[11px] text-[var(--admin-muted)]">
                                           {entry.user.email}
                                         </p>
                                       </div>
                                     </div>
-                                    <span className="text-[11px] font-semibold text-violet-600 dark:text-violet-300">
+                                    <span className="text-[11px] font-semibold text-violet-600">
                                       {getPlanLabel(entry.subscriptionPlan)} · {formatMoney(getPurchaseAmount(entry))}
                                     </span>
                                   </Link>
@@ -732,7 +765,7 @@ export default function AdminReferralManager() {
                     <button
                       type="button"
                       onClick={() => handleCopy(url)}
-                      className="inline-flex items-center justify-center rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:border-slate-300 hover:text-slate-900 dark:border-slate-800 dark:text-slate-200 dark:hover:border-slate-700"
+                      className="inline-flex items-center justify-center rounded-xl border border-[var(--admin-line)] px-3 py-2 text-xs font-semibold text-[var(--admin-secondary)] transition hover:border-[var(--admin-line)] hover:text-[var(--admin-ink)]"
                     >
                       Copy URL
                     </button>
@@ -741,12 +774,12 @@ export default function AdminReferralManager() {
                     type="button"
                     onClick={() => void handleArchiveClick(item.id)}
                     disabled={archivingId === item.id}
-                    className="absolute right-2 top-2 inline-flex h-4 w-4 items-center justify-center rounded-full border border-rose-200 bg-white/90 text-rose-500 opacity-0 shadow-sm transition hover:text-rose-600 group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-rose-900/40 dark:bg-slate-950/90 dark:text-rose-300"
+                    className="admin-archive inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--admin-accent-line)] bg-[var(--admin-surface)] text-[var(--admin-accent)] shadow-sm transition hover:text-[var(--admin-accent-hover)] disabled:cursor-not-allowed disabled:opacity-40"
                     aria-label="Archive referral link"
                     title="Archive"
                   >
                     {archivingId === item.id ? (
-                      <span className="h-2 w-2 animate-spin rounded-full border-2 border-rose-300 border-t-transparent" />
+                      <span className="h-2 w-2 animate-spin rounded-full border-2 border-[var(--admin-accent-line)] border-t-transparent" />
                     ) : (
                       <X className="h-2 w-2" />
                     )}
@@ -758,15 +791,17 @@ export default function AdminReferralManager() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
+      </section>
+      <section hidden={section !== 'users'} aria-label="Pro users">
+      <div className="rounded-2xl border border-[var(--admin-line)] bg-[var(--admin-surface)] p-6 shadow-sm backdrop-blur">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Pro users</h2>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            <h2 className="text-lg font-semibold text-[var(--admin-ink)]">Pro users</h2>
+            <p className="mt-1 text-xs text-[var(--admin-muted)]">
               Grant one month of Premium by username.
             </p>
           </div>
-          <span className="text-xs text-slate-400">{proUsers.length} total</span>
+          <span className="text-xs text-[var(--admin-muted)]">{proUsers.length} total</span>
         </div>
 
         <div className="mt-4 flex flex-col gap-3">
@@ -788,9 +823,9 @@ export default function AdminReferralManager() {
             }}
             placeholder="username"
             disabled={isGrantingPremium}
-            className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-amber-500 dark:focus:ring-amber-500/40"
+            className="min-w-0 flex-1 rounded-xl border border-[var(--admin-line)] bg-[var(--admin-surface)] px-4 py-2 text-sm text-[var(--admin-ink)] shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
           />
-          <label className="text-xs text-slate-500 dark:text-slate-400" htmlFor="premium-user-message">
+          <label className="text-xs text-[var(--admin-muted)]" htmlFor="premium-user-message">
             Message shown to the user
           </label>
           <textarea
@@ -801,13 +836,13 @@ export default function AdminReferralManager() {
             rows={4}
             maxLength={2000}
             disabled={isGrantingPremium}
-            className="min-w-0 resize-none rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-900 shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-60 dark:border-slate-800 dark:bg-slate-900 dark:text-white dark:focus:border-amber-500 dark:focus:ring-amber-500/40"
+            className="min-w-0 resize-none rounded-xl border border-[var(--admin-line)] bg-[var(--admin-surface)] px-4 py-2 text-sm text-[var(--admin-ink)] shadow-sm focus:border-amber-400 focus:outline-none focus:ring-2 focus:ring-amber-200 disabled:cursor-not-allowed disabled:opacity-60"
           />
           <button
             type="button"
             onClick={() => void handleGrantPremium()}
             disabled={isGrantingPremium || !premiumUsername.trim() || !premiumMessage.trim()}
-            className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:bg-amber-300 dark:text-slate-950"
+            className="inline-flex items-center justify-center rounded-xl bg-[var(--admin-accent)] px-5 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[var(--admin-accent-hover)] disabled:cursor-not-allowed disabled:bg-amber-300"
           >
             {isGrantingPremium ? 'Granting...' : 'Grant Premium for 1 month'}
           </button>
@@ -815,15 +850,15 @@ export default function AdminReferralManager() {
 
         <div className="mt-4 space-y-3">
           {proUsersLoading ? (
-            <div className="text-sm text-slate-500 dark:text-slate-400">Loading pro users...</div>
+            <div className="text-sm text-[var(--admin-muted)]">Loading pro users...</div>
           ) : proUsers.length === 0 ? (
-            <div className="text-sm text-slate-500 dark:text-slate-400">No active pro users yet.</div>
+            <div className="text-sm text-[var(--admin-muted)]">No active pro users yet.</div>
           ) : (
             proUsers.map((entry) => (
               <Link
                 key={entry.id}
                 href={userProfileHref(entry)}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white/70 px-4 py-3 text-sm text-slate-700 shadow-sm transition hover:border-amber-200 hover:bg-amber-50/50 dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200 dark:hover:border-amber-900/50"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[var(--admin-line)] bg-[var(--admin-surface)] px-4 py-3 text-sm text-[var(--admin-secondary)] shadow-sm transition hover:border-amber-200 hover:bg-amber-50/50"
               >
                 <div className="flex min-w-0 items-center gap-3">
                   {entry.avatarUrl ? (
@@ -836,27 +871,27 @@ export default function AdminReferralManager() {
                       height={40}
                     />
                   ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-xs font-semibold text-slate-600 dark:bg-slate-800 dark:text-slate-200">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[var(--admin-line)] text-xs font-semibold text-[var(--admin-secondary)]">
                       {entry.username.slice(0, 2).toUpperCase()}
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">
+                    <p className="truncate text-sm font-semibold text-[var(--admin-ink)]">
                       {entry.username}
                     </p>
-                    <p className="truncate text-xs text-slate-500 dark:text-slate-400">{entry.email}</p>
+                    <p className="truncate text-xs text-[var(--admin-muted)]">{entry.email}</p>
                     {entry.lastSeenAt ? (
-                      <p className="text-[11px] text-slate-400">
+                      <p className="text-[11px] text-[var(--admin-muted)]">
                         Last seen {formatShortDate(entry.lastSeenAt)}
                       </p>
                     ) : null}
                   </div>
                 </div>
                 <div className="flex items-center gap-3 text-right">
-                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-200">
+                  <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700">
                     Pro
                   </span>
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-[var(--admin-muted)]">
                     {entry.proExpiresAt ? `Active until ${formatShortDate(entry.proExpiresAt)}` : 'No expiry'}
                   </span>
                 </div>
@@ -866,37 +901,39 @@ export default function AdminReferralManager() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white/70 p-6 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
+      </section>
+      <section hidden={section !== 'support'} aria-label="Support messages">
+      <div className="rounded-2xl border border-[var(--admin-line)] bg-[var(--admin-surface)] p-6 shadow-sm backdrop-blur">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Support messages</h2>
-          <span className="text-xs text-slate-400">{supportMessages.length} total</span>
+          <h2 className="text-lg font-semibold text-[var(--admin-ink)]">Support messages</h2>
+          <span className="text-xs text-[var(--admin-muted)]">{supportMessages.length} total</span>
         </div>
 
         <div className="mt-4 space-y-4">
           {supportLoading ? (
-            <div className="text-sm text-slate-500 dark:text-slate-400">Loading support messages...</div>
+            <div className="text-sm text-[var(--admin-muted)]">Loading support messages...</div>
           ) : supportMessages.length === 0 ? (
-            <div className="text-sm text-slate-500 dark:text-slate-400">No support messages yet.</div>
+            <div className="text-sm text-[var(--admin-muted)]">No support messages yet.</div>
           ) : (
             supportMessages.map((entry) => (
               <div
                 key={entry.id}
-                className="rounded-xl border border-slate-200 bg-white/70 p-4 text-sm text-slate-700 shadow-sm dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-200"
+                className="rounded-xl border border-[var(--admin-line)] bg-[var(--admin-surface)] p-4 text-sm text-[var(--admin-secondary)] shadow-sm"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="space-y-1">
-                    <p className="text-base font-semibold text-slate-900 dark:text-white">
+                    <p className="text-base font-semibold text-[var(--admin-ink)]">
                       {entry.subject?.trim() || 'No subject'}
                     </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-[var(--admin-muted)]">
                       {entry.name?.trim() || 'Anonymous'} · {entry.email?.trim() || 'No email'}
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-slate-500 dark:bg-slate-800 dark:text-slate-300">
+                    <span className="rounded-full bg-[var(--admin-subtle)] px-2.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--admin-muted)]">
                       {entry.status}
                     </span>
-                    <p className="mt-1 text-[11px] text-slate-400">
+                    <p className="mt-1 text-[11px] text-[var(--admin-muted)]">
                       {new Date(entry.createdAt).toLocaleDateString('en-GB', {
                         day: '2-digit',
                         month: 'short',
@@ -905,14 +942,14 @@ export default function AdminReferralManager() {
                     </p>
                   </div>
                 </div>
-                <p className="mt-3 whitespace-pre-line text-sm text-slate-600 dark:text-slate-300">
+                <p className="mt-3 whitespace-pre-line text-sm text-[var(--admin-secondary)]">
                   {entry.message}
                 </p>
                 {entry.user ? (
                   <div className="mt-3">
                     <Link
                       href={userProfileHref(entry.user)}
-                      className="inline-flex items-center gap-2 text-xs font-semibold text-rose-600 transition hover:text-rose-700 dark:text-rose-300 dark:hover:text-rose-200"
+                      className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--admin-accent-hover)] transition hover:text-[var(--admin-accent-hover)]"
                     >
                       View user profile
                     </Link>
@@ -923,6 +960,7 @@ export default function AdminReferralManager() {
           )}
         </div>
       </div>
+      </section>
       <NotificationToast
         message={toastMessage}
         isVisible={showToast}

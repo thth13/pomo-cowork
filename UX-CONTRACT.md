@@ -662,3 +662,58 @@ the entered values and focus the first invalid field. English/Spanish labels fol
 I18nProvider, including the conjunction in the existing registration terms copy.
 Visual tokens and rendered-scenery detection follow DESIGN.md and appearance.css.
 Verification is static; app execution, builds and tsc remain user-owned.
+
+
+## Administration navigation
+
+`app/admin/page.tsx` owns the admin shell and hash navigation. Overview, referrals,
+users, support, and events are separately addressable sections; browser history
+restores selection. Existing `paywallPage` links still open activity, and pagination
+preserves `#events`. Referral, Premium, and support panels remain mounted when
+hidden to preserve drafts and expanded data. Activity mounts on first visit and
+then retains state. `AdminReferralManager` remains the owner of existing referral,
+Premium, support, and toast workflows; `AdminPaywallEvents` retains pagination,
+request cancellation, error recovery and the shared CommunityDialog confirmation.
+API permission and mutation policies remain owned by `app/api/admin` and
+`lib/admin.ts`. Overview counts reuse those responses; unavailable counts show a
+dash, and Refresh overview retries loading. No new billing or authorization rules.
+
+## Administration community data
+
+Sources: `prisma/schema.prisma`, `app/uzerz/page.tsx`, `lib/sessionStats.ts`,
+`hooks/useSocket.ts`, `store/useConnectionStore.ts`, and `lib/admin.ts`.
+`lib/adminRequest.ts` applies the existing token and admin allowlist checks before
+any new query. `/api/admin/overview` returns aggregate counts without caching.
+Registration counts exclude anonymous accounts and use `User.createdAt`, matching
+`/uzerz`; the schema has no separate guest-to-registered conversion timestamp, so
+these are account-creation cohorts, not a reconstruction of conversion events.
+Today/month-to-date boundaries are Europe/Kyiv local midnights resolved independently
+for DST. Session starts include all types/statuses; paywall, wall, and habit counts
+cover all currently stored records. Habit counts include archived habits.
+
+`/api/admin/data` is a read-only POST to accept long presence-ID lists without URL
+limits. It validates the list, account filter, page, and presence input after admin
+authorization. Results use explicit field selection, newest-first stable ordering,
+50-row pagination and clamping after deletions. It exposes no credentials. Presence
+IDs are a filter from the existing live feed, not authorization. Anonymous socket
+connections without IDs in that feed remain a separate count.
+
+`components/admin/useAdminData.ts` owns cancellation, timeout, stale-response
+protection, session-sensitive invalidation and manual retry for the new read-only
+surfaces. Tables have loading, empty, error, disconnected and pagination-boundary
+states. Keyboard-focusable horizontal scroll regions preserve all columns on mobile;
+full messages wrap without truncation. User profiles use `userProfileHref`.
+`CommunityDialog` and existing mutation owners are unchanged. Runtime verification
+is left to the user; only source syntax and diff checks are performed.
+
+Primary overview metrics use `useConnectionStore.totalOnlineCount` only while
+connected, and `/api/admin/overview.todayAnonymous` counts currently anonymous
+accounts created today in Kyiv. Converted guests are classified as registered
+accounts; anonymous connections without persisted accounts are not new-account
+creations. Paywall activity retains its explicitly labelled all-recorded scope.
+
+`AdminOnlinePanel` reuses the socket store and `useAdminData` below the overview's
+primary metrics. The existing admin data endpoint's online `compact` mode selects
+only identity fields, avoiding session-statistics queries. It retains admin checks
+and pagination limits. The preview shows at most 50 names with a total and a link to
+all online accounts; disconnected presence never renders stale account names.
