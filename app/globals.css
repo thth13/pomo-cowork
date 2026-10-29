@@ -2369,7 +2369,7 @@ body:has(.workspace-page) {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: hidden;
 }
 
 .working-sidebar .coworker-strip-heading {
@@ -2459,7 +2459,6 @@ body:has(.workspace-page) {
   .working-sidebar {
     justify-self: end;
     max-width: 400px;
-    max-height: 640px;
     margin: 0;
     padding-inline: 24px;
     border-left: 1px solid var(--pixel-line);
@@ -5135,7 +5134,8 @@ html[data-mini-timer] body {
   background: var(--pixel-screen);
 }
 
-.task-popover {
+.task-popover,
+.working-sidebar .coworker-strip {
   --pixel-scroll-track: transparent;
   --pixel-scroll-thumb: color-mix(in srgb, var(--pixel-muted) 32%, transparent);
   --pixel-scroll-hover: color-mix(in srgb, var(--pixel-muted) 55%, transparent);
@@ -5143,24 +5143,28 @@ html[data-mini-timer] body {
 }
 
 .task-popover,
-.task-popover-list {
+.task-popover-list,
+.working-sidebar .coworker-strip {
   scrollbar-width: thin;
   scrollbar-color: var(--pixel-scroll-thumb) transparent;
 }
 
 .task-popover::-webkit-scrollbar,
-.task-popover-list::-webkit-scrollbar {
+.task-popover-list::-webkit-scrollbar,
+.working-sidebar .coworker-strip::-webkit-scrollbar {
   width: 4px;
   height: 4px;
 }
 
 .task-popover::-webkit-scrollbar-track,
-.task-popover-list::-webkit-scrollbar-track {
+.task-popover-list::-webkit-scrollbar-track,
+.working-sidebar .coworker-strip::-webkit-scrollbar-track {
   background: transparent;
 }
 
 .task-popover::-webkit-scrollbar-thumb,
-.task-popover-list::-webkit-scrollbar-thumb {
+.task-popover-list::-webkit-scrollbar-thumb,
+.working-sidebar .coworker-strip::-webkit-scrollbar-thumb {
   border: 0;
   border-radius: 4px;
 }
@@ -5171,7 +5175,8 @@ html[data-mini-timer] body {
   }
 
   .task-popover,
-  .task-popover-list {
+  .task-popover-list,
+  .working-sidebar .coworker-strip {
     scrollbar-color: auto;
   }
 }
@@ -5445,4 +5450,38 @@ html[data-mini-timer] body {
 
 @media (max-width: 719px) {
   .working-sidebar:has(> .workspace-room-switch) { height: auto; }
+}
+
+/* Keep the original rail footprint, growing only when its contents need it. */
+@media (min-width: 960px) {
+  .working-sidebar {
+    --working-room-offset: 0px;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    min-height: min(640px, calc(100% - var(--working-room-offset)));
+    max-height: calc(100% - var(--working-room-offset));
+  }
+
+  .working-sidebar:has(> .workspace-room-switch) {
+    --working-room-offset: 56px;
+    height: auto;
+  }
+
+  .working-sidebar-content,
+  .working-sidebar .focus-page-community {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 0;
+  }
+
+  .working-sidebar .coworker-strip {
+    flex: 1 1 auto;
+  }
+
+  .working-sidebar .coworker-tile {
+    flex-shrink: 0;
+  }
 }

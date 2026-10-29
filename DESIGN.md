@@ -127,7 +127,11 @@ overrides saved desktop geometry without replacing the stored size.
 The homepage centers a 640px timer. Currently Working is a permanent right-side rail,
 part of the page rather than a floating window. At 1440px and up, symmetric side columns
 keep the timer centered independently of the rail. The rail is up to 400px wide and
-640px tall, with a subtle left divider, plain heading and online count. From 960px the rail sits beside the timer; narrower screens
+keeps its original 640px base height (clamped to the available workspace), growing
+only when its contents need more room, up to the available workspace height, with a subtle left divider,
+plain heading and online count. The list alone owns overflow, with the same thin,
+rounded scrollbar and transparent track as task popovers; the heading stays visible.
+From 960px the rail sits beside the timer; narrower screens
 place it below the timer in a bounded grid row, except on mobile (up to 719px), where
 the page scrolls naturally and the full session list has no height limit or internal scrollbar.
 On desktop the rail aligns to the right
