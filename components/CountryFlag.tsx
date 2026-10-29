@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-export default function CountryFlag({ flag, name }: { flag: string; name: string }) {
+export default function CountryFlag({ flag, name, variant = 'default' }: { flag: string; name: string; variant?: 'default' | 'admin' }) {
   const tooltipId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [position, setPosition] = useState<{ left: number; bottom: number } | null>(null)
@@ -40,7 +40,7 @@ export default function CountryFlag({ flag, name }: { flag: string; name: string
         type="button"
         aria-label={name}
         aria-describedby={position ? tooltipId : undefined}
-        className="inline-flex cursor-help rounded text-xl hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:hover:bg-slate-800"
+        className="country-flag-trigger inline-flex cursor-help rounded text-xl hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current dark:hover:bg-slate-800"
         onMouseEnter={showTooltip}
         onFocus={showTooltip}
         onBlur={() => setPosition(null)}
@@ -56,12 +56,12 @@ export default function CountryFlag({ flag, name }: { flag: string; name: string
           <span
             id={tooltipId}
             role="tooltip"
-            className="block whitespace-normal break-words rounded-[3px] border border-[var(--pixel-line)] bg-[var(--pixel-paper)] px-3 py-2 text-left text-xs font-medium leading-normal text-[var(--pixel-ink)] shadow-[3px_3px_0_var(--pixel-shadow)]"
+            className="country-flag-tooltip block whitespace-normal break-words rounded-[3px] border border-[var(--pixel-line)] bg-[var(--pixel-paper)] px-3 py-2 text-left text-xs font-medium leading-normal text-[var(--pixel-ink)] shadow-[3px_3px_0_var(--pixel-shadow)]"
           >
             {name}
           </span>
         </span>,
-        document.body,
+        variant === 'admin' ? triggerRef.current?.closest('.admin-shell') ?? document.body : document.body,
       )}
     </span>
   )

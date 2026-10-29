@@ -7,14 +7,14 @@ import { useAdminData } from './useAdminData'
 
 type Overview = { todayRegistered: number; todayAnonymous: number; monthlyRegistered: number; todayStartedTimers: number; paywallActions: number; habits: number; activeHabits: number; wallMessages: number; updatedAt: string }
 
-export default function AdminOverview() {
+export default function AdminOverview({ showOnlinePanel = true }: { showOnlinePanel?: boolean }) {
   const { data, error, loading, refresh } = useAdminData<Overview>('/api/admin/overview')
   const connected = useConnectionStore(state => state.isConnected)
   const totalOnline = useConnectionStore(state => state.totalOnlineCount)
   const primaryMetrics = [
-    { label: 'Currently online', value: connected ? totalOnline : undefined, note: connected ? 'Live · accounts and anonymous visitors' : 'Reconnecting to live presence…', href: '#online', icon: Radio },
-    { label: 'New users', value: data?.todayRegistered, note: 'Today · Kyiv', href: '#directory', icon: UserPlus },
-    { label: 'New anonymous users', value: data?.todayAnonymous, note: 'Guest accounts created today · Kyiv', icon: Users },
+    { label: 'Currently online', value: connected ? totalOnline : undefined, note: connected ? 'Live · accounts and anonymous visitors' : 'Reconnecting to live presence…', icon: Radio },
+    { label: 'Today new users', value: data?.todayRegistered, note: 'Today · Kyiv', href: '#directory', icon: UserPlus },
+    { label: 'Today new anonymous users', value: data?.todayAnonymous, note: 'Guest accounts created today · Kyiv', icon: Users },
     { label: 'Paywall activity', value: data?.paywallActions, note: 'All recorded actions', href: '#events', icon: MousePointer2 },
   ]
   const metrics = [
@@ -30,7 +30,7 @@ export default function AdminOverview() {
       const content = <><span className="admin-metric-label">{metric.label}<Icon size={20} aria-hidden="true" /></span><strong>{metric.value?.toLocaleString('en-US') ?? '—'}</strong><span className="admin-metric-note">{metric.note}</span></>
       return metric.href ? <a key={metric.label} href={metric.href} className="admin-metric admin-primary-metric">{content}</a> : <div key={metric.label} className="admin-metric admin-primary-metric">{content}</div>
     })}</div>
-    <AdminOnlinePanel />
+    {showOnlinePanel && <AdminOnlinePanel />}
     <div className="admin-metrics">{metrics.map(metric => {
       const content = <><span className="admin-metric-label">{metric.label}</span><strong>{metric.value?.toLocaleString('en-US') ?? '—'}</strong><span className="admin-metric-note">{metric.note}</span></>
       return metric.href ? <a key={metric.label} href={metric.href} className="admin-metric">{content}</a> : <div key={metric.label} className="admin-metric">{content}</div>

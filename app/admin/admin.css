@@ -195,3 +195,21 @@ body:has(.admin-shell) { background: #f5f7fa; }
 .admin-online-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 500; }
 .admin-online-name small { display: block; color: var(--admin-muted); font-size: 10px; font-weight: 400; }
 .admin-online-panel-note { padding: 0 20px 12px; color: var(--admin-muted); font-size: 11px; }
+
+.admin-shell { --admin-success-ink: #166534; --admin-success-soft: #f0fdf4; --admin-success-line: #bbf7d0; }
+.admin-status-active { color: var(--admin-success-ink); background: var(--admin-success-soft); border: 1px solid var(--admin-success-line); }
+.admin-status-archived { color: var(--admin-muted); background: var(--admin-subtle); border: 1px solid var(--admin-line); }
+.admin-wall-participants { display: flex; align-items: baseline; gap: 8px; white-space: nowrap; }
+.admin-wall-participants a { color: var(--admin-accent-hover); }
+.admin-wall-participants a:hover { text-decoration: underline; }
+.admin-wall-participants > span { color: var(--admin-muted); }
+.admin-shell .country-flag-trigger { min-width: 36px; justify-content: center; }
+.admin-shell .country-flag-trigger:hover { background: var(--admin-subtle); }
+.admin-shell .country-flag-tooltip { border-radius: 8px; box-shadow: 0 4px 16px #17203315; }
+
+.admin-records { margin-bottom: 32px; }
+.admin-total-registered { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; margin-bottom: 16px; border: 1px solid var(--admin-accent-line); border-radius: 12px; background: var(--admin-accent-soft); }
+.admin-total-registered h3 { font-size: 16px; font-weight: 600; }
+.admin-total-registered p { margin-top: 6px; color: var(--admin-secondary); font-size: 12px; }
+.admin-total-registered strong { font-size: 40px; color: var(--admin-accent-hover); font-weight: 600; }
+.admin-record-date { margin-bottom: 8px; font-size: 13px; font-weight: 600; }

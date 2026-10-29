@@ -1184,3 +1184,18 @@ account names with initial avatars, green presence dots, and profile links. Its
 220px maximum scroll height keeps the overview compact. The first 50 accounts are
 alphabetical; View all users opens the full online table. Loading, retry, empty and
 disconnected states are explicit, and anonymous connections remain a separate note.
+
+Admin refinements: primary acquisition cards explicitly say Today new users and
+Today new anonymous users. Country cells reuse CountryFlag with emoji and a country
+name tooltip on hover/focus; its admin variant portals inside the shell to retain
+light tokens. Active habit badges use green success tokens (#166534/#f0fdf4/#bbf7d0),
+archived badges use neutral muted/subtle/line tokens. Wall rows combine author and
+recipient as one non-wrapping “author → recipient” Profile wall column, with both
+names linking to their profiles. The standalone Online users section is removed;
+the compact overview panel now owns pagination when more than 50 accounts are online.
+
+All metrics is a separate admin navigation section. It presents a highlighted total
+registered-account count and four record cards: registration month/day, session-start
+day, and unique timer-user day. Each record shows the count and full calendar period;
+existing activity metrics follow without duplicating the online-user panel. Styling
+uses the established admin tokens and responsive metric grid.

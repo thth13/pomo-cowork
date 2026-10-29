@@ -65,7 +65,7 @@ export default function StatisticsDashboard() {
       : data ? <>
         {error && <div className="insight-refresh-error" role="status">{copy.refreshingError}<button type="button" className="insight-text-link" onClick={retry}>{copy.retry}</button></div>}
         <FocusHero data={data} />
-        {data.access === 'basic' && <SessionOverview data={data} />}
+        <SessionOverview data={data} />
         {details ? <StatisticsSections data={data} details={details} /> : preview?.details ? <div className="insight-locked-preview">
           <StatisticsSections data={preview} details={preview.details} locked />
           <div className="insight-preview-overlay">

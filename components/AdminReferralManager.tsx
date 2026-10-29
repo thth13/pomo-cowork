@@ -37,7 +37,7 @@ const getBaseUrl = () => {
   return window.location.origin
 }
 
-export type AdminSection = 'overview' | 'referrals' | 'users' | 'support' | 'events' | 'directory' | 'online' | 'wall' | 'habits'
+export type AdminSection = 'overview' | 'metrics' | 'referrals' | 'users' | 'support' | 'events' | 'directory' | 'wall' | 'habits'
 
 export default function AdminReferralManager({ section = 'referrals' }: { section?: AdminSection }) {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore()

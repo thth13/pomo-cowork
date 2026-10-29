@@ -717,3 +717,24 @@ primary metrics. The existing admin data endpoint's online `compact` mode select
 only identity fields, avoiding session-statistics queries. It retains admin checks
 and pagination limits. The preview shows at most 50 names with a total and a link to
 all online accounts; disconnected presence never renders stale account names.
+
+The Online users navigation section and its overview links have been removed at the
+user's request. Live users remain in AdminOnlinePanel, with Previous/Next pagination
+and clamped pages from the existing read-only endpoint. CountryFlag's optional admin
+variant keeps its existing keyboard/Escape/hover behavior and portals inside the admin
+shell. Habit statuses retain text alongside semantic colors. Wall author and recipient
+remain distinct profile links in one cell; the arrow has an accessible “to” equivalent.
+
+## All metrics records
+
+`/api/admin/metrics` uses authorizeAdmin and read-only aggregate queries over users
+and pomodoro_sessions. Prisma UTC timestamp-without-time-zone columns are converted
+to Europe/Kyiv before calendar grouping. Registered totals exclude current anonymous
+accounts; registration records use account createdAt, with the existing guest-conversion
+history limitation. Timer records include every stored session type and status;
+unique timer users count distinct userId per Kyiv day, including persisted guests.
+Only current stored records contribute; these are not immutable historical snapshots.
+Ties select the most recent period, and an empty dataset yields null record cards.
+Aggregation runs in PostgreSQL rather than downloading session history. The endpoint
+is uncached and loaded only for All metrics. The overview remains available, while
+All metrics reuses its current-statistics cards without its online-user list.

@@ -5,7 +5,8 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { notFound } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
-import { ArrowLeft, ArrowUpRight, Crown, LayoutDashboard, Link2, MessageSquare, MousePointer2, ShieldCheck, Users, Radio, MessageCircle, ListChecks } from 'lucide-react'
+import { ArrowLeft, ArrowUpRight, Crown, LayoutDashboard, Link2, MessageSquare, MousePointer2, ShieldCheck, Users, MessageCircle, ListChecks, BarChart3 } from 'lucide-react'
+import AdminAllMetrics from '@/components/admin/AdminAllMetrics'
 import AdminOverview from '@/components/admin/AdminOverview'
 import AdminDataTable, { type AdminDataKind } from '@/components/admin/AdminDataTable'
 import type { AdminSection } from '@/components/AdminReferralManager'
@@ -22,10 +23,10 @@ const AdminPaywallEvents = dynamic(() => import('@/components/AdminPaywallEvents
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, description: '' },
+  { id: 'metrics', label: 'All metrics', icon: BarChart3, description: 'Community totals, current activity, and all-time records.' },
   { id: 'referrals', label: 'Referral links', icon: Link2, description: 'Manage campaign links and track the people they bring to Pomo.' },
   { id: 'users', label: 'Pro users', icon: Crown, description: 'Manage Premium access and review active memberships.' },
   { id: 'directory', label: 'All users', icon: Users, description: 'Registered and guest accounts with focus statistics, as in the user directory.' },
-  { id: 'online', label: 'Online users', icon: Radio, description: 'Accounts currently connected to the workspace.' },
   { id: 'wall', label: 'Wall messages', icon: MessageCircle, description: 'Messages posted on every user profile.' },
   { id: 'habits', label: 'Habits', icon: ListChecks, description: 'Habit tracking across the community.' },
   { id: 'support', label: 'Support inbox', icon: MessageSquare, description: 'Messages and feedback from your community, in one place.' },
@@ -80,8 +81,9 @@ export default function AdminPage() {
           <div className="admin-page-heading"><div><p className="admin-eyebrow">ADMIN CONSOLE</p><h1>{active.label}</h1>{active.description && <p>{active.description}</p>}</div><Link href="/" className="admin-site-link">Open website<ArrowUpRight size={16} aria-hidden="true" /></Link></div>
           {isLoading ? <div className="admin-loading" role="status">Loading account…</div> : <>
             {section === 'overview' && <AdminOverview />}
+            {section === 'metrics' && <AdminAllMetrics />}
             <AdminReferralManager section={section} />
-            {(['directory', 'online', 'wall', 'habits'] as string[]).includes(section) && <AdminDataTable key={section} kind={section as AdminDataKind} />}
+            {(['directory', 'wall', 'habits'] as string[]).includes(section) && <AdminDataTable key={section} kind={section as AdminDataKind} />}
             {eventsVisited && <div hidden={section !== 'events'}><AdminPaywallEvents /></div>}
           </>}
         </main>

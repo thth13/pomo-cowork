@@ -1,25 +1,27 @@
 'use client'
 
 import Link from 'next/link'
+import { useState } from 'react'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import { userProfileHref } from '@/lib/userProfile'
 import { useAdminData } from './useAdminData'
 
 type OnlineUser = { id: string; username: string; isAnonymous: boolean }
-type OnlinePage = { rows: OnlineUser[]; total: number }
+type OnlinePage = { rows: OnlineUser[]; total: number; page: number; pageSize: number }
 
 export default function AdminOnlinePanel() {
+  const [page, setPage] = useState(1)
   const connected = useConnectionStore(state => state.isConnected)
   const onlineIds = useConnectionStore(state => state.onlineUserIds)
   const anonymousCount = useConnectionStore(state => state.anonymousOnlineCount)
   const { data, error, loading, refresh } = useAdminData<OnlinePage>('/api/admin/data', JSON.stringify({
-    kind: 'online', page: 1, compact: true, onlineIds: Object.keys(onlineIds).sort(),
+    kind: 'online', page, compact: true, onlineIds: Object.keys(onlineIds).sort(),
   }), connected)
 
   return <section className="admin-online-panel" aria-label="Online users">
     <div className="admin-online-panel-heading">
       <h2>Online users{data && <span>{data.total}</span>}</h2>
-      <a href="#online">View all users →</a>
+      <span className="admin-data-note">Live presence</span>
     </div>
     <div className="admin-online-panel-body" aria-busy={loading}>
       {!connected ? <p role="status">Reconnecting to live presence…</p>
@@ -32,8 +34,14 @@ export default function AdminOnlinePanel() {
           </Link>
         </li>)}</ul> : <p>No accounts are online right now.</p>}
     </div>
+    {data && data.total > data.pageSize && <nav className="admin-data-pagination" aria-label="Online users pages">
+      <span>Page {data.page} of {Math.ceil(data.total / data.pageSize)}</span><div>
+        <button type="button" disabled={loading || data.page <= 1} onClick={() => setPage(data.page - 1)}>Previous</button>
+        <button type="button" disabled={loading || data.page * data.pageSize >= data.total} onClick={() => setPage(data.page + 1)}>Next</button>
+      </div>
+    </nav>}
     {connected && <p className="admin-online-panel-note">
-      {data && data.total > data.rows.length ? `Showing ${data.rows.length} of ${data.total} accounts. ` : ''}
+      {data && data.total > data.rows.length ? `Showing ${(data.page - 1) * data.pageSize + 1}–${Math.min(data.page * data.pageSize, data.total)} of ${data.total} accounts. ` : ''}
       Live presence{anonymousCount > 0 ? ` · ${anonymousCount} anonymous visitors outside the account list` : ''}
     </p>}
   </section>
