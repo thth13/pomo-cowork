@@ -176,3 +176,30 @@
   .seo-flip-card { border-color: CanvasText; box-shadow: none; }
   .seo-tool-options button[aria-pressed="true"] { outline: 2px solid Highlight; }
 }
+
+.seo-workspace-invite { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px 32px; padding-block: 24px; border-bottom: 1px solid var(--pixel-line); }
+.seo-workspace-invite > div:first-child { flex: 1 1 280px; }
+.seo-workspace-invite h2 { font-size: 20px; font-weight: 600; line-height: 1.4; }
+.seo-workspace-invite p { margin-top: 6px; max-width: 60ch; color: var(--pixel-muted); font-size: 14px; line-height: 1.7; }
+.seo-workspace-invite-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; }
+.seo-workspace-invite .seo-button:disabled { opacity: .6; cursor: wait; }
+
+.seo-workspace-tasks { margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--pixel-line); }
+.seo-workspace-tasks > h2 { font-size: 16px; font-weight: 600; line-height: 1.5; margin-bottom: 12px; }
+.seo-workspace-tasks > p { color: var(--pixel-muted); font-size: 14px; }
+.seo-workspace-tasks .focus-projects { padding: 0; }
+
+/* Keep live company independent of the growing project list. */
+.seo-workspace-with-tasks { grid-template-columns: minmax(0, 1fr) minmax(280px, 340px); align-items: start; gap: 24px; border: 0; background: transparent; }
+.seo-workspace-with-tasks > .seo-timer { border: 1px solid var(--pixel-line); background: var(--pixel-paper); }
+.seo-workspace-with-tasks > .seo-social { align-self: start; padding: 22px; border: 1px solid var(--pixel-line); }
+.seo-workspace-with-tasks .seo-social h2 { font-size: 20px; }
+.seo-workspace-with-tasks .seo-presence { min-height: 0; margin-block: 18px; }
+.seo-workspace-with-tasks .seo-presence-status { padding-block: 12px; }
+.seo-workspace-with-tasks .seo-social-links { padding-top: 14px; border-top: 1px solid var(--pixel-line); }
+@media (max-width: 800px) {
+  .seo-workspace-with-tasks { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+}
+@media (max-width: 540px) {
+  .seo-workspace-with-tasks > .seo-social { padding: 20px 16px; }
+}

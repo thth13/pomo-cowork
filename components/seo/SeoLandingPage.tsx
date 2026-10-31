@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import JsonLd from '@/components/blog/JsonLd'
 import SeoWorkspace from './SeoWorkspace'
+import WorkspaceInvite from './WorkspaceInvite'
 import LocalStudyTimer from './LocalStudyTimer'
 import PracticeLandingPage from './PracticeLandingPage'
 import localStyles from './LocalStudyTimer.module.css'
@@ -67,15 +68,16 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
         ],
       }} />
       <header className="seo-hero">
-        <p className="seo-eyebrow">Pomo Cowork · {page.social ? 'Time together' : 'Make time for one thing'}</p>
+        {!page.compactWorkspace && <p className="seo-eyebrow">Pomo Cowork · {page.social ? 'Time together' : 'Make time for one thing'}</p>}
         <h1>{page.heading}</h1>
         <p className="seo-intro">{page.intro}</p>
-        <div className="seo-hero-actions">
+        {!page.compactWorkspace && <div className="seo-hero-actions">
           <a className="seo-button" href="#focus-timer">{page.cta} <span aria-hidden="true">↓</span></a>
-          {page.social && <Link className="seo-text-link" href="/rooms">Find a room for your group</Link>}
-        </div>
+          {page.social && !page.compactWorkspace && <Link className="seo-text-link" href="/rooms">Find a room for your group</Link>}
+        </div>}
       </header>
-      {page.localTimer ? <LocalStudyTimer key={slug} variant={page.localTimer} /> : <SeoWorkspace key={slug} title={page.title} defaults={page.defaults} timerNote={page.timerNote} social={page.social} socialHeading={page.socialHeading} socialCopy={page.socialCopy} appearance={page.appearance} experience={page.experience} />}
+      {page.localTimer ? <LocalStudyTimer key={slug} variant={page.localTimer} /> : <SeoWorkspace key={slug} title={page.title} defaults={page.defaults} timerNote={page.timerNote} compactWorkspace={page.compactWorkspace} workspaceTasks={page.workspaceTasks} social={page.social} socialHeading={page.socialHeading} socialCopy={page.socialCopy} appearance={page.appearance} experience={page.experience} />}
+      {page.compactWorkspace && <WorkspaceInvite />}
       <div className="seo-guide">
         <section className="seo-explanation" aria-labelledby="explanation-heading">
           <h2 id="explanation-heading">{page.explanationHeading}</h2>
@@ -124,7 +126,7 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
       <section className="seo-final" aria-labelledby="final-heading">
         <h2 id="final-heading">{page.finalHeading}</h2>
         <p>{page.finalCopy}</p>
-        <a className="seo-button" href="#focus-timer">{page.cta} <span aria-hidden="true">↑</span></a>
+        {page.compactWorkspace ? <Link className="seo-button" href="/">Open workspace <span aria-hidden="true">↗</span></Link> : <a className="seo-button" href="#focus-timer">{page.cta} <span aria-hidden="true">↑</span></a>}
       </section>
     </main>
   )

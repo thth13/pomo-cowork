@@ -490,6 +490,13 @@ board-specific resources are named explicitly rather than presented as universal
 The existing settings modal remains the duration owner;
 subsequent visitor changes are not overwritten by page presets. Reset on these pages
 uses the shared stop/cancel operation; time tracking retains the Stop label.
+The study-with-me and study-timer-with-friends routes use compact workspace copy: a short intro and interval note,
+one live-presence heading, and a single rooms link. Repeated eyebrows, explanatory
+presence copy and the visible timer heading are omitted; the timer retains its
+accessible heading. Timer-jump CTAs and the settings link are omitted on these routes.
+A compact invitation below the timer opens the shared AuthModal in registration mode;
+signed-in visitors get an Open workspace link instead. Guests can also explore the
+workspace directly. Editorial sections below the workspace remain intact.
 FAQ disclosures are native details/summary and their full answers render server-side.
 Metadata, canonical URLs, WebApplication/FAQ JSON-LD and sitemap entries are shared
 in implementation, while search intent, examples, benefits, FAQs and related links
@@ -1219,3 +1226,17 @@ registered-account count and four record cards: registration month/day, session-
 day, and unique timer-user day. Each record shows the count and full calendar period;
 existing activity metrics follow without duplicating the online-user panel. Styling
 uses the established admin tokens and responsive metric grid.
+
+The `/group-study-timer` route reuses the compact SEO workspace and registration
+invitation. It places the canonical `ProjectList` in its list variant below the timer,
+with project creation, nested tasks, completion and task-specific timer starts. Guest
+and account persistence remain owned by `taskService` and `useQuickTasks`; no separate
+local task store is introduced. Live presence still represents the shared workspace,
+not a synchronized private group. Editorial copy explains that distinction below the
+working area. The route is registered in `seoRoutes.ts` for discovery and the sitemap.
+
+On `/group-study-timer`, the timer/tasks surface and presence card have separate
+borders with a 24px gap. The presence column is capped at 340px and aligns to the
+top with content-driven height; it never stretches alongside a growing task list.
+Its empty/loading states have no reserved 180px spacer. The existing 300px list
+scroll limit remains, and below 800px the two surfaces stack with a 16px gap.

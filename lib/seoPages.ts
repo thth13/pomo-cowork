@@ -23,6 +23,8 @@ export interface SeoPage {
   experience?: 'aesthetic' | 'lofi' | 'fullscreen' | 'clock' | 'minimal' | 'deep-work' | 'exam' | 'reading' | 'coding' | 'classroom'
   defaults: { workDuration: number; shortBreak: number; longBreak: number; longBreakAfter: number }
   timerNote: string
+  compactWorkspace?: boolean
+  workspaceTasks?: boolean
   socialHeading: string
   socialCopy: string
   explanationHeading: string
@@ -330,12 +332,13 @@ export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
     title: 'Study With Me — Live Focus Sessions Online | Pomo Cowork',
     description: 'Looking for study-with-me company? Start your own timer beside real people studying and working online. No video schedule to follow and no camera needed.',
     heading: 'Study with me, on your own schedule',
-    intro: 'Bring your notes and settle in beside people who are working too. Start your own timer whenever you are ready; no camera or video schedule needed.',
-    cta: 'Start studying alongside others',
+    intro: 'Study alongside others with your own timer. No camera needed.',
+    cta: 'Start studying',
+    compactWorkspace: true,
     social: true,
     defaults: { workDuration: 25, shortBreak: 5, longBreak: 15, longBreakAfter: 4 },
-    timerNote: 'Your own 25-minute study session, with five-minute breaks. You do not have to match another person’s countdown.',
-    socialHeading: 'Meet the people working alongside you',
+    timerNote: '25 minutes of study · 5-minute breaks',
+    socialHeading: 'Studying now',
     socialCopy: 'These are live sessions from the current workspace. When nobody is active, you can be the person who starts the next quiet stretch.',
     explanationHeading: 'What does “study with me” mean here?',
     explanation: [
@@ -459,18 +462,64 @@ export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
     finalHeading: 'Choose your next round together',
     finalCopy: 'One task each, one agreed start, and a break to look forward to.',
   },
+  'group-study-timer': {
+    keyword: 'Group study timer',
+    secondaryKeywords: ['group Pomodoro timer', 'study group tasks', 'online group study timer'],
+    title: 'Group Study Timer with Tasks & Live Participants | Pomo Cowork',
+    description: 'Start a group study timer, see who else is focusing, and organize your own projects and tasks. Study in 25-minute blocks with five-minute breaks.',
+    heading: 'Group study timer',
+    intro: 'One task at a time. Study alongside others, at your own pace.',
+    cta: 'Start a study session',
+    compactWorkspace: true,
+    workspaceTasks: true,
+    social: true,
+    defaults: { workDuration: 25, shortBreak: 5, longBreak: 15, longBreakAfter: 4 },
+    timerNote: '25 minutes of study · 5-minute breaks',
+    socialHeading: 'Studying now',
+    socialCopy: 'See live focus sessions from the shared workspace.',
+    explanationHeading: 'A group study timer with your tasks close by',
+    explanation: [
+      'Use a group study timer to give independent work a shared rhythm. Choose a topic, create a project and add the tasks you want to finish. Start a focus block while other people work on their own goals.',
+      'Your task list uses the same projects as the main workspace. Expand a project to add tasks, mark them complete, or start a timer for one task. The live participant list shows activity across the workspace; use a study room when you want a dedicated place for friends.',
+    ],
+    stepsHeading: 'Start a group study block',
+    steps: ['Add a project and one small task.', 'Press play beside a task, or start the timer above.', 'Work for 25 minutes, then take a five-minute break.'],
+    benefits: [
+      { title: 'Your own task list', text: 'Keep study goals beside the timer and check off completed work.' },
+      { title: 'Live company', text: 'See people focusing in the shared workspace while you study.' },
+      { title: 'Flexible intervals', text: 'Adjust focus and break lengths to fit your group’s schedule.' },
+    ],
+    audienceHeading: 'For shared study time',
+    audience: [
+      { title: 'Revision groups', text: 'Work through separate topics, then compare notes during a break.' },
+      { title: 'Project partners', text: 'Break your part of an assignment into tasks and track focused time.' },
+    ],
+    advantageHeading: 'Projects and focus in one place',
+    advantage: 'Add projects and tasks directly on this page. Your account uses the same task list in the full workspace, where you can continue organizing your work and reviewing progress.',
+    faq: [
+      { question: 'Does everyone share one synchronized countdown?', answer: 'Each person controls their own timer. To study on the same schedule, agree on a start time and interval length. Opening this page does not synchronize everyone’s Start or Pause buttons.' },
+      { question: 'How do I add tasks to my study timer?', answer: 'Create a project below the timer, expand it, and add a task. Press the play button beside the task to start focusing on it. Stop your current session before starting a different task.' },
+      { question: 'Are these the same tasks as on the Projects page?', answer: 'Yes. When signed in, this page uses the same projects and tasks as your account’s Projects page. You can add tasks, mark them complete, and continue working on them in the main workspace.' },
+      { question: 'Can I use the group study timer without an account?', answer: 'Yes. Guests can start the timer and create projects and tasks in this browser. Create an account to continue using the full workspace with an account.' },
+      { question: 'Who appears in the participant list?', answer: 'The list shows live sessions from the shared workspace, not only visitors to this page or members of your group. Open a study room to gather friends. If nobody is active, you can still use the timer and your tasks.' },
+    ],
+    related: ['study-timer-with-friends', 'study-with-me', 'online-study-room', 'pomodoro-with-friends'],
+    finalHeading: 'Keep your study routine going',
+    finalCopy: 'Continue with your projects in the full workspace.',
+  },
   'study-timer-with-friends': {
     keyword: 'Study timer with friends',
     secondaryKeywords: ['group study timer', 'shared study timer', 'study timer for groups', 'timed group study'],
     title: 'Study Timer With Friends for Group Sessions | Pomo Cowork',
     description: 'Use a study timer with friends to plan quiet work blocks and group check-ins. Set a shared rhythm, keep individual goals, and study together in Pomo Cowork.',
     heading: 'A study timer with friends and a plan for the hour',
-    intro: 'Give your study group a simple agenda: a goal each, a quiet work block, and a short check-in. Keep the timer visible while you work.',
+    intro: 'Study with friends, keep your own goals, and catch up during breaks.',
     cta: 'Try the group study timer',
+    compactWorkspace: true,
     social: true,
     defaults: { workDuration: 25, shortBreak: 5, longBreak: 15, longBreakAfter: 4 },
-    timerNote: 'Two 25-minute study blocks plus two five-minute breaks fill an hour. Set aside extra time for introductions if needed.',
-    socialHeading: 'Know when your group is working',
+    timerNote: '25 minutes of study · 5-minute breaks',
+    socialHeading: 'Studying now',
     socialCopy: 'Live sessions make ongoing work visible. Open a room to gather friends in the same space, then check that everyone has the intended duration.',
     explanationHeading: 'What is a study timer with friends for?',
     explanation: [
@@ -500,7 +549,7 @@ export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
       { question: 'What should we do if someone needs help during a focus block?', answer: 'Agree on a rule before starting. For example, note ordinary questions for the next break, but interrupt for a problem that prevents any progress. If a question needs a long explanation, make a separate discussion block so other group members can keep their planned work time.' },
       { question: 'Can we keep separate study goals in the same room?', answer: 'Yes. A common room or start time does not require everyone to select the same task. Choose goals that fit the interval and use the check-in to describe progress. The timer organizes the group’s time while each person remains responsible for their own material and next step.' },
     ],
-    related: ['study-with-friends', 'pomodoro-with-friends', 'study-timer', 'timer-for-studying'],
+    related: ['group-study-timer', 'study-with-friends', 'pomodoro-with-friends', 'study-timer', 'timer-for-studying'],
     finalHeading: 'Give your next study hour a clear shape',
     finalCopy: 'Agree on the plan, gather your friends, and begin the first block.',
   },
