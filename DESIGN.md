@@ -1227,7 +1227,7 @@ day, and unique timer-user day. Each record shows the count and full calendar pe
 existing activity metrics follow without duplicating the online-user panel. Styling
 uses the established admin tokens and responsive metric grid.
 
-The `/group-study-timer` route reuses the compact SEO workspace and registration
+The `/group-study-timer` and `/study-timer` routes reuse the compact SEO workspace and registration
 invitation. It places the canonical `ProjectList` in its list variant below the timer,
 with project creation, nested tasks, completion and task-specific timer starts. Guest
 and account persistence remain owned by `taskService` and `useQuickTasks`; no separate
@@ -1235,7 +1235,7 @@ local task store is introduced. Live presence still represents the shared worksp
 not a synchronized private group. Editorial copy explains that distinction below the
 working area. The route is registered in `seoRoutes.ts` for discovery and the sitemap.
 
-On `/group-study-timer`, the timer/tasks surface and presence card have separate
+On `/group-study-timer` and `/study-timer`, the timer/tasks surface and presence card have separate
 borders with a 24px gap. The presence column is capped at 340px and aligns to the
 top with content-driven height; it never stretches alongside a growing task list.
 Its empty/loading states have no reserved 180px spacer. The existing 300px list
