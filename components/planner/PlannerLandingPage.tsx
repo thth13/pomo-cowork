@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import JsonLd from '@/components/blog/JsonLd'
 import StudyPlanner from './StudyPlanner'
+import ExamStudyPlanner from './ExamStudyPlanner'
 import { plannerLabels, plannerPages, plannerSlugs, type PlannerSlug } from '@/lib/plannerPages'
 import { seoToolLabels } from '@/lib/seoRoutes'
 
@@ -82,7 +83,7 @@ export default function PlannerLandingPage({ slug }: { slug: PlannerSlug }) {
         </div>
       </header>
       <noscript><p className="seo-intro">Enable JavaScript to build a plan and use its timer. The planning examples and instructions below are available without JavaScript.</p></noscript>
-      <StudyPlanner key={slug} mode={page.mode} />
+      {slug === 'exam-study-planner' ? <ExamStudyPlanner /> : <StudyPlanner key={slug} mode={page.mode} />}
       <div className="seo-guide">
         <section className="seo-explanation" aria-labelledby="explanation-heading">
           <h2 id="explanation-heading">{page.explanationHeading}</h2>

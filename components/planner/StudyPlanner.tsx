@@ -1,8 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
-import { CalendarDays, Check, Download, Pause, Play, Plus, Printer, RotateCcw, X } from 'lucide-react'
-import { useLocalStudyTimer } from '@/hooks/useLocalStudyTimer'
+import { CalendarDays, Check, Download, Play, Plus, Printer, X } from 'lucide-react'
+import PlannerSessionTimer from './PlannerSessionTimer'
 import UnsavedChangesGuard from '@/components/journal/UnsavedChangesGuard'
 import {
   buildStudyPlan, calculatePomodoros, createPlannerInput, dateKeyLocal,
@@ -38,45 +38,6 @@ function inputForMode(draft: PlannerDraft, mode: PlannerMode): PlannerInput {
     ...input, startDate: today, deadline: today, weekdays: [0, 1, 2, 3, 4, 5, 6],
     topics: [{ ...(input.topics[0] ?? { id: 'focus-task', name: 'My focus task' }), sessions: Math.max(1, calculation.sessions) }],
   }
-}
-
-function PlannerSessionTimer({ session, breakMinutes, onComplete, onClose }: {
-  session: PlannedSession; breakMinutes: number; onComplete: (id: string) => void; onClose: () => void
-}) {
-  const timer = useLocalStudyTimer(session.minutes * 60)
-  const [phase, setPhase] = useState<'focus' | 'break'>('focus')
-  const counted = useRef(false)
-  const panel = useRef<HTMLElement>(null)
-  const completion = useRef(onComplete)
-  completion.current = onComplete
-  useEffect(() => { panel.current?.focus() }, [])
-  useEffect(() => {
-    if (timer.status === 'finished' && phase === 'focus' && !counted.current) {
-      counted.current = true
-      completion.current(session.id)
-    }
-  }, [timer.status, phase, session.id])
-
-  const status = timer.status === 'finished'
-    ? phase === 'focus' ? 'Session complete. Your plan is checked off.' : 'Break complete. Choose your next session.'
-    : timer.status === 'running' ? phase === 'focus' ? 'One topic. One session.' : 'Take a little space away from your work.'
-      : timer.status === 'paused' ? 'Paused. Resume when you are ready.' : 'Ready when you are.'
-  const digits = `${String(Math.floor(timer.seconds / 60)).padStart(2, '0')}:${String(timer.seconds % 60).padStart(2, '0')}`
-  return <section ref={panel} className={styles.timer} aria-labelledby="planner-timer-title" tabIndex={-1}>
-    <div className={styles.timerHeading}><div><p className={styles.eyebrow}>{phase === 'focus' ? 'Your next small step' : 'Take a break'}</p><h3 id="planner-timer-title">{session.topicName}</h3></div>
-      <button type="button" onClick={onClose} className={styles.iconButton} aria-label="Close and reset this timer"><X size={18} aria-hidden="true" /></button></div>
-    <div className={styles.clock} role="timer" aria-live="off" aria-label={`${phase === 'focus' ? 'Focus' : 'Break'} time remaining`}>{digits}</div>
-    <p role="status" className={styles.timerStatus}>{status}</p>
-    <div className={styles.actions}>
-      {timer.status !== 'finished' ? <button type="button" className={styles.primary} onClick={timer.status === 'running' ? timer.pause : timer.start}>
-        {timer.status === 'running' ? <Pause size={16} aria-hidden="true" /> : <Play size={16} aria-hidden="true" />}
-        {timer.status === 'running' ? 'Pause' : timer.status === 'paused' ? 'Resume' : phase === 'focus' ? 'Start focus' : 'Start break'}
-      </button> : phase === 'focus' && breakMinutes > 0 ? <button type="button" className={styles.primary} onClick={() => { setPhase('break'); timer.reset(breakMinutes * 60) }}>Prepare {breakMinutes}-minute break</button>
-        : <button type="button" className={styles.primary} onClick={onClose}>Back to plan</button>}
-      {timer.status !== 'idle' && timer.status !== 'finished' && <button type="button" onClick={() => timer.reset((phase === 'focus' ? session.minutes : breakMinutes) * 60)}><RotateCcw size={16} aria-hidden="true" />Reset timer</button>}
-    </div>
-    <p className={styles.help}>This timer runs only on this page. Leaving resets it; completed checkmarks stay in this browser. Sessions are not added to account statistics.</p>
-  </section>
 }
 
 export default function StudyPlanner({ mode }: { mode: PlannerMode }) {

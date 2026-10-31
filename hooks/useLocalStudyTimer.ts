@@ -2,11 +2,23 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-/** Each mount owns its clock. No stores, persistence, events, or session services. */
-export function useLocalStudyTimer(initialSeconds: number, countUp = false) {
-  const [remainingMs, setRemainingMs] = useState(initialSeconds * 1000)
-  const [status, setStatus] = useState<'idle' | 'running' | 'paused' | 'finished'>('idle')
-  const clock = useRef({ at: 0, value: initialSeconds * 1000, running: false })
+export type StudyTimerSnapshot = {
+  status: 'idle' | 'running' | 'paused' | 'finished'
+  remainingMs: number
+  endsAt: number | null
+}
+
+/** Each mount owns its clock; callers may supply a validated restoration snapshot. */
+export function useLocalStudyTimer(initialSeconds: number, countUp = false, restored?: StudyTimerSnapshot | null) {
+  const initial = useRef<StudyTimerSnapshot | null>(null)
+  if (!initial.current) {
+    const value = restored?.status === 'running' && restored.endsAt !== null
+      ? Math.max(0, restored.endsAt - Date.now()) : restored?.remainingMs ?? initialSeconds * 1000
+    initial.current = { remainingMs: value, status: restored?.status === 'running' && value === 0 ? 'finished' : restored?.status ?? 'idle', endsAt: restored?.endsAt ?? null }
+  }
+  const [remainingMs, setRemainingMs] = useState(initial.current.remainingMs)
+  const [status, setStatus] = useState<StudyTimerSnapshot['status']>(initial.current.status)
+  const clock = useRef({ at: Date.now(), value: initial.current.remainingMs, running: initial.current.status === 'running' })
 
   const readClock = () => {
     const elapsed = Math.max(0, Date.now() - clock.current.at)
@@ -58,5 +70,9 @@ export function useLocalStudyTimer(initialSeconds: number, countUp = false) {
     setStatus('finished')
   }
 
-  return { seconds: countUp ? Math.floor(remainingMs / 1000) : Math.ceil(remainingMs / 1000), status, start, pause, reset, finish }
+  const snapshot: StudyTimerSnapshot = {
+    status, remainingMs: clock.current.value,
+    endsAt: status === 'running' ? clock.current.at + clock.current.value : null,
+  }
+  return { snapshot, seconds: countUp ? Math.floor(remainingMs / 1000) : Math.ceil(remainingMs / 1000), status, start, pause, reset, finish }
 }

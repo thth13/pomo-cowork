@@ -1,10 +1,11 @@
 import type { SeoSlug } from './seoRoutes'
 import type { PlannerMode } from './studyPlanner'
 
-export const plannerSlugs = ['weekly-study-planner', 'exam-revision-planner', 'pomodoro-calculator'] as const
+export const plannerSlugs = ['exam-study-planner', 'weekly-study-planner', 'exam-revision-planner', 'pomodoro-calculator'] as const
 export type PlannerSlug = typeof plannerSlugs[number]
 
 export const plannerLabels: Record<PlannerSlug, string> = {
+  'exam-study-planner': 'Exam Study Planner',
   'weekly-study-planner': 'Weekly Study Planner',
   'exam-revision-planner': 'Exam Revision Planner',
   'pomodoro-calculator': 'Pomodoro Calculator',
@@ -32,6 +33,51 @@ interface PlannerPage {
 }
 
 export const plannerPages: Record<PlannerSlug, PlannerPage> = {
+  'exam-study-planner': {
+    mode: 'exam',
+    title: 'Exam Study Planner — Free Pomodoro Study Plan | Pomo Cowork',
+    description: 'Enter your exam, exam date, and daily study hours. Get a free Pomodoro study plan with daily 25-minute focus blocks and breaks. Download your schedule.',
+    heading: 'Exam Study Planner',
+    intro: 'An exam ahead. A little time each day. Turn your deadline into a ready-to-use Pomodoro plan, with a clear number of focus sessions for each day.',
+    cta: 'Create my study plan',
+    explanationHeading: 'From “I need to study” to a plan for today',
+    explanation: [
+      'An exam date tells you when to be ready. This exam study planner gives the time before it a structure. Enter the name of your exam, its date, and the hours you can set aside each day. Your schedule starts today and ends the day before the exam.',
+      'Each study day contains complete 25-minute Pomodoros with five-minute breaks between them. The plan uses your daily availability, including breaks, and shows any minutes left over. It never schedules a partial focus block or adds study time on exam day.',
+      'Each day shows numbered Pomodoros, ready for you to use. Choose the topics and questions from your own course materials. The planner allocates time without inventing tasks or assigning a syllabus.',
+    ],
+    stepsHeading: 'Make your exam plan in three steps',
+    steps: [
+      'Name your exam and choose its date, from tomorrow to 90 days from today.',
+      'Enter your available hours per day, including breaks. Every day before the exam is included.',
+      'Create your plan, browse the daily blocks, and download the full schedule. Select a Pomodoro in your plan, then press Start focus in the timer on this page.',
+    ],
+    templatesHeading: 'What your study time looks like',
+    templates: [
+      { title: '30 minutes a day', text: 'One 25-minute focus block and five spare minutes. Choose one concrete task, such as recalling a definition or checking a short question set. There is no scheduled break after your final block.' },
+      { title: '1 hour a day', text: 'Two Pomodoros give you 50 minutes of focus with a five-minute break between them. Five minutes stay free for setup or a next-step note. Across seven study days, that is 14 focused sessions.' },
+      { title: '2 hours a day', text: 'Four Pomodoros give you 100 minutes of focus, three five-minute breaks, and five spare minutes. Across 14 study days, that is 56 sessions and 23 hours 20 minutes of focused preparation.' },
+    ],
+    tipsHeading: 'Give each block a useful job',
+    tips: [
+      { title: 'Build understanding', text: 'Use a Pomodoro to review material and explain it without notes. Choose the chapters that need attention.' },
+      { title: 'Practice and apply', text: 'Use a Pomodoro for practice questions and checking answers. For a timed mock, follow your exam provider’s timing rather than splitting it into Pomodoros.' },
+      { title: 'Review weak spots', text: 'Set aside a Pomodoro for mistakes and difficult ideas when you need it. You decide which sessions to use for review.' },
+    ],
+    faq: [
+      { question: 'How does the exam study planner work?', answer: 'Enter an exam name, exam date, and daily hours. The planner fits 25-minute focus blocks and five-minute breaks into each day from today until the day before your exam. Each block is labelled as a numbered Pomodoro; you choose what to study.' },
+      { question: 'Are the hours per day or the total for the whole plan?', answer: 'The hours are your available time each day, including short breaks. Every day is included. For example, two hours a day gives you four 25-minute focus sessions and three five-minute breaks each day, with five minutes left over.' },
+      { question: 'Does it include the exam day?', answer: 'No. The plan ends the day before your exam. You can choose an exam date from tomorrow to 90 days from today. Dates follow your browser’s local calendar day.' },
+      { question: 'Will it choose the topics for my exam?', answer: 'No. The exam name labels your plan. The schedule contains numbered Pomodoros without assigned tasks. Use your syllabus and practice results to choose specific topics. The plan does not assess readiness or guarantee a grade.' },
+      { question: 'Can I skip weekends or change the Pomodoro length?', answer: 'This quick planner uses every day and a fixed 25-minute focus / five-minute break rhythm. Use the linked Exam Revision Planner for selected weekdays, specific topics, session estimates, and custom durations.' },
+      { question: 'Can I save my exam study plan?', answer: 'Yes. Download the full schedule as a text file, including every day and study block. Your inputs, schedule, completed Pomodoros, and timer state also save automatically in this browser when local storage is available. A running timer accounts for time spent away. No account is needed, and plans do not sync between devices.' },
+      { question: 'Are long breaks included?', answer: 'No. The plan counts five-minute breaks only between focus blocks, with no break after the last block. Reserve meals and longer breaks outside the daily hours you enter.' },
+    ],
+    related: ['study-timer-for-exams', '25-5-pomodoro', 'active-recall-timer'],
+    finalHeading: 'Your next step can be just 25 minutes',
+    finalCopy: 'Name the exam. Set aside the time. Give today a place in your preparation.',
+  },
+
   'weekly-study-planner': {
     mode: 'weekly',
     title: 'Weekly Study Planner — Free Schedule & Templates | Pomo Cowork',

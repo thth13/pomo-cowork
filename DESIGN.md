@@ -1240,3 +1240,31 @@ borders with a 24px gap. The presence column is capped at 340px and aligns to th
 top with content-driven height; it never stretches alongside a growing task list.
 Its empty/loading states have no reserved 180px spacer. The existing 300px list
 scroll limit remains, and below 800px the two surfaces stack with a 16px gap.
+
+### Exam study quick planner
+
+`/exam-study-planner` uses the English, translation-excluded planner landing shell
+and its metadata/schema registry. `ExamStudyPlanner` is the quick-entry variant:
+exam name, native OS-owned exam date, and daily hours. Shared StudyPlanner styles
+own fields/buttons; its CSS module adds a sage 25/05 rhythm preview and a seven-day
+paginated agenda with compact numbered Pomodoro chips using existing pixel tokens.
+Chips are buttons that prepare a session in the shared PlannerSessionTimer; each
+day has one break note. A primary Prepare next Pomodoro action opens the next
+uncompleted session. Completion marks persist locally until rebuilding. The timer
+locks editing and session selection, supports manual breaks, and uses the existing
+leave guard. Closing restores focus. Programmatically focused result headings and
+timer containers have no outline; interactive controls retain visible keyboard focus.
+`calculatePomodoros`, `dateKeyLocal`, and `addDays` own timing/date arithmetic.
+Inline associated errors preserve inputs and focus the first invalid field;
+generation focuses the result heading. Editing retains a labelled previous result.
+The daily budget includes short breaks, every day is included, and exam day is
+excluded. Blocks have no assigned tasks; users choose their own study material. The full plan downloads as plain text. This
+quick variant saves its draft, generated plan, pagination, completion, selected
+Pomodoro, and focus/break timer snapshot under `pomo:exam-study-planner:v1`.
+`lib/examPlannerStorage.ts` validates restored snapshots. Running intervals use an
+absolute deadline; paused intervals preserve remaining milliseconds. Restoration
+finishes elapsed intervals once, without automatically starting a break. Saves
+wait for hydration; storage failures expose retry and other-tab changes pause
+writes until the user explicitly chooses a version. The leave guard applies only
+to unsaved state. Data stays in this browser and does not sync with an account. The existing revision planner owns custom weekdays,
+topic estimates, persistence, and adjustable session lengths.

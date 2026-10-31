@@ -107,3 +107,54 @@ No application, tests, build or tsc is run for this task. These are user-owned c
 10. Print a plan longer than seven selected days: every day should appear, without
     navigation, controls, scenery, fixed widgets or timer. Check light/dark themes,
     keyboard operation, native date picker, narrow/short screens and reduced motion.
+
+## Exam Study Planner quick entry
+
+`/exam-study-planner` adds a distinct three-field flow: exam name, actual exam date,
+and available hours **per day**, including short breaks. It includes every day
+from browser-local today to the day before the exam, with a 1–90-day horizon and
+0.5–8 daily hours expressed in whole minutes. Shared calendar and Pomodoro helpers
+keep arithmetic consistent with the other planners. The fixed 25/5 schedule shows
+compact numbered Pomodoro blocks with no invented tasks or preparation phases.
+The user chooses what to study. Breaks are described once per day when there is
+more than one block, and the text download follows the same structure.
+There is no trailing break or automatic long break. Results show seven days at a
+time; the text download includes all days. No account is required.
+The registry automatically includes the route in sitemap, homepage and related
+planner links. Server content, metadata and FAQ JSON-LD use the same page record.
+
+Manual checks: tomorrow / today / past / 90 / 91-day deadlines; empty fields;
+0.5, 1, 1.5, 2 and 8-hour budgets; narrow layout and dark theme; keyboard error
+focus and result focus; edited-input notice; final partial page; full text download;
+exam-name markup remains plain text; date ranges across daylight saving changes.
+Build, project launch and tsc are intentionally not run per user instructions.
+
+The quick planner now reuses `PlannerSessionTimer` with the other planners. Select
+a Pomodoro or Prepare next Pomodoro, then Start focus. Pause/resume/reset and manual
+five-minute breaks are available inline; the final daily session has no break.
+Completion is marked once and persists locally until rebuilding. While the timer
+is open, editing, other sessions, and pagination are locked. Closing restores
+focus; navigation uses the shared leave guard when local saving fails. Manually check these interactions
+and the absence of a container outline when clicking the exam heading.
+
+### Quick planner persistence
+
+`lib/examPlannerStorage.ts` owns versioned validation for the quick planner's
+`pomo:exam-study-planner:v1` snapshot: draft fields, original generated dates,
+plan metrics, pagination, completion IDs, selection, and timer phase/state.
+Restoration never regenerates an existing plan from today's date. The shared
+local timer accepts an optional validated snapshot; other consumers keep their
+existing behavior. Running timers restore from an absolute deadline, while paused
+and idle timers retain remaining milliseconds. Elapsed focus intervals finish once
+on return; breaks still require explicit preparation and start. Timer snapshots
+save on state transitions rather than on every countdown tick.
+Storage is browser-local, without account or cross-device sync. Saving begins only
+after restoration. Malformed data and storage failures keep the current view usable
+with explicit recovery; other-tab updates block writes until the user chooses a
+version. Download remains available as a separate plain-text copy of the schedule.
+
+Manual checks: reload incomplete drafts, stale-result edits, later schedule pages,
+completed blocks, running/paused/reset/finished focus and break intervals. Return
+after a focus deadline and confirm exactly one Done mark with no auto-started
+break. Check malformed JSON, invalid dates/IDs/durations, blocked storage, and
+conflicting edits in two tabs. Project launch, builds, and tsc remain unrun.
