@@ -1,5 +1,5 @@
 import lottie from 'lottie-web'
-import type { CompanionPose } from './CompanionScene'
+import type { CompanionPose } from './companionTypes'
 import { createBeepWorkScene } from './BeepWorkScene'
 import { BEEP_CELEBRATION_DURATION, createBeepReactions } from './BeepReactions'
 

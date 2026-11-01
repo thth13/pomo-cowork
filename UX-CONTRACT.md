@@ -837,7 +837,7 @@ non-modal controls. Escape restores pickup position; pointer cancellation, lost 
 blur and hidden documents release the grip. Carrying adds a small tilt. Guidance pauses
 roaming. Existing English/Spanish controls, pixel tokens and layers remain in use.
 Reduced motion freezes playback and disables roaming; hidden documents pause playback,
-and hidden/unmounted instances dispose the renderer. Obsolete companion assets have been removed; only beep_pomo.json is retained. No API/schema/auth changes. Manual verification: JSON load/retry, Hide/Show,
+and hidden/unmounted instances dispose the renderer. Obsolete 3D/pixel renderers, model-generation scripts, Sprite Fusion metadata and its local environment key have been removed. Shared pose types live in `companionTypes.ts`; only beep_pomo.json is retained. No API/schema/auth changes. Manual verification: JSON load/retry, Hide/Show,
 movement/drag/keyboard, timer status, guidance, narrow viewport and reduced motion.
 Runtime/build/typecheck verification deferred per the user's repository instructions.
 

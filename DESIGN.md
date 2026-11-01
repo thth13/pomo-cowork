@@ -1314,7 +1314,7 @@ playback never triggers these expressions on its own. Reduced motion freezes pla
 while still updating expressions; carrying adds a small tilt. Outside work and the completion reaction, both arms stay in
 their resting pose; the source loop's repeated greeting is disabled.
 `WalkingCompanion` and `TomGuide` retain movement, placement, hide/show, preferences,
-localized controls and guidance. The source animation is preserved. Earlier 3D/pixel renderers remain inactive; obsolete companion assets have been removed. Timer state controls status and roaming deferral;
+localized controls and guidance. The source animation is preserved. Earlier 3D/pixel renderers, their authoring scripts and unused dependencies have been removed. Shared pose types live in `companionTypes.ts`; only the active Lottie artwork is retained. Timer state controls status and roaming deferral;
 `BeepWorkScene` adds a local SVG standing desk and laptop in the artwork's palette.
 During a running focus/time-tracking session the character stands and types; pausing,
 stopping or taking a break returns to the ambient pose. Movement waits for the desk to clear before translating; carrying immediately hides furniture. Reduced motion uses a
