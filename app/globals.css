@@ -289,6 +289,8 @@
 
 /* Pocket garden: shared visual tokens for every application route. */
 :root {
+  --z-companion: 35;
+  --z-companion-controls: 36;
   --pixel-page: #f1efe7;
   --pixel-paper: #fbfaf5;
   --pixel-screen: #e1e6d6;
@@ -5485,3 +5487,7 @@ html[data-mini-timer] body {
     flex-shrink: 0;
   }
 }
+
+/* The two focus workflows share the existing homepage timer surface. */
+
+.mini-timer-flow-task { max-width: 100%; margin: 12px 0; padding-inline: 8px; text-align: center; overflow-wrap: anywhere; font-size: 14px; line-height: 1.6; color: var(--pixel-ink); }

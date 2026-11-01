@@ -2,6 +2,8 @@
 
 import { isTaskSelectionLocked } from '@/lib/taskSelection'
 
+import { dailyFlowCopy } from '@/lib/i18n/dailyFlow'
+import { useDailyFlowStore } from '@/store/useDailyFlowStore'
 import { usePetStore } from '@/store/usePetStore'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { Settings } from 'lucide-react'
@@ -41,6 +43,7 @@ import { useThrottle } from '@/hooks/useThrottle'
 import { useI18n } from '@/components/I18nProvider'
 
 interface PomodoroTimerProps {
+  dailyFlow?: boolean
   idleTitle?: string
   onSessionComplete?: () => void
   initialSettings?: TimerSettingsForm
@@ -178,7 +181,15 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
 }
 
 
-function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false, showRoomSwitch = true }: PomodoroTimerProps) {
+function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false, showRoomSwitch = true, dailyFlow = false }: PomodoroTimerProps) {
+  const flowTaskTitle = useDailyFlowStore(state => {
+    const taskId = state.data.queue[0]
+    return dailyFlow ? state.data.tasks.find(task => task.id === taskId)?.title : undefined
+  })
+  const flowRestoreSessionId = useDailyFlowStore(state => state.restorePending ? state.data.cursor?.sessionId : undefined)
+  const flowRestorePending = useDailyFlowStore(state => state.restorePending)
+  const flowError = useDailyFlowStore(state => state.error)
+  const flowBlocked = dailyFlow && (flowRestorePending || flowError === 'conflict' || flowError === 'invalid')
   const timerFont = useAppearanceStore(state => state.timerFont)
   const { t, language } = useI18n()
   const pictureInPicture = useDocumentPictureInPicture()
@@ -324,7 +335,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
   useWakeLock(Boolean(isRunning && currentSession))
 
-  const { mutateSessions } = useSessionRestore({
+  const { mutateSessions, restoreError } = useSessionRestore({
+    relatedSessionId: flowRestoreSessionId,
+    onSnapshot: (session, lastSession, relatedSession) => useDailyFlowStore.getState().reconcileTimer(session, lastSession, relatedSession),
     user,
     currentSession,
     restoreSession,
@@ -509,13 +522,16 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
   }, [workDuration, shortBreak, longBreak])
 
   const initiateSession = useCallback(async (type: SessionType): Promise<void> => {
+    if (dailyFlow && (useDailyFlowStore.getState().data.phase !== 'focus' || useDailyFlowStore.getState().error === 'conflict' || useDailyFlowStore.getState().error === 'invalid')) return
+    const flow = useDailyFlowStore.getState().data
+    const flowTitle = dailyFlow ? flow.tasks.find(task => task.id === flow.queue[0])?.title : undefined
     const requestId = ++startRequestIdRef.current
     const duration = getSessionDuration(type)
     const taskName =
       type === SessionType.TIME_TRACKING
-        ? selectedTask?.title || t.timer.timeTracking
+        ? flowTitle || selectedTask?.title || t.timer.timeTracking
         : type === SessionType.WORK
-          ? selectedTask?.title || t.timer.workSession
+          ? flowTitle || selectedTask?.title || t.timer.workSession
           : getSessionTypeLabel(type)
 
     const userId = user?.id || getOrCreateAnonymousId()
@@ -526,7 +542,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
     try {
       // Optimistic local start (don't wait for network)
-      startSession(taskName, duration, type, tempId, currentRoomId)
+      startSession(taskName, duration, type, tempId, currentRoomId, dailyFlow)
 
       sendMessageToServiceWorker({
         type: 'START_TIMER',
@@ -540,6 +556,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
       const dbSession = await sessionService.create({
         task: taskName,
+        standaloneTask: dailyFlow,
         duration,
         type,
         roomId: currentRoomId,
@@ -618,6 +635,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       // Already started optimistically; keep running.
     }
   }, [
+    dailyFlow,
     currentRoomId,
     emitSessionStart,
     getSessionDuration,
@@ -677,6 +695,10 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     setIsSettingsOpen(false)
   }
 
+  useEffect(() => {
+    if (dailyFlow && flowRestorePending) void mutateSessions().catch(() => {})
+  }, [dailyFlow, flowRestorePending, flowRestoreSessionId, mutateSessions])
+
   const getNextSessionType = useCallback((completedType: SessionType): SessionType => {
     // Get fresh state from store to avoid stale closures
     const { completedSessions: currentCompletedSessions, longBreakAfter: currentLongBreakAfter } = useTimerStore.getState()
@@ -709,7 +731,8 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
   }
 
-  const handleStart = async (focusTask?: TaskOption) => {
+  const handleStart = async (focusTask?: TaskOption, forceFocus = false) => {
+    if (flowBlocked) return
     if (focusTask && (useTimerStore.getState().currentSession || focusTask.completed)) return
     // Prevent multiple rapid clicks (throttled)
     if (isStarting || !canTriggerAction()) return
@@ -723,8 +746,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     setIsStarting(true)
 
     try {
-      const startType = isTimeTrackerMode ? SessionType.TIME_TRACKING : focusTask ? SessionType.WORK : sessionType
-      if (focusTask && !isTimeTrackerMode) setSessionType(SessionType.WORK)
+      const startType = forceFocus ? SessionType.WORK : isTimeTrackerMode ? SessionType.TIME_TRACKING : focusTask ? SessionType.WORK : sessionType
+      if (forceFocus || (focusTask && !isTimeTrackerMode)) setSessionType(SessionType.WORK)
+      if (forceFocus) setIsTimeTrackerMode(false)
 
       // If there's already an active session, silently end it first
       if (currentSession && !focusTask) {
@@ -757,10 +781,12 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       }
 
       const duration = getSessionDuration(startType)
+      const flow = useDailyFlowStore.getState().data
+      const flowTitle = dailyFlow ? flow.tasks.find(task => task.id === flow.queue[0])?.title : undefined
       const taskName =
         startType === SessionType.TIME_TRACKING
-          ? (focusTask ?? selectedTask)?.title || t.timer.timeTracking
-          : (focusTask ?? selectedTask)?.title || getSessionTypeLabel(startType)
+          ? flowTitle || (dailyFlow ? undefined : (focusTask ?? selectedTask)?.title) || t.timer.timeTracking
+          : flowTitle || (dailyFlow ? undefined : (focusTask ?? selectedTask)?.title) || getSessionTypeLabel(startType)
 
       // Get user ID or anonymous ID
       const userId = user?.id || getOrCreateAnonymousId()
@@ -770,7 +796,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       const tempId = `temp_${Date.now()}_${Math.random().toString(36).slice(2)}`
 
       // Optimistic local start (don't wait for network)
-      startSession(taskName, duration, startType, tempId, currentRoomId)
+      startSession(taskName, duration, startType, tempId, currentRoomId, dailyFlow)
 
       sendMessageToServiceWorker({
         type: 'START_TIMER',
@@ -786,6 +812,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       try {
         const sessionPayload: SessionData = {
           task: taskName,
+          standaloneTask: dailyFlow,
           duration,
           type: startType,
           roomId: currentRoomId,
@@ -882,7 +909,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     }
     useTimerActionsStore.setState({ startTask })
     return () => {
-      if (useTimerActionsStore.getState().startTask === startTask) useTimerActionsStore.setState({ startTask: null, busy: false })
+      if (useTimerActionsStore.getState().startTask === startTask) useTimerActionsStore.setState({ startTask: null, startFocus: null, stopSession: null, busy: false })
     }
   }, [])
   useEffect(() => {
@@ -1055,9 +1082,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     }
   }
 
-  const handleStop = async () => {
+  const handleStop = async (force = false) => {
     // Prevent multiple rapid clicks (throttled)
-    if (isStopping || !canTriggerAction()) return
+    if (isStopping || (!force && !canTriggerAction())) return
     
     clearAutoStart()
     startRequestIdRef.current += 1
@@ -1135,6 +1162,18 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     }
   }
 
+  const flowActionRef = useRef({ start: () => handleStart(undefined, true), stop: () => handleStop(true) })
+  useEffect(() => { flowActionRef.current = { start: () => handleStart(undefined, true), stop: () => handleStop(true) } })
+  useEffect(() => {
+    if (!dailyFlow) return
+    const startFocus = () => flowActionRef.current.start()
+    const stopSession = () => flowActionRef.current.stop()
+    useTimerActionsStore.setState({ startFocus, stopSession })
+    return () => {
+      if (useTimerActionsStore.getState().startFocus === startFocus) useTimerActionsStore.setState({ startFocus: null, stopSession: null })
+    }
+  }, [dailyFlow])
+
   const handleSessionComplete = useCallback(async () => {
     clearAutoStart()
     if (!currentSession) {
@@ -1165,8 +1204,9 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       
       if (
         completedType === SessionType.WORK &&
+        !dailyFlow &&
         selectedTask &&
-        selectedTask.id
+        (sessionSnapshot.taskRecordId === selectedTask.id || sessionSnapshot.workProjectId === selectedTask.id)
       ) {
         try {
           console.log('Incrementing pomodoro for task:', selectedTask.id)
@@ -1247,6 +1287,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     clearAutoStart()
     previewSessionType(nextType)
   }, [
+    dailyFlow,
     clearAutoStart,
     completeSession,
     currentSession,
@@ -1328,8 +1369,8 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     onStart: () => handleStart(),
     onPause: handlePause,
     onResume: handleResume,
-    onStop: handleStop,
-    isStarting,
+    onStop: () => handleStop(),
+    isStarting: isStarting || flowBlocked,
     isStopping,
     isPausing,
     isResuming,
@@ -1389,6 +1430,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       <div className="pixel-timer-screen">
         {presentation !== 'minimal' && <TimerPictureInPicture
           controller={pictureInPicture}
+          focusTaskLabel={flowTaskTitle}
           actions={timerActions}
           formattedTime={formatTime(timerDisplaySeconds)}
           sessionLabel={getSessionTypeLabel(activeSessionType)}
@@ -1408,13 +1450,17 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         </div>
       </div>
 
+      {dailyFlow && restoreError && <div className="flow-error" role="alert">
+        <p>{dailyFlowCopy[language].timerSyncError}</p>
+        <button type="button" className="btn btn-secondary" onClick={() => { void mutateSessions().catch(() => {}) }}>{dailyFlowCopy[language].retryTimer}</button>
+      </div>}
       <TimerControls
         {...timerActions}
         sessionType={activeSessionType}
         onSessionTypeChange={handleSessionTypeChange}
       >
         {showProject && <ProjectPicker />}
-        <TaskPicker
+        {!dailyFlow && <TaskPicker
           sessionType={activeSessionType}
           isDisabled={isTaskPickerDisabled}
           isOpen={isTaskMenuOpen}
@@ -1428,7 +1474,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
           taskSearch={taskSearch}
           onTaskSearchChange={setTaskSearch}
           hasTaskOptions={taskOptions.length > 0}
-        />
+        />}
       </TimerControls>
 
       <SettingsModal

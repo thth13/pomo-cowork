@@ -25,6 +25,8 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Study planner departure guard | UnsavedChangesGuard English copy/style variant, beforeunload | Existing native dialog owner intercepts navigation while a timer is prepared or persistence is unresolved; Stay here retains state. Browser unload warning is limited to those conditions |
 | Homepage room switch | RoomSwitch, useRoomStore, useTimerStore | Compact native button outside and above the Active Sessions panel when a current/last room exists; toggles Global/last room and preserves the existing running-session lock. Other routes retain the timer control |
 | Daily room challenge | RoomDailyChallenge, /api/rooms/[id]/challenge, sessionStats | Public/member read access follows room permissions; only the owner can save the name and 5–480-minute daily target. No challenge is assigned by default; the owner uses Set daily goal in the room header to create one. Unconfigured rooms hide the card; opening the dialog does not create a record. Current members and owner share a UTC day; finished/stopped focus sessions in this room count. Ten rows initially, Show more in batches of ten. SWR refreshes progress every 30 seconds, on focus, membership changes, saves and midnight. CommunityDialog’s daily-goal variant shares the Premium dialog shell; 25/50/100/150-minute shortcut buttons sit directly below the Daily target input, without a separate heading, and update that input’s draft. CommunityDialog owns editing, field errors focus invalid input, failed saves preserve drafts, duplicate submits are blocked, and the room status toast acknowledges confirmed saves |
+| Daily Flow | DailyFlow, useDailyFlowStore, lib/dailyFlow.ts | User Daily Flow request: newline task entry; reorder/edit/reversible remove; current-task-only focus; explicit task completion independent of session completion; skip to queue end; existing timer stop on last completion; daily summary and Finish My Day; adding work reopens planning. History browses one local calendar day at a time and leaves the shared timer mounted |
+| Daily Flow persistence and time | DailyFlowPersistence, useDailyFlowStore, useSessionRestore | Versioned browser-only storage per account/guest, no cloud sync; draft/queue/completions survive reload. Cursor high-water mark accumulates shared timer work/time-tracking seconds across sessions; pauses/breaks excluded; local midnight splits daily totals. Server snapshots reconcile account timers before closed-tab time is counted; guest snapshots restore active/paused timer. Unfinished work survives day rollover and returns to planning. Storage errors retain memory and offer retry; unreadable data is kept intact; other-tab conflicts suspend writes until explicit reload |
 | Timer / session transitions | PomodoroTimer, TimerControls, useTimerStore, sessionService | Preserve existing start/pause/resume/stop/complete operations |
 | Local practice timers | PracticeTimer, practiceTimerConfig, useLocalStudyTimer | Ten independent in-memory page instances; Start/Pause/Resume/Reset; manual stage preparation and start; 1–180 whole-minute overrides; Flowmodoro count-up prepares elapsed/5 rest, minimum one minute. No persistence, account timer, sessions, stats, audio or analytics calls. Finished status is announced without per-second live updates. Leaving/reloading clears state. See docs/seo-practice-pages.md for boundaries and manual checks |
 | Native mini timer | useDocumentPictureInPicture, TimerPictureInPicture, TimerActions | User-opened Document Picture-in-Picture window; portal shares timer state, locale, action handlers and pending flags; closing never stops the session |
@@ -749,3 +751,245 @@ Guest last seen uses the existing User.lastSeenAt field, updated on first connec
 and last disconnection (including stale-connection cleanup). Updates never create
 profiles; historical missing timestamps remain unknown until a new visit.
 No schema changes or migrations. Verification is static per user instructions.
+
+## Walking companion ownership
+
+`companion/TomGuide.tsx` owns Tom’s first-visit introduction and on-demand FAQ.
+Five non-modal speech cards can be skipped, closed or replayed; the first appearance
+waits for model readiness, an idle timer, a visible document and no modal. It never
+steals focus. A versioned browser-local seen flag is optional; memory prevents repeat
+introductions during the mounted visit if storage fails. Ask Tom is always available
+through the companion controls, including after rendering errors or hiding the model.
+FAQ answers are maintained local English/Spanish guidance, without a chat backend.
+Timer/Rooms links use existing routes. Speech is viewport-clamped with internal
+overflow; explicit close/Escape returns focus to Tom’s trigger, manual Help focuses
+its heading. Live regions announce steps/answers. Roaming pauses during guidance.
+No timers, tasks or room data are changed by the guide. Manual checks: first visit,
+repeat visit/reload, skip/replay, FAQ topics, keyboard/Escape, locale, narrow viewport,
+active timer/modal deferral and unavailable storage/WebGL.
+
+User request: replace the character with `beep_pomo.json`. `LottieCompanionScene.ts`
+owns JSON loading, SVG playback and cleanup. Loading/import/render failures expose
+the existing localized retry; retries remount the artwork. The artwork is 144×144 CSS pixels (half its previous size). Hover or keyboard
+focus shows the happy expression; leaving/blur restores neutral eyes. Hearts are
+gated by the same interaction. The speech bubble is visible only while TomGuide
+is open with text. Reduced motion still responds to expression changes.
+The display name is Mr. Beep throughout English/Spanish copy and accessible labels.
+The ambient loop applies outside work and rest. `BeepWorkScene.ts` owns local SVG furniture,
+standing posture and shoulder-driven typing with the original arm layers. A running focus/time-tracking session shows a
+desk and laptop with a 450ms furniture transition. There is no chair or added footwear;
+the source body remains upright. The laptop screen faces Beep; its rear lid faces
+the viewer. Pause/stop clears the desk; a running break uses heavy eyelids and slow
+sleepy blinking. Target movement waits for the desk to clear; pickup hides furniture
+immediately. Reduced motion snaps to a static standing work pose without typing. Preferences and internal
+component identifiers remain unchanged.
+`useTimerStore` remains the source for status and focus-time roaming deferral.
+`WalkingCompanion.tsx` retains normalized movement, optional local visibility/position
+preferences, pointer-captured dragging, arrow-key movement, target selection and
+non-modal controls. Escape restores pickup position; pointer cancellation, lost capture,
+blur and hidden documents release the grip. Carrying adds a small tilt. Guidance pauses
+roaming. Existing English/Spanish controls, pixel tokens and layers remain in use.
+Reduced motion freezes playback and disables roaming; hidden documents pause playback,
+and hidden/unmounted instances dispose the renderer. Obsolete companion assets have been removed; only beep_pomo.json is retained. No API/schema/auth changes. Manual verification: JSON load/retry, Hide/Show,
+movement/drag/keyboard, timer status, guidance, narrow viewport and reduced motion.
+Runtime/build/typecheck verification deferred per the user's repository instructions.
+
+Mr. Beep reactions: `BeepReactions.ts` attaches expression overlays to the source
+head so they track all poses. Priority: pickup surprise, completion/hover happiness,
+break heavy eyelids/long blinks, focus softly rounded eyes, neutral. Text visibility drives mouth motion
+and the speech bubble; no text means no talking motion. A timer-owned monotonic
+`completionSequence` increments in `completeSession` only. The companion subscribes
+to changes and schedules one 2.4-second leave-desk/arms-up/happy reaction per completion; no initial
+replay and no cancellation reaction. Hidden-tab completions do not replay. Pickup
+interrupts the jump and hides furniture. Breaks disable automatic roaming; manual movement remains available. Reduced motion keeps expression changes, snaps poses,
+and replaces the sequence with a static happy face and raised arms; typing and mouth motion are disabled.
+Runtime, build and typecheck remain deferred per user instructions. Manual coverage:
+start/pause/resume/complete/cancel, auto-start break, drag/drop during work/rest/jump,
+hover, guide open/close, reduced motion, hidden tab and Hide/Show.
+
+Completion choreography: clear furniture during the initial 450ms and shift the
+character back during 550ms; then raise both source arms at the shoulders, smile,
+and make a small hop. Lower arms and restore position during the final 450ms.
+Starting the next session waits for this reaction to finish before returning to work
+or sleepy break state. Cancellation does not celebrate; pickup interrupts the sequence.
+
+Arm continuity: the original left/right Lottie arms stay visible in all poses.
+Work rotates those layers inward at their source shoulders; typing adds a small
+angular motion, disabled for reduced motion. Completion raises the same layers.
+Furniture contains no substitute arms/hands. Desk and laptop remain in front of the
+character so normal occlusion is preserved, without detached hand translations.
+
+Animation previews live in the existing companion controls, available when visible
+and ready. Seven native pressed-state buttons select idle/work/break/smile/surprise/
+talking/completion; a live status names the selected preview. Repeated clicks replay;
+a five-second timeout or Stop preview returns to the current timer-driven state.
+Preview overrides a copy of the render pose only, suppresses wandering/movement,
+and respects reduced motion. Actual pickup cancels preview; hiding clears it.
+Controls are disabled during a real drag. No timer actions or completion events are
+emitted, and preview state is not persisted. Completion preview stages 800ms of work
+before leaving the desk and cheering. Runtime/build/typecheck remain deferred.
+
+### Mr. Beep interactive introduction
+
+User request: the first encounter explains timer, project and task creation through
+movement, pointing and clickable highlighting. The introduction focuses on projects
+and tasks, without a timer step. TomGuide/useBeepTour own progression;
+ProjectList, useQuickTasks and taskService own all records and validation.
+Welcome → click Tasks (Menu first on mobile)
+→ name and save a project → name and save its nested task
+→ task play/dropdown → guest registration → Sounds → Your Progress → Daily Goal
+→ Habits → Work History → Chat → finish.
+Task selection highlights both real controls and never requires starting a timer.
+Next is always available, including Tasks/project/task steps; each tool button also
+advances. A successful project/task save advances automatically, but is optional
+when exploring through Next. Click tracking uses capture before mobile-menu removal,
+then advances on the following frame. The registration target is intercepted to
+open the existing registration dialog without navigating an anonymous profile.
+Native open dialogs suspend the guide and prevent Escape from ending the tour.
+The primary picker target owns bubble placement; footer actions remain visible.
+Guests may open registration or continue without registering; registered accounts
+skip that step. Registration uses Navbar’s AuthModal register variant. Mobile menu
+opening alone does not advance a tool step.
+Creation advances only after a submitted form produces TASK_CHANGED_EVENT with the
+expected parent. Failed saves retain drafts and the current step. The new project's
+expanded form is targeted by its ID. No sample records or automatic timer starts.
+Outlines follow real controls through window movement and viewport resize; the
+bubble never traps focus, yields to modals and uses a polite live region. Escape
+closes the guide outside a modal. Reduced motion skips travel and pulse but keeps
+static pointing. Replay uses Ask Mr. Beep → Show me around again on the home route.
+The existing local first-meeting preference is preserved.
+
+### Mr. Beep GPT conversation
+
+User request: connect GPT so Beep can answer website questions and converse freely.
+BeepChat → POST /api/beep/chat → server-side Responses API. API keys remain on the
+server. The server supplies the website knowledge base and minimal normalized page/
+locale/device/timezone context; registered/Pro flags come from verified identity.
+Registered accounts also receive the bounded server-derived profile/activity summary
+from lib/beepPersonalContext.ts: name/description, joining date, XP/streaks, recorded
+activity, today/7/previous-7/30-day focus totals and three recent focus records.
+All queries scope to the verified JWT identity; email, passwords, IDs, billing data
+and full history are excluded. Profile/task strings are untrusted data. No action
+tools are included. Guests may converse with stricter
+rate limits. Bounded process-local quotas are not a distributed spending guarantee.
+Send locks duplicate submission; Stop/close/account switch aborts pending work.
+Failure preserves the user's message and offers retry without duplicating it.
+Enter sends, Shift+Enter inserts a newline, IME composition does not submit.
+The chat footer has no AI/provider disclosure, per the owner’s request; text is
+rendered without executable markup. Close uses a transparent, borderless button
+with a thin cross, preserving a 44px target and keyboard focus styling.
+The compact chat grows with right-aligned user bubbles and left-aligned Beep text,
+up to 420px of internally scrollable dialogue and a viewport-clamped 560px window.
+A single composer replaces greeting/suggestions/navigation/tour replay controls.
+Responses stream incrementally without Thinking text; a cursor marks the active
+reply. Stop retains received text; retry replaces a partial assistant reply while
+keeping its user turn. Scrolling away from the bottom pauses automatic following.
+Authenticated dialogues persist in owner-scoped database records. Closing keeps
+the current popup dialogue; reload/account change clears popup selection but saved
+records remain available through /beep. Unsigned visitors use memory-only chat.
+No transcript is written to localStorage.
+No fabricated fallback answer is shown for missing API configuration. Onboarding
+and its Next controls remain independent. Runtime verification is user-owned.
+
+The character button opens chat on click, Enter or Space. A 280ms primary-pointer
+hold starts carrying with pointer capture and suppresses the subsequent chat click.
+Escape, pointer cancellation and lost capture cancel placement; blur/hidden document
+release the grip. Pending holds are cancelled on these interruptions and unmount.
+Arrow keys and the existing Move control remain available. Chat close restores focus
+to the character when opened there, or to the controls trigger otherwise.
+Manual placement sets a persisted home position. Idle wandering moves at 125px/s
+inside an ellipse of 320px horizontal and 140px vertical radius around that fixed home,
+clamped to viewport bounds; wandering never shifts home. Move and keyboard placement
+also update home. The introduction teleports directly to highlighted controls,
+independently of walking speed and desk transitions, and points on arrival; it returns
+home afterward. Work, breaks, interactions, guidance and reduced motion still defer
+roaming.
+
+Beep surfaces use the shared rendered-scenery glass variant, including the global
+chat/guide and companion controls. Theme switches update CSS immediately without
+remounting the chat or resetting its transcript/draft. Forced-colors mode retains
+normal system-operable surfaces rather than translucent scene colors.
+
+### Mr. Beep arrival message
+
+TomGuide owns a text-only clickable welcome on the home page, once per registered
+account per mounted visit. It waits for authentication, model readiness, an idle
+timer, visible tab, no modal and the completed first-visit tour. It never steals
+focus or interrupts existing dialogue. GET /api/beep/chat authenticates identity,
+limits requests and generates localized text through the configured OpenAI model
+using a fresh server summary. Failure silently leaves the existing chat available. Click opens
+chat with the welcome as the initial assistant turn and focuses input; Close/Escape
+dismisses. Account/navigation changes cancel requests and prevent stale welcomes.
+The welcome uses existing glass/tokens, 44px click targets, viewport clamping and
+reduced-motion behavior. The arrival note auto-dismisses after 20 seconds; changing
+to dialogue cancels the timer. A signed, account-bound HttpOnly browser cookie
+stores only the previous greeting/timestamp for variation and warm return copy
+after at least three days. This is a gap since this browser’s last greeting, not
+verified site absence. Invalid/other-account cookies are ignored; no personal
+summary is persisted. Cookie signing uses a key distinct from authentication JWTs.
+Failure, identical or incomplete model output silently suppresses the note.
+A generation costs API tokens, shares the global model quota and has a 30s server
+and 35s client timeout.
+
+Beep greets as a friend, without questions, advice, productivity nudges or calls to
+action. Fresh activity informs tone, not a progress review. Casual chat is not
+steered toward work; planning or next steps are offered only on explicit request.
+
+### Saved Mr. Beep conversations
+
+Canonical owners: BeepChat for streaming/composer behavior in popup and page variants;
+lib/beepConversations.ts for transaction/revision/lease/idempotency; /api/beep for
+authenticated storage and retrieval; app/beep/BeepHistory for list/detail views.
+/beep lists chats in stable updatedAt/id order, 30 per page. /beep/[id] opens
+30 recent turns and Earlier messages loads older turns without replacing recent
+ones. New conversation creates a record on the first accepted user message; the
+first message names it. Popup close/reopen retains the current chat; its history icon opens the list.
+The header has no new-chat action. The index is a full-width list, and selected
+chats open on their own detail route, without a sidebar. Page submission requires
+an existing loaded conversation; the page cannot create a new chat. Navigation and private
+page patterns follow PersonalNavigation/Navbar/AuthModal. No new dialog/toast owner.
+
+Owner identity always comes from a verified token and existing account. A foreign
+chat ID returns 404. Pending user turns are saved before provider generation;
+partial replies are checkpointed and final replies saved before done is emitted.
+Turn IDs deduplicate retries; only the last unfinished turn can be regenerated.
+Completed requests replay without another provider call. Revisions and expiring
+database leases prevent cross-tab/process overwrites; stale finalization fails.
+Reload is explicit recovery for conflicts/save failures. Leaving during generation
+aborts the request; persistence does not imply a background job. All model context
+is loaded from this conversation's own bounded recent records.
+
+The list has loading/empty/error/expired-auth/load-more states; the conversation
+has loading/not-found/error/locked/streaming/stopped/retry/earlier-message states.
+Account changes remount private page data and clear popup state; late responses
+are discarded. Native links retain route/back behavior. Both mobile and desktop show either the list or the selected conversation,
+with a Back control to return to the list. Stop, IME input, Enter and
+Shift+Enter keep the shared composer contract. Runtime verification remains user-owned.
+
+Beep history/detail routes now share the product scenery and canonical glass-panel
+adapter in AppearanceProvider/appearance.css, including forced-colors fallback.
+No independent scenery renderer, theme state or token palette is added.
+
+Beep history loading now uses matching list-row and message/composer skeletons
+instead of visible Loading text, including authentication and additional list
+page requests. Existing rows remain visible during pagination. A localized status
+and aria-busy communicate loading while decorative bars are aria-hidden. Reduced
+motion follows the shared personal-page skeleton owner; forced colors use system
+colors. The visible Beep page heading is omitted; a screen-reader h1 is retained.
+
+Automatic Beep onboarding is only for unseen guests after authentication resolves.
+Registered accounts never start the tour, regardless of the browser seen flag;
+registering/signing in during a tour stops it and clears its targets. Personalized
+arrival messages remain independent and do not require a completed guest tour.
+
+Beep companion availability: min-width 720px. matchMedia controls mounting and
+reacts to resize; unmount disposes animation, cancels pending holds/requests and
+removes guide targets. Mobile never starts companion onboarding or welcome
+requests. Saved chat list/detail routes remain usable. The lower-left controls
+launcher is disabled as debug-only; closing desktop chat restores character focus.
+
+First Beep encounters use the shared English/Spanish introduction from
+`lib/beepIntroduction.ts` in both guest tour step zero and the registered arrival
+without signed welcome memory. Beep introduces himself, says he lives here now
+and explains that users can chat and ask questions. Later arrivals retain their
+existing personal greeting. First-arrival detection remains browser-local.

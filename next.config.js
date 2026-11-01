@@ -6,6 +6,11 @@ const nextConfig = {
     // Only the public asset address is exposed, never the Blob read/write token.
     NEXT_PUBLIC_BLOB_BASE_URL: blobBaseUrl,
   },
+  experimental: {
+    outputFileTracingIncludes: {
+      '/api/beep/chat': ['./docs/beep-knowledge-base.md'],
+    },
+  },
   async redirects() {
     return [{ source: '/users', destination: '/leaderboard', permanent: true }]
   },

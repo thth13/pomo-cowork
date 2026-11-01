@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import DailyFlowPersistence from '@/components/DailyFlowPersistence'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useSocket } from '@/hooks/useSocket'
@@ -41,5 +42,5 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     })
   }, [])
 
-  return <>{children}</>
+  return <><DailyFlowPersistence />{children}</>
 }

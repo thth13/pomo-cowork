@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import ThemeToggle from './ThemeToggle'
-import { Crown, User, Menu, X, ListChecks, Timer, Users, Trophy, BarChart3, BookOpen, Settings, LogOut, ChevronRight } from 'lucide-react'
+import { Crown, User, Menu, X, MessageCircle, ListChecks, Timer, Users, Trophy, BarChart3, BookOpen, Settings, LogOut, ChevronRight } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
@@ -39,6 +39,17 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
   const [isAccountPreviewOpen, setIsAccountPreviewOpen] = useState(false)
   const compactTriggerRef = useRef<HTMLButtonElement>(null)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [authInitialMode, setAuthInitialMode] = useState<'login' | 'register'>('login')
+  useEffect(() => {
+    if (!compact) return
+    const register = () => {
+      setAuthInitialMode('register')
+      setIsMobileMenuOpen(false)
+      setIsAuthModalOpen(true)
+    }
+    window.addEventListener('pomo:open-registration', register)
+    return () => window.removeEventListener('pomo:open-registration', register)
+  }, [compact])
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false)
@@ -386,6 +397,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 <Link prefetch={false}
                   href={userProfileHref(user)}
                   className="workspace-account-trigger"
+                  data-beep-tour={user.isAnonymous ? 'register' : undefined}
                   aria-label={`${t.nav.profile}: ${user.username}`}
                   aria-describedby={isAccountPreviewOpen ? accountPreviewId : undefined}
                   onClick={() => { setIsAccountPreviewOpen(false); setIsMobileMenuOpen(false) }}
@@ -399,7 +411,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                   </RankAvatarFrame>
                 </Link>
               ) : (
-                <button type="button" className="workspace-account-trigger" aria-label={t.nav.login} title={t.nav.login}
+                <button type="button" data-beep-tour="register" className="workspace-account-trigger" aria-label={t.nav.login} title={t.nav.login}
                   onClick={() => { setIsMobileMenuOpen(false); setIsAuthModalOpen(true) }}>
                   <span className="workspace-account-guest"><User size={19} aria-hidden="true" /></span>
                 </button>
@@ -726,6 +738,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 { href: currentRoomId ? `/rooms/${currentRoomId}` : '/rooms', label: t.nav.rooms, icon: Users, active: pathname.startsWith('/rooms') },
                 { href: '/leaderboard', label: t.nav.leaderboard, icon: Trophy, active: pathname === '/leaderboard' },
                 { href: '/statistics', label: statisticsCopy[language].navigation, icon: BarChart3, active: pathname === '/statistics' },
+                { href: '/beep', label: language === 'es' ? 'Chats con Mr. Beep' : 'Mr. Beep chats', icon: MessageCircle, active: pathname === '/beep' || pathname.startsWith('/beep/') },
                 { href: '/habits', label: habitsCopy[language].title, icon: ListChecks, active: pathname === '/habits' },
               ].map(({ href, label, icon: Icon, active }) => (
                 <Link prefetch={false} key={href} href={href} onClick={handleMobileLinkClick}
@@ -787,7 +800,8 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
 
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        initialMode={authInitialMode}
+        onClose={() => { setIsAuthModalOpen(false); setAuthInitialMode('login') }}
       />
     </>
   )

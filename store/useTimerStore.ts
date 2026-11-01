@@ -16,6 +16,7 @@ interface TimerState {
   timeRemaining: number
   currentSession: PomodoroSession | null
   completedSessions: number
+  completionSequence: number // Includes completed breaks and time tracking; excludes cancellation.
   pausedAt: number | null // timestamp when paused
 
   // Active sessions from other users
@@ -26,7 +27,7 @@ interface TimerState {
   taskOptions: TimerTaskOption[]
 
   // Actions
-  startSession: (task: string, duration: number, type: SessionType, sessionId?: string, roomId?: string | null) => void
+  startSession: (task: string, duration: number, type: SessionType, sessionId?: string, roomId?: string | null, standaloneTask?: boolean) => void
   pauseSession: () => void
   resumeSession: () => void
   completeSession: () => void
@@ -64,6 +65,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   timeRemaining: 25 * 60, // Default: 25 minutes in seconds
   currentSession: null,
   completedSessions: 0,
+  completionSequence: 0,
   pausedAt: null,
   activeSessions: [],
   selectedTask: null,
@@ -75,13 +77,13 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   longBreak: 15,
   longBreakAfter: 4,
 
-  startSession: (task: string, duration: number, type: SessionType, sessionId?: string, roomId?: string | null) => {
+  startSession: (task: string, duration: number, type: SessionType, sessionId?: string, roomId?: string | null, standaloneTask = false) => {
     const session: PomodoroSession = {
       id: sessionId || Date.now().toString(),
       userId: useAuthStore.getState().user?.id ?? getOrCreateAnonymousId(),
       roomId: roomId ?? null,
       task,
-      ...((type === SessionType.WORK || type === SessionType.TIME_TRACKING) ? {
+      ...(!standaloneTask && (type === SessionType.WORK || type === SessionType.TIME_TRACKING) ? {
         workProjectId: get().selectedTask?.parentId ?? get().selectedTask?.id ?? null,
         taskRecordId: get().selectedTask?.parentId ? get().selectedTask?.id : null,
         projectName: get().selectedTask?.projectTitle ?? get().selectedTask?.title ?? null,
@@ -191,6 +193,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         isRunning: false,
         currentSession: null,
         completedSessions: newCompletedCount,
+        completionSequence: get().completionSequence + 1,
         timeRemaining: nextDuration * 60,
         pausedAt: null,
       })

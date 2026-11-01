@@ -76,6 +76,28 @@ Artwork retains its limited palette; the scene background is desaturated in both
 
 ## Layout and components
 
+Daily Flow lives at `/daily-flow`, opened from a separate Daily flow mode section in
+Timer settings, with a Beta label beside the mode name and page wordmark. It has no
+homepage mode switch or header navigation link. A bordered glass shell groups planning,
+focus, summary and history, reusing the shared product scenery blur and surface tokens.
+Default themes use a lightly translucent paper surface, with an opaque fallback; forced
+colors restores system surfaces. It keeps the unboxed timer,
+Inter task names, pixel headings, paper/sage surfaces and existing tomato primary
+buttons. The only new visual emphasis is a sage Complete Task action. The planning
+queue uses numbered rows with visible move/edit/remove buttons, including on touch.
+Focus shows one task, a slim completion meter and the shared PomodoroTimer; other
+queue titles stay hidden. The existing native mini timer replaces its picker with
+that single task caption. Session controls, settings, sound and auto-start are shared.
+History can open without unmounting the timer. The completion screen gives the day
+room to end, with a small check/sparkle animation, task/focus totals and Finish My Day.
+All animations honor reduced motion. New colors derive from runtime pixel tokens;
+`app/daily-flow/daily-flow.css` owns page geometry, `app/community.css` owns the settings
+entry, and global styles own the mini-timer caption. Dense content continues to use Inter.
+Daily Flow copy and accessible labels follow English/Spanish in `lib/i18n/dailyFlow.ts`.
+Its browser-only, account-scoped persistence is independent of project/task records;
+normal timer task selection is preserved. See `docs/daily-flow.md` for lifecycle and
+manual verification. No server schema, subscription or project setup is required.
+
 Daily goal has its own Target button in the homepage dock and mobile tools menu.
 It reuses WorkspaceWindow for saved geometry, keyboard controls and focus return.
 The compact Inter counter sits above a twenty-segment meter in the existing tomato
@@ -1268,3 +1290,180 @@ wait for hydration; storage failures expose retry and other-tab changes pause
 writes until the user explicitly chooses a version. The leave guard applies only
 to unsaved state. Data stays in this browser and does not sync with an account. The existing revision planner owns custom weekdays,
 topic estimates, persistence, and adjustable session lengths.
+
+## Lottie companion Mr. Beep
+
+The active artwork is the user's `public/assets/companion/rigged-tom/beep_pomo.json`,
+a self-contained 400×400 Lottie animation with a six-second loop at 30 fps.
+`LottieCompanionScene` uses the existing lottie-web dependency, SVG rendering and the
+visibility-aware companion animation loop. The artwork is 144×144 CSS pixels, half
+its previous size. Happy eyes and smile appear on pointer hover, keyboard focus or session completion;
+hearts remain gated by hover/focus; the speech bubble appears only while TomGuide shows text. Ambient
+playback never triggers these expressions on its own. Reduced motion freezes playback
+while still updating expressions; carrying adds a small tilt. Outside work and the completion reaction, both arms stay in
+their resting pose; the source loop's repeated greeting is disabled.
+`WalkingCompanion` and `TomGuide` retain movement, placement, hide/show, preferences,
+localized controls and guidance. The source animation is preserved. Earlier 3D/pixel renderers remain inactive; obsolete companion assets have been removed. Timer state controls status and roaming deferral;
+`BeepWorkScene` adds a local SVG standing desk and laptop in the artwork's palette.
+During a running focus/time-tracking session the character stands and types; pausing,
+stopping or taking a break returns to the ambient pose. Movement waits for the desk to clear before translating; carrying immediately hides furniture. Reduced motion uses a
+static working pose. The display name is Mr. Beep in English and Spanish controls,
+guidance and accessible labels; internal identifiers and preference keys stay stable.
+Project launch, build and typecheck remain deferred per user instructions.
+
+### Mr. Beep reactions
+
+`BeepReactions.ts` owns head-attached focus, sleepy and surprised faces and the
+text-driven mouth. Focus uses softly rounded, slightly lowered eyes without angled brows; breaks
+keep the character upright with heavy eyelids, long sleepy blinks and no furniture. Pickup takes priority over other expressions and hides furniture.
+Visible guide text animates the mouth; closing text stops it immediately. The timer
+store's `completionSequence` advances only through `completeSession`, including breaks
+and time tracking. The companion observes that sequence without changing timer state
+and shows one 2.4-second completion sequence: leave the desk, raise both arms,
+smile with a small happy hop, then lower the arms. Cancellation does not trigger a jump. Completion
+while the document is hidden is not replayed later. Reduced motion uses static faces,
+working/resting poses and a brief happy expression without jumping, typing or talking
+motion. Work transitions suspend movement until the desk clears; automatic roaming stays
+off during focus, breaks and celebration. Source Lottie artwork remains unchanged.
+
+The standing work pose preserves the source body and thruster without added legs,
+shoes, chair or vertical compression. The wooden desk has a visible top edge and
+separate supports. The laptop display faces Beep; the viewer sees a plain sage lid
+with a small circular mark. On completion the desk clears over 450ms, Beep shifts
+back over 550ms, then raises both source arms using shoulder pivots. The last 450ms
+return the character and arms to neutral. Pickup cancels this sequence. Reduced
+motion shows a static smile with raised arms, without the exit, hop or typing.
+
+Work and celebration use only the two original Lottie arm layers. Shoulder pivots
+bring the source hands toward the laptop with subtle angular typing motion, then
+raise the same arms for celebration. No duplicate arms/hands or hide-and-replace
+transition is used; original sleeve and hand colors stay consistent across poses.
+
+The Mr. Beep controls include an English/Spanish Test animations fieldset. Seven
+buttons preview idle, working, sleepy break, smile, carried surprise, talking and
+completion. Each preview lasts five seconds, can be replayed or stopped, pauses
+roaming and overrides only the renderer pose. Completion first previews work for
+800ms before the exit/arms-up sequence. Existing reduced-motion preferences apply.
+No timer session, completion counter or persisted preference is changed.
+
+### Interactive first meeting
+
+TomGuide and useBeepTour own a first-visit route on the home workspace:
+welcome, Tasks, create project, create nested task, task selection, optional guest
+registration, Sounds, Your Progress, Daily Goal, Habits, Work History, Chat, finish.
+Task selection highlights both the task play button and the dropdown below the timer.
+Next is available on every step, including creation steps, so users can explore
+without creating another project or task. Successful saves still advance automatically.
+The primary target is explicitly marked so the bubble anchors to the timer picker
+while both picker and task play are highlighted. Guide actions stay outside the
+scrolling description; the guide sits above the mobile navigation and yields to
+both native open dialogs and authored aria-modal overlays.
+Registration opens the existing AuthModal in register mode; registered accounts skip
+that step. Tool steps advance on their real dock/menu button or Next; opening the
+mobile menu alone does not advance.
+The existing first-meeting preference and Ask Mr. Beep replay remain canonical.
+Real controls receive a growth-token outline with a reduced-motion-safe pulse;
+WalkingCompanion approaches each target and BeepWorkScene rotates the original arm
+at its shoulder toward it. No source artwork is modified. The bubble fits above
+or below the target, with internal scrolling, and yields to modal dialogs.
+Mobile follows Menu → Tasks. ProjectList/useQuickTasks remain the only creation
+owners: each creation step waits for a submitted form's confirmed save; failures
+keep the current step and draft. Users may dismiss at any time.
+
+### Mr. Beep AI chat
+
+Ask Mr. Beep embeds BeepChat in the existing help bubble, with a 390px maximum width,
+Inter body text, paper/sage transcript, existing token borders and growth sender names.
+A bounded scrollable log, real textarea label, explicit Send/Stop, New conversation,
+loading status, inline retry and provider disclosure share the existing controls.
+English/Spanish follow I18nProvider; replies follow the user's message language.
+The popup view survives closing and resets selection on reload/account change;
+authenticated transcripts persist in private saved dialogues at /beep. Only a bounded, authenticated profile/activity summary is fetched. The original tour stays accessible.
+Talking animation follows new replies rather than the waiting state. Server-side
+Responses API and the knowledge-base document own answers; see docs/beep-ai.md.
+
+The character itself is a native chat button: click/Enter/Space opens the existing
+chat; holding a primary pointer for 280ms switches to carrying with a grabbing
+cursor. Carrying never opens chat on release. The separate floating message icon
+is removed. Hover/focus pauses travel. Idle wandering moves at 125px/s within 320px horizontally
+and 140px vertically of its saved placement; manual moves redefine this home.
+Onboarding target changes teleport Beep immediately, without a walking pose.
+Tour travel remains independent and returns home when guidance finishes.
+
+Beep's guide/chat bubble, control panel, launcher and move
+hint follow the existing glass variant whenever product/home/tool scenery is
+actually rendered. app/appearance.css owns the data-companion-controls pixel-to-
+scene mapping and data-beep-surface shell, reusing canonical scene colors and
+18px blur. Chat log, fields, buttons, muted labels and scrollbars inherit those
+roles. A transparent guide footer avoids a second opaque surface. Default light/
+dark appearances retain their existing palette; forced colors exclude the glass
+variant. This also works for the globally mounted companion outside route shells.
+
+### Compact Mr. Beep dialogue
+
+The chat uses the existing scene-glass surface and pixel color tokens with Inter
+body text. A quiet 44px name/close row sits above a single composer. Initial chat
+has no greeting card, starter questions, navigation links or tour replay footer.
+User turns are small right-aligned screen-token bubbles; Beep replies are plain
+left-aligned text. The dialogue grows naturally to 420px, then scrolls internally;
+the complete window stays within 560px and the visual viewport. The input grows
+from one line to 112px. Send/Stop remain 44px icon buttons with localized names.
+The composer has no disclosure footer; close is a thin 14px icon on a transparent
+44px button with no border or shadow. Streaming uses a small growth-token cursor
+with blinking disabled for reduced motion. Existing themes and glass mapping own
+all colors; no new palette or typography is introduced.
+
+### Mr. Beep arrival note
+
+An optional short personal welcome uses the existing glass speech bubble, quiet
+name/close row and Inter text, without a composer until clicked. The text is a
+keyboard-operable button with no visible button border/background; the whole note
+stays within 300px and the visual viewport. It appears without taking focus after
+authentication and the first tour, while the timer is idle. Click carries the
+message into the existing chat. No new colors, overlays or typography are added.
+
+The arrival note now uses a fresh, short model-generated message and disappears
+automatically after 20 seconds. Opening dialogue cancels that timeout. A welcome
+after a long gap may say Beep missed the user; it never fabricates an exact absence
+from presence timestamps or pressures the user. Existing geometry and styling stay
+canonical.
+
+### Saved Beep conversations
+
+/beep and /beep/[id] reuse the personal-page frame, compact Navbar and
+PersonalNavigation. The index shows one full-width list of saved conversations;
+each row pairs its first-message title with the last-update date and a small
+navigation chevron. Clicking a row opens a separate dialogue page with a visible
+Back to all conversations link. There is no sidebar, empty composer beside the
+list, or new-conversation control on these pages. The popup header exposes only
+history and close, without a plus button.
+
+The shared BeepChat page variant fills the remaining dialogue canvas and scrolls
+its message log internally; input stays at the bottom. Page submission requires
+a loaded saved conversation. On narrow screens, row dates wrap below titles.
+Page input uses 16px type on mobile; controls retain 44px targets and visible focus.
+AppearanceProvider includes /beep routes in product scenery. appearance.css maps
+the list/dialogue shell to the same 18px glass blur, translucent pixel tokens and
+forced-colors fallback as other product pages. app/beep/beep.css owns page geometry;
+WalkingCompanion.module.css owns shared dialogue/composer geometry. No new palette
+or typography is introduced, and default light/dark appearances remain unchanged.
+
+Beep history omits the visible “Mr. Beep” page heading; a screen-reader heading
+retains page structure. Auth, initial list, additional list rows and dialogue
+loading use geometry-matched skeletons with the shared personal-skeleton-line
+animation. All skeleton colors derive from pixel tokens and inherit scenery
+glass; reduced motion uses the canonical static fallback. Decorative shapes are
+hidden from assistive technology, with one localized loading status per skeleton.
+
+The floating Beep companion mounts only at viewport widths of 720px or more,
+matching the existing mobile breakpoint. Narrowing the viewport unmounts artwork,
+chat/guide and their effects, rather than only hiding the renderer with CSS.
+Saved-chat pages remain available on mobile. The lower-left Beep launcher and its
+controls are debug-only and disabled by SHOW_DEBUG_CONTROLS in WalkingCompanion.
+The character remains the desktop chat trigger and focus-return target.
+
+First Beep encounters use the shared English/Spanish introduction from
+`lib/beepIntroduction.ts` in both guest tour step zero and the registered arrival
+without signed welcome memory. Beep introduces himself, says he lives here now
+and explains that users can chat and ask questions. Later arrivals retain their
+existing personal greeting. First-arrival detection remains browser-local.

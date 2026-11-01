@@ -34,6 +34,8 @@ model User {
   updatedAt            DateTime  @updatedAt
   lastSeenAt           DateTime?
 
+  beepConversations BeepConversation[]
+
   achievements UserAchievement[]
   achievementState AchievementState?
   achievementEvents AchievementEvent[]
@@ -664,4 +666,36 @@ model MonthlyWrapped {
 
   @@id([userId, monthStart])
   @@map("monthly_wrapped")
+}
+
+model BeepConversation {
+  id String @id
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title String @db.VarChar(100)
+  greeting String? @db.VarChar(500)
+  revision Int @default(0)
+  activeRequestId String?
+  activeUntil DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+  turns BeepTurn[]
+
+  @@index([userId, updatedAt, id])
+  @@map("beep_conversations")
+}
+
+model BeepTurn {
+  id String @id
+  conversationId String
+  conversation BeepConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sequence Int
+  userText String @db.VarChar(2000)
+  assistantText String @default("") @db.VarChar(5000)
+  status String @default("pending") @db.VarChar(16)
+  createdAt DateTime @default(now())
+
+  @@unique([conversationId, sequence])
+  @@index([conversationId, createdAt, id])
+  @@map("beep_turns")
 }

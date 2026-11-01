@@ -1,6 +1,7 @@
 'use client'
 
-import { Crown, Timer, Coffee, Armchair, Repeat2, Check, Loader2 } from 'lucide-react'
+import { Crown, Timer, Coffee, Armchair, Repeat2, Check, Loader2, ArrowRight } from 'lucide-react'
+import Link from 'next/link'
 import { memo, useId, useRef, useState } from 'react'
 import { useI18n } from '@/components/I18nProvider'
 import CommunityDialog from '@/components/CommunityDialog'
@@ -50,6 +51,8 @@ export const SettingsModal = memo(function SettingsModal({
   const trackerDescriptionId = useId()
   const autoStartLabelId = useId()
   const autoStartDescriptionId = useId()
+  const dailyFlowLabelId = useId()
+  const dailyFlowDescriptionId = useId()
   const isTimeTrackerLocked = !isProMember
   const fields = [
     { key: 'workDuration', label: t.timer.focusLength, icon: Timer, min: 1, max: 60 },
@@ -129,6 +132,21 @@ export const SettingsModal = memo(function SettingsModal({
               </section>
             </>
           )}
+          <section className="timer-settings-option timer-settings-daily-flow" aria-labelledby={dailyFlowLabelId}>
+            <div className="timer-settings-option-copy">
+              <div className="timer-settings-option-heading">
+                <h3 id={dailyFlowLabelId}>{t.settingsModal.dailyFlowMode}</h3>
+                <span className="daily-flow-beta">Beta</span>
+              </div>
+              <p id={dailyFlowDescriptionId}>{t.settingsModal.dailyFlowDescription}</p>
+            </div>
+            <Link href="/daily-flow" prefetch={false} className="timer-settings-button"
+              aria-describedby={dailyFlowDescriptionId} aria-disabled={isSaving || undefined}
+              tabIndex={isSaving ? -1 : undefined}
+              onClick={event => { if (isSaving) event.preventDefault(); else onClose() }}>
+              {t.settingsModal.openDailyFlow}<ArrowRight size={15} aria-hidden="true" />
+            </Link>
+          </section>
         </div>
         {saveError && <p role="alert" className="text-red-600 px-4 pb-3 text-sm">{saveError}</p>}
         <footer className="timer-settings-footer">

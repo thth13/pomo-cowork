@@ -145,6 +145,9 @@ export const translations = {
       switchTo: 'Switch to',
     },
     settingsModal: {
+      dailyFlowMode: 'Daily flow mode',
+      dailyFlowDescription: 'Plan your day and focus on one task at a time.',
+      openDailyFlow: 'Open Daily Flow',
       saveFailed: 'Could not save settings. Try again.',
       autoStart: 'Auto start',
       autoStartDescription: 'Automatically begin the next session when the current one ends.',
@@ -482,6 +485,9 @@ export const translations = {
       switchTo: 'Cambiar a',
     },
     settingsModal: {
+      dailyFlowMode: 'Modo Daily Flow',
+      dailyFlowDescription: 'Planifica tu día y concéntrate en una tarea a la vez.',
+      openDailyFlow: 'Abrir Daily Flow',
       saveFailed: 'No se pudieron guardar los ajustes. Inténtalo de nuevo.',
       autoStart: 'Inicio automático',
       autoStartDescription: 'Inicia automáticamente la siguiente sesión cuando termine la actual.',

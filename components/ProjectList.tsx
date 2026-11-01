@@ -138,11 +138,11 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
               </span>
               <span>{todo.title}</span>
             </label>}
-            {showSelectionButtons && <button type="button" className="focus-project-icon focus-timer-task" data-active={session?.taskRecordId === todo.id} disabled={Boolean(session) || timerBusy || !startTask || saving || todo.completed || project.completed} aria-label={`${text('Start timer for task', 'Iniciar temporizador para tarea')}: ${todo.title}`} title={session ? text('Stop the current session before starting another task.', 'Detén la sesión actual antes de iniciar otra tarea.') : text('Select this task and start the timer', 'Seleccionar esta tarea e iniciar el temporizador')} onClick={() => { if (startTask) void startTask(todo) }}><Play size={16} aria-hidden="true" /></button>}
+            {showSelectionButtons && <button type="button" className="focus-project-icon focus-timer-task" data-beep-tour="task-play" data-task-id={todo.id} data-project-id={project.id} data-active={session?.taskRecordId === todo.id} disabled={Boolean(session) || timerBusy || !startTask || saving || todo.completed || project.completed} aria-label={`${text('Start timer for task', 'Iniciar temporizador para tarea')}: ${todo.title}`} title={session ? text('Stop the current session before starting another task.', 'Detén la sesión actual antes de iniciar otra tarea.') : text('Select this task and start the timer', 'Seleccionar esta tarea e iniciar el temporizador')} onClick={() => { if (startTask) void startTask(todo) }}><Play size={16} aria-hidden="true" /></button>}
             {editingTask?.id !== todo.id && <ProjectActions kind="task" title={todo.title} disabled={saving || Boolean(editingTask)} onRename={() => { setEditingTask(todo); setTaskTitle(todo.title); setTaskRenameError(false); setDeleteStatus('') }} onDelete={() => { setDeleteTarget(todo); setDeleteError(false); setDeleteStatus('') }} />}
           </li>)}
         </ul>
-        <form noValidate className="focus-task-create" onSubmit={event => { event.preventDefault(); void create(project.id) }}>
+        <form noValidate className="focus-task-create" data-beep-tour="task" data-project-id={project.id} onSubmit={event => { event.preventDefault(); void create(project.id) }}>
           <input aria-label={`${text('Add new task', 'Añadir nueva tarea')}: ${project.title}`} placeholder={text('Add new task…', 'Añadir nueva tarea…')} value={drafts[project.id] ?? ''} disabled={saving || loading || loadError || project.completed} onChange={event => setDrafts(previous => ({ ...previous, [project.id]: event.target.value }))} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
           <button type="submit" disabled={saving || loading || loadError || project.completed || !drafts[project.id]?.trim()} aria-busy={pendingAction === `create-task:${project.id}`} aria-label={text('Add task', 'Añadir tarea')} title={text('Add task', 'Añadir tarea')}>{pendingAction === `create-task:${project.id}` ? <Loader2 size={16} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Plus size={16} aria-hidden="true" />}</button>
         </form>
@@ -151,14 +151,14 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
   }
 
   return <section ref={listRef} tabIndex={-1} className="focus-projects" data-i18n-ignore aria-label={text('Projects', 'Proyectos')} aria-busy={loading || saving}>
-    {!allowProjectCreation && <form noValidate className="focus-project-composer" onSubmit={event => { event.preventDefault(); void create() }}>
+    {!allowProjectCreation && <form noValidate className="focus-project-composer" data-beep-tour="project" onSubmit={event => { event.preventDefault(); void create() }}>
       <div className="project-name-field">
         <input aria-label={text('Project name', 'Nombre del proyecto')} placeholder={text('Create new project…', 'Crear nuevo proyecto…')} value={name} disabled={saving} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
         <ProjectColorPicker value={color} onChange={setColor} disabled={saving} />
       </div>
       <button type="submit" disabled={saving || !name.trim()} aria-busy={creatingProject} aria-label={creatingProject ? text('Saving', 'Guardando') : text('Add project', 'Añadir proyecto')} title={text('Add project', 'Añadir proyecto')}>{creatingProject ? <Loader2 size={18} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <ArrowUpRight size={18} aria-hidden="true" />}</button>
     </form>}
-    {allowProjectCreation && <form noValidate className="focus-project-create" onSubmit={event => { event.preventDefault(); void create() }}>
+    {allowProjectCreation && <form noValidate className="focus-project-create" data-beep-tour="project" onSubmit={event => { event.preventDefault(); void create() }}>
       <div className="project-name-field">
         <input aria-label={text('Project name', 'Nombre del proyecto')} placeholder={text('New project…', 'Nuevo proyecto…')} value={name} disabled={saving} onChange={event => setName(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
         <ProjectColorPicker value={color} onChange={setColor} disabled={saving} />

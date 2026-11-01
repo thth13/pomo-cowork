@@ -146,6 +146,7 @@ export const TaskPicker = memo(function TaskPicker({
       <div ref={taskPickerRef}>
         <button
           ref={triggerRef}
+          data-beep-tour={variant === 'default' ? 'task-picker' : undefined}
           id={pickerId}
           type="button"
           onClick={onToggle}

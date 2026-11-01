@@ -7,6 +7,7 @@ import { notifyTimerChanged } from '@/lib/timerEvents'
 
 export interface SessionData {
   task: string
+  standaloneTask?: boolean
   duration: number
   type: SessionType
   projectId?: string | null
@@ -84,7 +85,7 @@ export const sessionService = {
     }
 
     const focus = useTimerStore.getState().selectedTask
-    if (focus && (data.type === SessionType.WORK || data.type === SessionType.TIME_TRACKING)) {
+    if (!data.standaloneTask && focus && (data.type === SessionType.WORK || data.type === SessionType.TIME_TRACKING)) {
       body.workProjectId = focus.parentId ?? focus.id
       body.taskRecordId = focus.parentId ? focus.id : null
     }
@@ -92,7 +93,7 @@ export const sessionService = {
     const selected = useProjectSelection.getState()
     if (token && (data.type === SessionType.WORK || data.type === SessionType.TIME_TRACKING)) {
       const userId = useAuthStore.getState().user?.id
-      body.projectId = data.projectId ?? (selected.userId === userId ? selected.projectId : null)
+      body.projectId = data.standaloneTask ? null : data.projectId ?? (selected.userId === userId ? selected.projectId : null)
     }
 
     if (data.roomId) {

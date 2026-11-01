@@ -12,6 +12,7 @@ import { subscribeTimerChanges } from '@/lib/timerEvents'
 interface AccountTimerSnapshot {
   session: (PomodoroSession & { room?: { id: string; name: string; backgroundGradientKey: string | null } | null }) | null
   lastSession: PomodoroSession | null
+  relatedSession?: PomodoroSession | null
   serverNow: number
   user: { id: string; username: string; canTimeTrack: boolean; settings: User['settings'] }
   localFingerprint: string
@@ -30,6 +31,8 @@ interface UseSessionRestoreOptions {
   busy?: boolean
   onRemoteEnd?: (completed: boolean, type: SessionType) => void
   onRemoteMode?: (type: SessionType) => void
+  relatedSessionId?: string
+  onSnapshot?: (session: PomodoroSession | null, lastSession: PomodoroSession | null, relatedSession?: PomodoroSession | null) => void
 }
 const fingerprint = () => {
   const { currentSession: session, workDuration, shortBreak, longBreak, longBreakAfter } = useTimerStore.getState()
@@ -43,11 +46,13 @@ export function useSessionRestore(options: UseSessionRestoreOptions) {
   const userId = options.user && !options.user.isAnonymous ? options.user.id : null
   const completionAttempts = useRef(new Map<string, { retryAt: number; pending: boolean }>())
   const lastAppliedSnapshot = useRef<AccountTimerSnapshot | null>(null)
-  const { data, mutate } = useSWR<AccountTimerSnapshot>(userId ? ['/api/timer', userId] : null, async () => {
+  const { data, mutate, error: restoreError } = useSWR<AccountTimerSnapshot>(userId ? ['/api/timer', userId] : null, async () => {
     const localFingerprint = fingerprint()
     const startedBusy = latest.current.busy || isTimerSettingsSavePending()
     const token = useAuthStore.getState().token
-    const response = await fetch('/api/timer', {
+    const relatedSessionId = latest.current.relatedSessionId
+    const timerUrl = relatedSessionId ? `/api/timer?relatedSessionId=${encodeURIComponent(relatedSessionId)}` : '/api/timer'
+    const response = await fetch(timerUrl, {
       headers: { Authorization: `Bearer ${token}` }, cache: 'no-store', signal: AbortSignal.timeout(10000),
     })
     if (!response.ok) throw new Error(`Timer sync failed: ${response.status}`)
@@ -74,6 +79,7 @@ export function useSessionRestore(options: UseSessionRestoreOptions) {
       return
     }
     lastAppliedSnapshot.current = data
+    latest.current.onSnapshot?.(data.session, data.lastSession, data.relatedSession)
     const { user, restoreSession, setSessionType, emitSessionSync, ignoreSessionIdRef, onRemoteEnd, onRemoteMode } = latest.current
     if (!user) return
     const state = useTimerStore.getState()
@@ -135,5 +141,5 @@ export function useSessionRestore(options: UseSessionRestoreOptions) {
   }, [data, userId, options.busy, mutate])
 
   const mutateSessions = useCallback(() => mutate(), [mutate])
-  return { mutateSessions }
+  return { mutateSessions, restoreError }
 }

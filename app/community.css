@@ -543,6 +543,11 @@ button.profile-heatmap-cell:hover, button.profile-heatmap-cell:active { outline:
 .timer-settings-field-label > svg { flex: none; margin-top: 1px; }
 .timer-settings-field input { width: 100%; min-width: 0; min-height: 44px; padding: 8px 9px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-paper); color: var(--pixel-ink); font-family: var(--font-pixel); font-size: 16px; line-height: 1.5; box-shadow: inset 2px 2px 0 var(--pixel-shadow); }
 .timer-settings-auto { padding-top: 16px; border-top: 1px solid var(--pixel-line); }
+.timer-settings-daily-flow { flex-wrap: wrap; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--pixel-line); }
+.timer-settings-daily-flow .timer-settings-option-copy { flex-basis: 180px; }
+.daily-flow-beta { display: inline-flex; align-items: center; flex: none; padding: 2px 6px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-screen); color: var(--pixel-muted); font-size: 10px; font-weight: 600; line-height: 1.4; }
+.timer-settings-daily-flow a[aria-disabled="true"] { pointer-events: none; opacity: .45; cursor: not-allowed; }
+.timer-settings-daily-flow a:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 3px; }
 .timer-settings-footer { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; flex: none; padding: 14px 20px; border-top: 1px solid var(--pixel-line); background: var(--pixel-page); }
 .timer-settings-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 40px; padding: 9px 13px; border: 1px solid var(--pixel-line); border-radius: 2px; background: var(--pixel-paper); color: var(--pixel-ink); font-size: 12px; font-weight: 500; line-height: 1.5; cursor: pointer; }
 .timer-settings-button > svg { flex: none; }

@@ -15,6 +15,7 @@ import { TaskOption } from '@/types/task'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 
 interface TimerPictureInPictureProps {
+  focusTaskLabel?: string
   controller: ReturnType<typeof useDocumentPictureInPicture>
   actions: TimerActionsProps
   formattedTime: string
@@ -29,6 +30,7 @@ interface TimerPictureInPictureProps {
 
 export function TimerPictureInPicture({
   controller,
+  focusTaskLabel,
   actions,
   formattedTime,
   sessionLabel,
@@ -123,7 +125,7 @@ export function TimerPictureInPicture({
             <div className={`mini-timer-digits${formattedTime.length > 5 ? ' mini-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={sessionLabel} aria-live="off">
               {formattedTime}
             </div>
-            <TaskPicker
+            {focusTaskLabel ? <p className="mini-timer-flow-task">{focusTaskLabel}</p> : <TaskPicker
               variant="mini-timer"
               sessionType={sessionType}
               isDisabled={isTaskPickerDisabled}
@@ -138,7 +140,7 @@ export function TimerPictureInPicture({
               taskSearch={taskSearch}
               onTaskSearchChange={setTaskSearch}
               hasTaskOptions={taskOptions.length > 0}
-            />
+            />}
             {!isTimeTracking && (
               <div className="pixel-timer-track mini-timer-track" role="progressbar" aria-label={sessionLabel} aria-valuenow={Math.round(Math.max(0, Math.min(100, progress)))} aria-valuemin={0} aria-valuemax={100}>
                 {Array.from({ length: 24 }, (_, i) => <span key={i} className={progress >= (i + 1) / 24 * 100 ? 'filled' : ''} />)}

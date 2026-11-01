@@ -20,16 +20,21 @@ export async function GET(request: NextRequest) {
   try {
     const user = await account(request)
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401, headers: noCache })
-    const [session, lastSession] = await Promise.all([
+    const relatedSessionId = request.nextUrl.searchParams.get('relatedSessionId')
+    const [session, lastSession, relatedSession] = await Promise.all([
       prisma.pomodoroSession.findFirst({
         where: { userId: user.id, status: { in: ['ACTIVE', 'PAUSED'] } },
         orderBy: { createdAt: 'desc' },
         include: { room: { select: { id: true, name: true, backgroundGradientKey: true } } },
       }),
       prisma.pomodoroSession.findFirst({ where: { userId: user.id, status: { in: ['COMPLETED', 'CANCELLED'] } }, orderBy: { endedAt: 'desc' } }),
+      relatedSessionId && relatedSessionId.length <= 200
+        ? prisma.pomodoroSession.findFirst({ where: { id: relatedSessionId, userId: user.id } })
+        : Promise.resolve(null),
     ])
     return NextResponse.json({
       serverNow: Date.now(), session, lastSession,
+      ...(relatedSessionId ? { relatedSession } : {}),
       user: { id: user.id, username: user.username, canTimeTrack: hasActiveProAccess(user), settings: user.settings },
     }, { headers: noCache })
   } catch {

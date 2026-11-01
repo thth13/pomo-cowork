@@ -27,6 +27,7 @@ import RankUpToast from '@/components/RankUpToast'
 import AchievementNotifications from '@/components/achievements/AchievementNotifications'
 import JournalToast from '@/components/journal/JournalToast'
 import PremiumGrantModal from '@/components/PremiumGrantModal'
+import WalkingCompanion from '@/components/companion/WalkingCompanion'
 
 config.autoAddCss = false
 
@@ -122,6 +123,7 @@ export default function RootLayout({
                 <PremiumGrantModal />
               <JournalToast />
                 <WrappedProvider>{children}</WrappedProvider>
+                <WalkingCompanion />
                 <KofiWidget />
                 <div className="hidden sm:block">
                   <FeedbackWidget />
