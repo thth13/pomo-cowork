@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type RefObject, type SetStateAction } from 'react'
+import { useEffect, useRef, useState, type ReactNode, type RefObject, type SetStateAction } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BEEP_GUIDE_MODAL_SELECTOR, useBeepTour, type GuideTarget } from './useBeepTour'
@@ -9,7 +9,7 @@ import BeepChat from './BeepChat'
 import { logBeepClick, logBeepEvent } from '@/lib/beepEvents'
 import { beepIntroduction } from '@/lib/beepIntroduction'
 import type { BeepMessage, BeepConversationInfo } from '@/lib/beepChat'
-import { X, History } from 'lucide-react'
+import { X, History, Settings2 } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import styles from './WalkingCompanion.module.css'
 
@@ -39,7 +39,7 @@ const messages = {
       ['How do breaks work?', 'Choose Short Break or Long Break on the timer. Press Start if the break hasn’t started. You can check the timer settings for automatic starts and change the break lengths.'],
       ['Where are my tasks?', 'On the timer page, open Tasks in the tools dock, or in the menu on mobile. Create a project, add tasks inside it, and select what you want to focus on.'],
       ['How do I work with others?', 'Open Rooms from the navigation to choose a coworking space. The Currently Working area shows live sessions; people can each work on their own timer.'],
-      ['How can I move or hide you?', 'Click me to chat. Drag me and let go to put me down. I wander only near where you place me. Escape cancels a drag. Move lets you choose an empty spot, and arrow keys work on Move or my head. Stay here pauses my wandering; Hide companion puts me away.'],
+      ['How can I move or hide you?', 'Click me to chat. Drag me and let go to put me down. I wander only near where you place me. Escape cancels a drag. Arrow keys move me too. Open settings in my chat to turn wandering or animation on or off, or hide me.'],
     ],
     timer: 'Go to timer', rooms: 'Browse rooms',
   },
@@ -67,13 +67,14 @@ const messages = {
       ['¿Cómo funcionan los descansos?', 'Elige Descanso corto o Descanso largo. Pulsa Iniciar si no ha comenzado. En los ajustes puedes revisar el inicio automático y cambiar la duración de los descansos.'],
       ['¿Dónde están mis tareas?', 'En la página del temporizador, abre Tareas en la barra de herramientas o el menú móvil. Crea un proyecto, añade tareas dentro y selecciona en qué concentrarte.'],
       ['¿Cómo trabajo con otras personas?', 'Abre Salas en la navegación para elegir un espacio compartido. La zona de personas trabajando muestra sesiones en directo; cada persona puede usar su propio temporizador.'],
-      ['¿Cómo te muevo u oculto?', 'Haz clic en mí para hablar. Arrástrame y suéltame donde quieras. Solo paseo cerca de donde me dejas. Escape cancela el arrastre. Mover permite elegir un espacio vacío; las flechas funcionan en Mover o mi cabeza. Quedarse aquí detiene mis paseos; Ocultar compañero me guarda.'],
+      ['¿Cómo te muevo u oculto?', 'Haz clic en mí para hablar. Arrástrame y suéltame donde quieras. Solo paseo cerca de donde me dejas. Escape cancela el arrastre. También puedes moverme con las flechas. Abre los ajustes de mi chat para activar o desactivar los paseos o la animación, u ocultarme.'],
     ],
     timer: 'Ir al temporizador', rooms: 'Ver salas',
   },
 }
 
 interface Props {
+  settings: ReactNode
   ready: boolean
   running: boolean
   openRequest: number
@@ -84,13 +85,16 @@ interface Props {
   onSpeakingChange: (speaking: boolean) => void
 }
 
-export default function TomGuide({ ready, running, openRequest, anchorRef, returnFocusRef, onOpenChange, onTargetChange, onSpeakingChange }: Props) {
+export default function TomGuide({ settings, ready, running, openRequest, anchorRef, returnFocusRef, onOpenChange, onTargetChange, onSpeakingChange }: Props) {
   const { language } = useI18n()
   const text = messages[language]
   const pathname = usePathname()
   const registered = useAuthStore(state => state.isAuthenticated && Boolean(state.user) && !state.user?.isAnonymous)
   const [mode, setMode] = useState<'tour' | 'help' | 'welcome' | null>(null)
   const [step, setStep] = useState(0)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const settingsTriggerRef = useRef<HTMLButtonElement>(null)
+  useEffect(() => setSettingsOpen(false), [mode])
   const accountToken = useAuthStore(state => state.token)
   const [savedChat, setSavedChat] = useState<BeepConversationInfo | null>(null)
   const authLoading = useAuthStore(state => state.isLoading)
@@ -212,6 +216,11 @@ export default function TomGuide({ ready, running, openRequest, anchorRef, retur
     if (!mode) return
     const dismiss = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || document.querySelector(BEEP_GUIDE_MODAL_SELECTOR)) return
+      if (settingsOpen) {
+        setSettingsOpen(false)
+        settingsTriggerRef.current?.focus({ preventScroll: true })
+        return
+      }
       logBeepEvent('close_escape', mode === 'help' ? 'chat' : mode, mode === 'tour' ? step : undefined)
       setMode(null)
       returnFocusRef.current?.focus({ preventScroll: true })
@@ -248,7 +257,7 @@ export default function TomGuide({ ready, running, openRequest, anchorRef, retur
     }
     frame = requestAnimationFrame(place)
     return () => { document.removeEventListener('keydown', dismiss, true); cancelAnimationFrame(frame) }
-  }, [mode, step, ready, anchorRef, returnFocusRef])
+  }, [mode, step, ready, anchorRef, returnFocusRef, settingsOpen])
 
   if (!mode || mode === 'tour' && (authLoading || registered) || mode === 'welcome' && welcome?.owner !== accountToken) return null
   const close = () => { setMode(null); returnFocusRef.current?.focus({ preventScroll: true }) }
@@ -258,6 +267,11 @@ export default function TomGuide({ ready, running, openRequest, anchorRef, retur
       <div className={styles.heading}>
         <span className={styles.tomName}>{mode !== 'tour' ? 'Mr. Beep' : text.name}{mode === 'tour' && <span> · {text.progress} {step + 1 - (registered && step >= 5 ? 1 : 0)}/{text.intro.length - (registered ? 1 : 0)}</span>}</span>
         <div className={styles.chatToolbar}>
+          {mode === 'help' && <button ref={settingsTriggerRef} type="button" data-beep-action={settingsOpen ? 'controls_close' : 'controls_open'}
+            aria-label={language === 'es' ? 'Ajustes de Mr. Beep' : 'Mr. Beep settings'} title={language === 'es' ? 'Ajustes de Mr. Beep' : 'Mr. Beep settings'}
+            aria-expanded={settingsOpen} aria-controls="beep-chat-settings" onClick={() => setSettingsOpen(value => !value)}>
+            <Settings2 size={16} strokeWidth={1.5} aria-hidden="true" />
+          </button>}
           {mode === 'help' && <Link data-beep-action="saved_chats" href="/beep" aria-label={language === 'es' ? 'Conversaciones guardadas' : 'Saved conversations'} title={language === 'es' ? 'Conversaciones guardadas' : 'Saved conversations'}><History size={16} strokeWidth={1.5} aria-hidden="true" /></Link>}
           <button type="button" data-beep-action="close" className={styles.chatClose} aria-label={text.close} onClick={close}><X size={16} strokeWidth={1.5} aria-hidden="true" /></button>
         </div>
@@ -273,6 +287,7 @@ export default function TomGuide({ ready, running, openRequest, anchorRef, retur
           setMode('help')
           requestAnimationFrame(() => bubbleRef.current?.querySelector('textarea')?.focus({ preventScroll: true }))
         }}>{welcome.text}</button>}
+      {mode === 'help' && settingsOpen && <div id="beep-chat-settings" className={styles.chatSettings} role="group" aria-label={language === 'es' ? 'Ajustes de Mr. Beep' : 'Mr. Beep settings'}>{settings}</div>}
       {mode === 'help' && <BeepChat key={accountToken ?? 'guest'} conversation={savedChat} onConversationChange={setSavedChat} messages={chatMessages} onMessagesChange={setChatMessages} onSpeakingChange={onSpeakingChange} />}
       {mode === 'tour' && <div className={styles.tomFooter}>
         <button type="button" data-beep-action="tour_skip" onClick={close}>{text.skip}</button>

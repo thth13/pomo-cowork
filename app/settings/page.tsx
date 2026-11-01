@@ -9,10 +9,12 @@ import {
   Save,
   CreditCard,
   User,
-  Shield
+  Shield,
+  Bot
 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
+import { useCompanionStore } from '@/store/useCompanionStore'
 import { UserSettings } from '@/types'
 import Navbar from '@/components/Navbar'
 import PersonalNavigation from '@/components/PersonalNavigation'
@@ -27,7 +29,14 @@ import { playEndSound, disposeNotificationSound } from '@/lib/notificationSound'
 
 export default function SettingsPage() {
   const router = useRouter()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const beepVisible = useCompanionStore(state => state.visible)
+  const beepHydrated = useCompanionStore(state => state.hydrated)
+  const setBeepVisible = useCompanionStore(state => state.setVisible)
+  useEffect(() => { useCompanionStore.getState().hydrate() }, [])
+  const beepCopy = language === 'es'
+    ? { title: 'Mr. Beep', label: 'Mostrar Mr. Beep', description: 'Tu compañero de concentración en pantallas de escritorio.', hint: 'Se aplica al instante y se guarda en este navegador.' }
+    : { title: 'Mr. Beep', label: 'Show Mr. Beep', description: 'Your focus companion on desktop screens.', hint: 'Applies immediately and is saved in this browser.' }
   const profileCopy = t.settingsProfile
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const { setTimerSettings } = useTimerStore()
@@ -546,6 +555,24 @@ export default function SettingsPage() {
                     </p>
                   </div>
                 ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="settings-panel" aria-labelledby="settings-beep-title" data-i18n-ignore>
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="settings-section-icon"><Bot className="h-6 w-6" aria-hidden="true" /></span>
+                <div className="space-y-2">
+                  <h2 id="settings-beep-title" className="text-xl font-semibold text-slate-900 dark:text-white">{beepCopy.title}</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{beepCopy.description}</p>
+                  <label htmlFor="settings-beep-visible" className="text-sm font-semibold cursor-pointer">{beepCopy.label}</label>
+                  <p id="settings-beep-help" className="text-xs text-slate-500 dark:text-slate-400">{beepCopy.hint}</p>
+                </div>
+              </div>
+              <div className="settings-toggle">
+                <input id="settings-beep-visible" type="checkbox" className="settings-checkbox" checked={beepVisible}
+                  disabled={!beepHydrated} aria-describedby="settings-beep-help" onChange={event => setBeepVisible(event.currentTarget.checked)} />
               </div>
             </div>
           </section>

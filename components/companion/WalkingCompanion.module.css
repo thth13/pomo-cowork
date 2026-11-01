@@ -56,33 +56,16 @@
 .controls button:active { transform: translateY(1px); }
 .controls button:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 3px; }
 .controls button[aria-pressed='true'] { background: var(--pixel-screen); border-color: var(--pixel-growth); }
-.trigger { box-shadow: 2px 2px 0 var(--pixel-shadow); }
-.trigger svg { color: var(--pixel-growth); }
-.panel {
-  width: min(290px, calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)));
-  max-height: calc(100dvh - 100px);
-  overflow-y: auto;
-  margin-bottom: 8px;
-  padding: 12px;
-  background: var(--pixel-paper);
-  border: 1px solid var(--pixel-line);
-  border-radius: 3px;
-  box-shadow: 3px 3px 0 var(--pixel-shadow);
-}
 .heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .heading strong { font-size: 13px; }
 .heading button { width: 44px; padding: 0; border-color: transparent; }
-.panel p { font-size: 12px; line-height: 1.6; margin: 4px 0 12px; }
-.actions { display: flex; gap: 6px; flex-wrap: wrap; }
-.panel .help { color: var(--pixel-muted); font-size: 11px; margin-top: 10px; }
-.panel .visibility { width: 100%; }
-.previews { min-width: 0; margin: 14px 0; padding: 10px 0 0; border: 0; border-top: 1px solid var(--pixel-line); }
-.previews legend { padding: 0 6px 0 0; font-size: 12px; font-weight: 600; }
-.previewButtons { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
-.previewButtons button { padding: 7px; overflow-wrap: anywhere; }
-.previews .previewStatus { margin: 8px 0; font-size: 11px; color: var(--pixel-growth); }
-.previews:disabled button { opacity: 0.5; cursor: default; }
-.moveHint { display: block; padding: 6px 10px; margin-top: 6px; max-width: 220px; background: var(--pixel-paper); border: 1px solid var(--pixel-line); font-size: 12px; }
+.setting { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 44px; padding: 6px 0; font-size: 12px; cursor: pointer; }
+.setting:hover { color: var(--pixel-growth); }
+.setting input { flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--pixel-growth); cursor: pointer; }
+.setting input:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 3px; }
+.chatSettings { flex-shrink: 0; max-height: 35dvh; overflow-y: auto; padding: 0 4px 10px; margin-bottom: 8px; border-bottom: 1px solid var(--pixel-line); }
+.chatSettings .hideCompanion { width: 100%; margin-top: 6px; }
+.chatToolbar button[aria-expanded='true'] { color: var(--pixel-growth); background: var(--pixel-screen); }
 @media print { .actor, .controls { display: none; } }
 @media (forced-colors: active) { .controls button:focus-visible { outline-color: Highlight; } }
 

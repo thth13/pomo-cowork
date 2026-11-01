@@ -1350,12 +1350,8 @@ bring the source hands toward the laptop with subtle angular typing motion, then
 raise the same arms for celebration. No duplicate arms/hands or hide-and-replace
 transition is used; original sleeve and hand colors stay consistent across poses.
 
-The Mr. Beep controls include an English/Spanish Test animations fieldset. Seven
-buttons preview idle, working, sleepy break, smile, carried surprise, talking and
-completion. Each preview lasts five seconds, can be replayed or stopped, pauses
-roaming and overrides only the renderer pose. Completion first previews work for
-800ms before the exit/arms-up sequence. Existing reduced-motion preferences apply.
-No timer session, completion counter or persisted preference is changed.
+Companion settings contain only wandering, animation and Hide companion; animation
+preview controls are removed.
 
 ### Interactive first meeting
 
@@ -1406,8 +1402,8 @@ An empty chat closes immediately on a primary pointer press outside the bubble
 and character. Chats with messages stay open. Outside dismissal leaves focus with
 the clicked control and does not apply to the tour or welcome note.
 
-Beep's guide/chat bubble, control panel, launcher and move
-hint follow the existing glass variant whenever product/home/tool scenery is
+Beep's guide/chat bubble and inline settings
+follow the existing glass variant whenever product/home/tool scenery is
 actually rendered. app/appearance.css owns the data-companion-controls pixel-to-
 scene mapping and data-beep-surface shell, reusing canonical scene colors and
 18px blur. Chat log, fields, buttons, muted labels and scrollbars inherit those
@@ -1474,12 +1470,26 @@ hidden from assistive technology, with one localized loading status per skeleton
 The floating Beep companion mounts only at viewport widths of 720px or more,
 matching the existing mobile breakpoint. Narrowing the viewport unmounts artwork,
 chat/guide and their effects, rather than only hiding the renderer with CSS.
-Saved-chat pages remain available on mobile. The lower-left Beep launcher and its
-controls are debug-only and disabled by SHOW_DEBUG_CONTROLS in WalkingCompanion.
-The character remains the desktop chat trigger and focus-return target.
+Saved-chat pages remain available on mobile. A settings icon in the chat header opens
+an inline disclosure with exactly two native checkboxes (wandering and animation)
+and Hide companion. There is no corner launcher, placement action or animation
+preview UI. Drag and arrow-key placement remain available on the character.
+Visibility, wandering, animation and home position persist in the existing browser
+preference key; system reduced motion takes precedence. Hiding unmounts artwork
+and guide/chat. Escape closes settings first and returns focus to the settings
+icon; closing the chat returns focus to the character. The disclosure reuses the
+chat's paper/glass surface, theme tokens and English/Spanish locale.
+
 
 First Beep encounters use the shared English/Spanish introduction from
 `lib/beepIntroduction.ts` in both guest tour step zero and the registered arrival
 without signed welcome memory. Beep introduces himself, says he lives here now
 and explains that users can chat and ask questions. Later arrivals retain their
 existing personal greeting. First-arrival detection remains browser-local.
+
+The Settings page includes a Mr. Beep visibility checkbox using its existing panel,
+icon and checkbox styles. `store/useCompanionStore.ts` owns shared visibility for
+Settings and the floating companion; the existing browser preference key remains
+canonical. Changes apply immediately, including restoring a companion hidden from
+chat, and preserve wandering, animation and home position. English/Spanish copy
+uses the active locale; no server preference or Save settings action is required.

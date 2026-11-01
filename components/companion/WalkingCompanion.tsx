@@ -1,13 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { logBeepClick, logBeepEvent } from '@/lib/beepEvents'
+import { logBeepEvent } from '@/lib/beepEvents'
 import { usePathname } from 'next/navigation'
 import type { KeyboardEvent } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
-import { User, MapPin, MessageCircle, Pause, Play, X } from 'lucide-react'
+import { EyeOff } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import { useTimerStore } from '@/store/useTimerStore'
+import { COMPANION_STORAGE_KEY, useCompanionStore } from '@/store/useCompanionStore'
 import { SessionType } from '@/types'
 import type { CompanionMood, CompanionPose } from './companionTypes'
 import styles from './WalkingCompanion.module.css'
@@ -15,22 +16,14 @@ import TomGuide from './TomGuide'
 import type { GuideTarget } from './useBeepTour'
 import { BEEP_CELEBRATION_DURATION } from './BeepReactions'
 
-const STORAGE_KEY = 'pomo:walking-companion:v1'
-const SHOW_DEBUG_CONTROLS = false
 const DRAG_THRESHOLD_PX = 4
 const WALK_SPEED_PX_PER_SECOND = 125
 const WANDER_RADIUS_X = 320
 const WANDER_RADIUS_Y = 140
-const animationPreviews = ['idle', 'focus', 'break', 'happy', 'held', 'speaking', 'completion'] as const
-type AnimationPreview = typeof animationPreviews[number]
 type CompanionDrag = { id: number; offsetX: number; offsetY: number; lastX: number; lastTime: number; start: { x: number; y: number } }
-const previewCopy = {
-  en: { title: 'Test animations', hint: 'Preview for 5 seconds. Your timer stays unchanged.', stop: 'Stop preview', idle: 'Idle', focus: 'Work at desk', break: 'Sleepy break', happy: 'Smile', held: 'Surprised / carried', speaking: 'Talking', completion: 'Finish and celebrate' },
-  es: { title: 'Probar animaciones', hint: 'Vista previa de 5 segundos. El temporizador no cambia.', stop: 'Detener vista previa', idle: 'En reposo', focus: 'Trabajar en la mesa', break: 'Descanso con sueño', happy: 'Sonreír', held: 'Sorpresa / en brazos', speaking: 'Hablar', completion: 'Terminar y celebrar' },
-}
 const copy = {
-  en: { name: 'Mr. Beep', show: 'Show companion', hide: 'Hide companion', move: 'Move', moving: 'Choose a place', help: 'Click an empty space, or use arrow keys on Move. Escape cancels.', roam: 'Let Mr. Beep wander', stay: 'Stay here', loading: 'Waking up…', error: 'Companion unavailable. Try again.', retry: 'Try again', idle: 'Ready when you are', focus: 'Focusing with you', break: 'Taking a break', close: 'Close companion controls', chat: 'Chat with Mr. Beep' },
-  es: { name: 'Mr. Beep', show: 'Mostrar compañero', hide: 'Ocultar compañero', move: 'Mover', moving: 'Elige un lugar', help: 'Haz clic en un espacio vacío o usa las flechas en Mover. Escape cancela.', roam: 'Dejar que Mr. Beep pasee', stay: 'Quedarse aquí', loading: 'Despertando…', error: 'Compañero no disponible. Inténtalo de nuevo.', retry: 'Reintentar', idle: 'Listo cuando tú quieras', focus: 'Concentrándome contigo', break: 'De descanso', close: 'Cerrar controles del compañero', chat: 'Hablar con Mr. Beep' },
+  en: { animations: 'Animate companion', hide: 'Hide companion', roam: 'Let Mr. Beep wander' },
+  es: { animations: 'Animar al compañero', hide: 'Ocultar compañero', roam: 'Dejar que Mr. Beep pasee' },
 }
 
 export default function WalkingCompanion() {
@@ -50,25 +43,20 @@ export default function WalkingCompanion() {
 function DesktopCompanion() {
   const { language } = useI18n()
   const text = copy[language]
-  const previewText = previewCopy[language]
-  const [preview, setPreview] = useState<{ kind: AnimationPreview; started: number } | null>(null)
-  const previewRef = useRef(preview)
-  previewRef.current = preview
   const running = useTimerStore(state => state.isRunning)
   const sessionType = useTimerStore(state => state.currentSession?.type)
   const mood: CompanionMood = !running ? 'idle' : sessionType === SessionType.SHORT_BREAK || sessionType === SessionType.LONG_BREAK ? 'break' : 'focus'
-  const [visible, setVisible] = useState(true)
-  const [expanded, setExpanded] = useState(false)
-  const [moving, setMoving] = useState(false)
+  const visible = useCompanionStore(state => state.visible)
+  const setVisible = useCompanionStore(state => state.setVisible)
   const [wandering, setWandering] = useState(true)
+  const [animations, setAnimations] = useState(true)
+  const animationsRef = useRef(animations)
+  animationsRef.current = animations
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [attempt, setAttempt] = useState(0)
   const [hydrated, setHydrated] = useState(false)
   const artworkRef = useRef<HTMLDivElement>(null)
   const actorRef = useRef<HTMLDivElement>(null)
   const gripRef = useRef<HTMLButtonElement>(null)
-  const panelRef = useRef<HTMLDivElement>(null)
-  const triggerRef = useRef<HTMLButtonElement>(null)
   const interacting = useRef(false)
   const target = useRef({ x: 0.2, y: 0.8 })
   const position = useRef({ x: 0.2, y: 0.8 })
@@ -88,35 +76,21 @@ function DesktopCompanion() {
         x: Math.max(0, Math.min(1, next.x / Math.max(1, window.innerWidth - 144))),
         y: Math.max(0, Math.min(1, (next.y - 8) / Math.max(1, window.innerHeight - 230))),
       }
-      setMoving(false)
-      setPreview(null)
     } else target.current = { ...home.current }
   }, [])
   const pose = useRef<CompanionPose>({ mood, walking: false, direction: 1, reducedMotion: false })
   pose.current.mood = mood
   pose.current.speaking = guideSpeaking
   const roaming = useRef(wandering)
-  roaming.current = wandering && !moving && !guideOpen && !preview
-
-  useEffect(() => {
-    if (!preview) return
-    const timeout = window.setTimeout(() => setPreview(null), 5000)
-    return () => window.clearTimeout(timeout)
-  }, [preview])
+  roaming.current = wandering && !guideOpen
 
   useEffect(() => {
     if (!visible) {
-      setPreview(null)
+      setGuideRequest(0)
       interacting.current = false
       pose.current.hovered = false
     }
   }, [visible])
-
-  function startPreview(kind: AnimationPreview) {
-    target.current = { ...position.current }
-    setMoving(false)
-    setPreview({ kind, started: performance.now() / 1000 })
-  }
 
   useEffect(() => useTimerStore.subscribe((state, previous) => {
     if (state.completionSequence !== previous.completionSequence && !document.hidden) {
@@ -129,9 +103,9 @@ function DesktopCompanion() {
     if (guideOpen) target.current = { ...position.current }
   }, [guideOpen])
 
-  const save = useCallback((nextVisible = visible) => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ visible: nextVisible, ...home.current })) } catch { /* Optional preference; keep the in-memory companion usable. */ }
-  }, [visible])
+  const save = useCallback((nextVisible = visible, nextWandering = wandering, nextAnimations = animations) => {
+    try { localStorage.setItem(COMPANION_STORAGE_KEY, JSON.stringify({ visible: nextVisible, wandering: nextWandering, animations: nextAnimations, ...home.current })) } catch { /* Optional preference; keep the in-memory companion usable. */ }
+  }, [visible, wandering, animations])
 
   function cancelPress() {
     const pending = press.current
@@ -159,13 +133,10 @@ function DesktopCompanion() {
     if (!event.isPrimary || event.button !== 0 || status !== 'ready' || guideTarget.current || document.querySelector('[aria-modal="true"]')) return
     cancelPress()
     suppressClick.current = false
-    previewRef.current = null
-    setPreview(null)
     event.currentTarget.setPointerCapture(event.pointerId)
     const rect = actorRef.current!.getBoundingClientRect()
     const initial = { id: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top, lastX: event.clientX, lastTime: event.timeStamp, start: { ...position.current } }
     target.current = { ...position.current }
-    setMoving(false)
     press.current = { x: event.clientX, y: event.clientY, grip: initial }
   }
 
@@ -217,9 +188,11 @@ function DesktopCompanion() {
   })
 
   useEffect(() => {
+    useCompanionStore.getState().hydrate()
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
-      if (saved && typeof saved.visible === 'boolean') setVisible(saved.visible)
+      const saved = JSON.parse(localStorage.getItem(COMPANION_STORAGE_KEY) || 'null')
+      if (saved && typeof saved.wandering === 'boolean') setWandering(saved.wandering)
+      if (saved && typeof saved.animations === 'boolean') setAnimations(saved.animations)
       if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
         target.current = { x: Math.max(0, Math.min(1, saved.x)), y: Math.max(0, Math.min(1, saved.y)) }
         position.current = { ...target.current }
@@ -259,6 +232,7 @@ function DesktopCompanion() {
           const width = Math.max(1, window.innerWidth - 144)
           const height = Math.max(1, window.innerHeight - 230)
           const state = pose.current
+          state.reducedMotion = media.matches || !animationsRef.current
           if (now > nextWalk) {
             nextWalk = now + 14000 + Math.random() * 10000
             if (roaming.current && !interacting.current && !press.current && !state.held && state.mood === 'idle' && now / 1000 >= (state.celebrateUntil || 0) && !state.reducedMotion) {
@@ -276,7 +250,7 @@ function DesktopCompanion() {
           const destination = guideTarget.current
           state.walking = distance > 1 && !destination && !state.reducedMotion && !state.held
           if (Math.abs(dx) > 1) state.direction = Math.sign(dx)
-          const step = state.held || previewRef.current ? 0 : destination || state.reducedMotion ? 1 : scene?.canMove() ? Math.min(1, dt * WALK_SPEED_PX_PER_SECOND / Math.max(distance, 1)) : 0
+          const step = state.held ? 0 : destination || state.reducedMotion ? 1 : scene?.canMove() ? Math.min(1, dt * WALK_SPEED_PX_PER_SECOND / Math.max(distance, 1)) : 0
           position.current.x += (target.current.x - position.current.x) * step
           position.current.y += (target.current.y - position.current.y) * step
           if (actorRef.current) actorRef.current.style.transform = `translate3d(${position.current.x * width}px, ${8 + position.current.y * height}px, 0)`
@@ -284,22 +258,7 @@ function DesktopCompanion() {
             x: destination.pointX - position.current.x * width,
             y: destination.pointY - (8 + position.current.y * height),
           } : undefined
-          let rendered = destination ? { ...state, mood: 'idle' as const, hovered: false, celebrateUntil: 0 } : state
-          const activePreview = previewRef.current
-          if (activePreview) {
-            const { kind, started } = activePreview
-            const finishAt = started + 0.8
-            rendered = {
-              ...state,
-              mood: kind === 'focus' || kind === 'completion' && now / 1000 < finishAt ? 'focus' : kind === 'break' ? 'break' : 'idle',
-              walking: false,
-              held: kind === 'held',
-              hovered: kind === 'happy',
-              speaking: kind === 'speaking',
-              dragVelocity: kind === 'held' ? Math.sin(now / 450) * 500 : 0,
-              celebrateUntil: kind === 'completion' && now / 1000 >= finishAt ? finishAt + BEEP_CELEBRATION_DURATION : 0,
-            }
-          }
+          const rendered = destination ? { ...state, mood: 'idle' as const, hovered: false, celebrateUntil: 0 } : state
           const signature = `${rendered.mood}:${rendered.direction}:${rendered.reducedMotion}:${rendered.held}:${rendered.hovered}:${rendered.speaking}:${rendered.pointAt?.x}:${rendered.pointAt?.y}:${now / 1000 < (rendered.celebrateUntil || 0)}`
           if (!rendered.reducedMotion || signature !== lastStaticPose) scene?.render(now / 1000, rendered)
           lastStaticPose = signature
@@ -322,49 +281,7 @@ function DesktopCompanion() {
       scenePose.held = false
       scenePose.hovered = false
     }
-  }, [hydrated, visible, attempt])
-
-  useEffect(() => {
-    if (!expanded) return
-    const dismiss = (event: PointerEvent) => {
-      if (event.target instanceof Node && !panelRef.current?.contains(event.target)) setExpanded(false)
-    }
-    const escape = (event: globalThis.KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setExpanded(false)
-        setMoving(false)
-        triggerRef.current?.focus()
-      }
-    }
-    document.addEventListener('pointerdown', dismiss)
-    document.addEventListener('keydown', escape)
-    return () => {
-      document.removeEventListener('pointerdown', dismiss)
-      document.removeEventListener('keydown', escape)
-    }
-  }, [expanded])
-
-  useEffect(() => {
-    if (!moving) return
-    const choose = (event: MouseEvent) => {
-      if (document.querySelector('[aria-modal="true"]')) return
-      if (!(event.target instanceof Element) || event.target.closest('a, button, input, textarea, select, label, summary, [role="button"], [role="menu"], [contenteditable], [data-companion-controls], [data-companion-actor]')) return
-      target.current = {
-        x: Math.max(0, Math.min(1, (event.clientX - 72) / Math.max(1, window.innerWidth - 144))),
-        y: Math.max(0, Math.min(1, (event.clientY - 120) / Math.max(1, window.innerHeight - 230))),
-      }
-      home.current = { ...target.current }
-      save()
-      setMoving(false)
-    }
-    const escape = (event: globalThis.KeyboardEvent) => { if (event.key === 'Escape') setMoving(false) }
-    document.addEventListener('click', choose)
-    document.addEventListener('keydown', escape)
-    return () => {
-      document.removeEventListener('click', choose)
-      document.removeEventListener('keydown', escape)
-    }
-  }, [moving, save])
+  }, [hydrated, visible])
 
   function nudge(event: KeyboardEvent<HTMLButtonElement>) {
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return
@@ -381,9 +298,9 @@ function DesktopCompanion() {
   function toggleWandering() {
     if (wandering) {
       target.current = { ...position.current }
-      save()
     }
-    setWandering(value => !value)
+    setWandering(!wandering)
+    save(visible, !wandering)
   }
 
   function interactWithActor(active: boolean) {
@@ -392,16 +309,12 @@ function DesktopCompanion() {
     if (active && !guideTarget.current && !drag.current) target.current = { ...position.current }
   }
 
-  function openChat(surface: 'character' | 'controls' = 'character') {
+  function openChat() {
     cancelPress()
     drop()
     target.current = { ...position.current }
-    previewRef.current = null
-    setPreview(null)
-    setExpanded(false)
-    setMoving(false)
     const tourStep = document.querySelector<HTMLElement>('#beep-guide[data-guide-mode="tour"]')?.dataset.beepLogStep
-    logBeepEvent('chat_open', tourStep === undefined ? surface : 'tour', tourStep === undefined ? undefined : Number(tourStep))
+    logBeepEvent('chat_open', tourStep === undefined ? 'character' : 'tour', tourStep === undefined ? undefined : Number(tourStep))
     setGuideRequest(value => value + 1)
   }
 
@@ -414,7 +327,7 @@ function DesktopCompanion() {
         onFocusCapture={() => interactWithActor(true)}
         onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget) && !event.currentTarget.matches(':hover')) interactWithActor(false) }}>
 
-        <div key={`beep-pomo-${attempt}`} ref={artworkRef} className={styles.artwork} aria-hidden="true" />
+        <div ref={artworkRef} className={styles.artwork} aria-hidden="true" />
         <button ref={gripRef} type="button" className={styles.grip} data-held={held}
           aria-label={language === 'es' ? 'Hablar con Mr. Beep. Arrastra para moverlo; usa las flechas con el teclado.' : 'Chat with Mr. Beep. Drag to move; use arrow keys to move with the keyboard.'}
           title={language === 'es' ? 'Clic para hablar · Arrastra para mover' : 'Click to chat · Drag to move'}
@@ -429,36 +342,29 @@ function DesktopCompanion() {
             if (!drag.current) openChat()
           }} />
       </div>}
-      {SHOW_DEBUG_CONTROLS && <div data-beep-log-surface="controls" onClickCapture={logBeepClick} className={styles.controls} ref={panelRef} data-companion-controls>
-        {expanded && <div id="companion-controls" className={styles.panel} data-beep-surface>
-          <div className={styles.heading}><strong>{text.name}</strong><button type="button" data-beep-action="controls_close" aria-label={text.close} onClick={() => { setExpanded(false); triggerRef.current?.focus() }}><X size={16} /></button></div>
-          <p role="status">{!visible ? text.show : status === 'loading' ? text.loading : status === 'error' ? text.error : text[mood]}</p>
-          <button type="button" className={styles.visibility} onClick={() => openChat('controls')}><MessageCircle size={15} />{language === 'es' ? 'Preguntar a Mr. Beep' : 'Ask Mr. Beep'}</button>
-          {visible && status === 'error' && <button type="button" data-beep-action="model_retry" onClick={() => setAttempt(value => value + 1)}>{text.retry}</button>}
-          {visible && status === 'ready' && <>
-            <div className={styles.actions}>
-              <button type="button" data-beep-action="move_toggle" aria-pressed={moving} aria-describedby="companion-move-help" onKeyDown={nudge} onClick={() => setMoving(value => !value)}><MapPin size={15} />{moving ? text.moving : text.move}</button>
-              <button type="button" data-beep-action="wander_toggle" aria-pressed={wandering} onClick={toggleWandering}>{wandering ? <Pause size={15} /> : <Play size={15} />}{wandering ? text.stay : text.roam}</button>
-            </div>
-            <p id="companion-move-help" className={styles.help}>{text.help}</p>
-            <fieldset className={styles.previews} disabled={held}>
-              <legend>{previewText.title}</legend>
-              <p className={styles.help}>{previewText.hint}</p>
-              <div className={styles.previewButtons}>
-                {animationPreviews.map(kind => <button key={kind} data-beep-action={`preview_${kind}`} type="button" aria-pressed={preview?.kind === kind} onClick={() => startPreview(kind)}>{previewText[kind]}</button>)}
-              </div>
-              {preview && <>
-                <p className={styles.previewStatus} role="status">{previewText[preview.kind]}</p>
-                <button type="button" className={styles.visibility} data-beep-action="preview_stop" onClick={() => setPreview(null)}>{previewText.stop}</button>
-              </>}
-            </fieldset>
-          </>}
-          <button type="button" className={styles.visibility} data-beep-action="visibility_toggle" onClick={() => { cancelPress(); drop(); setVisible(value => !value); setMoving(false); save(!visible) }}>{visible ? text.hide : text.show}</button>
-        </div>}
-        <button ref={triggerRef} data-beep-action={expanded ? 'controls_close' : 'controls_open'} type="button" className={styles.trigger} data-beep-surface aria-expanded={expanded} aria-controls="companion-controls" onClick={() => setExpanded(value => !value)}><User size={16} />{text.name}</button>
-        {moving && !expanded && <span className={styles.moveHint} data-beep-surface role="status">{text.moving} · Esc</span>}
-      </div>}
-      <TomGuide ready={visible && status === 'ready' && !preview} running={running} openRequest={guideRequest} anchorRef={actorRef} returnFocusRef={gripRef} onOpenChange={setGuideOpen} onSpeakingChange={setGuideSpeaking} onTargetChange={followGuide} />
+      {visible && <TomGuide ready={status === 'ready'} running={running} openRequest={guideRequest} anchorRef={actorRef} returnFocusRef={gripRef} onOpenChange={setGuideOpen} onSpeakingChange={setGuideSpeaking} onTargetChange={followGuide}
+        settings={<>
+          <label className={styles.setting}>
+            <span>{text.roam}</span>
+            <input type="checkbox" checked={wandering} onChange={toggleWandering} />
+          </label>
+          <label className={styles.setting}>
+            <span>{text.animations}</span>
+            <input type="checkbox" checked={animations} onChange={event => {
+              const enabled = event.currentTarget.checked
+              setAnimations(enabled)
+              save(visible, wandering, enabled)
+            }} />
+          </label>
+          <button type="button" className={styles.hideCompanion} data-beep-action="visibility_toggle" onClick={() => {
+            cancelPress()
+            drop()
+            setGuideRequest(0)
+            setVisible(false)
+            save(false)
+          }}><EyeOff size={15} aria-hidden="true" />{text.hide}</button>
+        </>}
+      />}
     </>
   )
 }

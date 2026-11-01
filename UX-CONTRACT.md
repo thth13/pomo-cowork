@@ -866,15 +866,9 @@ angular motion, disabled for reduced motion. Completion raises the same layers.
 Furniture contains no substitute arms/hands. Desk and laptop remain in front of the
 character so normal occlusion is preserved, without detached hand translations.
 
-Animation previews live in the existing companion controls, available when visible
-and ready. Seven native pressed-state buttons select idle/work/break/smile/surprise/
-talking/completion; a live status names the selected preview. Repeated clicks replay;
-a five-second timeout or Stop preview returns to the current timer-driven state.
-Preview overrides a copy of the render pose only, suppresses wandering/movement,
-and respects reduced motion. Actual pickup cancels preview; hiding clears it.
-Controls are disabled during a real drag. No timer actions or completion events are
-emitted, and preview state is not persisted. Completion preview stages 800ms of work
-before leaving the desk and cheering. Runtime/build/typecheck remain deferred.
+Animation preview controls have been removed; the chat settings disclosure exposes
+only wandering, animation and Hide companion. Timer state remains unchanged by
+these preferences.
 
 ### Mr. Beep interactive introduction
 
@@ -1034,11 +1028,24 @@ its chat, onboarding and arrival requests. The admin Beep messages section remai
 Beep companion availability: min-width 720px. matchMedia controls mounting and
 reacts to resize; unmount disposes animation, cancels pending holds/requests and
 removes guide targets. Mobile never starts companion onboarding or welcome
-requests. Saved chat list/detail routes remain usable. The lower-left controls
-launcher is disabled as debug-only; closing desktop chat restores character focus.
+requests. Saved chat list/detail routes remain usable. The chat header owns a settings disclosure with exactly two native checkboxes
+(wandering and animation) and Hide companion. No corner launcher or placement/
+preview controls are rendered. Drag and arrow-key placement remain available.
+Preferences apply immediately and persist in the existing browser key; system
+reduced motion takes precedence. Hiding unmounts guide/chat and artwork.
+Escape closes settings first and restores its icon's focus; chat close restores
+character focus. The disclosure closes with the chat.
+
 
 First Beep encounters use the shared English/Spanish introduction from
 `lib/beepIntroduction.ts` in both guest tour step zero and the registered arrival
 without signed welcome memory. Beep introduces himself, says he lives here now
 and explains that users can chat and ask questions. Later arrivals retain their
 existing personal greeting. First-arrival detection remains browser-local.
+
+Mr. Beep visibility: Settings → Show Mr. Beep toggles the same browser-local
+visibility as chat → Hide companion. `useCompanionStore` owns the live state and
+hydration; writes preserve the other companion preferences. The native checkbox
+applies immediately without Save settings. Disabling unmounts artwork and chat;
+re-enabling restores artwork without reopening the previous chat. Mobile may change
+the preference, while the companion still mounts only from 720px.
