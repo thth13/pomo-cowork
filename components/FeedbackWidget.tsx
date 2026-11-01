@@ -1,15 +1,18 @@
 'use client'
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, MessageCircle } from 'lucide-react'
+import { Check, MessageCircle, Send, X } from 'lucide-react'
+import { useI18n } from '@/components/I18nProvider'
+import { feedbackCopy } from '@/lib/i18n/feedback'
 import { useAuthStore } from '@/store/useAuthStore'
 
-const DEFAULT_MESSAGE = 'Help us get better'
 const SEEN_KEY = 'feedback_widget_seen'
 const PROMPT_ANIM_MS = 300
 
 export default function FeedbackWidget() {
   const { user, isAuthenticated, token } = useAuthStore()
+  const { language } = useI18n()
+  const copy = feedbackCopy[language]
   const [open, setOpen] = useState(false)
   const [showPrompt, setShowPrompt] = useState(false)
   const [promptMounted, setPromptMounted] = useState(false)
@@ -17,18 +20,22 @@ export default function FeedbackWidget() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [closing, setClosing] = useState(false)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
   const widgetRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const seen = localStorage.getItem(SEEN_KEY)
-    if (seen) return
+    try {
+      if (localStorage.getItem(SEEN_KEY)) return
+    } catch {
+      // Feedback remains available when storage is blocked.
+    }
     setPromptMounted(true)
     requestAnimationFrame(() => setShowPrompt(true))
     const timer = window.setTimeout(() => {
       setShowPrompt(false)
-      localStorage.setItem(SEEN_KEY, '1')
+      try { localStorage.setItem(SEEN_KEY, '1') } catch { /* Optional prompt preference. */ }
     }, 20000)
     return () => window.clearTimeout(timer)
   }, [])
@@ -70,17 +77,15 @@ export default function FeedbackWidget() {
         }),
       })
 
-      const payload = (await response.json().catch(() => null)) as { error?: string } | null
-
       if (!response.ok) {
-        setError(payload?.error || 'Failed to send message. Try again later.')
+        setError(copy.error)
         return
       }
 
       setSuccess(true)
       setMessage('')
     } catch (err) {
-      setError('Failed to send message. Try again later.')
+      setError(copy.error)
     } finally {
       setLoading(false)
     }
@@ -90,20 +95,21 @@ export default function FeedbackWidget() {
     setOpen(true)
     setError(null)
     if (typeof window !== 'undefined') {
-      localStorage.setItem(SEEN_KEY, '1')
+      try { localStorage.setItem(SEEN_KEY, '1') } catch { /* Optional prompt preference. */ }
     }
     setShowPrompt(false)
   }
 
   const handleClose = useCallback(() => {
-    setClosing(true)
-    setError(null)
-    setSuccess(false)
-    window.setTimeout(() => {
-      setOpen(false)
-      setClosing(false)
-    }, 180)
+    if (widgetRef.current?.contains(document.activeElement)) {
+      triggerRef.current?.focus({ preventScroll: true })
+    }
+    setOpen(false)
   }, [])
+
+  useEffect(() => {
+    if (open) inputRef.current?.focus({ preventScroll: true })
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -123,89 +129,59 @@ export default function FeedbackWidget() {
   }, [open, handleClose])
 
   return (
-    <div ref={widgetRef} className="feedback-widget fixed bottom-6 right-6 z-50 flex items-end justify-end">
+    <div ref={widgetRef} className="feedback-widget fixed bottom-6 right-6 z-50 flex items-end justify-end"
+      onKeyDown={(event) => {
+        if (open && event.key === 'Escape') {
+          event.stopPropagation()
+          handleClose()
+        }
+      }}>
       <div className="relative">
         {promptMounted && !open && (
-          <div
-            className={`absolute bottom-16 right-0 mb-2 w-64 rounded-2xl border border-rose-100 bg-white px-3 py-2 text-sm text-gray-700 shadow-xl transition-all duration-300 ${
-              showPrompt ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'
-            } dark:border-rose-900/40 dark:bg-slate-900 dark:text-slate-200`}
-          >
-            Help us get better. Share ideas or report bugs.
+          <div className={`feedback-prompt ${showPrompt ? 'feedback-prompt-visible' : ''}`}>
+            {copy.prompt}
           </div>
         )}
         {open && (
-          <div className={`absolute bottom-16 right-0 w-[320px] rounded-2xl border border-rose-100 bg-white shadow-2xl dark:border-rose-900/40 dark:bg-slate-900 ${closing ? 'feedback-pop-out' : 'feedback-pop'}`}>
-            <div className="flex items-start justify-between gap-3 border-b border-rose-100/70 px-4 pb-3 pt-4 dark:border-rose-900/40">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-rose-500 dark:text-rose-300">
-                  {DEFAULT_MESSAGE}
-                </p>
-                <h3 className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
-                  Share ideas or report bugs
-                </h3>
+          <section id="feedback-panel" role="dialog" aria-labelledby="feedback-title"
+            aria-describedby="feedback-description" className="feedback-panel feedback-pop">
+            <header className="feedback-header">
+              <div className="feedback-heading">
+                <MessageCircle size={16} aria-hidden="true" />
+                <h2 id="feedback-title">{copy.title}</h2>
               </div>
-              <button
-                type="button"
-                onClick={handleClose}
-                className="rounded-full p-1 text-gray-500 hover:text-gray-800 dark:text-slate-400 dark:hover:text-white"
-                aria-label="Collapse"
-              >
-                <ChevronDown className="h-4 w-4" aria-hidden="true" />
+              <button type="button" onClick={handleClose} className="feedback-close" aria-label={copy.close}>
+                <X size={18} aria-hidden="true" />
               </button>
-            </div>
-
-            <div className="px-4 pt-3">
-              <div className="rounded-2xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">
-                We read every note. Tell us what to improve, or share any bug you found.
-              </div>
-            </div>
-
-            <form onSubmit={handleSubmit} className="px-4 pb-4 pt-3 space-y-3">
-              <textarea
-                value={message}
+            </header>
+            <form onSubmit={handleSubmit} noValidate className="feedback-form" aria-busy={loading}>
+              <p id="feedback-description" className="feedback-description">{copy.description}</p>
+              <label htmlFor="feedback-message" className="feedback-label">{copy.label}</label>
+              <textarea id="feedback-message" ref={inputRef} value={message}
                 onChange={(event) => {
                   setMessage(event.target.value)
                   if (error) setError(null)
                   if (success) setSuccess(false)
                 }}
-                className="min-h-[120px] w-full rounded-xl border border-rose-100 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-rose-400 focus:outline-none dark:border-rose-900/50 dark:bg-slate-950 dark:text-white"
-                placeholder="Write your suggestion or bug report..."
-                required
-              />
-
-              {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200">
-                  {error}
-                </div>
-              )}
-
-              {success && (
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
-                  Thanks! Your message was sent to support.
-                </div>
-              )}
-
-              <div className="flex items-center justify-between">
-                <button
-                  type="submit"
-                  disabled={!canSubmit || loading}
-                  className="inline-flex items-center justify-center rounded-full bg-rose-500 px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] text-white transition hover:bg-rose-600 disabled:opacity-60"
-                >
-                  {loading ? 'Sending…' : 'Send'}
-                </button>
-              </div>
+                className="feedback-input resize-none" placeholder={copy.placeholder}
+                maxLength={4000} required disabled={loading}
+                aria-describedby={error ? 'feedback-error' : 'feedback-description'} />
+              {error && <p id="feedback-error" role="alert" className="feedback-status feedback-error">{error}</p>}
+              {success && <p role="status" className="feedback-status feedback-success">
+                <Check size={16} aria-hidden="true" />{copy.success}
+              </p>}
+              <button type="submit" disabled={!canSubmit || loading} className="feedback-send">
+                <Send size={15} aria-hidden="true" />
+                <span role="status">{loading ? copy.sending : copy.send}</span>
+              </button>
             </form>
-          </div>
+          </section>
         )}
-
-        <button
-          type="button"
-          onClick={open ? handleClose : handleOpen}
-          className="group relative flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-slate-700 to-slate-600 text-white shadow-lg shadow-slate-900/25 transition hover:scale-[1.02] focus:outline-none sm:h-14 sm:w-14"
-          aria-label="Open feedback"
-        >
-          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" fill="currentColor" stroke="none" aria-hidden="true" />
+        <button ref={triggerRef} type="button" onClick={open ? handleClose : handleOpen}
+          className="feedback-trigger" aria-label={open ? copy.close : copy.open}
+          aria-expanded={open} aria-controls={open ? 'feedback-panel' : undefined}
+          aria-haspopup="dialog" title={open ? copy.close : copy.open}>
+          {open ? <X size={21} aria-hidden="true" /> : <MessageCircle size={21} aria-hidden="true" />}
         </button>
       </div>
     </div>

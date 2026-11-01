@@ -1,6 +1,7 @@
 import 'react-kofi/dist/kofi.css'
 import './globals.css'
 import './appearance.css'
+import './feedback.css'
 import './community.css'
 import './ambient-sounds.css'
 import './daily-goal.css'
@@ -11,7 +12,6 @@ import WrappedProvider from '@/components/wrapped/WrappedProvider'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
 import Link from 'next/link'
-import Script from 'next/script'
 import { Bebas_Neue, Cormorant_Garamond, Inter, Orbitron, Space_Grotesk, VT323 } from 'next/font/google'
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/ThemeProvider'
@@ -84,20 +84,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
-        <Script async src="https://www.googletagmanager.com/gtag/js?id=G-TEKE22N2N5" />
-        <Script async src="https://www.googletagmanager.com/gtag/js?id=AW-11075064387" />
-        <Script
-          id="gtag-init"
-          dangerouslySetInnerHTML={{
-            __html: `
-              window.dataLayer = window.dataLayer || [];
-              function gtag(){dataLayer.push(arguments);}
-              gtag('js', new Date());
-              gtag('config', 'G-TEKE22N2N5');
-              gtag('config', 'AW-11075064387');
-            `,
-          }}
-        />
         <script
           dangerouslySetInnerHTML={{
             __html: `

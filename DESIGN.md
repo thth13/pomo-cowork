@@ -1502,3 +1502,16 @@ account caches and pending writes are scoped per user. Server preference ownersh
 is separate from timer/profile Save settings. Settings reports synchronization and
 failure in the current locale. Guests continue browser-only persistence. Home
 position, visibility, wandering and animation share useCompanionStore.
+
+### Feedback widget
+
+The bottom-right FeedbackWidget follows compact workspace windows: a round 48px outlined
+message button, 3px panel corners, sage title bar, restrained pixel heading and Inter form.
+The introduction uses an inset screen surface, primary ink and a tomato edge to
+separate it from the form.
+`app/feedback.css` consumes existing pixel tokens; `app/appearance.css` maps the
+button, prompt and panel to canonical scene colors and 18px glass blur whenever
+scenery is rendered. Each floating surface owns its blur. Light/dark, reduced motion
+and forced colors retain the same geometry. The anchored panel stays non-modal,
+keeps its draft on dismissal, focuses the message on opening and supports Escape
+with focus return. English/Spanish copy lives in `lib/i18n/feedback.ts`.

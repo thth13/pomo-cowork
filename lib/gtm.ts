@@ -1,9 +1,10 @@
 import TagManager from 'react-gtm-module'
+import { canUseGoogleTracking } from '@/lib/analyticsEnvironment'
 
 const GTM_ID = process.env.NEXT_PUBLIC_GTM_ID
 let gtmInitialized = false
 
-const canUseGtm = () => Boolean(GTM_ID) && process.env.NODE_ENV === 'production'
+const canUseGtm = () => Boolean(GTM_ID) && canUseGoogleTracking()
 
 export const initGtm = () => {
   if (!canUseGtm() || gtmInitialized) return
