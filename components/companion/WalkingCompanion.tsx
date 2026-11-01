@@ -17,12 +17,13 @@ import { BEEP_CELEBRATION_DURATION } from './BeepReactions'
 
 const STORAGE_KEY = 'pomo:walking-companion:v1'
 const SHOW_DEBUG_CONTROLS = false
-const PICKUP_DELAY_MS = 280
+const DRAG_THRESHOLD_PX = 4
 const WALK_SPEED_PX_PER_SECOND = 125
 const WANDER_RADIUS_X = 320
 const WANDER_RADIUS_Y = 140
 const animationPreviews = ['idle', 'focus', 'break', 'happy', 'held', 'speaking', 'completion'] as const
 type AnimationPreview = typeof animationPreviews[number]
+type CompanionDrag = { id: number; offsetX: number; offsetY: number; lastX: number; lastTime: number; start: { x: number; y: number } }
 const previewCopy = {
   en: { title: 'Test animations', hint: 'Preview for 5 seconds. Your timer stays unchanged.', stop: 'Stop preview', idle: 'Idle', focus: 'Work at desk', break: 'Sleepy break', happy: 'Smile', held: 'Surprised / carried', speaking: 'Talking', completion: 'Finish and celebrate' },
   es: { title: 'Probar animaciones', hint: 'Vista previa de 5 segundos. El temporizador no cambia.', stop: 'Detener vista previa', idle: 'En reposo', focus: 'Trabajar en la mesa', break: 'Descanso con sueño', happy: 'Sonreír', held: 'Sorpresa / en brazos', speaking: 'Hablar', completion: 'Terminar y celebrar' },
@@ -72,9 +73,9 @@ function DesktopCompanion() {
   const target = useRef({ x: 0.2, y: 0.8 })
   const position = useRef({ x: 0.2, y: 0.8 })
   const home = useRef({ x: 0.2, y: 0.8 })
-  const press = useRef<{ id: number; timer: ReturnType<typeof setTimeout> } | null>(null)
+  const press = useRef<{ x: number; y: number; grip: CompanionDrag } | null>(null)
   const suppressClick = useRef(false)
-  const drag = useRef<{ id: number; offsetX: number; offsetY: number; lastX: number; lastTime: number; start: { x: number; y: number } } | null>(null)
+  const drag = useRef<CompanionDrag | null>(null)
   const [held, setHeld] = useState(false)
   const [guideOpen, setGuideOpen] = useState(false)
   const [guideSpeaking, setGuideSpeaking] = useState(false)
@@ -135,10 +136,9 @@ function DesktopCompanion() {
   function cancelPress() {
     const pending = press.current
     if (!pending) return
-    clearTimeout(pending.timer)
     press.current = null
     suppressClick.current = true
-    if (gripRef.current?.hasPointerCapture(pending.id)) gripRef.current.releasePointerCapture(pending.id)
+    if (gripRef.current?.hasPointerCapture(pending.grip.id)) gripRef.current.releasePointerCapture(pending.grip.id)
   }
 
   function drop(cancel = false) {
@@ -166,27 +166,29 @@ function DesktopCompanion() {
     const initial = { id: event.pointerId, offsetX: event.clientX - rect.left, offsetY: event.clientY - rect.top, lastX: event.clientX, lastTime: event.timeStamp, start: { ...position.current } }
     target.current = { ...position.current }
     setMoving(false)
-    press.current = { id: event.pointerId, timer: setTimeout(() => {
-      press.current = null
-      suppressClick.current = true
-      drag.current = initial
-      pose.current.held = true
-      pose.current.celebrateUntil = 0
-      pose.current.dragVelocity = 0
-      setHeld(true)
-    }, PICKUP_DELAY_MS) }
+    press.current = { x: event.clientX, y: event.clientY, grip: initial }
   }
 
   function releasePointer(event: ReactPointerEvent<HTMLButtonElement>, cancel = false) {
     if (drag.current?.id === event.pointerId) { drop(cancel); return }
-    if (press.current?.id !== event.pointerId) return
+    if (press.current?.grip.id !== event.pointerId) return
     if (cancel) { cancelPress(); return }
-    clearTimeout(press.current.timer)
     press.current = null
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
   }
 
   function carry(event: ReactPointerEvent<HTMLButtonElement>) {
+    const pending = press.current
+    if (pending?.grip.id === event.pointerId) {
+      if (Math.hypot(event.clientX - pending.x, event.clientY - pending.y) < DRAG_THRESHOLD_PX) return
+      press.current = null
+      suppressClick.current = true
+      drag.current = pending.grip
+      pose.current.held = true
+      pose.current.celebrateUntil = 0
+      pose.current.dragVelocity = 0
+      setHeld(true)
+    }
     const grip = drag.current
     if (!grip || grip.id !== event.pointerId) return
     const elapsed = Math.max(8, event.timeStamp - grip.lastTime)
@@ -414,8 +416,8 @@ function DesktopCompanion() {
 
         <div key={`beep-pomo-${attempt}`} ref={artworkRef} className={styles.artwork} aria-hidden="true" />
         <button ref={gripRef} type="button" className={styles.grip} data-held={held}
-          aria-label={language === 'es' ? 'Hablar con Mr. Beep. Mantén pulsado para moverlo; usa las flechas con el teclado.' : 'Chat with Mr. Beep. Hold to carry; use arrow keys to move with the keyboard.'}
-          title={language === 'es' ? 'Clic para hablar · Mantén pulsado para mover' : 'Click to chat · Hold to carry'}
+          aria-label={language === 'es' ? 'Hablar con Mr. Beep. Arrastra para moverlo; usa las flechas con el teclado.' : 'Chat with Mr. Beep. Drag to move; use arrow keys to move with the keyboard.'}
+          title={language === 'es' ? 'Clic para hablar · Arrastra para mover' : 'Click to chat · Drag to move'}
           aria-controls="beep-guide" aria-expanded={guideOpen}
           onPointerDown={pickUp} onPointerMove={carry}
           onPointerUp={event => releasePointer(event)}

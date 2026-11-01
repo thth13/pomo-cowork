@@ -1394,12 +1394,17 @@ Talking animation follows new replies rather than the waiting state. Server-side
 Responses API and the knowledge-base document own answers; see docs/beep-ai.md.
 
 The character itself is a native chat button: click/Enter/Space opens the existing
-chat; holding a primary pointer for 280ms switches to carrying with a grabbing
-cursor. Carrying never opens chat on release. The separate floating message icon
+chat; moving a pressed primary pointer by 4px switches immediately to carrying
+with a grabbing cursor, without a hold delay. The movement threshold tolerates
+small pointer jitter during a click. Carrying never opens chat on release. The separate floating message icon
 is removed. Hover/focus pauses travel. Idle wandering moves at 125px/s within 320px horizontally
 and 140px vertically of its saved placement; manual moves redefine this home.
 Onboarding target changes teleport Beep immediately, without a walking pose.
 Tour travel remains independent and returns home when guidance finishes.
+
+An empty chat closes immediately on a primary pointer press outside the bubble
+and character. Chats with messages stay open. Outside dismissal leaves focus with
+the clicked control and does not apply to the tour or welcome note.
 
 Beep's guide/chat bubble, control panel, launcher and move
 hint follow the existing glass variant whenever product/home/tool scenery is

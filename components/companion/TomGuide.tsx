@@ -39,7 +39,7 @@ const messages = {
       ['How do breaks work?', 'Choose Short Break or Long Break on the timer. Press Start if the break hasn’t started. You can check the timer settings for automatic starts and change the break lengths.'],
       ['Where are my tasks?', 'On the timer page, open Tasks in the tools dock, or in the menu on mobile. Create a project, add tasks inside it, and select what you want to focus on.'],
       ['How do I work with others?', 'Open Rooms from the navigation to choose a coworking space. The Currently Working area shows live sessions; people can each work on their own timer.'],
-      ['How can I move or hide you?', 'Click me to chat. Hold me briefly, then drag and let go to put me down. I wander only near where you place me. Escape cancels a drag. Move lets you choose an empty spot, and arrow keys work on Move or my head. Stay here pauses my wandering; Hide companion puts me away.'],
+      ['How can I move or hide you?', 'Click me to chat. Drag me and let go to put me down. I wander only near where you place me. Escape cancels a drag. Move lets you choose an empty spot, and arrow keys work on Move or my head. Stay here pauses my wandering; Hide companion puts me away.'],
     ],
     timer: 'Go to timer', rooms: 'Browse rooms',
   },
@@ -67,7 +67,7 @@ const messages = {
       ['¿Cómo funcionan los descansos?', 'Elige Descanso corto o Descanso largo. Pulsa Iniciar si no ha comenzado. En los ajustes puedes revisar el inicio automático y cambiar la duración de los descansos.'],
       ['¿Dónde están mis tareas?', 'En la página del temporizador, abre Tareas en la barra de herramientas o el menú móvil. Crea un proyecto, añade tareas dentro y selecciona en qué concentrarte.'],
       ['¿Cómo trabajo con otras personas?', 'Abre Salas en la navegación para elegir un espacio compartido. La zona de personas trabajando muestra sesiones en directo; cada persona puede usar su propio temporizador.'],
-      ['¿Cómo te muevo u oculto?', 'Haz clic en mí para hablar. Mantén pulsado un momento, arrástrame y suéltame donde quieras. Solo paseo cerca de donde me dejas. Escape cancela el arrastre. Mover permite elegir un espacio vacío; las flechas funcionan en Mover o mi cabeza. Quedarse aquí detiene mis paseos; Ocultar compañero me guarda.'],
+      ['¿Cómo te muevo u oculto?', 'Haz clic en mí para hablar. Arrástrame y suéltame donde quieras. Solo paseo cerca de donde me dejas. Escape cancela el arrastre. Mover permite elegir un espacio vacío; las flechas funcionan en Mover o mi cabeza. Quedarse aquí detiene mis paseos; Ocultar compañero me guarda.'],
     ],
     timer: 'Ir al temporizador', rooms: 'Ver salas',
   },
@@ -196,6 +196,17 @@ export default function TomGuide({ ready, running, openRequest, anchorRef, retur
     onOpenChange(mode !== null)
     return () => onOpenChange(false)
   }, [mode, onOpenChange])
+
+  useEffect(() => {
+    if (mode !== 'help' || chatMessages.length > 0) return
+    const dismissEmptyChat = (event: PointerEvent) => {
+      if (!event.isPrimary || event.button !== 0 || document.querySelector(BEEP_GUIDE_MODAL_SELECTOR)) return
+      if (!(event.target instanceof Node) || bubbleRef.current?.contains(event.target) || anchorRef.current?.contains(event.target)) return
+      setMode(null)
+    }
+    document.addEventListener('pointerdown', dismissEmptyChat, true)
+    return () => document.removeEventListener('pointerdown', dismissEmptyChat, true)
+  }, [mode, chatMessages.length, anchorRef])
 
   useEffect(() => {
     if (!mode) return
