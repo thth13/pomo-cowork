@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client'
+import { memoryFacts } from '@/lib/beepMemory'
 import { prisma } from '@/lib/db'
 import { getEffectiveSessionMinutesSql } from '@/lib/sessionStatsSql'
 
@@ -11,6 +12,7 @@ const clip = (value: string | null, length: number) => value?.trim().slice(0, le
 
 export async function getBeepPersonalContext(userId: string, timezone: string) {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: {
+    beepMemory: { select: { facts: true, language: true } },
     isAnonymous: true, displayName: true, username: true, description: true,
     createdAt: true, lastSeenAt: true, experience: true, currentStreak: true, longestStreak: true,
   } })
@@ -65,6 +67,7 @@ export async function getBeepPersonalContext(userId: string, timezone: string) {
   const previous7Days = period(cutoff(13), cutoff(7))
   return {
     asOf: now.toISOString(), timezone,
+    memory: { language: user.beepMemory?.language ?? null, facts: memoryFacts(user.beepMemory?.facts).filter(fact => fact.value !== null).map(({ key, value }) => ({ key, value })) },
     profile: {
       name: clip(user.displayName || user.username, 60), description: clip(user.description, 240),
       joinedAt: user.createdAt.toISOString().slice(0, 10), experience: user.experience,

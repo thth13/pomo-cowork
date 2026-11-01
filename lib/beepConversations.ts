@@ -28,15 +28,15 @@ export async function beginBeepTurn(input: {
     }, data: { revision: { increment: 1 }, activeRequestId: input.requestId, activeUntil: new Date(now.getTime() + 60_000), updatedAt: now } })
     if (!acquired.count) throw new BeepConversationError(409, 'conflict')
     await tx.beepTurn.updateMany({ where: { conversationId: conversation.id, status: 'pending' }, data: { status: 'interrupted' } })
-    if (existing) await tx.beepTurn.update({ where: { id: existing.id }, data: { assistantText: '', status: 'pending' } })
-    else await tx.beepTurn.create({ data: { id: input.requestId, conversationId: conversation.id, sequence: (latest?.sequence ?? 0) + 1, userText: input.content } })
+    const activeTurn = existing ? await tx.beepTurn.update({ where: { id: existing.id }, data: { assistantText: '', status: 'pending' } })
+      : await tx.beepTurn.create({ data: { id: input.requestId, conversationId: conversation.id, sequence: (latest?.sequence ?? 0) + 1, userText: input.content } })
     const turns = await tx.beepTurn.findMany({ where: { conversationId: conversation.id }, orderBy: { sequence: 'desc' }, take: 8 })
     const messages: BeepMessage[] = turns.reverse().flatMap(turn => [
       { role: 'user', content: turn.userText } as BeepMessage,
       ...(turn.assistantText ? [{ role: 'assistant', content: turn.assistantText } as BeepMessage] : []),
     ])
     if (conversation.greeting) messages.unshift({ role: 'assistant', content: conversation.greeting })
-    return { conversationId: conversation.id, revision: conversation.revision + 1, replay: undefined, messages: beepHistory(messages) }
+    return { conversationId: conversation.id, revision: conversation.revision + 1, createdAt: activeTurn.createdAt, replay: undefined, messages: beepHistory(messages) }
   })
 }
 

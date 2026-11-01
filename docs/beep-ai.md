@@ -263,3 +263,71 @@ Collection is best-effort and never blocks the interface.
 Deploy migration `20261101130000_add_beep_events` with `npm run prisma:migrate`
 and regenerate Prisma Client with `npm exec -- prisma generate` when preparing the
 deployment. Applying the migration is required for the event API and admin table.
+
+
+## Cross-dialogue memory and language
+
+Deploy `20261101140000_add_beep_memory_preferences` using `npm run prisma:migrate`
+before running this version. `npm exec -- prisma generate` updates the client.
+The migration is additive: private `beep_memory` and `beep_preferences` tables
+reference users with cascading deletion; existing transcripts are unchanged.
+
+Registered accounts now extract durable facts from each newly accepted user
+message before generating the reply. `lib/beepMemory.ts` makes one additional,
+server-only Responses request with strict JSON Schema, `store: false`, the current
+message and existing memory (no whole-history scan). It uses OPENAI_MODEL and an
+8-second timeout within the existing overall request budget and global quota.
+This adds model latency and usage. Failure does not prevent the normal reply and
+Beep receives the actual save result so it cannot promise an unconfirmed save.
+This follows [Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs).
+
+Up to 40 bounded facts/tombstones are retained, with at most eight changes per
+message. Useful facts include a preferred name, occupation, ongoing project,
+goals, interests and communication/work preferences. Exact supporting quotes from
+the current user message are required. Assistant guesses, temporary feelings,
+credentials, payment data, precise addresses and highly sensitive personal facts
+are excluded by the extraction instructions. Memory is probabilistic extraction,
+not a guarantee every statement is retained. Corrections replace stable keys;
+explicit requests to forget remove a fact or clear all facts. Stored transcripts
+are independent and are not erased by forgetting a remembered fact.
+
+Account-scoped transaction locks and original user-turn timestamps prevent older
+concurrent turns/retries from replacing newer facts or language. Completed replay
+skips extraction. Memory is never returned in public profile/auth payloads or
+written into browser storage. Anonymous/unsigned visitors have no durable personal
+memory. Existing older dialogues are not automatically backfilled.
+
+Response language priority: explicit request in the latest message → language of
+that message → last clear user language in this dialogue for ambiguous text →
+saved account language → interface locale. All languages are supported by the
+prompt, independently of the English/Spanish UI. Russian → English → Ukrainian
+must switch on the very next reply; an older saved language never locks the chat.
+Language is extracted and persisted on the first clear message and included in
+future dialogues and arrival greetings.
+
+## Account companion preferences
+
+`CompanionPersistence` owns live synchronization, independently of the renderer or
+mobile breakpoint. GET/PATCH `/api/beep/preferences` verifies account ownership,
+rejects invalid/cross-site inputs and stores visibility, wandering, animation and
+normalized home x/y separately from timer settings. Partial updates preserve
+unrelated fields. On first use without server preferences, existing local settings
+seed the account. Afterwards server values restore on a different browser/device.
+Guests retain local preferences; account caches and pending patches use scoped
+keys. Writes serialize, preserve changes made during initial loading, and retry on
+window focus/network restoration. Pending writes survive reload; failed sync is
+shown on Settings. Account changes cancel requests and reset the preference scope.
+
+Manual checks (application launch/build/typecheck remain user-owned):
+- Introduce a durable goal/name; start another dialogue and ask Beep about it.
+- Correct a fact, ask to forget it, and then ask in a fresh dialogue.
+- Switch Russian → English → Ukrainian within one chat and after reloading.
+- Send an emoji after a language switch; verify the saved language is retained.
+- Switch accounts and confirm facts/preferences never come from the previous one.
+- Hide in chat, restore in Settings, disable wandering/animation, change position;
+  reload or use another device and verify the account preferences return.
+- Disconnect while changing preferences, restore connection/focus, and verify retry.
+
+Implementation verification: Prisma schema validation/client generation and
+targeted ESLint. No DB migration deployment, actual AI calls, tests, app launch,
+build or tsc were run.

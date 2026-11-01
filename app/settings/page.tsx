@@ -31,6 +31,7 @@ export default function SettingsPage() {
   const router = useRouter()
   const { t, language } = useI18n()
   const beepVisible = useCompanionStore(state => state.visible)
+  const beepSyncStatus = useCompanionStore(state => state.syncStatus)
   const beepHydrated = useCompanionStore(state => state.hydrated)
   const setBeepVisible = useCompanionStore(state => state.setVisible)
   useEffect(() => { useCompanionStore.getState().hydrate() }, [])
@@ -567,7 +568,13 @@ export default function SettingsPage() {
                   <h2 id="settings-beep-title" className="text-xl font-semibold text-slate-900 dark:text-white">{beepCopy.title}</h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400">{beepCopy.description}</p>
                   <label htmlFor="settings-beep-visible" className="text-sm font-semibold cursor-pointer">{beepCopy.label}</label>
-                  <p id="settings-beep-help" className="text-xs text-slate-500 dark:text-slate-400">{beepCopy.hint}</p>
+                  <p id="settings-beep-help" className="text-xs text-slate-500 dark:text-slate-400" role="status">{beepSyncStatus === 'error'
+                    ? language === 'es' ? 'Guardado en este navegador. No se pudo sincronizar con tu cuenta; se reintentará al volver a esta ventana.' : 'Saved in this browser. Account sync failed; it will retry when you return to this window.'
+                    : beepSyncStatus === 'saving' || beepSyncStatus === 'loading'
+                      ? language === 'es' ? 'Sincronizando…' : 'Syncing…'
+                      : user && !user.isAnonymous
+                        ? language === 'es' ? 'Se aplica al instante y se guarda en tu cuenta.' : 'Applies immediately and is saved to your account.'
+                        : beepCopy.hint}</p>
                 </div>
               </div>
               <div className="settings-toggle">

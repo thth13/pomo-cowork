@@ -8,7 +8,7 @@ import type { PointerEvent as ReactPointerEvent } from 'react'
 import { EyeOff } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import { useTimerStore } from '@/store/useTimerStore'
-import { COMPANION_STORAGE_KEY, useCompanionStore } from '@/store/useCompanionStore'
+import { useCompanionStore } from '@/store/useCompanionStore'
 import { SessionType } from '@/types'
 import type { CompanionMood, CompanionPose } from './companionTypes'
 import styles from './WalkingCompanion.module.css'
@@ -48,12 +48,16 @@ function DesktopCompanion() {
   const mood: CompanionMood = !running ? 'idle' : sessionType === SessionType.SHORT_BREAK || sessionType === SessionType.LONG_BREAK ? 'break' : 'focus'
   const visible = useCompanionStore(state => state.visible)
   const setVisible = useCompanionStore(state => state.setVisible)
-  const [wandering, setWandering] = useState(true)
-  const [animations, setAnimations] = useState(true)
+  const wandering = useCompanionStore(state => state.wandering)
+  const animations = useCompanionStore(state => state.animations)
+  const setPreferences = useCompanionStore(state => state.setPreferences)
+  const savedX = useCompanionStore(state => state.x)
+  const savedY = useCompanionStore(state => state.y)
+  const scope = useCompanionStore(state => state.scope)
   const animationsRef = useRef(animations)
   animationsRef.current = animations
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [hydrated, setHydrated] = useState(false)
+  const hydrated = useCompanionStore(state => state.hydrated)
   const artworkRef = useRef<HTMLDivElement>(null)
   const actorRef = useRef<HTMLDivElement>(null)
   const gripRef = useRef<HTMLButtonElement>(null)
@@ -103,9 +107,9 @@ function DesktopCompanion() {
     if (guideOpen) target.current = { ...position.current }
   }, [guideOpen])
 
-  const save = useCallback((nextVisible = visible, nextWandering = wandering, nextAnimations = animations) => {
-    try { localStorage.setItem(COMPANION_STORAGE_KEY, JSON.stringify({ visible: nextVisible, wandering: nextWandering, animations: nextAnimations, ...home.current })) } catch { /* Optional preference; keep the in-memory companion usable. */ }
-  }, [visible, wandering, animations])
+  const save = useCallback(() => {
+    useCompanionStore.getState().setPreferences({ x: home.current.x, y: home.current.y })
+  }, [])
 
   function cancelPress() {
     const pending = press.current
@@ -187,20 +191,15 @@ function DesktopCompanion() {
     }
   })
 
+  useEffect(() => { useCompanionStore.getState().hydrate() }, [])
+
   useEffect(() => {
-    useCompanionStore.getState().hydrate()
-    try {
-      const saved = JSON.parse(localStorage.getItem(COMPANION_STORAGE_KEY) || 'null')
-      if (saved && typeof saved.wandering === 'boolean') setWandering(saved.wandering)
-      if (saved && typeof saved.animations === 'boolean') setAnimations(saved.animations)
-      if (saved && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
-        target.current = { x: Math.max(0, Math.min(1, saved.x)), y: Math.max(0, Math.min(1, saved.y)) }
-        position.current = { ...target.current }
-        home.current = { ...target.current }
-      }
-    } catch { /* Ignore unavailable storage or invalid optional preferences. */ }
-    setHydrated(true)
-  }, [])
+    home.current = { x: savedX, y: savedY }
+    if (!drag.current && !guideTarget.current) {
+      target.current = { ...home.current }
+      position.current = { ...home.current }
+    }
+  }, [savedX, savedY, scope])
 
   useEffect(() => {
     if (!hydrated || !visible || !artworkRef.current) return
@@ -299,8 +298,7 @@ function DesktopCompanion() {
     if (wandering) {
       target.current = { ...position.current }
     }
-    setWandering(!wandering)
-    save(visible, !wandering)
+    setPreferences({ wandering: !wandering })
   }
 
   function interactWithActor(active: boolean) {
@@ -342,7 +340,7 @@ function DesktopCompanion() {
             if (!drag.current) openChat()
           }} />
       </div>}
-      {visible && <TomGuide ready={status === 'ready'} running={running} openRequest={guideRequest} anchorRef={actorRef} returnFocusRef={gripRef} onOpenChange={setGuideOpen} onSpeakingChange={setGuideSpeaking} onTargetChange={followGuide}
+      {visible && <TomGuide key={scope ?? 'guest'} ready={status === 'ready'} running={running} openRequest={guideRequest} anchorRef={actorRef} returnFocusRef={gripRef} onOpenChange={setGuideOpen} onSpeakingChange={setGuideSpeaking} onTargetChange={followGuide}
         settings={<>
           <label className={styles.setting}>
             <span>{text.roam}</span>
@@ -352,8 +350,7 @@ function DesktopCompanion() {
             <span>{text.animations}</span>
             <input type="checkbox" checked={animations} onChange={event => {
               const enabled = event.currentTarget.checked
-              setAnimations(enabled)
-              save(visible, wandering, enabled)
+              setPreferences({ animations: enabled })
             }} />
           </label>
           <button type="button" className={styles.hideCompanion} data-beep-action="visibility_toggle" onClick={() => {
@@ -361,7 +358,6 @@ function DesktopCompanion() {
             drop()
             setGuideRequest(0)
             setVisible(false)
-            save(false)
           }}><EyeOff size={15} aria-hidden="true" />{text.hide}</button>
         </>}
       />}

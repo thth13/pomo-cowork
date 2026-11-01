@@ -1049,3 +1049,14 @@ hydration; writes preserve the other companion preferences. The native checkbox
 applies immediately without Save settings. Disabling unmounts artwork and chat;
 re-enabling restores artwork without reopening the previous chat. Mobile may change
 the preference, while the companion still mounts only from 720px.
+
+
+Beep account persistence supersedes browser-only preferences for registered users:
+CompanionPersistence is the canonical hydration/synchronization owner; the
+owner-scoped preferences API persists visibility, wandering, animation and home
+position. First use imports local values only when no server record exists.
+Changes apply immediately, pending patches are cached per account, requests serialize
+and retry on network restoration/focus. Settings exposes failed synchronization.
+Mobile settings synchronize without mounting the companion. User/account changes
+cancel prior requests. Guests remain local. See docs/beep-ai.md for the memory,
+language, ownership, concurrency and migration contract.

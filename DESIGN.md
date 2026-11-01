@@ -1493,3 +1493,12 @@ Settings and the floating companion; the existing browser preference key remains
 canonical. Changes apply immediately, including restoring a companion hidden from
 chat, and preserve wandering, animation and home position. English/Spanish copy
 uses the active locale; no server preference or Save settings action is required.
+
+
+Mr. Beep preferences now synchronize to the signed-in account through
+CompanionPersistence and `/api/beep/preferences`, retaining the same compact chat
+and Settings controls. The existing local key seeds first-time account preferences;
+account caches and pending writes are scoped per user. Server preference ownership
+is separate from timer/profile Save settings. Settings reports synchronization and
+failure in the current locale. Guests continue browser-only persistence. Home
+position, visibility, wandering and animation share useCompanionStore.

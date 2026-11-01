@@ -9,7 +9,7 @@ import BeepChat from './BeepChat'
 import { logBeepClick, logBeepEvent } from '@/lib/beepEvents'
 import { beepIntroduction } from '@/lib/beepIntroduction'
 import type { BeepMessage, BeepConversationInfo } from '@/lib/beepChat'
-import { X, History, Settings2 } from 'lucide-react'
+import { X, History, Settings } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import styles from './WalkingCompanion.module.css'
 
@@ -267,10 +267,10 @@ export default function TomGuide({ settings, ready, running, openRequest, anchor
       <div className={styles.heading}>
         <span className={styles.tomName}>{mode !== 'tour' ? 'Mr. Beep' : text.name}{mode === 'tour' && <span> · {text.progress} {step + 1 - (registered && step >= 5 ? 1 : 0)}/{text.intro.length - (registered ? 1 : 0)}</span>}</span>
         <div className={styles.chatToolbar}>
-          {mode === 'help' && <button ref={settingsTriggerRef} type="button" data-beep-action={settingsOpen ? 'controls_close' : 'controls_open'}
+          {mode === 'help' && <button ref={settingsTriggerRef} type="button" className={styles.chatClose} data-beep-action={settingsOpen ? 'controls_close' : 'controls_open'}
             aria-label={language === 'es' ? 'Ajustes de Mr. Beep' : 'Mr. Beep settings'} title={language === 'es' ? 'Ajustes de Mr. Beep' : 'Mr. Beep settings'}
             aria-expanded={settingsOpen} aria-controls="beep-chat-settings" onClick={() => setSettingsOpen(value => !value)}>
-            <Settings2 size={16} strokeWidth={1.5} aria-hidden="true" />
+            <Settings size={16} strokeWidth={1.5} aria-hidden="true" />
           </button>}
           {mode === 'help' && <Link data-beep-action="saved_chats" href="/beep" aria-label={language === 'es' ? 'Conversaciones guardadas' : 'Saved conversations'} title={language === 'es' ? 'Conversaciones guardadas' : 'Saved conversations'}><History size={16} strokeWidth={1.5} aria-hidden="true" /></Link>}
           <button type="button" data-beep-action="close" className={styles.chatClose} aria-label={text.close} onClick={close}><X size={16} strokeWidth={1.5} aria-hidden="true" /></button>

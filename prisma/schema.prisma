@@ -34,6 +34,8 @@ model User {
   updatedAt            DateTime  @updatedAt
   lastSeenAt           DateTime?
 
+  beepMemory BeepMemory?
+  beepPreferences BeepPreferences?
   beepConversations BeepConversation[]
   beepEvents BeepEvent[]
 
@@ -718,4 +720,30 @@ model BeepTurn {
   @@unique([conversationId, sequence])
   @@index([conversationId, createdAt, id])
   @@map("beep_turns")
+}
+
+// Private cross-dialogue memory, never included in public profile payloads.
+model BeepMemory {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  facts Json @default("[]")
+  language String? @db.VarChar(35)
+  languageAt DateTime?
+  clearedAt DateTime?
+  updatedAt DateTime @updatedAt
+
+  @@map("beep_memory")
+}
+
+model BeepPreferences {
+  userId String @id
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  visible Boolean @default(true)
+  wandering Boolean @default(true)
+  animations Boolean @default(true)
+  x Float @default(0.2)
+  y Float @default(0.8)
+  updatedAt DateTime @updatedAt
+
+  @@map("beep_preferences")
 }
