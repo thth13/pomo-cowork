@@ -22,7 +22,7 @@
 }
 .feedback-trigger:is(:hover, [aria-expanded="true"]) { background: var(--pixel-screen); }
 .feedback-trigger:active { transform: translate(1px, 1px); }
-.feedback-widget button:focus-visible, .feedback-input:focus-visible {
+.feedback-widget button:focus-visible {
   outline: 2px solid var(--pixel-accent);
   outline-offset: 3px;
 }
@@ -80,6 +80,7 @@
   font-size: 14px;
   line-height: 1.6;
 }
+.feedback-input:focus { outline: none; border-color: var(--pixel-accent); }
 .feedback-input::placeholder { color: var(--pixel-muted); opacity: 1; }
 .feedback-input:disabled { opacity: .7; cursor: wait; }
 .feedback-status { display: flex; align-items: flex-start; gap: 8px; padding: 10px; border: 1px solid currentColor; border-radius: 2px; font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
@@ -107,6 +108,19 @@
 .feedback-send:active:not(:disabled) { transform: translateY(1px); }
 .feedback-send:disabled { opacity: .55; cursor: not-allowed; }
 .feedback-prompt { padding: 12px 14px; font-size: 13px; line-height: 1.6; opacity: 0; transform: translateY(8px); pointer-events: none; transition: opacity 300ms, transform 300ms; }
+/* The tail aligns with the center of the 48px feedback button. */
+.feedback-prompt::after {
+  content: '';
+  position: absolute;
+  right: 15px;
+  bottom: -8px;
+  width: 14px;
+  height: 14px;
+  background: inherit;
+  border-right: 2px solid var(--pixel-line);
+  border-bottom: 2px solid var(--pixel-line);
+  transform: rotate(45deg);
+}
 .feedback-prompt-visible { opacity: 1; transform: translateY(0); }
 @media (max-width: 719px) {
   .feedback-widget { right: calc(16px + env(safe-area-inset-right)); bottom: calc(16px + env(safe-area-inset-bottom)); }

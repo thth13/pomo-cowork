@@ -1508,7 +1508,8 @@ position, visibility, wandering and animation share useCompanionStore.
 The bottom-right FeedbackWidget follows compact workspace windows: a round 48px outlined
 message button, 3px panel corners, sage title bar, restrained pixel heading and Inter form.
 The introduction uses an inset screen surface, primary ink and a tomato edge to
-separate it from the form.
+separate it from the form. The first-visit prompt has a speech-bubble tail aligned
+with the center of the round trigger to make their relationship visible.
 `app/feedback.css` consumes existing pixel tokens; `app/appearance.css` maps the
 button, prompt and panel to canonical scene colors and 18px glass blur whenever
 scenery is rendered. Each floating surface owns its blur. Light/dark, reduced motion
