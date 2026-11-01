@@ -30,7 +30,7 @@ export async function getBeepPersonalContext(userId: string, timezone: string) {
       FROM pomodoro_sessions s
       WHERE s."userId" = ${userId} AND s.type IN ('WORK', 'TIME_TRACKING')
         AND s.status IN ('COMPLETED', 'CANCELLED')
-        AND ${attribution} >= ((${today}::date - 29)::timestamp AT TIME ZONE ${timezone}) AT TIME ZONE 'UTC'
+        AND ${attribution} >= (LEAST((${today}::date - 29)::timestamp, date_trunc('month', ${today}::date::timestamp)) AT TIME ZONE ${timezone}) AT TIME ZONE 'UTC'
         AND ${attribution} <= ${now}
       GROUP BY day ORDER BY day DESC
     `),
@@ -40,7 +40,7 @@ export async function getBeepPersonalContext(userId: string, timezone: string) {
       FROM pomodoro_sessions s
       WHERE s."userId" = ${userId} AND s.type IN ('WORK', 'TIME_TRACKING')
         AND s.status IN ('COMPLETED', 'CANCELLED') AND ${attribution} <= ${now}
-      ORDER BY ${attribution} DESC, s.id DESC LIMIT 3
+      ORDER BY ${attribution} DESC, s.id DESC LIMIT 6
     `),
     prisma.$queryRaw<{ at: Date }[]>(Prisma.sql`
       SELECT ${attribution} AS at FROM pomodoro_sessions s
@@ -65,6 +65,9 @@ export async function getBeepPersonalContext(userId: string, timezone: string) {
   }
   const last7Days = period(cutoff(6))
   const previous7Days = period(cutoff(13), cutoff(7))
+  const weekday = new Date(`${today}T00:00:00Z`).getUTCDay()
+  const weekStart = cutoff((weekday + 6) % 7)
+  const monthStart = `${today.slice(0, 7)}-01`
   return {
     asOf: now.toISOString(), timezone,
     memory: { language: user.beepMemory?.language ?? null, facts: memoryFacts(user.beepMemory?.facts).filter(fact => fact.value !== null).map(({ key, value }) => ({ key, value })) },
@@ -75,7 +78,9 @@ export async function getBeepPersonalContext(userId: string, timezone: string) {
       lastRecordedActivityAt: user.lastSeenAt?.toISOString() ?? null,
     },
     activity: {
-      today: period(today), last7Days, previous7Days, last30Days: period(cutoff(29)),
+      today: period(today), yesterday: period(cutoff(1), cutoff(1)),
+      thisWeek: period(weekStart), thisMonth: period(monthStart),
+      last7Days, previous7Days, last30Days: period(cutoff(29)),
       weeklyFocusChangeMinutes: last7Days.focusMinutes - previous7Days.focusMinutes,
       lastCompletedSessionAt: lastCompleted[0]?.at.toISOString() ?? null,
       recentSessions: recent.map(session => ({ ...session, at: session.at.toISOString() })),

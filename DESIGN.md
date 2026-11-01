@@ -76,15 +76,23 @@ Artwork retains its limited palette; the scene background is desaturated in both
 
 ## Layout and components
 
-Daily Flow lives at `/daily-flow`, opened from a separate Daily flow mode section in
-Timer settings, with a Beta label beside the mode name and page wordmark. It has no
-homepage mode switch or header navigation link. A bordered glass shell groups planning,
+Daily Flow replaces the ordinary timer in the homepage's central focus station.
+Timer settings owns a Open Daily Flow button, with a Beta label beside the mode name
+and panel wordmark. `useWorkspaceModeStore` remembers the browser's selected mode;
+the panel's Pomodoro button returns to the ordinary timer. `/daily-flow` redirects
+to the homepage with the mode selected. Workspace tools and coworkers remain available.
+A bordered glass shell groups planning,
 focus, summary and history, reusing the shared product scenery blur and surface tokens.
+On the homepage with scenery, the focus station owns the single glass surface;
+Daily Flow's inner shell is transparent and shares the workspace-window scene token
+adapter for text, fields, dividers and progress. No opaque paper layer or second blur
+is painted over that glass. Default backgrounds retain the paper treatment.
 Default themes use a lightly translucent paper surface, with an opaque fallback; forced
 colors restores system surfaces. It keeps the unboxed timer,
 Inter task names, pixel headings, paper/sage surfaces and existing tomato primary
-buttons. The only new visual emphasis is a sage Complete Task action. The planning
-queue uses numbered rows with visible move/edit/remove buttons, including on touch.
+buttons. The only new visual emphasis is a sage Complete Task action. Task entry uses the project task list; project headings only expand their tasks.
+Each expanded project offers a single-line input and Add task button to create a
+real project task, which the user then selects for the day. The planning queue uses numbered rows with visible move/edit/remove buttons, including on touch.
 Focus shows one task, a slim completion meter and the shared PomodoroTimer; other
 queue titles stay hidden. The existing native mini timer replaces its picker with
 that single task caption. Session controls, settings, sound and auto-start are shared.
@@ -95,7 +103,11 @@ All animations honor reduced motion. New colors derive from runtime pixel tokens
 entry, and global styles own the mini-timer caption. Dense content continues to use Inter.
 Daily Flow copy and accessible labels follow English/Spanish in `lib/i18n/dailyFlow.ts`.
 Its browser-only, account-scoped persistence is independent of project/task records;
-normal timer task selection is preserved. See `docs/daily-flow.md` for lifecycle and
+planning and quick add reuse TaskPicker to select only tasks inside unfinished
+projects, with a muted project caption and disabled entries already included today.
+Projects cannot be selected. Inline creation uses useQuickTasks/taskService and saves
+to the parent project; creating and selecting for the day are separate actions.
+Normal timer task selection is preserved. See `docs/daily-flow.md` for lifecycle and
 manual verification. No server schema, subscription or project setup is required.
 
 Daily goal has its own Target button in the homepage dock and mobile tools menu.

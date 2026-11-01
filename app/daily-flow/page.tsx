@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
-import DailyFlow from '@/components/DailyFlow'
-import Navbar from '@/components/Navbar'
-import './daily-flow.css'
+import { redirect } from 'next/navigation'
 
 export const metadata: Metadata = {
   title: 'Daily Flow | Pomo Cowork',
@@ -10,5 +8,5 @@ export const metadata: Metadata = {
 }
 
 export default function DailyFlowPage() {
-  return <div className="garden-page daily-flow-page"><Navbar compact /><DailyFlow /></div>
+  redirect('/?mode=daily-flow')
 }

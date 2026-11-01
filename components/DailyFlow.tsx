@@ -1,18 +1,20 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import Link from 'next/link'
 import { ArrowDown, ArrowLeft, ArrowUp, Check, CheckCheck, ChevronLeft, ChevronRight, Clock, History, ListTodo, Pencil, Plus, SkipForward, Sparkles, Trash2 } from 'lucide-react'
 import PomodoroTimer from '@/components/PomodoroTimer'
+import { TaskPicker } from '@/components/TaskPicker'
+import { useTaskMenu } from '@/hooks/useTaskMenu'
+import { SessionType } from '@/types'
 import { useI18n } from '@/components/I18nProvider'
 import { dailyFlowCopy } from '@/lib/i18n/dailyFlow'
 import { dayFocus, localDay, settleCursor, taskFocus } from '@/lib/dailyFlow'
-import { addFlowDraft, restoreGuestFlowTimer, useDailyFlowStore } from '@/store/useDailyFlowStore'
+import { restoreGuestFlowTimer, useDailyFlowStore } from '@/store/useDailyFlowStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useTimerActionsStore } from '@/store/useTimerActionsStore'
 import { registerServiceWorker } from '@/lib/serviceWorker'
 
-export default function DailyFlow() {
+export default function DailyFlow({ onExit, onSessionComplete }: { onExit: () => void; onSessionComplete?: () => Promise<void> }) {
   const { language } = useI18n()
   const copy = dailyFlowCopy[language]
   const { data, ready, error, update, syncTimer, retry, reload } = useDailyFlowStore()
@@ -24,7 +26,6 @@ export default function DailyFlow() {
   const [historyDay, setHistoryDay] = useState('')
   const [editing, setEditing] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
-  const [fieldError, setFieldError] = useState('')
   const [editError, setEditError] = useState('')
   const [adding, setAdding] = useState(false)
   const [notice, setNotice] = useState('')
@@ -35,9 +36,12 @@ export default function DailyFlow() {
   const actionPending = useRef(false)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const historyHeadingRef = useRef<HTMLHeadingElement>(null)
-  const draftRef = useRef<HTMLTextAreaElement>(null)
   const locked = error === 'conflict' || error === 'invalid'
   const controlsLocked = locked || restorePending
+  const taskMenu = useTaskMenu(controlsLocked || busy)
+  const { setIsTaskMenuOpen } = taskMenu
+  const taskOptions = useTimerStore(state => state.taskOptions)
+  const unavailableTaskIds = data.tasks.filter(task => !task.deleted && (data.queue.includes(task.id) || task.completedDay === data.day)).flatMap(task => task.sourceTaskId ? [task.sourceTaskId] : [])
   const queue = data.queue.map(id => data.tasks.find(task => task.id === id)!).filter(Boolean)
   const current = queue[0]
   const completed = data.tasks.filter(task => task.completedDay === data.day)
@@ -78,17 +82,14 @@ export default function DailyFlow() {
     const heading = history ? historyHeadingRef.current : headingRef.current
     heading?.focus({ preventScroll: true })
   }, [ready, data.phase, history])
-  useEffect(() => {
-    if (adding) draftRef.current?.focus()
-  }, [adding])
 
   useEffect(() => {
     setEditing(null)
     setRemoved(null)
     setNotice('')
-    setFieldError('')
+    setIsTaskMenuOpen(false)
     pendingStart.current = false
-  }, [storageKey])
+  }, [storageKey, setIsTaskMenuOpen])
 
   const previousEdit = useRef<string | null>(null)
   useEffect(() => {
@@ -96,21 +97,8 @@ export default function DailyFlow() {
     previousEdit.current = editing
   }, [editing])
 
-  const addTasks = () => {
-    const titles = data.draft.split(/\r?\n/).map(title => title.trim()).filter(Boolean)
-    if (busy || !titles.length) return false
-    if (titles.some(title => title.length > 500)) {
-      setFieldError(copy.longTask)
-      draftRef.current?.focus()
-      return false
-    }
-    const success = update(addFlowDraft)
-    if (success) { setFieldError(''); setAdding(false) }
-    return success
-  }
   const begin = () => {
     if (locked || actionPending.current) return
-    if (data.draft.trim() && !addTasks()) return
     pendingStart.current = true
     const success = update(next => {
       next.day = localDay()
@@ -153,22 +141,38 @@ export default function DailyFlow() {
       update(next => { next.phase = 'planning'; next.cursor = null; next.timer = null })
     } finally { actionPending.current = false; setBusy(false) }
   }
-  const composer = <form className="flow-composer" noValidate onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} onSubmit={event => { event.preventDefault(); addTasks() }}>
-    <label htmlFor="flow-draft">{focusing ? copy.quickAdd : copy.tasks}</label>
-    <textarea id="flow-draft" ref={draftRef} className="input resize-none" rows={focusing ? 3 : 5}
-      value={data.draft} placeholder={copy.placeholder} disabled={locked || busy}
-      aria-invalid={Boolean(fieldError)} aria-describedby={fieldError ? 'flow-field-error' : 'flow-draft-hint'}
-      onChange={event => { update(next => { next.draft = event.target.value }); setFieldError('') }} />
-    <p id="flow-draft-hint" className="flow-muted">{copy.planHint}</p>
-    {fieldError && <p id="flow-field-error" role="alert">{fieldError}</p>}
-    <div className="flow-actions"><button type="submit" className="btn btn-secondary" disabled={locked || !data.draft.trim()}><Plus size={16} />{copy.add}</button>
-      {focusing && <button type="button" className="flow-link" onClick={() => setAdding(false)}>{copy.cancel}</button>}</div>
-  </form>
+  const composer = <div className="flow-project-picker">
+    <p className="flow-task-picker-label">{copy.tasks}</p>
+    <TaskPicker key={storageKey} variant="daily-flow" sessionType={SessionType.WORK}
+      isDisabled={controlsLocked || busy} isOpen={taskMenu.isTaskMenuOpen && !history}
+      onToggle={() => taskMenu.setIsTaskMenuOpen(value => !value)} onClose={() => taskMenu.setIsTaskMenuOpen(false)}
+      taskPickerRef={taskMenu.taskPickerRef} taskDropdownRef={taskMenu.taskDropdownRef}
+      selectedTask={null} filteredTaskOptions={taskOptions} hasTaskOptions={taskOptions.length > 0}
+      taskSearch={taskMenu.taskSearch} onTaskSearchChange={taskMenu.setTaskSearch}
+      triggerLabel={copy.fromProjects} unavailableTaskIds={unavailableTaskIds} unavailableLabel={copy.alreadyAdded}
+      onSelectTask={task => {
+        if (!task?.parentId || controlsLocked || busy) return
+        const success = update(next => {
+          if (next.tasks.some(item => item.sourceTaskId === task.id && !item.deleted && (next.queue.includes(item.id) || item.completedDay === next.day))) return
+          const id = crypto.randomUUID()
+          const projectTitle = task.parentId ? taskOptions.find(option => option.id === task.parentId)?.title ?? task.projectTitle : undefined
+          next.tasks.push({ id, title: task.title, sourceTaskId: task.id, sourceProjectTitle: projectTitle,
+            createdDay: localDay(), completedDay: null, completedAt: null, focusByDay: {} })
+          next.queue.push(id)
+        })
+        if (success) {
+          setNotice(copy.imported)
+          // Re-adding the removed source replaces its pending Undo action.
+          if (removed && data.tasks.find(item => item.id === removed.id)?.sourceTaskId === task.id) setRemoved(null)
+        }
+      }} />
+    {focusing && <button type="button" className="flow-link" onClick={() => setAdding(false)}>{copy.cancel}</button>}
+  </div>
 
-  return <main className="daily-flow-content" data-no-translate>
+  return <div className="daily-flow-content" data-no-translate>
     <div className="flow-surface">
     <header className="flow-header">
-      <Link href="/" className="flow-back"><ArrowLeft size={16} />Pomodoro</Link>
+      <button type="button" className="flow-back" onClick={onExit}><ArrowLeft size={16} />Pomodoro</button>
       <span className="flow-wordmark"><ListTodo size={17} />{copy.title}<span className="daily-flow-beta">Beta</span></span>
       <button type="button" className="flow-link" aria-pressed={history} onClick={() => { setHistory(value => !value); setNotice('') }}>
         {history ? <ListTodo size={16} /> : <History size={16} />}{history ? copy.today : copy.history}
@@ -197,7 +201,7 @@ export default function DailyFlow() {
         <p className="flow-eyebrow">{copy.current}</p><h1 ref={headingRef} tabIndex={-1} aria-live="polite" aria-atomic="true" className="flow-current-task"><span key={current.id} className="flow-task-label">{current.title}</span></h1>
         <p className="flow-task-time">{copy.taskTime}: {duration(taskFocus(current))}</p>
         {restorePending && <p className="flow-muted" role="status">{copy.loading}</p>}
-        <PomodoroTimer dailyFlow idleTitle="Daily Flow | Pomo Cowork" showRoomSwitch={false} />
+        <PomodoroTimer dailyFlow idleTitle="Daily Flow | Pomo Cowork" showRoomSwitch={false} onSessionComplete={onSessionComplete} />
         <div className="flow-task-actions"><button type="button" className="btn flow-complete" disabled={busy || timerBusy || controlsLocked} onClick={() => void changeTask(true)}><Check size={19} />{copy.complete}</button>
           <button type="button" className="flow-link" title={queue.length < 2 ? copy.skipHint : copy.skip} disabled={busy || timerBusy || controlsLocked || queue.length < 2} onClick={() => void changeTask(false)}><SkipForward size={16} />{copy.skip}</button></div>
         <p className="flow-muted flow-focus-hint">{copy.focusHint}</p>
@@ -224,7 +228,7 @@ export default function DailyFlow() {
             if (!editTitle.trim()) { setEditError(copy.emptyTask); return }
             if (update(next => { const item = next.tasks.find(item => item.id === task.id); if (item) item.title = editTitle.trim() })) { setEditing(null); setEditError('') }
           }}><label className="sr-only" htmlFor={`flow-edit-${task.id}`}>{copy.edit}</label><input id={`flow-edit-${task.id}`} className="input" autoFocus maxLength={500} value={editTitle} aria-invalid={Boolean(editError)} aria-describedby={editError ? 'flow-edit-error' : undefined} onChange={event => { setEditTitle(event.target.value); setEditError('') }} onKeyDown={event => { if (event.nativeEvent.isComposing || event.keyCode === 229) { if (event.key === 'Enter') event.preventDefault(); return } if (event.key === 'Enter') { event.preventDefault(); event.currentTarget.form?.requestSubmit() } if (event.key === 'Escape') { setEditing(null); setEditError('') } }} />{editError && <span id="flow-edit-error" role="alert">{editError}</span>}<button type="submit" className="flow-link" disabled={locked}>{copy.save}</button><button type="button" className="flow-link" onClick={() => { setEditing(null); setEditError('') }}>{copy.cancel}</button></form>
-            : <span className="flow-queue-title">{task.title}</span>}
+            : <span className="flow-queue-title">{task.title}{task.sourceProjectTitle && <small>{task.sourceProjectTitle}</small>}</span>}
           {editing !== task.id && <div className="flow-row-actions">
             <button type="button" className="flow-icon" title={copy.up} aria-label={`${copy.up}: ${task.title}`} disabled={locked || index === 0} onClick={() => update(next => { [next.queue[index - 1], next.queue[index]] = [next.queue[index], next.queue[index - 1]] })}><ArrowUp size={16} /></button>
             <button type="button" className="flow-icon" title={copy.down} aria-label={`${copy.down}: ${task.title}`} disabled={locked || index === queue.length - 1} onClick={() => update(next => { [next.queue[index + 1], next.queue[index]] = [next.queue[index], next.queue[index + 1]] })}><ArrowDown size={16} /></button>
@@ -234,10 +238,10 @@ export default function DailyFlow() {
         </li>)}</ol>}
         <div className="flow-status" role="status">{notice}{removed && <button type="button" className="flow-link" disabled={locked} onClick={() => { update(next => { const task = next.tasks.find(item => item.id === removed.id); if (task) { task.deleted = false; next.queue.splice(Math.min(removed.index, next.queue.length), 0, task.id) } }); setRemoved(null); setNotice('') }}>{copy.undo}</button>}</div>
         {session && <p className="flow-muted">{copy.activeTimer}</p>}
-        <button type="button" id="flow-start" className="btn btn-primary flow-start" disabled={locked || editing !== null || (!queue.length && !data.draft.trim())} onClick={begin}>{carry ? copy.resume : copy.start}<ChevronRight size={18} /></button>
+        <button type="button" id="flow-start" className="btn btn-primary flow-start" disabled={locked || editing !== null || !queue.length} onClick={begin}>{carry ? copy.resume : copy.start}<ChevronRight size={18} /></button>
         <p className="flow-storage-note"><Check size={13} />{error ? copy[error] : copy.local}</p>
       </section>}</div>
     </>}
     </div>
-  </main>
+  </div>
 }

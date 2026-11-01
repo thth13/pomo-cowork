@@ -1,9 +1,10 @@
 export const dailyFlowCopy = {
   en: {
     title: 'Daily Flow', tagline: 'One task at a time. Finish your day.', today: 'Today', history: 'History',
-    planTitle: 'What will you finish today?', planHint: 'A short list is enough. Put each task on a new line.',
-    tasks: 'Tasks for today', placeholder: 'Write the first draft\nReview the design\nSend the proposal',
-    add: 'Add tasks', quickAdd: 'Add a task', start: 'Start Focus', resume: 'Continue Focus',
+    planTitle: 'What will you finish today?', planHint: 'Type a task and press Enter or Add task.',
+    tasks: 'Tasks for today', placeholder: 'What do you want to finish?',
+    add: 'Add task', quickAdd: 'Add a task', start: 'Start Focus', resume: 'Continue Focus',
+    fromProjects: 'Choose tasks from projects', alreadyAdded: 'Already added today', imported: 'Added to your day.',
     carryTitle: 'Your unfinished tasks are still here.', carryHint: 'Continue where you left off, or adjust your list for today.',
     empty: 'Your day starts with one task.', edit: 'Edit task', remove: 'Remove task', up: 'Move up', down: 'Move down',
     save: 'Save', cancel: 'Cancel', undo: 'Undo removal', removed: 'Task removed.',
@@ -28,9 +29,10 @@ export const dailyFlowCopy = {
   },
   es: {
     title: 'Daily Flow', tagline: 'Una tarea a la vez. Termina tu día.', today: 'Hoy', history: 'Historial',
-    planTitle: '¿Qué terminarás hoy?', planHint: 'Una lista corta es suficiente. Escribe cada tarea en una línea.',
-    tasks: 'Tareas para hoy', placeholder: 'Escribir el primer borrador\nRevisar el diseño\nEnviar la propuesta',
-    add: 'Añadir tareas', quickAdd: 'Añadir una tarea', start: 'Empezar a concentrarme', resume: 'Seguir concentrándome',
+    planTitle: '¿Qué terminarás hoy?', planHint: 'Escribe una tarea y pulsa Intro o Añadir tarea.',
+    tasks: 'Tareas para hoy', placeholder: '¿Qué quieres terminar?',
+    add: 'Añadir tarea', quickAdd: 'Añadir una tarea', start: 'Empezar a concentrarme', resume: 'Seguir concentrándome',
+    fromProjects: 'Elegir tareas de proyectos', alreadyAdded: 'Ya añadido hoy', imported: 'Añadido a tu día.',
     carryTitle: 'Tus tareas pendientes siguen aquí.', carryHint: 'Retoma donde lo dejaste o ajusta tu lista para hoy.',
     empty: 'Tu día empieza con una tarea.', edit: 'Editar tarea', remove: 'Quitar tarea', up: 'Subir', down: 'Bajar',
     save: 'Guardar', cancel: 'Cancelar', undo: 'Deshacer', removed: 'Tarea retirada.',

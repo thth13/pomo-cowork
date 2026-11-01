@@ -127,22 +127,29 @@ server can read the knowledge file. Inspect actual replies for unsupported claim
 
 ## Personal arrival message
 
-The first greeting without valid account-bound welcome memory uses the shared
-local introduction in `lib/beepIntroduction.ts`: Beep says hello, introduces
-himself, says he lives here now and that the user can chat and ask questions.
-The guest tour starts with the same English/Spanish introduction. This first
-arrival does not call OpenAI or require an API key; returning greetings still do.
-First-arrival detection uses the existing signed browser cookie, so clearing it
-or using a new browser can show the introduction again.
+The first greeting without valid account-bound welcome memory, recorded work
+history or saved personal facts uses the shared local introduction in
+`lib/beepIntroduction.ts`. The guest tour starts with the same English/Spanish
+introduction. This introductory arrival does not call OpenAI or require an API
+key; personalized greetings do. Clearing the browser cookie or using a new
+browser does not force an introduction when the account already has work history.
 
 GET `/api/beep/chat?language=en&timezone=Europe/Kyiv` verifies the bearer token,
 queries fresh statistics and makes one Responses API request with `OPENAI_MODEL`,
-`store: false` and at most 700 output tokens. It requests 1–2 sentences, targeting
-240 characters with a 400-character hard display cap. The full website reference
-is omitted from this small request. A randomly selected conversational angle and
-previous greeting encourage variation; exact repetition is rejected. Greetings
-are friendly hellos with no advice, questions, productivity prompts or invitations
-to take a next step. Activity informs tone rather than becoming a progress review.
+`store: false` and at most 700 output tokens. It requests 2–3 short sentences,
+targeting 320 characters with a 400-character hard display cap. The full website
+reference is omitted from this small request. When available, greetings recall
+one actual task/project and include one positive recorded-work total for yesterday,
+the current calendar week (Monday onward), the current calendar month, or an
+explicitly labeled last-7/30-day window. Periods use the user's timezone; calendar
+month queries include its first day even on day 31. Existing rolling totals and
+previous-week comparison remain available. The six latest work sessions supply
+task names, not period totals; a completed session never implies a finished task.
+A randomly selected available time period and the previous greeting encourage
+variation; exact repetition is rejected. Without work history, a saved project
+fact or a warm hello is used. No activity or zero totals are turned into criticism.
+Greetings contain no advice, questions, productivity prompts or invitations
+to take a next step.
 Chat also avoids unsolicited coaching; advice is offered only when requested. Missing key,
 provider failure, incomplete or repeated output suppress the optional welcome.
 Generation costs API tokens; it is no longer a fixed local template.

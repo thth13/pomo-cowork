@@ -1,7 +1,8 @@
 'use client'
 
 import { Crown, Timer, Coffee, Armchair, Repeat2, Check, Loader2, ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
+import { useWorkspaceModeStore } from '@/store/useWorkspaceModeStore'
 import { memo, useId, useRef, useState } from 'react'
 import { useI18n } from '@/components/I18nProvider'
 import CommunityDialog from '@/components/CommunityDialog'
@@ -45,6 +46,9 @@ export const SettingsModal = memo(function SettingsModal({
   isProMember,
 }: SettingsModalProps) {
   const { t } = useI18n()
+  const router = useRouter()
+  const pathname = usePathname()
+  const setMode = useWorkspaceModeStore(state => state.setMode)
   const [isSaving, setIsSaving] = useState(false)
   const savePendingRef = useRef(false)
   const trackerLabelId = useId()
@@ -140,12 +144,15 @@ export const SettingsModal = memo(function SettingsModal({
               </div>
               <p id={dailyFlowDescriptionId}>{t.settingsModal.dailyFlowDescription}</p>
             </div>
-            <Link href="/daily-flow" prefetch={false} className="timer-settings-button"
-              aria-describedby={dailyFlowDescriptionId} aria-disabled={isSaving || undefined}
-              tabIndex={isSaving ? -1 : undefined}
-              onClick={event => { if (isSaving) event.preventDefault(); else onClose() }}>
+            <button type="button" aria-describedby={dailyFlowDescriptionId}
+              className="timer-settings-button" disabled={isSaving}
+              onClick={() => {
+                onClose()
+                setMode('daily-flow')
+                if (pathname !== '/') router.push('/')
+              }}>
               {t.settingsModal.openDailyFlow}<ArrowRight size={15} aria-hidden="true" />
-            </Link>
+            </button>
           </section>
         </div>
         {saveError && <p role="alert" className="text-red-600 px-4 pb-3 text-sm">{saveError}</p>}

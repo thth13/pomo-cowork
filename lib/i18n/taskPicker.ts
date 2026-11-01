@@ -1,6 +1,7 @@
 export const taskPickerCopy = {
   en: {
     prompt: 'What are you working on?', search: 'Search projects or tasks…', clear: 'Clear search',
+    newTask: 'New task in this project', addTask: 'Add task', createdTask: 'Task created. Select it to add it to your day.',
     create: 'Create', add: 'Add project', rename: 'Rename', complete: 'Mark complete', delete: 'Delete',
     cancel: 'Cancel', save: 'Save', more: 'Actions', empty: 'No projects yet. Add a project in',
     loading: 'Loading projects…', saving: 'Saving…', error: 'Could not save your changes. Please try again.',
@@ -9,6 +10,7 @@ export const taskPickerCopy = {
   },
   es: {
     prompt: '¿En qué estás trabajando?', search: 'Buscar proyectos o tareas…', clear: 'Borrar búsqueda',
+    newTask: 'Nueva tarea en este proyecto', addTask: 'Añadir tarea', createdTask: 'Tarea creada. Selecciónala para añadirla a tu día.',
     create: 'Crear', add: 'Añadir proyecto', rename: 'Renombrar', complete: 'Marcar completada', delete: 'Eliminar',
     cancel: 'Cancelar', save: 'Guardar', more: 'Acciones de tarea', empty: 'Aún no hay proyectos. Añade uno en',
     loading: 'Cargando proyectos…', saving: 'Guardando…', error: 'No se pudieron guardar los cambios. Inténtalo de nuevo.',

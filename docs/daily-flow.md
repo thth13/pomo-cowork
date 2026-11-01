@@ -1,12 +1,17 @@
 # Daily Flow
 
-`/daily-flow` is a separate focus workflow. The Daily flow mode section in Timer
-settings opens it without replacing ordinary Pomodoro. Header navigation omits this
-entry. English/Spanish follow I18nProvider.
+Daily Flow is a homepage timer mode. The Open Daily Flow button in Timer settings
+replaces ordinary Pomodoro in the central focus station, keeping workspace tools
+and coworkers available. The Pomodoro button returns to the ordinary timer.
+`useWorkspaceModeStore` persists the selected mode in this browser. Existing links
+to `/daily-flow` redirect to `/?mode=daily-flow`; the homepage selects Flow and
+removes the mode parameter. English/Spanish follow I18nProvider.
 
 ## Ownership and behavior
 
 - `components/DailyFlow.tsx`: planning, current task, summary and day-by-day history.
+- `components/HomeWorkspace.tsx`, `store/useWorkspaceModeStore.ts`: homepage placement
+  and browser-persisted timer mode; `SettingsModal` owns the Open Daily Flow button.
 - `lib/dailyFlow.ts`: versioned snapshot validation, pause-safe elapsed-time cursor,
   local calendar days and summaries. It never completes a task on a timer event.
 - `store/useDailyFlowStore.ts`: queue/draft/history persistence and conflict recovery.
@@ -19,7 +24,16 @@ entry. English/Spanish follow I18nProvider.
 - `TimerPictureInPicture`: the same controls, with a current-task caption instead of
   a picker in Flow mode.
 
-Tasks are deliberately independent of projects and their task records. Flow sessions
+Planning and quick add reuse TaskPicker to select an unfinished task from inside
+a project. Project headings only expand their lists and cannot be selected. Each
+expanded project offers a task input and Add task button (Enter also submits).
+Creation saves a real task through useQuickTasks/taskService with the fixed parent;
+the user then selects it to add it to the Flow queue. Failed creation retains the
+draft and shows an inline error; repeated pending submissions are blocked. Imported entries retain their source ID and project caption;
+items already queued or completed on the current Flow day cannot be added twice.
+Removing an entry allows adding it again. Existing snapshots remain compatible.
+Titles are copied: renaming or completing a Flow entry does not change the source.
+Tasks remain independent of projects and their task records. Flow sessions
 suppress existing project/task association, leaving ordinary selection intact.
 Switching or completing a task in the middle of a work session checkpoints time and
 assigns subsequent work to the next task. The session itself continues. Completing
@@ -47,8 +61,18 @@ the task's recorded focus remains available in daily statistics.
 The user requested no project startup, build or typecheck. These checks are intended
 for the user's local run:
 
-1. Paste three task lines, including blanks. Add, rename, reorder with arrows, remove
-   and Undo. Reload and confirm both tasks and unfinished draft survive.
+0. Enable Daily flow mode in timer settings: stay on `/` with Flow replacing the
+   timer. Open chat/tasks, check coworkers, reload, and return via Pomodoro. Confirm
+   mode persistence, saved queue/session, mobile document scrolling, desktop panel
+   scrolling and the legacy `/daily-flow` redirect. Use the Flow Pomodoro button to return to the ordinary timer.
+1. Open Choose tasks from projects, expand a project and select its task. Confirm
+   project headings only expand and cannot be added to Flow. Create a task with the
+   project input and Add task button or Enter; confirm it appears in Projects, then
+   select it for the day. Check blank input, IME composition, failed creation/retry
+   and duplicate submission guards. Rename, reorder, remove, Undo and reload Flow.
+   Confirm project captions, disabled duplicates (also after completion),
+   removal/re-add, reload, empty/loading/retry and adding during a running session.
+   Confirm the ordinary timer selection and original task status stay unchanged.
 2. Start Focus: only the current title is visible. Pause/resume, switch break types,
    adjust timer settings and open the mini timer. It must not expose other tasks.
 3. Complete or skip a task halfway through work: keep the same countdown; credit

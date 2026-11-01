@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
 import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
+import DailyFlow from '@/components/DailyFlow'
+import { useWorkspaceModeStore } from '@/store/useWorkspaceModeStore'
 import ActiveSessions from '@/components/ActiveSessions'
 import RoomSwitch from '@/components/RoomSwitch'
 import { registerServiceWorker } from '@/lib/serviceWorker'
@@ -40,6 +42,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore()
   const { t, language } = useI18n()
   const copy = gardenCopy[language]
+  const { mode, setMode } = useWorkspaceModeStore()
   const ambientMixer = useAmbientSounds()
   const [mounted, setMounted] = useState(false)
   const [workingCollapsed, setWorkingCollapsed] = useState(false)
@@ -70,6 +73,12 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   ] as const
 
   useEffect(() => {
+    const url = new URL(window.location.href)
+    if (url.searchParams.get('mode') === 'daily-flow') {
+      setMode('daily-flow')
+      url.searchParams.delete('mode')
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash)
+    }
     try {
       const stored = localStorage.getItem(OPEN_PANELS_STORAGE_KEY)
       const saved: unknown = JSON.parse(stored ?? localStorage.getItem('pomo:windows:open:v1') ?? '[]')
@@ -87,7 +96,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       // The rail stays open when storage is unavailable.
     }
     setMounted(true)
-  }, [])
+  }, [setMode])
 
   useEffect(() => {
     // Wait for restoration so the initial empty state cannot overwrite saved windows.
@@ -296,7 +305,9 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
           <Navbar compact workspaceActions={renderPanelButtons} />
           <div className="focus-page-layout">
             <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
-              <PomodoroTimer showRoomSwitch={false} idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />
+              {mode === 'daily-flow'
+                ? <DailyFlow onExit={() => setMode('timer')} onSessionComplete={handleSessionComplete} />
+                : <PomodoroTimer showRoomSwitch={false} idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />}
             </section>
             <aside id="workspace-working" className="working-sidebar" data-collapsed={workingCollapsed} aria-label={t.activeSessions.title}>
               <RoomSwitch />

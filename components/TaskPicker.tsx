@@ -8,7 +8,8 @@ import { RefObject, memo, useId, useLayoutEffect, useRef, useState } from 'react
 import { createPortal } from 'react-dom'
 import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { Check, ChevronDown, X } from 'lucide-react'
+import { Check, ChevronDown, Loader2, Plus, X } from 'lucide-react'
+import { taskService } from '@/services/taskService'
 import { taskPickerCopy } from '@/lib/i18n/taskPicker'
 import { gardenCopy } from '@/lib/i18n/garden'
 import { useQuickTasks } from '@/hooks/useQuickTasks'
@@ -24,7 +25,10 @@ const SHOW_PROJECT_SEARCH = false
 const PICKER_CONTROLS = 'input:not(:disabled), button:not(:disabled), a[href]'
 
 interface TaskPickerProps {
-  variant?: 'default' | 'mini-timer'
+  variant?: 'default' | 'mini-timer' | 'daily-flow'
+  unavailableTaskIds?: string[]
+  triggerLabel?: string
+  unavailableLabel?: string
   sessionType: SessionType
   isDisabled: boolean
   isOpen: boolean
@@ -42,6 +46,9 @@ interface TaskPickerProps {
 
 export const TaskPicker = memo(function TaskPicker({
   variant = 'default',
+  unavailableTaskIds = [],
+  triggerLabel,
+  unavailableLabel,
   isDisabled,
   isOpen,
   onToggle,
@@ -62,6 +69,11 @@ export const TaskPicker = memo(function TaskPicker({
   const searchRef = useRef<HTMLInputElement>(null)
   const allOptions = useTimerStore(state => state.taskOptions)
   const [expandedProjects, setExpandedProjects] = useState<string[]>([])
+  const [taskDrafts, setTaskDrafts] = useState<Record<string, string>>({})
+  const [creatingProject, setCreatingProject] = useState<string | null>(null)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const [createdNotice, setCreatedNotice] = useState('')
+  const [createdTaskId, setCreatedTaskId] = useState<string | null>(null)
   const pickerId = useId()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [position, setPosition] = useState<{
@@ -73,14 +85,15 @@ export const TaskPicker = memo(function TaskPicker({
   } | null>(null)
   const isVisible = isOpen && !isDisabled
 
-  const { loading, loadError, retry } = useQuickTasks(isVisible)
+  const { loading, loadError, saving, mutate, retry } = useQuickTasks(isVisible)
+  const tasksOnly = variant === 'daily-flow'
   const queryText = taskSearch.trim().toLocaleLowerCase()
   const matches = filteredTaskOptions.filter(task => !task.completed && !task.id.startsWith('temp_') && `${task.title} ${task.projectTitle ?? ''} ${task.description ?? ''}`.toLocaleLowerCase().includes(queryText))
-  const projects = [...allOptions].sort(compareTaskActivity).filter(project => !project.parentId && !project.completed && (!queryText || matches.some(item => item.id === project.id || item.parentId === project.id)))
+  const projects = [...allOptions].sort(compareTaskActivity).filter(project => !project.parentId && !project.completed && !project.id.startsWith('temp_') && (!queryText || matches.some(item => item.id === project.id || item.parentId === project.id)))
   const options = projects.flatMap(project => [project, ...(queryText || expandedProjects.includes(project.id) ? matches.filter(task => task.parentId === project.id).sort(compareTaskActivity) : [])])
   const query = taskSearch.trim()
   const exactMatch = options.find(task => task.title.toLocaleLowerCase() === query.toLocaleLowerCase())
-  const close = () => { onClose(); triggerRef.current?.focus() }
+  const close = () => { setCreatedTaskId(null); onClose(); triggerRef.current?.focus() }
   const focusFirstControl = () => {
     const dropdown = taskDropdownRef.current
     const target = dropdown?.querySelector<HTMLElement>(PICKER_CONTROLS) ?? dropdown
@@ -93,10 +106,30 @@ export const TaskPicker = memo(function TaskPicker({
     if (variant === 'mini-timer') window.focus()
   }
   const select = (task: TaskOption | null) => {
-    if (isDisabled || isTaskSelectionLocked(useTimerStore.getState().currentSession)) return
+    if (tasksOnly && !task?.parentId) return
+    if (isDisabled || (task && unavailableTaskIds.includes(task.id)) || (variant !== 'daily-flow' && isTaskSelectionLocked(useTimerStore.getState().currentSession))) return
     onSelectTask(task)
     close()
   }
+  const createTask = async (projectId: string) => {
+    const title = taskDrafts[projectId]?.trim()
+    if (!title || saving || loading || loadError || isDisabled) return
+    if (!useTimerStore.getState().taskOptions.some(project => project.id === projectId && !project.parentId && !project.completed)) return
+    setCreatingProject(projectId)
+    setCreateError(null)
+    setCreatedNotice('')
+    const result = await mutate(async () => ({ task: await taskService.create({ title, parentId: projectId }) }))
+    if (result) {
+      setTaskDrafts(previous => ({ ...previous, [projectId]: '' }))
+      setCreatedNotice(copy.createdTask)
+      if ('task' in result) setCreatedTaskId(result.task.id)
+    } else setCreateError(projectId)
+    setCreatingProject(null)
+  }
+  useLayoutEffect(() => {
+    if (!isVisible || loading || !createdTaskId) return
+    taskDropdownRef.current?.ownerDocument.getElementById(`${pickerId}-task-${createdTaskId}`)?.focus()
+  }, [isVisible, loading, createdTaskId, pickerId, taskDropdownRef])
   useLayoutEffect(() => {
     if (!isVisible) return
     const ownerWindow = triggerRef.current?.ownerDocument.defaultView
@@ -164,11 +197,11 @@ export const TaskPicker = memo(function TaskPicker({
           aria-expanded={isVisible}
           aria-haspopup="dialog"
           aria-controls={isVisible ? `${pickerId}-options` : undefined}
-          aria-label={`${copy.selection}: ${selectedTask?.projectTitle && selectedTask.parentId ? `${selectedTask.projectTitle} / ` : ''}${selectedTask?.title ?? copy.prompt}`}
-          title={isDisabled ? copy.locked : selectedTask?.title}
+          aria-label={triggerLabel ?? `${copy.selection}: ${selectedTask?.projectTitle && selectedTask.parentId ? `${selectedTask.projectTitle} / ` : ''}${selectedTask?.title ?? copy.prompt}`}
+          title={isDisabled && variant !== 'daily-flow' ? copy.locked : selectedTask?.title}
           className={`current-task-trigger ${variant === 'mini-timer' ? 'mini-timer-task-trigger' : ''}`}
         >
-          <span>{selectedTask?.parentId && selectedTask.projectTitle ? <><span style={projectColorStyle(allOptions.find(option => option.id === selectedTask.parentId)?.color)}>{selectedTask.projectTitle}</span>{' / '}</> : null}<span style={selectedTask && !selectedTask.parentId ? projectColorStyle(selectedTask.color) : undefined}>{selectedTask?.title ?? copy.prompt}</span></span>
+          <span>{selectedTask?.parentId && selectedTask.projectTitle ? <><span style={projectColorStyle(allOptions.find(option => option.id === selectedTask.parentId)?.color)}>{selectedTask.projectTitle}</span>{' / '}</> : null}<span style={selectedTask && !selectedTask.parentId ? projectColorStyle(selectedTask.color) : undefined}>{triggerLabel ?? selectedTask?.title ?? copy.prompt}</span></span>
           <ChevronDown size={14} aria-hidden="true" className={isVisible ? 'rotate-180' : ''} />
         </button>
 
@@ -181,11 +214,12 @@ export const TaskPicker = memo(function TaskPicker({
                 id={`${pickerId}-options`}
                 role="dialog"
                 tabIndex={-1}
-                aria-label={copy.selection}
+                aria-label={triggerLabel ?? copy.selection}
                 aria-busy={loading}
                 data-i18n-ignore
                 data-background-mode={variant !== 'mini-timer' && backgroundId !== 'default' || undefined}
                 data-mini-timer-picker={variant === 'mini-timer' || undefined}
+                data-daily-flow-picker={variant === 'daily-flow' || undefined}
                 initial={{ opacity: 0, y: reducedMotion ? 0 : -4 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: reducedMotion ? 0 : -4 }}
@@ -232,18 +266,38 @@ export const TaskPicker = memo(function TaskPicker({
                         <div className="task-option" key={task.id} data-project-task={Boolean(task.parentId)}>
                           <div className="task-option-row" data-selected={selectedTask?.id === task.id}>
                             {!task.parentId && <button type="button" className="task-option-disclosure" aria-label={`${copy.tasks}: ${task.title}`} aria-expanded={Boolean(queryText) || expandedProjects.includes(task.id)} onClick={() => setExpandedProjects(previous => previous.includes(task.id) ? previous.filter(id => id !== task.id) : [...previous, task.id])}><ChevronDown size={12} strokeWidth={1.5} aria-hidden="true" className={queryText || expandedProjects.includes(task.id) ? '' : '-rotate-90'} /></button>}
-                            <button type="button" className="task-option-select" aria-label={task.parentId ? `${project.title} / ${task.title}` : task.title} aria-pressed={selectedTask?.id === task.id} onClick={() => select(task)}>
+                            <button id={`${pickerId}-task-${task.id}`} type="button" className="task-option-select" disabled={unavailableTaskIds.includes(task.id)} title={unavailableTaskIds.includes(task.id) ? unavailableLabel : undefined} aria-label={`${task.parentId ? `${project.title} / ${task.title}` : task.title}${unavailableTaskIds.includes(task.id) && unavailableLabel ? `: ${unavailableLabel}` : ''}`} aria-pressed={selectedTask?.id === task.id} onClick={() => select(task)}>
                               <span><span className="task-option-title" style={!task.parentId ? projectColorStyle(project.color) : undefined}>{task.title}</span></span>
-                              {selectedTask?.id === task.id && <Check size={16} aria-hidden="true" />}
+                              {(selectedTask?.id === task.id || unavailableTaskIds.includes(task.id)) && <Check size={16} aria-hidden="true" />}
                             </button>
                           </div>
                         </div>
                       )
                       return (
                         <div className="task-project-group" key={project.id}>
-                          {renderOption(project)}
-                          {children.length > 0 && <div className="task-project-children" role="group" aria-label={project.title}>
+                          {tasksOnly ? <button type="button" className="task-option-select flow-project-disclosure"
+                            aria-expanded={Boolean(queryText) || expandedProjects.includes(project.id)}
+                            onClick={() => setExpandedProjects(previous => previous.includes(project.id) ? previous.filter(id => id !== project.id) : [...previous, project.id])}>
+                            <ChevronDown size={14} aria-hidden="true" className={queryText || expandedProjects.includes(project.id) ? '' : '-rotate-90'} />
+                            <span className="task-option-title" style={projectColorStyle(project.color)}>{project.title}</span>
+                          </button> : renderOption(project)}
+                          {(children.length > 0 || (tasksOnly && (Boolean(queryText) || expandedProjects.includes(project.id)))) && <div className="task-project-children" role="group" aria-label={project.title}>
                             {children.map(renderOption)}
+                            {tasksOnly && <form className="flow-project-task-form" noValidate onSubmit={event => { event.preventDefault(); void createTask(project.id) }}>
+                              <label className="sr-only" htmlFor={`${pickerId}-${project.id}-new-task`}>{copy.newTask}: {project.title}</label>
+                              <div className="flow-project-task-entry">
+                                <input id={`${pickerId}-${project.id}-new-task`} type="text" maxLength={500}
+                                  value={taskDrafts[project.id] ?? ''} placeholder={copy.newTask} disabled={saving}
+                                  aria-invalid={createError === project.id}
+                                  aria-describedby={createError === project.id ? `${pickerId}-${project.id}-error` : undefined}
+                                  onChange={event => { setTaskDrafts(previous => ({ ...previous, [project.id]: event.target.value })); setCreateError(null) }}
+                                  onKeyDown={event => { if (event.key === 'Enter' && event.nativeEvent.isComposing) event.preventDefault() }} />
+                                <button type="submit" disabled={saving || !taskDrafts[project.id]?.trim()} aria-busy={creatingProject === project.id}>
+                                  {creatingProject === project.id ? <Loader2 size={15} className="animate-spin motion-reduce:animate-none" aria-hidden="true" /> : <Plus size={15} aria-hidden="true" />}{copy.addTask}
+                                </button>
+                              </div>
+                              {createError === project.id && <p id={`${pickerId}-${project.id}-error`} role="alert">{copy.error}</p>}
+                            </form>}
                           </div>}
                         </div>
                       )
@@ -256,6 +310,7 @@ export const TaskPicker = memo(function TaskPicker({
                     {!options.length && query && <p className="task-popover-message">{t.timer.noMatchingTasks}</p>}
                   </>}
                 </div>
+                {tasksOnly && <p className="flow-project-task-status" role="status">{createdNotice}</p>}
                 {selectedTask && <div className="task-popover-footer">
                   <button type="button" onClick={() => select(null)}>{copy.noTask}</button>
                 </div>}

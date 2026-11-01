@@ -9,6 +9,8 @@ export interface FlowTask {
   completedAt: string | null
   focusByDay: Record<string, number>
   deleted?: boolean
+  sourceTaskId?: string
+  sourceProjectTitle?: string
 }
 export interface FlowCursor {
   sessionId: string
@@ -56,6 +58,8 @@ export function parseDailyFlow(raw: string): DailyFlowSnapshot | null {
       && isDay(t.createdDay) && (t.completedDay === null || isDay(t.completedDay))
       && (t.completedAt === null || (typeof t.completedAt === 'string' && Number.isFinite(Date.parse(t.completedAt))))
       && (t.deleted === undefined || typeof t.deleted === 'boolean')
+      && (t.sourceTaskId === undefined || typeof t.sourceTaskId === 'string')
+      && (t.sourceProjectTitle === undefined || typeof t.sourceProjectTitle === 'string')
       && record(t.focusByDay) && Object.entries(t.focusByDay).every(([day, seconds]) => isDay(day) && finite(seconds)))) return null
     const tasks = v.tasks as FlowTask[]
     const ids = new Set(tasks.map(t => t.id))
