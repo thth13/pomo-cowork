@@ -1,5 +1,7 @@
 'use client'
 
+import { logBeepEvent } from '@/lib/beepEvents'
+import type { BeepAction } from '@/lib/beepEventTypes'
 import { useEffect, useRef } from 'react'
 import { TASK_CHANGED_EVENT, type TaskChange } from '@/hooks/useQuickTasks'
 import type { RefObject } from 'react'
@@ -108,6 +110,22 @@ export function useBeepTour(active: boolean, step: number, advance: () => void, 
       if (!(clicked instanceof Node)) return
       const control = highlightedElements.find(element => element.contains(clicked))
       if (!control || control.matches(':disabled, [aria-disabled="true"]')) return
+      const clickedElement = clicked instanceof Element ? clicked : clicked.parentElement
+      const button = clickedElement?.closest('button, a, select, input[type="submit"]')
+      // Forms are highlighted too: record their buttons, never text-field clicks or values.
+      if (button && control.contains(button) && !button.matches(':disabled, [aria-disabled="true"]')) {
+        const panel = toolPanels[step]
+        const action: BeepAction = control.matches('[data-workspace-menu-trigger]') ? 'target_menu'
+          : control.matches('button[aria-controls="workspace-tasks"]') ? 'target_tasks'
+          : control.matches('[data-beep-tour="project"]') ? (button.matches('[type="submit"]') ? 'target_project' : 'target_project_color')
+          : control.matches('.focus-project-disclosure') ? 'target_project_expand'
+          : control.matches('[data-beep-tour="task"]') ? 'target_task'
+          : control.matches('[data-beep-tour="task-play"]') ? 'target_task_play'
+          : control.matches('[data-beep-tour="task-picker"]') ? 'target_task_picker'
+          : control.matches('[data-beep-tour="register"]') ? 'target_register'
+          : `target_${panel}` as BeepAction
+        logBeepEvent(action, 'tour', step)
+      }
       if (step === 5 && control.matches('[data-beep-tour="register"]')) {
         event.preventDefault()
         event.stopPropagation()

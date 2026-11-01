@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { logBeepClick, logBeepEvent } from '@/lib/beepEvents'
+import { usePathname } from 'next/navigation'
 import type { KeyboardEvent } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
 import { User, MapPin, MessageCircle, Pause, Play, X } from 'lucide-react'
@@ -31,6 +33,7 @@ const copy = {
 }
 
 export default function WalkingCompanion() {
+  const pathname = usePathname()
   const [desktop, setDesktop] = useState(false)
   useEffect(() => {
     const media = window.matchMedia('(min-width: 720px)')
@@ -39,7 +42,8 @@ export default function WalkingCompanion() {
     media.addEventListener('change', update)
     return () => media.removeEventListener('change', update)
   }, [])
-  return desktop ? <DesktopCompanion /> : null
+  const isAdmin = pathname === '/admin' || pathname.startsWith('/admin/')
+  return desktop && !isAdmin ? <DesktopCompanion /> : null
 }
 
 function DesktopCompanion() {
@@ -386,7 +390,7 @@ function DesktopCompanion() {
     if (active && !guideTarget.current && !drag.current) target.current = { ...position.current }
   }
 
-  function openChat() {
+  function openChat(surface: 'character' | 'controls' = 'character') {
     cancelPress()
     drop()
     target.current = { ...position.current }
@@ -394,6 +398,8 @@ function DesktopCompanion() {
     setPreview(null)
     setExpanded(false)
     setMoving(false)
+    const tourStep = document.querySelector<HTMLElement>('#beep-guide[data-guide-mode="tour"]')?.dataset.beepLogStep
+    logBeepEvent('chat_open', tourStep === undefined ? surface : 'tour', tourStep === undefined ? undefined : Number(tourStep))
     setGuideRequest(value => value + 1)
   }
 
@@ -421,33 +427,33 @@ function DesktopCompanion() {
             if (!drag.current) openChat()
           }} />
       </div>}
-      {SHOW_DEBUG_CONTROLS && <div className={styles.controls} ref={panelRef} data-companion-controls>
+      {SHOW_DEBUG_CONTROLS && <div data-beep-log-surface="controls" onClickCapture={logBeepClick} className={styles.controls} ref={panelRef} data-companion-controls>
         {expanded && <div id="companion-controls" className={styles.panel} data-beep-surface>
-          <div className={styles.heading}><strong>{text.name}</strong><button type="button" aria-label={text.close} onClick={() => { setExpanded(false); triggerRef.current?.focus() }}><X size={16} /></button></div>
+          <div className={styles.heading}><strong>{text.name}</strong><button type="button" data-beep-action="controls_close" aria-label={text.close} onClick={() => { setExpanded(false); triggerRef.current?.focus() }}><X size={16} /></button></div>
           <p role="status">{!visible ? text.show : status === 'loading' ? text.loading : status === 'error' ? text.error : text[mood]}</p>
-          <button type="button" className={styles.visibility} onClick={() => openChat()}><MessageCircle size={15} />{language === 'es' ? 'Preguntar a Mr. Beep' : 'Ask Mr. Beep'}</button>
-          {visible && status === 'error' && <button type="button" onClick={() => setAttempt(value => value + 1)}>{text.retry}</button>}
+          <button type="button" className={styles.visibility} onClick={() => openChat('controls')}><MessageCircle size={15} />{language === 'es' ? 'Preguntar a Mr. Beep' : 'Ask Mr. Beep'}</button>
+          {visible && status === 'error' && <button type="button" data-beep-action="model_retry" onClick={() => setAttempt(value => value + 1)}>{text.retry}</button>}
           {visible && status === 'ready' && <>
             <div className={styles.actions}>
-              <button type="button" aria-pressed={moving} aria-describedby="companion-move-help" onKeyDown={nudge} onClick={() => setMoving(value => !value)}><MapPin size={15} />{moving ? text.moving : text.move}</button>
-              <button type="button" aria-pressed={wandering} onClick={toggleWandering}>{wandering ? <Pause size={15} /> : <Play size={15} />}{wandering ? text.stay : text.roam}</button>
+              <button type="button" data-beep-action="move_toggle" aria-pressed={moving} aria-describedby="companion-move-help" onKeyDown={nudge} onClick={() => setMoving(value => !value)}><MapPin size={15} />{moving ? text.moving : text.move}</button>
+              <button type="button" data-beep-action="wander_toggle" aria-pressed={wandering} onClick={toggleWandering}>{wandering ? <Pause size={15} /> : <Play size={15} />}{wandering ? text.stay : text.roam}</button>
             </div>
             <p id="companion-move-help" className={styles.help}>{text.help}</p>
             <fieldset className={styles.previews} disabled={held}>
               <legend>{previewText.title}</legend>
               <p className={styles.help}>{previewText.hint}</p>
               <div className={styles.previewButtons}>
-                {animationPreviews.map(kind => <button key={kind} type="button" aria-pressed={preview?.kind === kind} onClick={() => startPreview(kind)}>{previewText[kind]}</button>)}
+                {animationPreviews.map(kind => <button key={kind} data-beep-action={`preview_${kind}`} type="button" aria-pressed={preview?.kind === kind} onClick={() => startPreview(kind)}>{previewText[kind]}</button>)}
               </div>
               {preview && <>
                 <p className={styles.previewStatus} role="status">{previewText[preview.kind]}</p>
-                <button type="button" className={styles.visibility} onClick={() => setPreview(null)}>{previewText.stop}</button>
+                <button type="button" className={styles.visibility} data-beep-action="preview_stop" onClick={() => setPreview(null)}>{previewText.stop}</button>
               </>}
             </fieldset>
           </>}
-          <button type="button" className={styles.visibility} onClick={() => { cancelPress(); drop(); setVisible(value => !value); setMoving(false); save(!visible) }}>{visible ? text.hide : text.show}</button>
+          <button type="button" className={styles.visibility} data-beep-action="visibility_toggle" onClick={() => { cancelPress(); drop(); setVisible(value => !value); setMoving(false); save(!visible) }}>{visible ? text.hide : text.show}</button>
         </div>}
-        <button ref={triggerRef} type="button" className={styles.trigger} data-beep-surface aria-expanded={expanded} aria-controls="companion-controls" onClick={() => setExpanded(value => !value)}><User size={16} />{text.name}</button>
+        <button ref={triggerRef} data-beep-action={expanded ? 'controls_close' : 'controls_open'} type="button" className={styles.trigger} data-beep-surface aria-expanded={expanded} aria-controls="companion-controls" onClick={() => setExpanded(value => !value)}><User size={16} />{text.name}</button>
         {moving && !expanded && <span className={styles.moveHint} data-beep-surface role="status">{text.moving} · Esc</span>}
       </div>}
       <TomGuide ready={visible && status === 'ready' && !preview} running={running} openRequest={guideRequest} anchorRef={actorRef} returnFocusRef={gripRef} onOpenChange={setGuideOpen} onSpeakingChange={setGuideSpeaking} onTargetChange={followGuide} />

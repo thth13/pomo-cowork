@@ -1249,6 +1249,13 @@ day, and unique timer-user day. Each record shows the count and full calendar pe
 existing activity metrics follow without duplicating the online-user panel. Styling
 uses the established admin tokens and responsive metric grid.
 
+Beep messages adds a read-only cross-account transcript table in the same admin
+tokens, with full question/reply text, account identity, reply status and Kyiv times.
+Conversation details disclose the saved greeting, IDs, dates and revision. Status
+filters and 50-turn pagination persist in URL state; selecting a conversation shows
+its turns chronologically. The all-conversation view is newest first. No public
+chat styling, composer or new visual tokens are introduced.
+
 The `/group-study-timer` and `/study-timer` routes reuse the compact SEO workspace and registration
 invitation. It places the canonical `ProjectList` in its list variant below the timer,
 with project creation, nested tasks, completion and task-specific timer starts. Guest
@@ -1292,6 +1299,10 @@ to unsaved state. Data stays in this browser and does not sync with an account. 
 topic estimates, persistence, and adjustable session lengths.
 
 ## Lottie companion Mr. Beep
+
+Beep activity uses the existing admin shell, table, filter buttons and pagination
+styles. Its separate navigation section is `/admin#beep-events`; it introduces no
+new visual tokens or product-facing controls.
 
 The active artwork is the user's `public/assets/companion/rigged-tom/beep_pomo.json`,
 a self-contained 400×400 Lottie animation with a six-second loop at 30 fps.

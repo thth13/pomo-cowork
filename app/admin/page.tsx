@@ -8,6 +8,8 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowUpRight, Crown, LayoutDashboard, Link2, MessageSquare, MousePointer2, ShieldCheck, Users, MessageCircle, ListChecks, BarChart3 } from 'lucide-react'
 import AdminAllMetrics from '@/components/admin/AdminAllMetrics'
 import AdminOverview from '@/components/admin/AdminOverview'
+import AdminBeepMessages from '@/components/admin/AdminBeepMessages'
+import AdminBeepEvents from '@/components/admin/AdminBeepEvents'
 import AdminDataTable, { type AdminDataKind } from '@/components/admin/AdminDataTable'
 import type { AdminSection } from '@/components/AdminReferralManager'
 import './admin.css'
@@ -28,6 +30,8 @@ const sections = [
   { id: 'users', label: 'Pro users', icon: Crown, description: 'Manage Premium access and review active memberships.' },
   { id: 'directory', label: 'All users', icon: Users, description: 'Registered and guest accounts with focus statistics, as in the user directory.' },
   { id: 'wall', label: 'Wall messages', icon: MessageCircle, description: 'Messages posted on every user profile.' },
+  { id: 'beep', label: 'Beep messages', icon: MessageSquare, description: 'Saved conversations with Mr. Beep across all accounts. All times are shown in Kyiv time.' },
+  { id: 'beep-events', label: 'Beep activity', icon: MousePointer2, description: 'Onboarding and other interactions with Mr. Beep.' },
   { id: 'habits', label: 'Habits', icon: ListChecks, description: 'Habit tracking across the community.' },
   { id: 'support', label: 'Support inbox', icon: MessageSquare, description: 'Messages and feedback from your community, in one place.' },
   { id: 'events', label: 'Paywall activity', icon: MousePointer2, description: 'Explore interactions with Premium and support. All event times are shown in Kyiv time.' },
@@ -82,6 +86,8 @@ export default function AdminPage() {
           {isLoading ? <div className="admin-loading" role="status">Loading account…</div> : <>
             {section === 'overview' && <AdminOverview />}
             {section === 'metrics' && <AdminAllMetrics />}
+            {section === 'beep' && <AdminBeepMessages />}
+            {section === 'beep-events' && <AdminBeepEvents />}
             <AdminReferralManager section={section} />
             {(['directory', 'wall', 'habits'] as string[]).includes(section) && <AdminDataTable key={section} kind={section as AdminDataKind} />}
             {eventsVisited && <div hidden={section !== 'events'}><AdminPaywallEvents /></div>}

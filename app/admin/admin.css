@@ -213,3 +213,17 @@ body:has(.admin-shell) { background: #f5f7fa; }
 .admin-total-registered p { margin-top: 6px; color: var(--admin-secondary); font-size: 12px; }
 .admin-total-registered strong { font-size: 40px; color: var(--admin-accent-hover); font-weight: 600; }
 .admin-record-date { margin-bottom: 8px; font-size: 13px; font-weight: 600; }
+
+.admin-beep-note { margin-bottom: 16px; }
+.admin-beep-filters { flex-wrap: wrap; }
+.admin-beep-id { overflow-wrap: anywhere; font-size: 12px; }
+.admin-beep-conversation { min-width: 240px; max-width: 340px; }
+.admin-beep-link { color: var(--admin-accent-hover); text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.admin-beep-link:hover { text-decoration: underline; }
+.admin-beep-details { margin-top: 12px; font-size: 12px; white-space: normal; overflow-wrap: anywhere; }
+.admin-beep-details summary { cursor: pointer; color: var(--admin-secondary); }
+.admin-beep-details dl { margin-block: 12px; }
+.admin-beep-details dt { margin-top: 8px; color: var(--admin-muted); }
+.admin-beep-details dd { margin: 2px 0 0; }
+.admin-beep-details h3 { margin-top: 12px; font-weight: 600; }
+.admin-beep-text { margin-top: 6px; white-space: pre-wrap; }

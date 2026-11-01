@@ -23,7 +23,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user?.id) router.replace(userProfileHref(user))
-  }, [isLoading, isAuthenticated, user?.id, user?.username, user?.isAnonymous, router])
+  }, [isLoading, isAuthenticated, user, router])
 
   return <div className={`community-page garden-page${showingProfile ? ' profile-page' : ''}`} lang={language} data-no-translate>
     <Navbar compact />

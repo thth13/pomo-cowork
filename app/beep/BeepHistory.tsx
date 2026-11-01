@@ -6,6 +6,7 @@ import { ArrowLeft, ChevronRight, RefreshCw } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import PersonalNavigation from '@/components/PersonalNavigation'
 import AuthModal from '@/components/AuthModal'
+import { logBeepClick } from '@/lib/beepEvents'
 import BeepChat from '@/components/companion/BeepChat'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
@@ -124,21 +125,21 @@ function Workspace({ token, conversationId, onSignIn }: { token: string; convers
   const formatDate = (date: string) => new Intl.DateTimeFormat(language === 'es' ? 'es-ES' : 'en-US', { dateStyle: 'medium' }).format(new Date(date))
   const expired = error === 401 || listError === 401
 
-  return <div className="beep-history-layout" data-view={conversationId ? 'conversation' : 'list'}>
+  return <div data-beep-log-surface="page" onClickCapture={logBeepClick} className="beep-history-layout" data-view={conversationId ? 'conversation' : 'list'}>
     {!conversationId ? <section className="beep-history-list-view" aria-label={text.history}>
-      <div className="beep-history-list-heading"><h2>{text.history}</h2><button type="button" aria-label={text.refresh} title={text.refresh} disabled={listLoading} onClick={() => setListVersion(value => value + 1)}><RefreshCw size={15} aria-hidden="true" /></button></div>
+      <div className="beep-history-list-heading"><h2>{text.history}</h2><button type="button" data-beep-action="history_refresh" aria-label={text.refresh} title={text.refresh} disabled={listLoading} onClick={() => setListVersion(value => value + 1)}><RefreshCw size={15} aria-hidden="true" /></button></div>
       {listLoading && !items.length && <LoadingSkeleton label={text.loading} />}
       {!listLoading && !listError && !items.length && <p className="beep-history-muted">{text.empty}</p>}
-      <nav className="beep-conversation-list" aria-label={text.history}>{items.map(item => <Link key={item.id} href={`/beep/${item.id}`}>
+      <nav className="beep-conversation-list" aria-label={text.history}>{items.map(item => <Link data-beep-action="history_open" key={item.id} href={`/beep/${item.id}`}>
         <span>{item.title}</span><time dateTime={item.updatedAt}>{formatDate(item.updatedAt)}</time><ChevronRight size={16} aria-hidden="true" />
       </Link>)}</nav>
       {listLoading && items.length > 0 && <LoadingSkeleton label={text.loading} rows={2} />}
-      {listError && <div role="alert" className="beep-history-error"><p>{listError === 401 ? text.expired : text.error}</p><button type="button" onClick={() => listError === 401 ? onSignIn() : setListVersion(value => value + 1)}>{listError === 401 ? text.signIn : text.retry}</button></div>}
-      {cursor && <button type="button" disabled={listLoading} onClick={() => { void more() }}>{text.more}</button>}
+      {listError && <div role="alert" className="beep-history-error"><p>{listError === 401 ? text.expired : text.error}</p><button type="button" data-beep-action={listError === 401 ? 'history_sign_in' : 'history_refresh'} onClick={() => listError === 401 ? onSignIn() : setListVersion(value => value + 1)}>{listError === 401 ? text.signIn : text.retry}</button></div>}
+      {cursor && <button type="button" data-beep-action="history_more" disabled={listLoading} onClick={() => { void more() }}>{text.more}</button>}
     </section> : <section className="beep-history-conversation" aria-label={text.title}>
-      <header className="beep-conversation-heading"><Link href="/beep" className="beep-conversation-back"><ArrowLeft size={16} aria-hidden="true" /><span>{text.back}</span></Link><h2>{conversation?.title || text.history}</h2></header>
-      {earlierError && <div className="beep-history-error" role="alert"><p>{text.error}</p><button type="button" disabled={earlierLoading || busy} onClick={() => { void earlier() }}>{text.retry}</button></div>}
-      {loading ? <LoadingSkeleton label={text.loading} dialogue /> : error ? <div className="beep-history-error" role="alert"><p>{expired ? text.expired : error === 404 ? text.missing : text.error}</p><button type="button" onClick={() => expired ? onSignIn() : setDetailVersion(value => value + 1)}>{expired ? text.signIn : text.retry}</button></div> : conversation?.id === conversationId &&
+      <header className="beep-conversation-heading"><Link data-beep-action="history_back" href="/beep" className="beep-conversation-back"><ArrowLeft size={16} aria-hidden="true" /><span>{text.back}</span></Link><h2>{conversation?.title || text.history}</h2></header>
+      {earlierError && <div className="beep-history-error" role="alert"><p>{text.error}</p><button type="button" data-beep-action="chat_earlier" disabled={earlierLoading || busy} onClick={() => { void earlier() }}>{text.retry}</button></div>}
+      {loading ? <LoadingSkeleton label={text.loading} dialogue /> : error ? <div className="beep-history-error" role="alert"><p>{expired ? text.expired : error === 404 ? text.missing : text.error}</p><button type="button" data-beep-action={expired ? 'history_sign_in' : 'chat_reload'} onClick={() => expired ? onSignIn() : setDetailVersion(value => value + 1)}>{expired ? text.signIn : text.retry}</button></div> : conversation?.id === conversationId &&
         <BeepChat key={`${conversationId}:${detailVersion}`} messages={messages} onMessagesChange={setMessages} conversation={conversation}
           onConversationChange={value => setConversation(previous => ({ ...previous, ...value }))} onSpeakingChange={silent} onBusyChange={setBusy} variant="page" locked={active}
           onReload={() => setDetailVersion(value => value + 1)} onEarlier={before !== null ? () => { void earlier() } : undefined} earlierLoading={earlierLoading} />}

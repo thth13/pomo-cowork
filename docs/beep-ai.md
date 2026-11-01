@@ -176,6 +176,14 @@ OpenAI, app launch, build or tsc calls were made for this change.
 
 ## Saved conversations
 
+Administrators can read all persisted turns at `/admin#beep`, including full user
+and assistant text, saved opening greetings, owner identity, turn/conversation IDs,
+status, sequence, revision and Kyiv timestamps. The read-only
+`POST /api/admin/beep-messages` uses `authorizeAdmin` before querying, never caches
+responses, validates filters and paginates 50 turns at a time. Status and conversation
+filters are available; a selected conversation is chronological, the global list
+is newest first. Unsaved unsigned-guest chats and provider usage metadata are unavailable.
+
 Apply `20261101120000_add_beep_conversations` before using the new persistence
 (`npm run prisma:migrate` applies pending repository migrations). Prisma Client
 has been regenerated; migration files were prepared without connecting to a DB.
@@ -237,3 +245,21 @@ Automatic onboarding is limited to first-time guests after auth loading finishes
 Registered users skip onboarding even in a new browser, and signing in/registering
 stops an active guest tour. Their personalized welcomes do not depend on the local
 onboarding seen flag.
+
+## Interaction logging
+
+Button interactions are stored separately from dialogue in `beep_events`.
+Onboarding records Next, Skip, Finish, Close/Escape and highlighted control presses,
+with stable step numbers/names. Chat logging covers opening, welcome activation,
+saved-history navigation, send (including Enter), retry, stop, reload and earlier
+messages. Existing debug controls are instrumented while remaining hidden.
+
+View `/admin#beep-events` (**Beep activity**), filter **Onboarding** to inspect the
+tour, or click a visit ID to inspect one page session. Signed-in/anonymous accounts
+are resolved on the server; unsigned guests are grouped by a temporary random visit
+ID. No message bodies, form values or URL query strings are included in this log.
+Collection is best-effort and never blocks the interface.
+
+Deploy migration `20261101130000_add_beep_events` with `npm run prisma:migrate`
+and regenerate Prisma Client with `npm exec -- prisma generate` when preparing the
+deployment. Applying the migration is required for the event API and admin table.

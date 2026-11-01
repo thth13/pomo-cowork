@@ -35,6 +35,7 @@ model User {
   lastSeenAt           DateTime?
 
   beepConversations BeepConversation[]
+  beepEvents BeepEvent[]
 
   achievements UserAchievement[]
   achievementState AchievementState?
@@ -78,6 +79,25 @@ model User {
   wallMessagesSent     UserWallMessage[] @relation("WallAuthorUser")
 
   @@map("users")
+}
+
+model BeepEvent {
+  id String @id
+  visitId String @db.VarChar(36)
+  action String @db.VarChar(40)
+  surface String @db.VarChar(16)
+  step Int?
+  pagePath String @db.VarChar(500)
+  userId String?
+  isAuthenticated Boolean
+  createdAt DateTime @default(now())
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt, id])
+  @@index([surface, createdAt, id])
+  @@index([visitId, createdAt])
+  @@index([userId, createdAt])
+  @@map("beep_events")
 }
 
 model PaywallEvent {

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { BEEP_GUIDE_MODAL_SELECTOR, useBeepTour, type GuideTarget } from './useBeepTour'
 import { useAuthStore } from '@/store/useAuthStore'
 import BeepChat from './BeepChat'
+import { logBeepClick, logBeepEvent } from '@/lib/beepEvents'
 import { beepIntroduction } from '@/lib/beepIntroduction'
 import type { BeepMessage, BeepConversationInfo } from '@/lib/beepChat'
 import { X, History } from 'lucide-react'
@@ -200,6 +201,7 @@ export default function TomGuide({ ready, running, openRequest, anchorRef, retur
     if (!mode) return
     const dismiss = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || document.querySelector(BEEP_GUIDE_MODAL_SELECTOR)) return
+      logBeepEvent('close_escape', mode === 'help' ? 'chat' : mode, mode === 'tour' ? step : undefined)
       setMode(null)
       returnFocusRef.current?.focus({ preventScroll: true })
     }
@@ -235,18 +237,18 @@ export default function TomGuide({ ready, running, openRequest, anchorRef, retur
     }
     frame = requestAnimationFrame(place)
     return () => { document.removeEventListener('keydown', dismiss, true); cancelAnimationFrame(frame) }
-  }, [mode, ready, anchorRef, returnFocusRef])
+  }, [mode, step, ready, anchorRef, returnFocusRef])
 
   if (!mode || mode === 'tour' && (authLoading || registered) || mode === 'welcome' && welcome?.owner !== accountToken) return null
   const close = () => { setMode(null); returnFocusRef.current?.focus({ preventScroll: true }) }
   const current = text.intro[step]
   return (
-    <section id="beep-guide" ref={bubbleRef} className={`${styles.tomBubble} ${styles.controls}`} data-companion-controls data-beep-surface data-guide-mode={mode} aria-labelledby={mode === 'tour' ? 'tom-guide-title' : undefined} aria-label={mode !== 'tour' ? 'Mr. Beep' : undefined}>
+    <section data-beep-log-surface={mode === 'help' ? 'chat' : mode} data-beep-log-step={mode === 'tour' ? step : undefined} onClickCapture={logBeepClick} id="beep-guide" ref={bubbleRef} className={`${styles.tomBubble} ${styles.controls}`} data-companion-controls data-beep-surface data-guide-mode={mode} aria-labelledby={mode === 'tour' ? 'tom-guide-title' : undefined} aria-label={mode !== 'tour' ? 'Mr. Beep' : undefined}>
       <div className={styles.heading}>
         <span className={styles.tomName}>{mode !== 'tour' ? 'Mr. Beep' : text.name}{mode === 'tour' && <span> · {text.progress} {step + 1 - (registered && step >= 5 ? 1 : 0)}/{text.intro.length - (registered ? 1 : 0)}</span>}</span>
         <div className={styles.chatToolbar}>
-          {mode === 'help' && <Link href="/beep" aria-label={language === 'es' ? 'Conversaciones guardadas' : 'Saved conversations'} title={language === 'es' ? 'Conversaciones guardadas' : 'Saved conversations'}><History size={16} strokeWidth={1.5} aria-hidden="true" /></Link>}
-          <button type="button" className={styles.chatClose} aria-label={text.close} onClick={close}><X size={16} strokeWidth={1.5} aria-hidden="true" /></button>
+          {mode === 'help' && <Link data-beep-action="saved_chats" href="/beep" aria-label={language === 'es' ? 'Conversaciones guardadas' : 'Saved conversations'} title={language === 'es' ? 'Conversaciones guardadas' : 'Saved conversations'}><History size={16} strokeWidth={1.5} aria-hidden="true" /></Link>}
+          <button type="button" data-beep-action="close" className={styles.chatClose} aria-label={text.close} onClick={close}><X size={16} strokeWidth={1.5} aria-hidden="true" /></button>
         </div>
       </div>
       <div className={mode !== 'tour' ? 'sr-only' : styles.tomContent} aria-live={mode === 'tour' ? 'polite' : undefined} aria-atomic="true">
@@ -254,7 +256,7 @@ export default function TomGuide({ ready, running, openRequest, anchorRef, retur
         {mode === 'tour' && <p>{current[1]}</p>}
         {mode === 'tour' && step > 0 && step < text.intro.length - 1 && <p className={styles.tourHint}>{step >= 4 ? text.optionalAction : text.action}</p>}
       </div>
-      {mode === 'welcome' && welcome && <button type="button" className={styles.welcomeText}
+      {mode === 'welcome' && welcome && <button type="button" data-beep-action="welcome_open" className={styles.welcomeText}
         onClick={() => {
           setChatMessages(previous => previous.length ? previous : [{ role: 'assistant', content: welcome.text }])
           setMode('help')
@@ -262,8 +264,8 @@ export default function TomGuide({ ready, running, openRequest, anchorRef, retur
         }}>{welcome.text}</button>}
       {mode === 'help' && <BeepChat key={accountToken ?? 'guest'} conversation={savedChat} onConversationChange={setSavedChat} messages={chatMessages} onMessagesChange={setChatMessages} onSpeakingChange={onSpeakingChange} />}
       {mode === 'tour' && <div className={styles.tomFooter}>
-        <button type="button" onClick={close}>{text.skip}</button>
-        <button type="button" className={styles.tomNext} onClick={step === text.intro.length - 1 ? close : () => setStep(value => value + 1)}>{step === text.intro.length - 1 ? text.done : text.next}</button>
+        <button type="button" data-beep-action="tour_skip" onClick={close}>{text.skip}</button>
+        <button type="button" data-beep-action={step === text.intro.length - 1 ? 'tour_finish' : 'tour_next'} className={styles.tomNext} onClick={step === text.intro.length - 1 ? close : () => setStep(value => value + 1)}>{step === text.intro.length - 1 ? text.done : text.next}</button>
       </div>}
     </section>
   )

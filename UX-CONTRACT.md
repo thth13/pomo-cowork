@@ -603,6 +603,26 @@ on account change/unmount. Success announces deletion, reloads the current page
 (the GET handler clamps empty final pages), and focuses Refresh. Deleting an already
 removed event succeeds idempotently. Verification remains static per user request.
 
+## Admin Beep messages
+
+Source: user request; `app/api/admin/beep-messages/route.ts`,
+`lib/adminRequest.ts` and `prisma/schema.prisma` (BeepConversation/BeepTurn).
+The read-only cross-account endpoint authorizes administrators before querying any
+transcript or account data and returns private/no-store responses. Owner-scoped
+`/api/beep` access remains unchanged. Only already-persisted conversations are
+available; unsaved guest messages and pre-persistence chats cannot be recovered.
+Provider model, tokens and generation duration are not recorded or inferred.
+
+`AdminBeepMessages` reuses `useAdminData` for timeout, cancellation, stale-response
+protection and authentication errors, and existing admin table/controls/tokens.
+Full user/reply text is rendered as plain text, with expandable saved greeting and
+conversation metadata. Pending turns with an expired/released generation lease are
+labelled explicitly without mutating their stored status. Filters and pagination
+use beepStatus/beepConversation/beepPage query parameters with #beep navigation.
+All turns are newest first; one conversation is chronological. Server pagination
+uses 50 turns, clamps out-of-range pages and provides loading/empty/error/retry states.
+Dates explicitly use Europe/Kyiv. Runtime verification is user-owned.
+
 ## Admin Premium grants
 
 Source: user request dated 2026-10-06; `app/api/admin/pro-users/route.ts` owns
@@ -753,6 +773,33 @@ profiles; historical missing timestamps remain unknown until a new visit.
 No schema changes or migrations. Verification is static per user instructions.
 
 ## Walking companion ownership
+
+Beep interaction logging: `lib/beepEvents.ts` owns nonblocking client delivery;
+`lib/beepEventTypes.ts` owns stable action and onboarding-step names. TomGuide,
+WalkingCompanion and BeepChat tag their existing buttons; the shared capture handler
+records only the nearest logging surface to prevent nested chat duplicates.
+Send/retry are recorded on accepted submission, including Enter. Disabled controls,
+hover, text-field input and automatic step progression do not emit button events.
+`useBeepTour` records highlighted control presses with the current zero-based step;
+the admin table shows one-based step numbers and names. Escape close is explicit.
+
+POST `/api/beep/events` validates bounded allowlisted data, rejects cross-origin
+browser requests, applies bounded process-local throttling and stores `BeepEvent`.
+Identity is server-derived from a verified token and account lookup, including
+anonymous accounts; unsigned guests have no account ID. In-memory random visit IDs
+group interactions until a full page reload, including account transitions in that
+visit. No messages, names entered in forms, query strings or IP addresses are stored
+in these records. Event UUIDs deduplicate delivery; collection is best-effort and
+does not block interaction or retry failed requests. Process-local throttling is not
+a distributed quota. This is client-reported analytics, not an audit of trusted actions.
+
+`AdminBeepEvents` reuses `useAdminData` and admin table/filter/pagination styles.
+`/api/admin/beep-events` authorizes admins before all queries, returns 50 rows per
+page ordered by server creation time/id, supports surface and visit filters, and
+disables response caching. Filters/page are URL-backed; timestamps use Europe/Kyiv.
+Loading, empty, error, refresh and pagination states follow AdminBeepMessages.
+Migration `20261101130000_add_beep_events` must be deployed before collection.
+Runtime/build/typecheck verification remains user-owned.
 
 `companion/TomGuide.tsx` owns Tom’s first-visit introduction and on-demand FAQ.
 Five non-modal speech cards can be skipped, closed or replayed; the first appearance
@@ -982,6 +1029,8 @@ Registered accounts never start the tour, regardless of the browser seen flag;
 registering/signing in during a tour stops it and clears its targets. Personalized
 arrival messages remain independent and do not require a completed guest tour.
 
+Beep companion is not mounted on `/admin` or its nested routes; this also excludes
+its chat, onboarding and arrival requests. The admin Beep messages section remains available.
 Beep companion availability: min-width 720px. matchMedia controls mounting and
 reacts to resize; unmount disposes animation, cancels pending holds/requests and
 removes guide targets. Mobile never starts companion onboarding or welcome

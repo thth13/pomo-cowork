@@ -125,13 +125,13 @@ export async function createCompanionScene(canvas: HTMLCanvasElement) {
         else choose(wanted)
       }
       elapsed += dt
-      for (const [name, action] of actions) {
+      actions.forEach((action, name) => {
         const target = name === current ? 1 : 0
         const weight = pose.reducedMotion || wanted === 'Held' ? target : THREE.MathUtils.damp(weights.get(name) || 0, target, 12, dt)
         weights.set(name, weight)
         action.enabled = true; action.setEffectiveWeight(weight)
         if (pose.reducedMotion) action.time = 0
-      }
+      })
       mixer.update(pose.reducedMotion ? 0 : dt)
       const workingWeight = (weights.get('Work') || 0) + (weights.get('SitDown') || 0) + (weights.get('StandUp') || 0)
       const restingWeight = weights.get('Rest') || 0

@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
 import { beepDetail, BeepRequestError } from '@/lib/beepClient'
+import { logBeepClick, logBeepEvent } from '@/lib/beepEvents'
 import { beepStreamEvents } from '@/lib/beepStream'
 import { beepHistory, BEEP_MESSAGE_LIMIT, type BeepMessage, type BeepConversationInfo } from '@/lib/beepChat'
 import styles from './WalkingCompanion.module.css'
@@ -77,6 +78,7 @@ export default function BeepChat({ messages, onMessagesChange, onSpeakingChange,
   async function send(question?: string, retry = false) {
     const content = (question ?? draft).trim()
     if (requestRef.current || locked || variant === 'page' && !conversation || !content || content.length > BEEP_MESSAGE_LIMIT) return
+    logBeepEvent(retry ? 'chat_retry' : 'chat_send', variant === 'page' ? 'page' : 'chat')
     const retryMessages = messages.at(-1)?.role === 'assistant' ? messages.slice(0, -1) : messages
     const lastUser = retryMessages.at(-1)
     const requestId = retry && lastUser?.requestId ? lastUser.requestId : crypto.randomUUID()
@@ -166,10 +168,10 @@ export default function BeepChat({ messages, onMessagesChange, onSpeakingChange,
 
   const retryQuestion = messages.at(-1)?.role === 'user' ? messages.at(-1) : messages.at(-2)
 
-  return <div className={`${styles.beepChat} ${variant === 'page' ? styles.chatPage : ''}`}>
+  return <div data-beep-log-surface={variant === 'page' ? 'page' : 'chat'} onClickCapture={logBeepClick} className={`${styles.beepChat} ${variant === 'page' ? styles.chatPage : ''}`}>
     {(messages.length > 0 || busy) && <div ref={logRef} className={styles.chatLog} role="log" aria-label={text.label} aria-live="polite" aria-busy={busy} tabIndex={0}
       onScroll={event => { const log = event.currentTarget; followEnd.current = log.scrollHeight - log.scrollTop - log.clientHeight < 48 }}>
-      {onEarlier && <button type="button" disabled={earlierLoading || busy} onClick={() => { followEnd.current = false; onEarlier() }}>{text.earlier}</button>}
+      {onEarlier && <button type="button" data-beep-action="chat_earlier" disabled={earlierLoading || busy} onClick={() => { followEnd.current = false; onEarlier() }}>{text.earlier}</button>}
       {messages.map((message, index) => <div key={index} className={styles.chatMessage} data-role={message.role}>
         <span className="sr-only">{message.role === 'user' ? text.you : text.beep}</span>
         <p>{message.content}</p>
@@ -179,11 +181,11 @@ export default function BeepChat({ messages, onMessagesChange, onSpeakingChange,
         <p>{streamingText}<span className={styles.chatCursor} aria-hidden="true" /></p>
       </div>}
     </div>}
-    {locked && <div className={styles.chatError} role="status"><p>{text.pending}</p>{onReload && <button type="button" onClick={onReload}>{text.reload}</button>}</div>}
+    {locked && <div className={styles.chatError} role="status"><p>{text.pending}</p>{onReload && <button type="button" data-beep-action="chat_reload" onClick={onReload}>{text.reload}</button>}</div>}
     {error && <div className={styles.chatError} role="alert">
       <p>{text[error]}</p>
       {!['conflict', 'save_failed'].includes(error) && retryQuestion?.role === 'user' && <button type="button" disabled={busy || locked} onClick={() => { void send(retryQuestion.content, true) }}>{text.retry}</button>}
-      {conversation && token && <button type="button" disabled={busy} onClick={() => {
+      {conversation && token && <button type="button" data-beep-action="chat_reload" disabled={busy} onClick={() => {
         if (onReload) { onReload(); setError(null); return }
         void beepDetail(conversation.id, token).then(detail => {
           if (mounted.current && useAuthStore.getState().token === token) { onConversationChange(detail.conversation); onMessagesChange(detail.messages); setError(detail.active ? 'conflict' : null) }
@@ -196,7 +198,7 @@ export default function BeepChat({ messages, onMessagesChange, onSpeakingChange,
         onChange={event => setDraft(event.target.value)} onKeyDown={event => {
           if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send() }
         }} />
-      {busy ? <button type="button" title={text.stop} aria-label={text.stop} onClick={() => requestRef.current?.abort()}><Square size={15} aria-hidden="true" /></button> : <button type="submit" title={text.send} aria-label={text.send} disabled={locked || !draft.trim()}><Send size={17} aria-hidden="true" /></button>}
+      {busy ? <button type="button" data-beep-action="chat_stop" title={text.stop} aria-label={text.stop} onClick={() => requestRef.current?.abort()}><Square size={15} aria-hidden="true" /></button> : <button type="submit" title={text.send} aria-label={text.send} disabled={locked || !draft.trim()}><Send size={17} aria-hidden="true" /></button>}
     </form>
   </div>
 }
