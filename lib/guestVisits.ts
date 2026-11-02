@@ -31,7 +31,7 @@ export async function removeGuestVisit(id: string, db: PrismaClient = prisma): P
 }
 
 export async function removeRequestGuestVisit(request: NextRequest, anonymousId?: unknown): Promise<void> {
-  const ids = new Set([request.cookies.get(VISITOR_COOKIE)?.value, anonymousId])
+  const ids = Array.from(new Set([request.cookies.get(VISITOR_COOKIE)?.value, anonymousId]))
   for (const id of ids) {
     if (isValidAnonymousId(id)) await removeGuestVisit(id)
   }
