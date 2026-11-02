@@ -1,4 +1,5 @@
 import { recordUserCountry } from '@/lib/userCountry'
+import { removeRequestGuestVisit } from '@/lib/guestVisits'
 import { registerAnonymousUser } from '@/lib/registerAnonymousUser'
 import crypto from 'crypto'
 import { NextRequest, NextResponse } from 'next/server'
@@ -166,6 +167,7 @@ export async function POST(request: NextRequest) {
     }
 
     await recordUserCountry(request, user.id)
+    await removeRequestGuestVisit(request, anonymousId)
 
     await recordReferralSignup(referralCode, user.id)
 

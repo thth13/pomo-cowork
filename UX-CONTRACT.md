@@ -732,6 +732,22 @@ full messages wrap without truncation. User profiles use `userProfileHref`.
 `CommunityDialog` and existing mutation owners are unchanged. Runtime verification
 is left to the user; only source syntax and diff checks are performed.
 
+Guest acquisition logging follows the user's November 2, 2026 request: show visitors
+without registered or persisted anonymous profiles, their IP, country and entry page;
+remove that original log when they create a profile or sign in. `/api/visits` records
+one initial pathname per browser's existing anonymous ID, excluding query strings and
+fragments. A local anonymous ID alone is not a persisted anonymous profile. Country
+uses the existing trusted Vercel geolocation owner; unknown IP/country stays null.
+`lib/guestVisits.ts` serializes tracking and conversion per identity. Conversion
+physically deletes the GuestVisit (IP, country, path, timestamp); VisitorIdentity keeps
+only the opaque ID and conversion flag so delayed requests cannot recreate the log.
+Successful password and Google auth, including the OAuth callback, consume the cookie
+identity; password/Google POSTs also consume their supplied anonymous ID. Persisting
+an anonymous profile consumes the same ID in ensureAnonymousUser. Tracking failure
+does not block product use; the client retries server/network failures twice. Admin
+reads remain protected by authorizeAdmin and use the existing table pagination and
+manual refresh, with no IP-based merging of separate browsers.
+
 Primary overview metrics use `useConnectionStore.totalOnlineCount` only while
 connected, and `/api/admin/overview.todayAnonymous` counts currently anonymous
 accounts created today in Kyiv. Converted guests are classified as registered

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const denied = await authorizeAdmin(request)
     if (denied) return denied
     const body = await request.json().catch(() => null)
-    if (!body || !['directory', 'online', 'wall', 'habits'].includes(body.kind) || !Number.isSafeInteger(body.page) || body.page < 1) {
+    if (!body || !['directory', 'online', 'wall', 'habits', 'visitors'].includes(body.kind) || !Number.isSafeInteger(body.page) || body.page < 1) {
       return NextResponse.json({ error: 'Invalid list or page.' }, { status: 400 })
     }
     if (body.kind === 'online' && (!Array.isArray(body.onlineIds) || body.onlineIds.length > 10000 || body.onlineIds.some((id: unknown) => typeof id !== 'string' || id.length > 128))) {
@@ -27,6 +27,15 @@ export async function POST(request: NextRequest) {
     const paging = (total: number) => {
       const page = Math.min(body.page, Math.max(1, Math.ceil(total / pageSize)))
       return { page, skip: (page - 1) * pageSize, take: pageSize }
+    }
+    if (body.kind === 'visitors') {
+      const total = await prisma.guestVisit.count()
+      const { page, skip, take } = paging(total)
+      const rows = await prisma.guestVisit.findMany({
+        skip, take, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+        select: { id: true, ipAddress: true, countryCode: true, pagePath: true, createdAt: true },
+      })
+      return respond(rows, total, page)
     }
     if (body.kind === 'directory' || body.kind === 'online') {
       const where: Prisma.UserWhereInput = body.kind === 'online' ? { id: { in: body.onlineIds } } : { isAnonymous: body.userType === 'anonymous' }

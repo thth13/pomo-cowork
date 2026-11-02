@@ -1205,6 +1205,12 @@ rendered; plain backgrounds and forced colors retain the shared opaque surfaces.
 
 ## Administration dashboard
 
+New visitors (`/admin#visitors`) reuses AdminDataTable, CountryFlag and the existing
+admin tokens without new styles. Rows show IP, country, first landing pathname and
+Kyiv timestamp, newest first, with 50-row pagination and the shared loading, empty,
+retry and error states. Registered and persisted anonymous profiles are excluded;
+conversion removes the initial visit. Unknown IP or country is shown as a dash.
+
 `/admin` is an intentional visual exception requested by the user: a conventional,
 white dashboard, independent of the public pixel identity and the saved dark theme.
 `app/admin/admin.css` owns scoped `--admin-*` tokens: white surface (#ffffff), cool

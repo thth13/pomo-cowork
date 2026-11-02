@@ -83,6 +83,27 @@ model User {
   @@map("users")
 }
 
+// Minimal conversion marker prevents delayed requests from recreating a deleted visit.
+model VisitorIdentity {
+  id        String @id
+  converted Boolean @default(false)
+  visit     GuestVisit?
+
+  @@map("visitor_identities")
+}
+
+model GuestVisit {
+  id          String @id
+  ipAddress   String? @db.VarChar(45)
+  countryCode String? @db.VarChar(2)
+  pagePath    String @db.VarChar(500)
+  createdAt   DateTime @default(now())
+  identity    VisitorIdentity @relation(fields: [id], references: [id], onDelete: Cascade)
+
+  @@index([createdAt, id])
+  @@map("guest_visits")
+}
+
 model BeepEvent {
   id String @id
   visitId String @db.VarChar(36)

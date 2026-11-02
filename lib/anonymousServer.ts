@@ -2,6 +2,7 @@ import crypto from 'crypto'
 import type { Prisma, PrismaClient } from '@prisma/client'
 import { buildAnonymousProfile, isValidAnonymousId } from './anonymousProfile'
 import { hashPassword, verifyToken } from './auth'
+import { removeGuestVisit } from './guestVisits'
 
 const DEFAULT_SETTINGS = {
   workDuration: 25,
@@ -63,6 +64,7 @@ export const ensureAnonymousUser = async (
       return null
     }
 
+    await removeGuestVisit(anonymousId, prisma)
     return ensureUserSettings(prisma, existingUser)
   }
 
@@ -94,6 +96,7 @@ export const ensureAnonymousUser = async (
     return null
   }
 
+  await removeGuestVisit(anonymousId, prisma)
   return ensureUserSettings(prisma, user)
 }
 

@@ -7,13 +7,14 @@ import { useConnectionStore } from '@/store/useConnectionStore'
 import { userProfileHref } from '@/lib/userProfile'
 import { useAdminData } from './useAdminData'
 
-export type AdminDataKind = 'directory' | 'wall' | 'habits'
+export type AdminDataKind = 'directory' | 'wall' | 'habits' | 'visitors'
 type Person = { id: string; username: string; isAnonymous: boolean }
 type UserRow = Person & { countryCode: string | null; createdAt: string; lastSeenAt: string | null; totalMinutes: number; totalPomodoros: number; sessionsCount: number }
 type WallRow = { id: string; message: string; createdAt: string; author: Person; profileUser: Person }
 type HabitRow = { id: string; title: string; startDate: string; archived: boolean; createdAt: string; user: Person; _count: { completions: number } }
-type ListData = { rows: (UserRow | WallRow | HabitRow)[]; total: number; page: number; pageSize: number }
-const titles = { directory: 'All users', wall: 'Wall messages', habits: 'Habits' }
+type VisitorRow = { id: string; ipAddress: string | null; countryCode: string | null; pagePath: string; createdAt: string }
+type ListData = { rows: (UserRow | WallRow | HabitRow | VisitorRow)[]; total: number; page: number; pageSize: number }
+const titles = { directory: 'All users', wall: 'Wall messages', habits: 'Habits', visitors: 'New visitors' }
 const countryNames = new Intl.DisplayNames(['en'], { type: 'region', fallback: 'none' })
 const countryFlag = (code: string | null) => {
   const normalized = code?.toUpperCase()
@@ -33,13 +34,14 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
   const connected = useConnectionStore(state => state.isConnected)
   const body = JSON.stringify({ kind, page, userType })
   const { data, error, loading, refresh } = useAdminData<ListData>('/api/admin/data', body)
-  const headers = kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions']
+  const headers = kind === 'visitors' ? ['IP address', 'Country', 'Landing page', 'Visited · Kyiv'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions']
 
   return <section aria-label={titles[kind]}>
     <div className="admin-data-toolbar">
       <div><h2>{titles[kind]}{data ? ` · ${data.total.toLocaleString('en-US')}` : ''}</h2>
         {kind === 'habits' && <p>All active and archived habits, newest first.</p>}
         {kind === 'wall' && <p>All existing profile wall messages, newest first.</p>}
+        {kind === 'visitors' && <p>First visits without an account. Removed after sign-in, registration, or anonymous profile creation.</p>}
       </div>
       <button type="button" onClick={refresh} disabled={loading}>Refresh</button>
     </div>
@@ -50,6 +52,7 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
         <div className="admin-table-scroll" tabIndex={0} role="region" aria-label={`${titles[kind]} table`}>
           <table><caption className="sr-only">{titles[kind]}</caption><thead><tr>{headers.map(header => <th key={header} scope="col">{header}</th>)}</tr></thead>
             <tbody>{data.rows.length === 0 ? <tr><td colSpan={headers.length} className="admin-data-state">No {titles[kind].toLowerCase()} found.</td></tr> : data.rows.map(row => {
+              if ('pagePath' in row) return <tr key={row.id}><td>{row.ipAddress || '—'}</td><td>{countryFlag(row.countryCode)}</td><td className="admin-message-cell">{row.pagePath}</td><td>{date(row.createdAt)}</td></tr>
               if ('message' in row) return <tr key={row.id}><td><div className="admin-wall-participants"><Link href={userProfileHref(row.author)}>{row.author.username}</Link><span aria-hidden="true">→</span><span className="sr-only">to</span><Link href={userProfileHref(row.profileUser)}>{row.profileUser.username}</Link></div></td><td className="admin-message-cell">{row.message}</td><td>{date(row.createdAt)}</td></tr>
               if ('title' in row) return <tr key={row.id}><td className="admin-message-cell">{row.title}</td><td>{person(row.user)}</td><td><span className={`admin-status ${row.archived ? 'admin-status-archived' : 'admin-status-active'}`}>{row.archived ? 'Archived' : 'Active'}</span></td><td>{row.startDate}</td><td>{row._count.completions}</td><td>{date(row.createdAt)}</td></tr>
               return <tr key={row.id}><td>{person(row)}{connected && onlineIds[row.id] && <span className="admin-online-status">Online</span>}</td><td>{countryFlag(row.countryCode)}</td><td>{date(row.createdAt)}</td><td>{date(row.lastSeenAt)}</td><td>{Math.floor(row.totalMinutes / 60)}h {row.totalMinutes % 60}m</td><td>{row.totalPomodoros}</td><td>{row.sessionsCount}</td></tr>

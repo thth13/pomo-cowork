@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import CompanionPersistence from '@/components/CompanionPersistence'
+import GuestVisitTracker from '@/components/GuestVisitTracker'
 import DailyFlowPersistence from '@/components/DailyFlowPersistence'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
@@ -43,5 +44,5 @@ export default function AuthProvider({ children }: { children: React.ReactNode }
     })
   }, [])
 
-  return <><DailyFlowPersistence /><CompanionPersistence />{children}</>
+  return <><GuestVisitTracker /><DailyFlowPersistence /><CompanionPersistence />{children}</>
 }

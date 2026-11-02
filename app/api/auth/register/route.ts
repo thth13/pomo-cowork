@@ -1,4 +1,5 @@
 import { recordUserCountry } from '@/lib/userCountry'
+import { removeRequestGuestVisit } from '@/lib/guestVisits'
 import { registerAnonymousUser } from '@/lib/registerAnonymousUser'
 import { validateRegistration, type RegistrationFieldErrors } from '@/lib/registrationValidation'
 import { Prisma } from '@prisma/client'
@@ -157,6 +158,7 @@ export async function POST(request: NextRequest) {
     }
 
     await recordUserCountry(request, user.id)
+    await removeRequestGuestVisit(request, anonymousId)
 
     await recordReferralSignup(referralCode, user.id)
 
