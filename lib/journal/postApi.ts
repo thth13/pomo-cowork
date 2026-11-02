@@ -180,13 +180,10 @@ export async function feedApi(request: NextRequest) {
   const posts = await prisma.journalPost.findMany({
     where: {
       ...publicPost,
-      author: {
-        followers: {
-          some: {
-            followerId: user.id
-          }
-        }
-      }
+      AND: [{ OR: [
+        { author: { followers: { some: { followerId: user.id } } } },
+        { project: { followers: { some: { userId: user.id } } } },
+      ] }]
     },
     include: postInclude,
     orderBy: [{

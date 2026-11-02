@@ -125,7 +125,7 @@ export async function imagesApi(request: NextRequest, id?: string) {
       }), prisma.project.findFirst({
         where: {
           visibility: 'PUBLIC',
-          imageUrl: path
+          OR: [{ imageUrl: path }, { coverUrl: path }]
         },
         select: {
           id: true

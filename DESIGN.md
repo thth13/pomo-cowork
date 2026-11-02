@@ -1528,3 +1528,20 @@ scenery is rendered. Each floating surface owns its blur. Light/dark, reduced mo
 and forced colors retain the same geometry. The anchored panel stays non-modal,
 keeps its draft on dismissal, focuses the message on opening and supports Escape
 with focus return. English/Spanish copy lives in `lib/i18n/feedback.ts`.
+
+## Public project pages
+
+Public project pages extend the existing journal identity: a wide 4:1 cover,
+square project logo, quiet Inter title, four compact focus/progress statistics,
+and a two-column blog/sidebar layout. The empty cover uses the existing pixel grid
+and sprout; no new palette or font is introduced. Narrow layouts stack the columns
+and retain a two-column statistics grid. `app/(journal)/journal.css` owns geometry;
+all surfaces use the journal/pixel tokens. `AppearanceProvider` includes @profile
+routes, and the existing `app/appearance.css` journal-card adapter owns glass blur,
+contrast and forced-colors behavior. The editor uses the same card surface.
+
+ProjectEditor reuses journal fields, uploads, mutation feedback and unsaved guards.
+The project field comes first and selects a real work project; inline creation is
+saved atomically with its public page. Native select and date controls retain the
+journal's accepted browser-owned popup behavior. See docs/project-journal.md for
+publication, task visibility, subscription and visit semantics.

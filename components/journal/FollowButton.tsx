@@ -7,26 +7,29 @@ import { journalApi, useJournalQuery, useJournalMutation, useJournalText } from 
 import { Feedback } from './Primitives'
 export default function FollowButton({
   userId,
-  count
+  count,
+  projectId
 }: {
   userId: string;
   count: number;
+  projectId?: string;
 }) {
   const user = useAuthStore(s => s.user),
     [auth, setAuth] = useState(false),
     t = useJournalText(),
     state = useJournalMutation()
+  const endpoint = projectId ? `projects/${projectId}/follow` : `follow/${userId}`
   const query = useJournalQuery<{
     following: boolean;
     count: number;
-  }>(user && !user.isAnonymous && user.id !== userId ? `follow/${userId}` : null)
+  }>(user && !user.isAnonymous && user.id !== userId ? endpoint : null)
   if (user?.id === userId) return <small>
     {count}
     {' '}
     {t('followers', 'seguidores')}
   </small>
   return <div>
-    <button type="button" className="journal-button secondary" disabled={state.busy || query.loading} aria-pressed={query.data?.following ?? false} onClick={() => {
+    <button type="button" className="journal-button secondary" disabled={state.busy || query.loading || Boolean(query.error)} aria-pressed={query.data?.following ?? false} onClick={() => {
       if (!user || user.isAnonymous) {
         setAuth(true)
         return
@@ -35,13 +38,13 @@ export default function FollowButton({
         const result = await journalApi<{
           following: boolean;
           count: number;
-        }>(`follow/${userId}`, {
+        }>(endpoint, {
           method: query.data?.following ? 'DELETE' : 'PUT'
         })
         query.setData(result)
       })
     }}>
-      {query.data?.following ? t('Following', 'Siguiendo') : t('Follow', 'Seguir')}
+      {query.data?.following ? t('Following', 'Siguiendo') : projectId ? t('Follow project', 'Seguir proyecto') : t('Follow', 'Seguir')}
     </button>
     <small>
       {' '}

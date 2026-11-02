@@ -9,6 +9,10 @@ export interface Stats {
   sessions: number;
 }
 export interface Project {
+  workProjectId: string | null;
+  coverUrl: string | null;
+  showTasks: boolean;
+  views: number;
   id: string;
   userId: string;
   name: string;

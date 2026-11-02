@@ -3,7 +3,7 @@
 ## Entry points
 
 - `/settings/profile`: choose a public username and edit the existing user profile.
-- `/projects`: private project management; `/projects/new` creates a project.
+- `/projects`: private project management; `/projects/public/new` creates a public page for an existing work project, or creates both together.
 - `/@username`: public projects, updates, and activity.
 - `/@username/projects/slug`: public project, timeline, and updates.
 - `/@username/posts/slug`: permanent update URL; editing the title preserves its slug.
@@ -40,12 +40,12 @@ slug changes its public URL; no alias system is introduced in this MVP.
 ## Data and privacy contract
 
 - Reuse User and PomodoroSession. No parallel authentication or focus counters.
-- Count `COMPLETED` `WORK`/`TIME_TRACKING` sessions and stopped `TIME_TRACKING`
-  sessions stored as `CANCELLED` with an `endedAt` timestamp. Use effective minutes
-  (including legacy tracker elapsed-duration records) and session-end attribution.
-  Zero-time entries, cancelled WORK sessions, active/paused sessions, and breaks do
-  not count for project totals and new post snapshots; existing post snapshots
-  remain historical.
+- Project totals and project-linked new snapshots count positive effective minutes from `COMPLETED` and `CANCELLED`
+  `WORK`/`TIME_TRACKING` sessions, including manually stopped Pomodoros and legacy
+  trackers. Use session-end attribution and exclude future entries. Active/paused
+  sessions and breaks do not count. Completed Pomodoros count only COMPLETED WORK.
+  Existing post snapshots remain historical. Unscoped journal achievement/snapshot
+  calculations retain their existing completed-work/stopped-tracker rules.
 - Public profile totals, heatmap, and streak use `buildStatistics`, the same
   calculation as `/api/statistics`: both COMPLETED and CANCELLED WORK/TIME_TRACKING
   entries contribute positive effective minutes, including manually stopped Pomodoros.
@@ -120,3 +120,41 @@ an incognito browser:
 Static validation performed: Prisma schema validation and client generation, targeted
 ESLint, and whitespace/diff inspection. The design audit's existing stats/settings
 findings are unrelated to the journal; runtime and accessibility checks remain manual.
+
+## Public work project pages (November 2026)
+
+Migration: `prisma/migrations/20261101150000_add_work_project_public_page/migration.sql`.
+Apply with `npm run prisma:migrate`, then regenerate with `npm exec -- prisma generate`.
+Neither command has been run by the implementation agent.
+
+`Project.workProjectId` uniquely references an owned root Task, keeping the existing
+journal URL, posts and authentication model. Focus includes sessions linked through
+either projectId or workProjectId, once per session. Task totals read actual children;
+titles are queried only when the owner enables showTasks. Start date defaults to the
+work project's creation date and remains editable. Root creation and page save share
+a transaction; request IDs make creation retryable. Existing unlinked pages remain
+available. Deleting a work project detaches its public page; deleting only the page
+preserves all work tasks and sessions. The page's posts/social records cascade.
+
+ProjectFollow stores independent subscriptions. `/feed` includes public published
+posts from followed people OR followed projects, without duplicate posts.
+ProjectView stores a per-project visitor hash/day, with old deduplication keys removed
+on the next counted visit. The page keeps its lifetime counter. The HttpOnly visitor
+cookie is random; no IP address is stored. Authenticated owner views are excluded;
+anonymous visits in another browser cannot be identified as the owner. Metadata and
+prefetch do not count. This is not a bot/fraud-resistant analytics system.
+
+Manual verification (runtime was intentionally not started):
+1. Select a root project with existing focus/tasks; publish and verify totals.
+2. Create a new project inline; retry a failed response and confirm one root/page.
+3. Upload separate logo and cover; save/reopen, edit dates and descriptions.
+4. Open as a guest: page/posts render, interactions request sign-in; private task
+   titles are absent from responses until showTasks is enabled.
+5. Follow from a second account; repeat PUT, check one follower and feed posts;
+   unfollow, like/unlike, create/delete own comment, deny foreign edits.
+6. Refresh and change sections: one view/day; owner and prefetch add none.
+7. Make private: public page, posts, assets and social APIs become inaccessible.
+8. Check narrow/light/dark/scenery views, keyboard, empty states and failed uploads.
+
+Static premium audit was attempted; it stops on pre-existing native select ownership
+at app/stats/page.tsx:793. No runtime, build, tsc or database command was run.

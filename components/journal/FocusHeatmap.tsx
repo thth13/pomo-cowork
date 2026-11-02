@@ -1,4 +1,5 @@
 'use client'
+import { useJournalText } from '@/lib/journal/client'
 import { useState } from 'react'
 import { duration } from '@/lib/journal/types'
 export default function FocusHeatmap({
@@ -10,6 +11,7 @@ export default function FocusHeatmap({
     sessions: number;
   }[];
 }) {
+  const t = useJournalText()
   const [active, setActive] = useState<string | null>(null)
   const map = new Map(days.map(day => [day.date, day]))
   const today = new Date()
@@ -24,9 +26,9 @@ export default function FocusHeatmap({
     return date.toISOString().slice(0, 10)
   })
   return <section className="journal-card">
-    <h2>Focus activity</h2>
-    <p className="journal-muted">Completed focus sessions · last 365 days · UTC</p>
-    <div className="journal-heatmap-scroll" tabIndex={0} aria-label="Year of focus activity, scroll horizontally">
+    <h2>{t('Focus activity', 'Actividad de concentración')}</h2>
+    <p className="journal-muted">{t('Focused work · last 365 days · UTC', 'Trabajo enfocado · últimos 365 días · UTC')}</p>
+    <div className="journal-heatmap-scroll" tabIndex={0} aria-label={t('Year of focus activity, scroll horizontally', 'Año de actividad, desplazar horizontalmente')}>
       <div className="journal-heatmap" role="list">
         {Array.from({
           length: start.getUTCDay()
@@ -35,16 +37,16 @@ export default function FocusHeatmap({
           const day = map.get(date),
             seconds = day?.seconds || 0,
             level = seconds >= 14400 ? 4 : seconds >= 7200 ? 3 : seconds >= 1800 ? 2 : seconds > 0 ? 1 : 0
-          const label = `${date}: ${duration(seconds)} focused, ${day?.sessions || 0} sessions`
+          const label = `${date}: ${duration(seconds)} ${t('focused', 'de concentración')}, ${day?.sessions || 0} ${t('sessions', 'sesiones')}`
           return <span role="listitem" tabIndex={0} key={date} data-level={level} aria-label={label} className="journal-heat-day" onMouseEnter={() => setActive(date)} onMouseLeave={() => setActive(null)} onFocus={() => setActive(date)} onBlur={() => setActive(null)} onKeyDown={event => { if (event.key === 'Escape') setActive(null) }}>{active === date && <span className="journal-heat-tooltip" role="tooltip">{label}</span>}</span>
         })}
       </div>
     </div>
     <p className="journal-muted">
-      Less
+      {t('Less', 'Menos')}
       <span className="journal-heat-legend" aria-hidden="true">{[0, 1, 2, 3, 4].map(level => <i key={level} data-level={level} />)}</span>
       {' '}
-      More
+      {t('More', 'Más')}
     </p>
   </section>
 }

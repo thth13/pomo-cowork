@@ -40,7 +40,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     }
   }, [])
   return <>
-    {backgroundId !== 'default' && sceneryRoutes.test(pathname) &&
+    {backgroundId !== 'default' && (sceneryRoutes.test(pathname) || /^\/@[^/]+(?:\/|$)/.test(pathname)) &&
       <div className="product-scenery" aria-hidden="true"><WorkspaceBackground /></div>}
     {children}
   </>

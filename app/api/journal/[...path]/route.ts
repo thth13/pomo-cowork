@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { failure, JournalError } from '@/lib/journal/server'
-import { projectsApi } from '@/lib/journal/projectApi'
+import { projectFollowApi, projectViewApi } from '@/lib/journal/projectSocialApi'
+import { projectsApi, workProjectsApi } from '@/lib/journal/projectApi'
 import { profileApi, followApi, discoverApi } from '@/lib/journal/profileApi'
 import { postsApi, feedApi, weeklyApi } from '@/lib/journal/postApi'
 import { commentsApi, reactionsApi, imagesApi } from '@/lib/journal/interactionApi'
@@ -20,6 +21,9 @@ async function route(request: NextRequest, {
     if (resource === 'weekly' && !id && method === 'GET') return await weeklyApi(request)
     if (resource === 'feed' && !id && method === 'GET') return await feedApi(request)
     if (resource === 'follow' && id && !action && ['GET', 'PUT', 'DELETE'].includes(method)) return await followApi(request, id)
+    if (resource === 'work-projects' && !id && method === 'GET') return await workProjectsApi(request)
+    if (resource === 'projects' && id && action === 'follow' && !child && ['GET', 'PUT', 'DELETE'].includes(method)) return await projectFollowApi(request, id)
+    if (resource === 'projects' && id && action === 'view' && !child && method === 'POST') return await projectViewApi(request, id)
     if (resource === 'projects' && !action && (!id && ['GET', 'POST'].includes(method) || id && ['GET', 'PUT', 'DELETE'].includes(method))) return await projectsApi(request, id)
     if (resource === 'posts' && id && action === 'support' && !child && ['GET', 'PUT', 'DELETE'].includes(method)) return await reactionsApi(request, id)
     if (resource === 'posts' && id && action === 'comments' && (!child && ['GET', 'POST'].includes(method) || child && method === 'DELETE')) return await commentsApi(request, id, child)

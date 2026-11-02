@@ -48,7 +48,6 @@ export default function ProjectPicker() {
       {page > 1 && <button type="button" onClick={() => setPage(page - 1)}>{t('Previous', 'Anterior')}</button>}
       {query.data?.hasMore && <button type="button" onClick={() => setPage(page + 1)}>{t('More projects', 'Más proyectos')}</button>}
       {' '}
-      <Link href="/projects/new">{t('New project', 'Nuevo proyecto')}</Link>
     </div>}
   </div>
 }

@@ -48,15 +48,13 @@ export function weekStart(now = new Date()) {
   start.setUTCDate(start.getUTCDate() - (start.getUTCDay() + 6) % 7)
   return start
 }
-function scope(userId: string, projectId?: string, from?: Date, to?: Date) {
+function scope(userId: string, projectId?: string, from?: Date, to?: Date, includeStoppedWork = false) {
   return Prisma.sql`"s"."userId" = ${userId}
-    AND ("s"."status" = 'COMPLETED' OR (
-      "s"."type" = 'TIME_TRACKING' AND "s"."status" = 'CANCELLED'
-      AND "s"."endedAt" IS NOT NULL
-    ))
+    AND ${projectId || includeStoppedWork ? Prisma.sql`"s"."status" IN ('COMPLETED', 'CANCELLED')` : Prisma.sql`("s"."status" = 'COMPLETED' OR ("s"."type" = 'TIME_TRACKING' AND "s"."status" = 'CANCELLED' AND "s"."endedAt" IS NOT NULL))`}
+    AND COALESCE("s"."completedAt", "s"."endedAt", "s"."startedAt") <= CURRENT_TIMESTAMP
     AND "s"."type" IN ('WORK', 'TIME_TRACKING')
     AND ${getEffectiveSessionMinutesSql('s')} > 0
-    ${projectId ? Prisma.sql`AND "s"."projectId" = ${projectId}` : Prisma.empty}
+    ${projectId ? Prisma.sql`AND ("s"."projectId" = ${projectId} OR "s"."workProjectId" = (SELECT "workProjectId" FROM "projects" WHERE id = ${projectId} AND "userId" = ${userId}))` : Prisma.empty}
     ${from ? Prisma.sql`AND COALESCE("s"."completedAt", "s"."endedAt", "s"."startedAt") >= ${from}` : Prisma.empty}
     ${to ? Prisma.sql`AND COALESCE("s"."completedAt", "s"."endedAt", "s"."startedAt") <= ${to}` : Prisma.empty}`
 }
@@ -70,12 +68,13 @@ export async function projectFocusStats(userId: string, projectIds: string[]) {
   const ids = Array.from(new Set(projectIds))
   if (!ids.length) return new Map<string, FocusStats>()
   const rows = await prisma.$queryRaw<(FocusStats & { projectId: string })[]>(Prisma.sql`
-    SELECT "s"."projectId",
+    SELECT p.id AS "projectId",
       COALESCE(SUM(${getEffectiveSessionMinutesSql('s')} * 60), 0)::float8 AS seconds,
       COUNT(*)::int AS sessions
     FROM "pomodoro_sessions" "s"
-    WHERE ${scope(userId)} AND "s"."projectId" IN (${Prisma.join(ids)})
-    GROUP BY "s"."projectId"
+    JOIN "projects" p ON ("s"."projectId" = p.id OR "s"."workProjectId" = p."workProjectId")
+    WHERE ${scope(userId, undefined, undefined, undefined, true)} AND p."userId" = ${userId} AND p.id IN (${Prisma.join(ids)})
+    GROUP BY p.id
   `)
   return new Map(rows.map(({ projectId, seconds, sessions }) => [projectId, { seconds, sessions }]))
 }

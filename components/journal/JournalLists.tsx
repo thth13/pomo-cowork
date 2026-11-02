@@ -54,7 +54,7 @@ function Posts({
     t = useJournalText()
   return <>
     <header className="journal-row">
-      <h1>{mode === 'feed' ? t('From people you follow', 'De las personas que sigues') : t('Your updates', 'Tus actualizaciones')}</h1>
+      <h1>{mode === 'feed' ? t('From projects and people you follow', 'De los proyectos y personas que sigues') : t('Your updates', 'Tus actualizaciones')}</h1>
       <Link className="journal-button" href="/journal/compose">{t('Post update', 'Publicar actualización')}</Link>
     </header>
     <div className="journal-actions">
@@ -90,8 +90,7 @@ function Projects() {
     t = useJournalText()
   return <>
   <header className="journal-row">
-    <h1>{t('My projects', 'Mis proyectos')}</h1>
-    <Link className="journal-button" href="/projects/new">{t('Create project', 'Crear proyecto')}</Link>
+    <h2>{t('Project pages', 'Páginas de proyectos')}</h2>
   </header>
   {user && <Link href={profileHref(user.username)}>
     {t('View my public profile', 'Ver mi perfil público')}
@@ -100,8 +99,7 @@ function Projects() {
   </Link>}
   {query.loading ? <JournalLoading /> : query.error ? <QueryError error={query.error} retry={query.reload} /> : <>
     {!query.data?.items.length && <section className="journal-empty">
-      <h2>{t('Start something worth focusing on.', 'Empieza algo que merezca tu atención.')}</h2>
-      <Link href="/projects/new">{t('Create project', 'Crear proyecto')}</Link>
+      <h2>{t('Share the progress of one of your projects.', 'Comparte los avances de uno de tus proyectos.')}</h2>
     </section>}
     <div className="journal-grid">
       {query.data?.items.map(project => <article key={project.id} className="journal-card">

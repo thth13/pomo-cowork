@@ -1063,3 +1063,30 @@ and retry on network restoration/focus. Settings exposes failed synchronization.
 Mobile settings synchronize without mounting the companion. User/account changes
 cancel prior requests. Guests remain local. See docs/beep-ai.md for the memory,
 language, ownership, concurrency and migration contract.
+
+### Public project pages
+
+Source: user public-project request; prisma/schema.prisma, lib/journal/projectApi.ts,
+projectSocialApi.ts, projectOverview.ts and the existing journal authorization rules.
+- `/projects` offers Make public project; `/projects/public/new` selects an owned
+  root Task or creates one atomically with its page. One page per work project.
+  The work-project edit dialog opens that flow with the project selected; existing
+  pages redirect to their editor. Legacy unlinked journal pages remain editable.
+- ProjectEditor owns first-field project selection, logo/cover uploads, description,
+  start date, visibility and optional public task names. Native select/date popups
+  accept OS geometry/keyboard behavior, as in the existing journal editor.
+- FormFields, ImageAttachments, useJournalMutation, Feedback, JournalToast and
+  UnsavedChangesGuard remain canonical. Pending writes lock the form; errors keep
+  the draft. Public saves open the resulting page; private saves return to projects.
+- PublicProjectView uses URL section/page navigation. Blog pages contain 12 posts;
+  tasks 20; timeline 20. FollowButton has a project variant; post likes/comments
+  reuse PostInteractions and the existing owner/author checks.
+- Public reads require PUBLIC, including cover/logo, follows and view registration.
+  Task names require explicit showTasks; aggregates remain public with the page.
+  Hiding a project hides its posts/assets and excludes them from feeds.
+- Visits count after client mount, once per UTC day/account or browser cookie,
+  excluding authenticated owners. Server prefetch/metadata do not increment views.
+  Views are a deduplicated counter, not a bot-proof unique-person metric.
+- Deleting a page deletes its blog/social records, preserving work tasks/sessions.
+  Deleting the work project detaches the journal page without deleting its posts.
+- Runtime/browser checks, builds and tsc remain user-owned for this task.

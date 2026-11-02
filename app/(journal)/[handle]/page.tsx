@@ -118,7 +118,6 @@ export default async function ProfilePage({
     {tab === 'projects' && !data.projects.length && <div className="journal-empty">
       <h2>Start something worth focusing on.</h2>
       <p>No public projects yet.</p>
-      <Link href="/projects/new">Create project</Link>
     </div>}
     {tab === 'updates' && <>
       {data.posts.map(post => <UpdateCard key={post.id} post={((json(post) as unknown) as Post)} />)}
