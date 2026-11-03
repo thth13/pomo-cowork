@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { logBeepEvent } from '@/lib/beepEvents'
+import { isSeoPath } from '@/lib/seoRoutes'
 import { usePathname } from 'next/navigation'
 import type { KeyboardEvent } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
@@ -37,7 +38,7 @@ export default function WalkingCompanion() {
     return () => media.removeEventListener('change', update)
   }, [])
   const isAdmin = pathname === '/admin' || pathname.startsWith('/admin/')
-  return desktop && !isAdmin ? <DesktopCompanion /> : null
+  return desktop && !isAdmin && !isSeoPath(pathname) ? <DesktopCompanion /> : null
 }
 
 function DesktopCompanion() {

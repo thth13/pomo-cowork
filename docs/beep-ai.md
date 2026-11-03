@@ -75,9 +75,13 @@ The extra context is typically hundreds of tokens; text fields/record counts are
 bounded, but exact token usage depends on content and the configured model.
 Guests can also chat. Provider requests use `store: false`; this disables response
 storage for retrieval, not every provider retention policy. Messages are still sent
-to OpenAI. The chat has no visible provider disclosure, per the owner’s request. Authenticated conversations are stored in the app database. Guests without a verified
-account token retain a memory-only transcript. No transcript is written to localStorage.
-Reloading clears popup selection, but saved chats remain available at `/beep`.
+to OpenAI. The chat has no visible provider disclosure, per the owner’s request.
+Both authenticated and guest conversations are stored in the app database. Guests
+send the existing `x-anonymous-id`; the first accepted message ensures an anonymous
+account and saves its conversation/turns through the same persistence pipeline.
+No transcript is written to localStorage. Reloading clears popup selection;
+signed-in users can reopen saved chats at `/beep`. Guest chats are also visible
+in the admin messages table. Previously unsaved guest messages cannot be recovered.
 The latest eight saved turns, bounded to 16 whole messages / 12,000 characters,
 are sent to the model. The popup displays up to 40 messages; the full page loads
 30 turns at a time and can fetch all earlier messages. Questions are capped at 2,000 characters. Long conversations
@@ -189,7 +193,8 @@ status, sequence, revision and Kyiv timestamps. The read-only
 `POST /api/admin/beep-messages` uses `authorizeAdmin` before querying, never caches
 responses, validates filters and paginates 50 turns at a time. Status and conversation
 filters are available; a selected conversation is chronological, the global list
-is newest first. Unsaved unsigned-guest chats and provider usage metadata are unavailable.
+is newest first. Guest turns are included with their anonymous account identity.
+Previously unsaved guest chats and provider usage metadata are unavailable.
 
 Apply `20261101120000_add_beep_conversations` before using the new persistence
 (`npm run prisma:migrate` applies pending repository migrations). Prisma Client
@@ -213,13 +218,14 @@ the companion popup; the page variant requires an existing loaded conversation.
 Empty composers do not create records. No rename/delete actions were added.
 
 GET `/api/beep/conversations` and GET `/api/beep/conversations/[id]` require a
-verified token and existing account. Every query is owner-scoped; a foreign ID
+verified token or a valid `x-anonymous-id` belonging to an existing anonymous account.
+Every query is owner-scoped; a foreign ID
 returns 404, not another account's data. Detail pagination uses `before` turn
 sequence. API responses are no-store, request inputs are validated and cross-site
-requests are rejected. Anonymous persisted accounts with a verified token are
-scoped like any account; unsigned visitors have no saved-history access.
+requests are rejected. Anonymous IDs cannot access registered accounts. Guest
+retry/reload uses these endpoints; the full-page history UI still requires sign-in.
 
-Authenticated POST `/api/beep/chat` now requires UUID-v4 `conversationId` and
+POST `/api/beep/chat` requires UUID-v4 `conversationId` and
 `requestId` plus integer `revision`. It saves the user turn before generation and
 reads model history from the database, ignoring browser-supplied assistant history
 except a bounded first-chat welcome. Turn IDs deduplicate retried requests. A
