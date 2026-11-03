@@ -1,8 +1,9 @@
 import 'server-only'
+import { projectOverview } from './projectOverview'
 import { cache } from 'react'
 import { prisma } from '@/lib/db'
 import { publicAuthor, publicPost, pageNumber } from './server'
-import { focusStats, profileFocusStatistics, projectFocusStats } from './stats'
+import { profileFocusStatistics, projectFocusStats } from './stats'
 export const postInclude = ({
   author: {
     select: publicAuthor
@@ -167,7 +168,7 @@ export async function profileData(username: string, tab: string, page: number) {
     hasMore: tab === 'updates' ? posts.length > 12 : tab === 'activity' ? activity.length > 20 : projects.length > 12
   }
 }
-export async function publicProjectData(username: string, slug: string, page = 1) {
+export const publicProjectData = cache(async (username: string, slug: string, page = 1) => {
   const user = await profileByUsername(username)
   if (!user) return null
   const project = await prisma.project.findFirst({
@@ -178,7 +179,7 @@ export async function publicProjectData(username: string, slug: string, page = 1
     }
   })
   if (!project) return null
-  const [stats, posts, timeline] = await Promise.all([focusStats(user.id, project.id), prisma.journalPost.findMany({
+  const [overview, posts, timeline, milestone] = await Promise.all([projectOverview(project, page), prisma.journalPost.findMany({
     where: {
       projectId: project.id,
       ...publicPost
@@ -191,16 +192,23 @@ export async function publicProjectData(username: string, slug: string, page = 1
     }],
     take: 13,
     skip: (page - 1) * 12
-  }), projectTimeline(project.id, page)])
+  }), projectTimeline(project.id, page), prisma.journalPost.findFirst({
+    where: { projectId: project.id, type: 'MILESTONE', ...publicPost }, include: { milestone: true },
+    orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
+  })])
   return {
     user,
     project,
-    stats,
+    overview,
+    milestone,
+    stats: { seconds: overview.seconds, sessions: overview.sessions },
     posts: posts.slice(0, 12),
     timeline: timeline.slice(0, 20),
+    morePosts: posts.length > 12,
+    moreTimeline: timeline.length > 20,
     hasMore: posts.length > 12 || timeline.length > 20
   }
-}
+})
 export { pageNumber }
 
 async function projectTimeline(projectId: string, page: number) {

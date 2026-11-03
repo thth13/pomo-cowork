@@ -8,6 +8,8 @@ import ThemeToggle from '@/components/ThemeToggle'
 import { usernameFromHandle } from '@/lib/journal/handles'
 import { useJournalText } from '@/lib/journal/client'
 import { useAuthStore } from '@/store/useAuthStore'
+import BlogHeader from './BlogHeader'
+import { isProjectBlogRoute } from '@/lib/journal/routes'
 function useCompactJournalNav() {
   const pathname = usePathname()
   const segments = pathname.split('/').filter(Boolean)
@@ -19,16 +21,20 @@ function useCompactJournalNav() {
 export function JournalBackToTimer() {
   const compact = useCompactJournalNav()
   const pathname = usePathname()
+  if (isProjectBlogRoute(pathname)) return null
   return compact && pathname !== '/projects' ? <div className="journal-back-to-timer"><BackToTimer /></div> : null
 }
 
 export default function JournalNav(){
   const t=useJournalText(),user=useAuthStore(state=>state.user)
   const useCompactNav = useCompactJournalNav()
+  const pathname = usePathname()
+
+  if (isProjectBlogRoute(pathname)) return <BlogHeader />
 
   if (useCompactNav) return <Navbar compact />
 
   return <header className="journal-nav"><Link href="/" className="journal-brand">Pomo Cowork</Link><nav aria-label={t('Journal navigation','Navegación del diario')}>
-    <Link href="/">{t('Timer','Temporizador')}</Link><Link href="/feed">{t('Feed','Novedades')}</Link><Link href="/projects">{t('My projects','Mis proyectos')}</Link><Link href="/journal">{t('My updates','Mis actualizaciones')}</Link><Link href={user ? userProfileHref(user) : '/settings/profile'}>{t('My profile','Mi perfil')}</Link><Link href="/settings/profile">{t('Edit profile','Editar perfil')}</Link><ThemeToggle/>
+    <Link href="/">{t('Timer','Temporizador')}</Link><Link href="/feed">{t('Feed','Novedades')}</Link><Link href="/projects">{t('My projects','Mis proyectos')}</Link><Link href="/projects/public">{t('Public projects','Proyectos públicos')}</Link><Link href="/journal">{t('My updates','Mis actualizaciones')}</Link><Link href={user ? userProfileHref(user) : '/settings/profile'}>{t('My profile','Mi perfil')}</Link><Link href="/settings/profile">{t('Edit profile','Editar perfil')}</Link><ThemeToggle/>
   </nav></header>
 }

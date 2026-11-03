@@ -168,6 +168,8 @@ body:has(.admin-shell) { background: #f5f7fa; }
 .admin-status { display: inline-block; padding: 3px 8px; border-radius: 5px; background: var(--admin-subtle); }
 .admin-online-status { display: block; margin-top: 5px; color: #15803d; font-size: 11px; }
 .admin-statistics { margin-bottom: 28px; }
+.admin-recent-users { margin-top: 28px; }
+.admin-recent-users > .admin-data-note { margin-bottom: 16px; }
 .admin-statistics .admin-metrics { margin-bottom: 12px; }
 @media (max-width: 800px) { .admin-data-toolbar, .admin-data-pagination { flex-wrap: wrap; } }
 

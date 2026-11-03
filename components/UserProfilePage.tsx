@@ -19,6 +19,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { useThemeStore } from '@/store/useThemeStore'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import Navbar from '@/components/Navbar'
+import BlogHeader from '@/components/journal/BlogHeader'
 import ActiveSessionTimer, { type ProfileActiveSession } from '@/components/ActiveSessionTimer'
 import WeeklyActivityChart from '@/components/WeeklyActivityChart'
 import PersonalNavigation from '@/components/PersonalNavigation'
@@ -94,7 +95,8 @@ interface WallMessage {
   }
 }
 
-export default function UserProfilePage({ userId }: { userId: string }) {
+export default function UserProfilePage({ userId, navigation = 'workspace' }: { userId: string; navigation?: 'workspace' | 'blogs' }) {
+  const inBlogs = navigation === 'blogs'
   const router = useRouter()
   const { language, t } = useI18n()
   const copy = communityCopy[language]
@@ -498,9 +500,9 @@ export default function UserProfilePage({ userId }: { userId: string }) {
   const rank = getRank(experience)
 
   if (loading || error || !profile) {
-    return <div className="community-page garden-page profile-page" lang={language} data-no-translate><Navbar compact /><main className={`community-layout${isOwnProfile ? ' personal-page-frame' : ''}`}>
-      {isOwnProfile && <PersonalNavigation />}
-      {!isOwnProfile && <div className="mb-6 flex justify-end"><Link href="/" className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</Link></div>}
+    return <div className={`community-page garden-page profile-page${inBlogs ? ' blog-profile-page' : ''}`} lang={language} data-no-translate>{inBlogs ? <BlogHeader /> : <Navbar compact />}<main className={`community-layout${isOwnProfile && !inBlogs ? ' personal-page-frame' : ''}`}>
+      {!inBlogs && isOwnProfile && <PersonalNavigation />}
+      {!inBlogs && !isOwnProfile && <div className="mb-6 flex justify-end"><Link href="/" className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</Link></div>}
       {loading ? <PersonalPageSkeleton variant="profile" /> : <div className="community-panel community-state">
         <Sprout aria-hidden="true" /><h1>{copy.userNotFound}</h1><p>{error}</p><button type="button" className="community-button" onClick={() => setRetry(value => value + 1)}>{copy.retry}</button>
       </div>}
@@ -508,11 +510,11 @@ export default function UserProfilePage({ userId }: { userId: string }) {
   }
 
   return (
-    <div className="community-page garden-page profile-page" lang={language} data-no-translate>
-      <Navbar compact />
-      <main className={`community-layout${isOwnProfile ? ' personal-page-frame' : ''}`}>
-        {isOwnProfile && <PersonalNavigation />}
-        {!isOwnProfile && <div className="mb-6 flex justify-end"><Link href="/" className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</Link></div>}
+    <div className={`community-page garden-page profile-page${inBlogs ? ' blog-profile-page' : ''}`} lang={language} data-no-translate>
+      {inBlogs ? <BlogHeader /> : <Navbar compact />}
+      <main className={`community-layout${isOwnProfile && !inBlogs ? ' personal-page-frame' : ''}`}>
+        {!inBlogs && isOwnProfile && <PersonalNavigation />}
+        {!inBlogs && !isOwnProfile && <div className="mb-6 flex justify-end"><Link href="/" className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</Link></div>}
         <header className="profile-header">
           {profile.user.avatarUrl ? <Image src={profile.user.avatarUrl} alt="" width={88} height={88} className="community-avatar profile-avatar" /> : <span className="community-avatar profile-avatar" aria-hidden="true">{profile.user.username.charAt(0).toUpperCase()}</span>}
           <div className="profile-identity">

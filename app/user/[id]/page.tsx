@@ -2,6 +2,7 @@ import { notFound, redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { userProfileHref } from '@/lib/userProfile'
 import UserProfilePage from '@/components/UserProfilePage'
+import '@/app/(journal)/blog-header.css'
 
 export const dynamic = 'force-dynamic'
 
@@ -45,5 +46,5 @@ export default async function UserProfileRoute({ params, searchParams }: {
     redirect(`${userProfileHref(user)}${suffix}`)
   }
 
-  return <UserProfilePage key={user.id} userId={user.id} />
+  return <UserProfilePage key={user.id} userId={user.id} navigation={searchParams.view === 'blogs' ? 'blogs' : 'workspace'} />
 }

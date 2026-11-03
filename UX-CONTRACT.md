@@ -63,6 +63,26 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Workspace overlays | WorkspaceWindow | Compact non-modal windows; default position beside the left dock, saved positions take precedence; pointer/touch dragging and resizing with keyboard arrows; viewport bounds; click/focus stacking; Escape/close/dock dismissal; mounted content preserves drafts; position and size persist per window in localStorage and fit the viewport on reopen |
 | CRUD / permissions | Existing task, room and auth services/API routes | No workflow or permission changes |
 
+## Public project directory
+
+Blog routes are resolved by `lib/journal/routes.ts` and share BlogHeader through
+JournalNav. BlogHeader owns navigation and publish entry; AuthModal owns sign-in,
+ThemeToggle owns theme and profileHref owns public blog/account destinations.
+KofiWidget omits the support entry on those routes, and JournalBackToTimer renders
+no extra link. The header's Timer link returns to `/`. The catalog begins with
+project cards and retains a screen-reader h1. Personal `/projects` keeps workspace chrome.
+
+Sources: `lib/journal/queries.ts` publicProjectData/profileByUsername,
+`lib/journal/projectSocialApi.ts`, and `lib/journal/projectOverview.ts`.
+`/projects/public` and the read-only `public-projects` journal endpoint are available
+to guests. Visibility is PUBLIC and authors must be non-anonymous; API responses
+select public identity fields and aggregate statistics without task names. Page is URL-owned. The count, search, status and sorting toolbar is removed; legacy
+q, status and sort parameters do not filter the visible catalog and are dropped on navigation. Server pages contain 12 cards with stable ID
+tie-breaking. The catalog uses newest-first creation time ordering.
+FollowButton's bookmark variant owns subscriptions,
+auth, pending and retry behavior. Loading, retryable failure, empty and no-results
+reuse journal primitives. Cards link to existing public project and author routes.
+
 ## Guest registration invitation
 
 PomodoroTimer counts completed WORK sessions for guests, excluding breaks and cancelled
@@ -809,6 +829,18 @@ All metrics reuses its current-statistics cards without its online-user list.
 
 ## Anonymous presence
 
+Admin latest user activity uses `/api/admin/recent-users`, guarded by
+`authorizeAdmin`, to count currently registered accounts with `lastSeenAt` within
+the trailing 7 or 30 times 24 hours. Unknown and future timestamps are excluded.
+This is recorded presence (connection/disconnection), not a measure of completed
+work or a continuous heartbeat. Existing historical gaps remain unknown.
+`AdminRecentUsers` reuses `useAdminData` and admin table/filter/pagination styles;
+the URL owns period and page, period changes reset the page, and the server clamps
+pages to the available results. Results use 20-row pages, deterministic descending
+last-seen/ID order, profile links, Kyiv dates, and private no-store responses.
+Source: user request for recent active users with 7/30-day filters; existing
+`User.lastSeenAt` and socket presence updates. Runtime verification stays with the user.
+
 Source: user request dated 2026-10-29. Socket presence snapshots include anonymous
 IDs alongside registered IDs; the shared connection store exposes both for online
 indicators and admin lists while keeping registered and guest counts separate.
@@ -1105,3 +1137,30 @@ and retry on network restoration/focus. Settings exposes failed synchronization.
 Mobile settings synchronize without mounting the companion. User/account changes
 cancel prior requests. Guests remain local. See docs/beep-ai.md for the memory,
 language, ownership, concurrency and migration contract.
+
+### Public project pages
+
+Source: user public-project request; prisma/schema.prisma, lib/journal/projectApi.ts,
+projectSocialApi.ts, projectOverview.ts and the existing journal authorization rules.
+- `/projects` offers Make public project; `/projects/public/new` selects an owned
+  root Task or creates one atomically with its page. One page per work project.
+  The work-project edit dialog opens that flow with the project selected; existing
+  pages redirect to their editor. Legacy unlinked journal pages remain editable.
+- ProjectEditor owns first-field project selection, logo/cover uploads, description,
+  start date, visibility and optional public task names. Native select/date popups
+  accept OS geometry/keyboard behavior, as in the existing journal editor.
+- FormFields, ImageAttachments, useJournalMutation, Feedback, JournalToast and
+  UnsavedChangesGuard remain canonical. Pending writes lock the form; errors keep
+  the draft. Public saves open the resulting page; private saves return to projects.
+- PublicProjectView uses URL section/page navigation. Blog pages contain 12 posts;
+  tasks 20; timeline 20. FollowButton has a project variant; post likes/comments
+  reuse PostInteractions and the existing owner/author checks.
+- Public reads require PUBLIC, including cover/logo, follows and view registration.
+  Task names require explicit showTasks; aggregates remain public with the page.
+  Hiding a project hides its posts/assets and excludes them from feeds.
+- Visits count after client mount, once per UTC day/account or browser cookie,
+  excluding authenticated owners. Server prefetch/metadata do not increment views.
+  Views are a deduplicated counter, not a bot-proof unique-person metric.
+- Deleting a page deletes its blog/social records, preserving work tasks/sessions.
+  Deleting the work project detaches the journal page without deleting its posts.
+- Runtime/browser checks, builds and tsc remain user-owned for this task.

@@ -1,5 +1,7 @@
 import JournalNav, { JournalBackToTimer } from '@/components/journal/JournalNav'
 import './journal.css'
+import './blog-header.css'
+import './projects/public/public-projects.css'
 export default function JournalLayout({
   children
 }: {

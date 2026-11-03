@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { Fragment, useId, useRef, useState } from 'react'
 import { ArrowUpRight, ChevronDown, Check, ListTodo, Loader2, Plus, Play, Trash2, X } from 'lucide-react'
 import CommunityDialog from '@/components/CommunityDialog'
@@ -241,6 +242,7 @@ export default function ProjectList({ isVisible = true, showSelectionButtons = t
             <ProjectColorPicker value={renameColor} onChange={setRenameColor} disabled={saving} />
           </div>
         </div>
+        {renameTarget && !saving && <Link className="public-project-dialog-link" href={`/projects/public/new?project=${encodeURIComponent(renameTarget.id)}`}>{text('Make project blog', 'Crear blog del proyecto')} ↗</Link>}
         {renameError && <p role="alert">{text('Could not save changes. Please try again.', 'No se pudieron guardar los cambios. Inténtalo de nuevo.')}</p>}
         <div className="community-dialog-actions">
           <button type="button" className="community-button" disabled={saving} onClick={() => setRenameTarget(null)}>{text('Cancel', 'Cancelar')}</button>

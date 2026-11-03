@@ -31,7 +31,7 @@ export default function PostInteractions({
   const list = useJournalQuery<PageResult<Comment>>(open ? `posts/${postId}/comments?page=${page}` : null)
   return <div className="journal-interactions">
     <div className="journal-actions">
-      <button type="button" disabled={state.busy || support.loading} aria-pressed={support.data?.supported ?? false} onClick={() => {
+      <button type="button" disabled={state.busy || support.loading || Boolean(support.error)} aria-pressed={support.data?.supported ?? false} onClick={() => {
         if (!user || user.isAnonymous) {
           setAuth(true)
           return
@@ -40,7 +40,7 @@ export default function PostInteractions({
           method: support.data?.supported ? 'DELETE' : 'PUT'
         })))
       }}>
-        {t('Support', 'Apoyar')}
+        {support.data?.supported ? t('Liked', 'Te gusta') : t('Like', 'Me gusta')}
         {' '}
         ·
         {' '}
@@ -67,6 +67,7 @@ export default function PostInteractions({
             await journalApi(`posts/${postId}/comments/${comment.id}`, {
               method: 'DELETE'
             })
+            setCommentCount(value => Math.max(0, value - 1))
             if (list.data?.items.length === 1 && page > 1) setPage(page - 1);else list.reload()
           })} />}
         </div>)}

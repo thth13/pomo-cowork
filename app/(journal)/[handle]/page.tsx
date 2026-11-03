@@ -55,6 +55,7 @@ export default async function ProfilePage({
     } = data,
     base = profileHref(user.username)
   return <>
+    <section className="journal-card journal-profile-overview">
     <header className="journal-profile">
       {user.avatarUrl && <Image unoptimized width={80} height={80} className="journal-profile-avatar" src={user.avatarUrl} alt="" />}
       <div className="journal-profile-copy">
@@ -111,18 +112,18 @@ export default async function ProfilePage({
       </div>
     </dl>
     <OwnerActions userId={user.id} />
+    </section>
     <nav className="journal-tabs" aria-label="Profile sections">{['projects', 'updates', 'activity', 'achievements'].map(name => <Link key={name} href={`${base}?tab=${name}`} aria-current={tab === name ? 'page' : undefined}>{name[0].toUpperCase() + name.slice(1)}</Link>)}</nav>
     <ProfileAchievements userId={user.id} />
     {tab !== 'achievements' && page === 1 && data.pinned && <ProjectCard project={((json(data.pinned) as unknown) as Project)} username={user.username} pinned latest={data.pinned.milestones[0]?.title} />}
     {tab === 'projects' && <div className="journal-grid">{data.projects.map(project => <ProjectCard key={project.id} project={((json(project) as unknown) as Project)} username={user.username} />)}</div>}
-    {tab === 'projects' && !data.projects.length && <div className="journal-empty">
+    {tab === 'projects' && !data.projects.length && <div className="journal-card journal-empty">
       <h2>Start something worth focusing on.</h2>
       <p>No public projects yet.</p>
-      <Link href="/projects/new">Create project</Link>
     </div>}
     {tab === 'updates' && <>
       {data.posts.map(post => <UpdateCard key={post.id} post={((json(post) as unknown) as Post)} />)}
-      {!data.posts.length && <div className="journal-empty">
+      {!data.posts.length && <div className="journal-card journal-empty">
         No published updates yet.
         <Link href="/journal/compose">Share what you have been working on.</Link>
       </div>}

@@ -45,6 +45,7 @@ model User {
 
   weeklyWrapped WeeklyWrapped[]
   monthlyWrapped MonthlyWrapped[]
+  projectFollows ProjectFollow[]
   projects Project[]
   journalPosts JournalPost[]
   followers Follow[] @relation("Following")
@@ -330,6 +331,8 @@ model Task {
   parent             Task? @relation("ProjectTasks", fields: [parentId], references: [id], onDelete: Cascade)
   children           Task[] @relation("ProjectTasks")
 
+  publicPage         Project? @relation("WorkProjectPage")
+
   color              String?
   title              String
   description        String  @default("")
@@ -480,6 +483,13 @@ enum JournalPostType {
 }
 
 model Project {
+  workProjectId String? @unique
+  workProject Task? @relation("WorkProjectPage", fields: [workProjectId], references: [id], onDelete: SetNull)
+  coverUrl String?
+  showTasks Boolean @default(false)
+  views Int @default(0)
+  followers ProjectFollow[]
+  visits ProjectView[]
   id          String @id @default(cuid())
   userId      String
   user        User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -768,4 +778,26 @@ model BeepPreferences {
   updatedAt DateTime @updatedAt
 
   @@map("beep_preferences")
+}
+
+model ProjectFollow {
+  userId String
+  projectId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, projectId])
+  @@index([projectId, createdAt])
+  @@map("project_follows")
+}
+
+model ProjectView {
+  projectId String
+  visitorHash String @db.VarChar(64)
+  day String @db.VarChar(10)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@id([projectId, visitorHash, day])
+  @@map("project_views")
 }
