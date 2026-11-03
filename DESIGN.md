@@ -29,6 +29,14 @@ spacing:
 
 # Pomo Pocket Garden
 
+## Admin latest user activity
+
+Overview and All metrics reuse `AdminRecentUsers` for a registered-user count and
+20-row list ordered by last seen. The 7/30-day buttons and pagination reuse admin
+table styles, English copy, Kyiv timestamps, and `useAdminData` loading/error/retry
+states. `activityDays` and `activityPage` persist in the URL without changing the
+active section. Existing admin CSS tokens remain the visual owner.
+
 ## Public project detail header
 
 The project detail page omits the back-to-profile link and standalone cover banner.

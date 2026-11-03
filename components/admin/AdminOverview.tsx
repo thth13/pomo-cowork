@@ -3,6 +3,7 @@
 import { Radio, UserPlus, Users, MousePointer2 } from 'lucide-react'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import AdminOnlinePanel from './AdminOnlinePanel'
+import AdminRecentUsers from './AdminRecentUsers'
 import { useAdminData } from './useAdminData'
 
 type Overview = { todayRegistered: number; todayAnonymous: number; monthlyRegistered: number; todayStartedTimers: number; paywallActions: number; habits: number; activeHabits: number; wallMessages: number; updatedAt: string }
@@ -36,5 +37,6 @@ export default function AdminOverview({ showOnlinePanel = true }: { showOnlinePa
       return metric.href ? <a key={metric.label} href={metric.href} className="admin-metric">{content}</a> : <div key={metric.label} className="admin-metric">{content}</div>
     })}</div>
     <p className="admin-data-note">Registration counts use account creation dates and exclude guest accounts.</p>
+    <AdminRecentUsers />
   </section>
 }

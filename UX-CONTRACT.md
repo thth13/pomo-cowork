@@ -829,6 +829,18 @@ All metrics reuses its current-statistics cards without its online-user list.
 
 ## Anonymous presence
 
+Admin latest user activity uses `/api/admin/recent-users`, guarded by
+`authorizeAdmin`, to count currently registered accounts with `lastSeenAt` within
+the trailing 7 or 30 times 24 hours. Unknown and future timestamps are excluded.
+This is recorded presence (connection/disconnection), not a measure of completed
+work or a continuous heartbeat. Existing historical gaps remain unknown.
+`AdminRecentUsers` reuses `useAdminData` and admin table/filter/pagination styles;
+the URL owns period and page, period changes reset the page, and the server clamps
+pages to the available results. Results use 20-row pages, deterministic descending
+last-seen/ID order, profile links, Kyiv dates, and private no-store responses.
+Source: user request for recent active users with 7/30-day filters; existing
+`User.lastSeenAt` and socket presence updates. Runtime verification stays with the user.
+
 Source: user request dated 2026-10-29. Socket presence snapshots include anonymous
 IDs alongside registered IDs; the shared connection store exposes both for online
 indicators and admin lists while keeping registered and guest counts separate.
