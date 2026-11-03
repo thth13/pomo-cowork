@@ -107,17 +107,6 @@ export async function POST(request: NextRequest) {
                 soundVolume: 0.5,
                 notificationsEnabled: true,
               }
-            },
-            tasks: {
-              create: [
-                {
-                  title: 'Welcome to Pomo Cowork!',
-                  description: 'This is your first task. You can edit or delete it, and add new tasks.',
-                  pomodoros: 1,
-                  priority: 'Средний',
-                  completed: false
-                }
-              ]
             }
           },
           include: { settings: true }
@@ -140,17 +129,6 @@ export async function POST(request: NextRequest) {
               soundVolume: 0.5,
               notificationsEnabled: true,
             }
-          },
-          tasks: {
-            create: [
-              {
-                title: 'Welcome to Pomo Cowork!',
-                description: 'This is your first task. You can edit or delete it, and add new tasks.',
-                pomodoros: 1,
-                priority: 'Средний',
-                completed: false
-              }
-            ]
           }
         },
         include: { settings: true }

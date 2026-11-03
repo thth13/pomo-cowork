@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import ThemeToggle from './ThemeToggle'
-import { Crown, User, Menu, X, MessageCircle, ListChecks, Timer, Users, Trophy, BarChart3, BookOpen, Settings, LogOut, ChevronRight, Sprout } from 'lucide-react'
+import { Crown, User, Menu, X, ListChecks, Timer, Users, Trophy, BarChart3, BookOpen, Settings, LogOut, ChevronRight, Sprout } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
@@ -739,7 +739,6 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 { href: currentRoomId ? `/rooms/${currentRoomId}` : '/rooms', label: t.nav.rooms, icon: Users, active: pathname.startsWith('/rooms') },
                 { href: '/leaderboard', label: t.nav.leaderboard, icon: Trophy, active: pathname === '/leaderboard' },
                 { href: '/statistics', label: statisticsCopy[language].navigation, icon: BarChart3, active: pathname === '/statistics' },
-                { href: '/beep', label: language === 'es' ? 'Chats con Mr. Beep' : 'Mr. Beep chats', icon: MessageCircle, active: pathname === '/beep' || pathname.startsWith('/beep/') },
                 { href: '/habits', label: habitsCopy[language].title, icon: ListChecks, active: pathname === '/habits' },
               ].map(({ href, label, icon: Icon, active }) => (
                 <Link prefetch={false} key={href} href={href} onClick={handleMobileLinkClick}
