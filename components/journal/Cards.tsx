@@ -4,6 +4,7 @@ import { Project, Post, Milestone, Stats, duration, profileHref, postHref } from
 import Markdown from './Markdown'
 import PostInteractions from './PostInteractions'
 import { JournalImage, OwnerActions } from './Primitives'
+import { ProjectStatusLabel } from './PublicProjectLabels'
 export function FocusStats({
   stats
 }: {
@@ -32,11 +33,11 @@ export function ProjectCard({
   latest?: string;
 }) {
   return <article className={`journal-card ${pinned ? 'journal-pinned' : ''}`}>
-    {pinned && <p className="journal-eyebrow">Currently building</p>}
+    {pinned && <p className="journal-eyebrow">Pinned project</p>}
     {project.imageUrl && <JournalImage src={project.imageUrl} alt={project.name} />}
     <div className="journal-row">
       <h3><Link href={`${profileHref(username)}/projects/${project.slug}`}>{project.name}</Link></h3>
-      <span className="journal-badge">{project.status.toLowerCase()}</span>
+      <span className="journal-badge"><ProjectStatusLabel status={project.status} /></span>
     </div>
     <p>{project.description}</p>
     <FocusStats stats={project.stats} />

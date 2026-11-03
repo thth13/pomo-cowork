@@ -34,8 +34,19 @@ sessions or rewrite legacy usernames. A case-insensitive username index prevents
 concurrent claims; if the database already has names differing only in letter case,
 resolve those with the affected account owners before deploying. New registration,
 Google-generated names, and explicit username edits use the shared normalized rules.
-Legacy public names continue to resolve until edited. Changing a username or project
-slug changes its public URL; no alias system is introduced in this MVP.
+Legacy public names continue to resolve until edited. Changing a username changes
+its public URL; no alias system is introduced in this MVP. Project slugs are generated
+on the server from the project name, with numeric suffixes for duplicates within an
+account. Editing a project preserves its existing slug and links; no slug field is
+shown in the editor.
+
+## Project status
+
+The editor, cards and public pages use shared English/Spanish labels: Not started,
+In progress, Paused and Completed. Existing PLANNING/BUILDING database values map to
+Not started/In progress; no data migration is needed. New pages default to In progress.
+Archive/restore is a separate editor action applied by Save project. Existing archived
+pages show Archived until the owner chooses another status or restores them.
 
 ## Data and privacy contract
 
@@ -158,3 +169,14 @@ Manual verification (runtime was intentionally not started):
 
 Static premium audit was attempted; it stops on pre-existing native select ownership
 at app/stats/page.tsx:793. No runtime, build, tsc or database command was run.
+
+### Project map view
+
+The public project page and demo accept `?tab=map`. ProjectMap renders the existing
+project aggregate and public task page as a connected, read-only diagram grouped
+by completion status. No phase model, task mutation or database migration is added.
+The same showTasks gate applies; hidden task names are not queried or rendered.
+Pagination retains `tab=map` and uses `overview.moreTasks`; totals cover the entire
+project while visible task lists cover the current page (explicitly labelled).
+Manual checks: hidden/empty tasks, mixed/all-completed tasks, more than 20 tasks,
+long names, mobile stacking, keyboard tab navigation and scenery/default themes.

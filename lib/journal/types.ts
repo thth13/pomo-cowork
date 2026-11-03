@@ -29,6 +29,26 @@ export interface Project {
   completedAt: string | null;
   stats: Stats;
 }
+export interface PublicProjectListing {
+  id: string;
+  userId: string;
+  name: string;
+  slug: string;
+  description: string;
+  imageUrl: string | null;
+  status: Project['status'];
+  startedAt: string;
+  author: Author;
+  stats: {
+    pomodoros: number;
+    seconds: number;
+    totalTasks: number;
+    completedTasks: number;
+    followers: number;
+    streak: number;
+    week: { date: string; minutes: number }[];
+  };
+}
 export interface Milestone {
   title: string;
   description: string;

@@ -10,7 +10,9 @@ import { useI18n } from '@/components/I18nProvider'
 import { JournalImage, OwnerActions } from './Primitives'
 import FollowButton from './FollowButton'
 import ProjectViews from './ProjectViews'
+import { projectStatusLabels } from '@/lib/journal/projectStatus'
 import FocusHeatmap from './FocusHeatmap'
+import ProjectMap from './ProjectMap'
 
 export default function PublicProjectView({ project, user, overview, tab, posts, timeline, about, pagination, milestone, preview = false, followControl }: {
   preview?: boolean
@@ -29,7 +31,7 @@ export default function PublicProjectView({ project, user, overview, tab, posts,
   const { language } = useI18n()
   const date = (value: string) => new Intl.DateTimeFormat(language, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(value))
   const number = (value: number) => new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(value)
-  const statuses = { PLANNING: t('Planning', 'Planificación'), BUILDING: t('Building', 'En desarrollo'), PAUSED: t('Paused', 'En pausa'), COMPLETED: t('Completed', 'Completado'), ARCHIVED: t('Archived', 'Archivado') }
+  const statuses = projectStatusLabels(t)
   const progress = overview.totalTasks ? Math.round(overview.completedTasks / overview.totalTasks * 100) : 0
   const weekMax = Math.max(60, ...overview.week.map(d => d.minutes))
   const tasks = <section className="journal-card public-project-tasks">
@@ -43,10 +45,9 @@ export default function PublicProjectView({ project, user, overview, tab, posts,
     <ol className="public-project-activity">{overview.recent.map(item => <li key={item.id}><span className="public-activity-dot" aria-hidden="true" /><div><strong>{item.type === 'WORK' ? t('Worked on the project', 'Trabajo en el proyecto') : t('Tracked focused work', 'Trabajo enfocado registrado')}</strong><small>{duration(item.minutes * 60)} · {t('focused', 'de concentración')}</small></div><time dateTime={item.date}>{date(item.date)}</time></li>)}</ol>
   </section>
   return <article className="public-project">
-    <Link className="public-project-back" href={preview ? '/projects' : profileHref(user.username)}>← {user.displayName || user.username}</Link>
     <header className="journal-card public-project-header">
-      <div className="public-project-cover">{project.coverUrl ? <JournalImage src={project.coverUrl} alt={t('Project cover', 'Portada del proyecto')} /> : <div className="public-project-cover-default"><Sprout size={44} strokeWidth={1} aria-hidden="true" /><span>{t('A little focus. Real progress.', 'Un poco de enfoque. Avances reales.')}</span></div>}</div>
       <div className="public-project-identity">
+        {project.coverUrl && <div className="public-project-cover" aria-hidden="true"><JournalImage src={project.coverUrl} alt="" /></div>}
         <div className="public-project-logo">{project.imageUrl ? <JournalImage src={project.imageUrl} alt={project.name} /> : <Sprout size={30} aria-hidden="true" />}</div>
         <div className="public-project-heading"><div className="public-project-title"><h1>{project.name}</h1><span className="journal-badge">{statuses[project.status]}</span></div><p className="journal-muted">{t('by', 'por')} <>{preview ? <span>{user.displayName || user.username}</span> : <Link href={profileHref(user.username)}>{user.displayName || user.username}</Link>}</></p><p>{project.description}</p></div>
         {preview ? followControl : <FollowButton userId={user.id} projectId={project.id} count={overview.followers} />}
@@ -59,9 +60,10 @@ export default function PublicProjectView({ project, user, overview, tab, posts,
       </div>
       {!preview && <OwnerActions userId={user.id} projectId={project.id} />}
       <nav className="journal-tabs public-project-tabs" aria-label={t('Project sections', 'Secciones del proyecto')}>
-        {[['overview', t('Overview', 'Resumen')], ['activity', t('Activity', 'Actividad')], ['tasks', t('Tasks', 'Tareas')], ['blog', t('Dev blog', 'Blog de desarrollo')]].map(([key, label]) => <Link key={key} href={`?tab=${key}`} aria-current={tab === key ? 'page' : undefined}>{label}</Link>)}
+        {[['overview', t('Overview', 'Resumen')], ['activity', t('Activity', 'Actividad')], ['tasks', t('Tasks', 'Tareas')], ['map', t('Map', 'Mapa')], ['blog', t('Dev blog', 'Blog de desarrollo')]].map(([key, label]) => <Link key={key} href={`?tab=${key}`} aria-current={tab === key ? 'page' : undefined}>{label}</Link>)}
       </nav>
     </header>
+    {tab === 'map' ? <><ProjectMap project={project} overview={overview} />{project.showTasks && pagination}</> : <>
     <dl className="public-project-stats">
       <div className="journal-card"><dt><Clock3 size={16} />{t('Total focus time', 'Tiempo de concentración')}</dt><dd>{number(overview.seconds / 3600)}<small> h</small></dd><small>{t('From project sessions', 'De las sesiones del proyecto')}</small></div>
       <div className="journal-card"><dt><Sprout size={16} />{t('Pomodoros', 'Pomodoros')}</dt><dd>{number(overview.pomodoros)}</dd><small>{t('Completed focus sessions', 'Sesiones Pomodoro completadas')}</small></div>
@@ -80,5 +82,6 @@ export default function PublicProjectView({ project, user, overview, tab, posts,
       <FocusHeatmap days={overview.days} />
       <section className="journal-card"><h2>{t('About this project', 'Acerca del proyecto')}</h2>{about}</section>
     </aside></div>
+    </>}
   </article>
 }

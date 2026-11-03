@@ -63,6 +63,26 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Workspace overlays | WorkspaceWindow | Compact non-modal windows; default position beside the left dock, saved positions take precedence; pointer/touch dragging and resizing with keyboard arrows; viewport bounds; click/focus stacking; Escape/close/dock dismissal; mounted content preserves drafts; position and size persist per window in localStorage and fit the viewport on reopen |
 | CRUD / permissions | Existing task, room and auth services/API routes | No workflow or permission changes |
 
+## Public project directory
+
+Blog routes are resolved by `lib/journal/routes.ts` and share BlogHeader through
+JournalNav. BlogHeader owns navigation and publish entry; AuthModal owns sign-in,
+ThemeToggle owns theme and profileHref owns public blog/account destinations.
+KofiWidget omits the support entry on those routes, and JournalBackToTimer renders
+no extra link. The header's Timer link returns to `/`. The catalog begins with
+project cards and retains a screen-reader h1. Personal `/projects` keeps workspace chrome.
+
+Sources: `lib/journal/queries.ts` publicProjectData/profileByUsername,
+`lib/journal/projectSocialApi.ts`, and `lib/journal/projectOverview.ts`.
+`/projects/public` and the read-only `public-projects` journal endpoint are available
+to guests. Visibility is PUBLIC and authors must be non-anonymous; API responses
+select public identity fields and aggregate statistics without task names. Page is URL-owned. The count, search, status and sorting toolbar is removed; legacy
+q, status and sort parameters do not filter the visible catalog and are dropped on navigation. Server pages contain 12 cards with stable ID
+tie-breaking. The catalog uses newest-first creation time ordering.
+FollowButton's bookmark variant owns subscriptions,
+auth, pending and retry behavior. Loading, retryable failure, empty and no-results
+reuse journal primitives. Cards link to existing public project and author routes.
+
 ## Guest registration invitation
 
 PomodoroTimer counts completed WORK sessions for guests, excluding breaks and cancelled

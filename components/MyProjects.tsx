@@ -1,6 +1,5 @@
 'use client'
 
-import Link from 'next/link'
 import { MyProjects as PublicProjects } from '@/components/journal/JournalLists'
 import { Clock3, ListTodo } from 'lucide-react'
 import { useJournalText } from '@/lib/journal/client'
@@ -25,7 +24,6 @@ export default function MyProjects() {
       </div>
       <dl className="my-projects-total"><dt><Clock3 size={15} aria-hidden="true" />{t('Total focused', 'Total enfocado')}</dt><dd>{new Intl.NumberFormat(language, { maximumFractionDigits: 1 }).format(totalMinutes / 60)} h</dd></dl>
     </div>
-    <div className="journal-actions"><Link className="journal-button" href="/projects/public/new">{t('Make public project', 'Hacer público un proyecto')}</Link></div>
     <ProjectList showSelectionButtons={false} layout="table" />
     <div className="public-project-management"><PublicProjects /></div>
   </section>

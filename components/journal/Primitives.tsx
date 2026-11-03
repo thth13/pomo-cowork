@@ -53,7 +53,7 @@ export function QueryError({
   const t = useJournalText()
   return <div role="alert" className="journal-empty">
   <p>{error}</p>
-  <button onClick={retry}>{t('Try again', 'Reintentar')}</button>
+  <button type="button" onClick={retry}>{t('Try again', 'Reintentar')}</button>
   </div>
 }
 export function OwnerActions({

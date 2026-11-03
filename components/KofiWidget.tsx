@@ -1,17 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { KoFiPanel } from 'react-kofi'
 import CommunityDialog from '@/components/CommunityDialog'
 import { useI18n } from '@/components/I18nProvider'
 import { gardenCopy } from '@/lib/i18n/garden'
 import { useAuthStore } from '@/store/useAuthStore'
 import { logPaywallEvent } from '@/lib/paywallEvents'
+import { usePathname, useSearchParams } from 'next/navigation'
+import { isProjectBlogRoute } from '@/lib/journal/routes'
 
 const SUPPORT_COLOR = '#52664B'
 const SUPPORT_TEXT = 'Support Pomo Cowork'
 
 export default function KofiWidget() {
+  return <Suspense fallback={null}><KofiWidgetContent /></Suspense>
+}
+
+function KofiWidgetContent() {
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const isBlogProfile = pathname.startsWith('/user/') && searchParams.get('view') === 'blogs'
   const { language } = useI18n()
   const copy = gardenCopy[language]
   const [open, setOpen] = useState(false)
@@ -22,7 +31,7 @@ export default function KofiWidget() {
     setMounted(true)
   }, [])
 
-  if (!mounted || isLoading) return null
+  if (!mounted || isLoading || isProjectBlogRoute(pathname) || isBlogProfile) return null
 
   return (
     <>

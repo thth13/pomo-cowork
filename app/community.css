@@ -568,3 +568,9 @@ button.profile-heatmap-cell:hover, button.profile-heatmap-cell:active { outline:
   .timer-settings-switch[aria-checked="true"] .timer-settings-switch-track { background: Highlight; }
   .timer-settings-button.timer-settings-save { border-color: ButtonText; color: ButtonText; }
 }
+
+/* The existing profile can sit beneath the in-flow Pomo blogs header. */
+.blog-profile-page.profile-page .community-layout { padding-top: 28px; }
+@media (max-width: 600px) {
+  .blog-profile-page.profile-page .community-layout { padding-top: 20px; }
+}

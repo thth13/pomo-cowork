@@ -3,6 +3,7 @@
 import { useEffect, type ReactNode } from 'react'
 import { usePathname } from 'next/navigation'
 import WorkspaceBackground from '@/components/WorkspaceBackground'
+import { usernameFromHandle } from '@/lib/journal/handles'
 import { APPEARANCE_STORAGE_KEY, useAppearanceStore } from '@/store/useAppearanceStore'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -40,7 +41,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     }
   }, [])
   return <>
-    {backgroundId !== 'default' && (sceneryRoutes.test(pathname) || /^\/@[^/]+(?:\/|$)/.test(pathname)) &&
+    {backgroundId !== 'default' && (sceneryRoutes.test(pathname) || Boolean(usernameFromHandle(pathname.split('/')[1] || ''))) &&
       <div className="product-scenery" aria-hidden="true"><WorkspaceBackground /></div>}
     {children}
   </>

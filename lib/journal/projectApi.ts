@@ -61,12 +61,12 @@ export async function projectsApi(request: NextRequest, id?: string) {
   if (!workProject && !newProjectName && (!previous || previous.workProjectId)) throw new JournalError('Choose a project or create one.', 400, 'workProjectId')
   const name = workProject?.title || newProjectName || previous!.name
   if (name.length > 100) throw new JournalError('Shorten the project name to 100 characters.', 400, 'workProjectId')
-  const slug = text(data, 'slug', 80) || slugify(name)
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new JournalError('Use lowercase letters, numbers, and single dashes.', 400, 'slug')
+  const baseSlug = slugify(name)
+  const slug = previous?.slug || baseSlug
   const image = (await ownedImages(data.imageUrl ? [data.imageUrl] : [], user.id))[0] || null
   const coverUrl = (await ownedImages(data.coverUrl ? [data.coverUrl] : [], user.id))[0] || null
   const showTasks = flag(data, 'showTasks')
-  const status = choice(data.status, projectStatuses, 'PLANNING')
+  const status = choice(data.status, projectStatuses, previous?.status || 'BUILDING')
   const visibility = choice(data.visibility, (['PUBLIC', 'PRIVATE'] as const), 'PRIVATE')
   const pinned = flag(data, 'pinned')
   const startedAt = date(data.startedAt)
@@ -98,6 +98,12 @@ export async function projectsApi(request: NextRequest, id?: string) {
         }
       })
       if (existing) return existing
+    }
+    if (!previous) {
+      let suffix = 2
+      while (await tx.project.findUnique({ where: { userId_slug: { userId: user.id, slug: values.slug } }, select: { id: true } })) {
+        values.slug = `${baseSlug}-${suffix++}`
+      }
     }
     const selected = workProject ? await tx.task.findFirst({ where: { id: workProject.id, userId: user.id, parentId: null } }) : null
     if (workProject && !selected) throw new JournalError('Project not found.', 404)
@@ -155,7 +161,7 @@ export async function projectsApi(request: NextRequest, id?: string) {
 export async function workProjectsApi(request: NextRequest) {
   const user = await requireUser(request)
   const page = pageNumber(request.nextUrl.searchParams.get('page'))
-  const select = { id: true, title: true, createdAt: true, publicPage: { select: { id: true, visibility: true } } } as const
+  const select = { id: true, title: true, color: true, createdAt: true, publicPage: { select: { id: true, visibility: true } } } as const
   const items = await prisma.task.findMany({
     where: { userId: user.id, parentId: null }, select,
     orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], take: 51, skip: (page - 1) * 50,

@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { failure, JournalError } from '@/lib/journal/server'
 import { projectFollowApi, projectViewApi } from '@/lib/journal/projectSocialApi'
+import { publicProjectsApi } from '@/lib/journal/publicProjectsApi'
 import { projectsApi, workProjectsApi } from '@/lib/journal/projectApi'
 import { profileApi, followApi, discoverApi } from '@/lib/journal/profileApi'
 import { postsApi, feedApi, weeklyApi } from '@/lib/journal/postApi'
@@ -16,6 +17,7 @@ async function route(request: NextRequest, {
   try {
     const [resource, id, action, child] = params.path
     const method = request.method
+    if (resource === 'public-projects' && !id && method === 'GET') return await publicProjectsApi(request)
     if (resource === 'profile' && !id && ['GET', 'PUT'].includes(method)) return await profileApi(request)
     if (resource === 'discover' && !id && method === 'GET') return await discoverApi(request)
     if (resource === 'weekly' && !id && method === 'GET') return await weeklyApi(request)

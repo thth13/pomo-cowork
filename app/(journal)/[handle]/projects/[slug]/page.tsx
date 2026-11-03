@@ -42,8 +42,8 @@ export default async function ProjectPage({
     data = await publicProjectData(username, params.slug, page)
   if (!data) notFound()
   const { user, project, overview } = data
-  const tab = ['overview', 'activity', 'tasks', 'blog'].includes(searchParams.tab || '') ? searchParams.tab! : 'overview'
-  const hasMore = tab === 'tasks' ? overview.moreTasks : tab === 'activity' ? data.moreTimeline : data.morePosts
+  const tab = ['overview', 'activity', 'tasks', 'map', 'blog'].includes(searchParams.tab || '') ? searchParams.tab! : 'overview'
+  const hasMore = (tab === 'tasks' || tab === 'map') ? overview.moreTasks : tab === 'activity' ? data.moreTimeline : data.morePosts
   const posts = tab === 'overview' ? data.posts.slice(0, 2) : data.posts
   return <PublicProjectView
     user={user}

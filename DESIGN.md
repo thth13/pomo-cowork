@@ -29,6 +29,55 @@ spacing:
 
 # Pomo Pocket Garden
 
+## Public project detail header
+
+The project detail page omits the back-to-profile link and standalone cover banner.
+An optional cover image sits behind the name/description identity block, with an
+88% paper-token overlay for text contrast; no cover means no image or placeholder.
+The identity stays content-sized. Forced colors hides the decorative cover.
+`PublicProjectView.tsx` and `app/(journal)/journal.css` own this presentation.
+
+## Public project directory
+
+`/projects/public` is a guest-accessible catalog of public project pages. The supplied
+reference is superseded by the requested compact redesign: a 44px logo beside the
+name and status, an optional right-hand description, slim task progress, three equal
+centered metric columns in one inset surface, and a separate weekly-activity strip.
+The author and start date form one footer identity; followers align opposite it.
+The project title link stretches across the card, with a card-wide keyboard focus
+outline. The author link and follow controls remain independently interactive above it.
+Descriptions sit beside the identity behind a fine vertical divider, with up to
+three lines and a native title tooltip. Below 340px of card content width they move
+below the identity with up to two lines. Empty descriptions render no block.
+The header has a compact 76px minimum height. Cards share equal
+grid-row heights, use 10px section gaps, and anchor their footers at the bottom.
+The streak counter is omitted; the seven weekly bars fill the remaining width after the label. Paper/sage/tomato runtime tokens
+preserve the product identity; catalog cards use a 16px radius and collapse to two
+then one column. Inter owns dense text; tabular numerals align statistics.
+`app/(journal)/projects/public/public-projects.css` owns this route's geometry.
+The journal query, error/loading primitives, Radix JournalSelect and FollowButton
+remain canonical. The bookmark is a project-follow variant, with the same auth and
+mutation behavior as the public page. The toolbar, result count, search, status filter and sort controls are removed.
+Paging remains URL-owned; projects use newest-first order. The directory uses 12-item server pages,
+explicit previous/next actions, existing UTC project statistics and public author
+fields. Only PUBLIC projects belonging to non-anonymous users appear. No invented
+tags, verification or sprint data is displayed. English/Spanish follow I18nProvider.
+
+The blog section now owns `BlogHeader`, an in-flow Pomo blogs wordmark, Projects /
+Feed navigation, timer link, shared theme switch, publish action and
+account/sign-in control. `lib/journal/routes.ts` defines the section: nested project
+routes, public @profiles/posts, feed, discover, journal and journal profile settings.
+The personal `/projects` workspace retains its compact menu. Blog routes omit the
+floating workspace menu, support widget and standalone Back to timer link. The
+catalog's introductory hero is removed; it begins directly with project cards and keeps
+a visually hidden h1. `app/(journal)/blog-header.css` owns header layout, including
+its two-row mobile navigation and theme/scenery adaptations. AuthModal, ThemeToggle
+and the existing profile/project routes remain canonical; scenery preferences stay
+in effect. The header scrolls with the document and introduces no overlay menu. It uses a
+64px desktop row, a text-only wordmark, plain navigation with a thin active underline,
+an icon-only theme control and a quiet outline publish action. Search and sorting
+and the count/status toolbar are absent. The blogs word uses --pixel-tomato-ink.
+
 ## Direction and context
 
 Product workspace for people doing focused work together. Preserve timer, task, room,
@@ -164,6 +213,19 @@ theme controls; guests can navigate and sign in. The settings page, leaderboard,
 public @profiles, project list, project create/edit and public project pages reuse this
 compact menu; other routes retain their header. Journal pages with compact navigation
 reserve 84px plus the top safe-area inset above their content, matching leaderboard.
+Project create/edit reuse the Projects personal-page frame and responsive gutters;
+the editor card is centered with a 960px cap. ProjectEditor uses a compact Inter
+heading, a main details column and a narrower publishing panel with a subtle tinted surface; below 760px these stack. About and logo/cover use native details
+disclosures, with field errors opening the relevant section. Settings and save/cancel
+stay visible. QueryError keeps its retry behavior in a compact inline treatment.
+Fields, uploads, feedback and unsaved guards reuse journal primitives; native select
+and date popups remain platform-owned. Colors inherit the existing pixel and scenery
+tokens. Optional sections preserve values while collapsed.
+The editor is a deliberate softer form variant: 14px outer corners, 8px field corners,
+low-contrast token-derived field fills, regular-weight values, inset aligned chevrons
+and checkbox-backed switches. Native select popups remain OS-owned; only their closed
+triggers are styled. Disclosure chevrons align at the trailing edge. Error retry is
+a quiet underlined action in a compact tinted notice.
 These journal routes and leaderboard share `BackToTimer`, an outlined arrow link
 to `/` with English/Spanish labels; journal places it above the page content on the right.
 At widths up to 719px, this same menu moves to the top left and includes the five
@@ -1556,7 +1618,98 @@ routes, and the existing `app/appearance.css` journal-card adapter owns glass bl
 contrast and forced-colors behavior. The editor uses the same card surface.
 
 ProjectEditor reuses journal fields, uploads, mutation feedback and unsaved guards.
+About the project is expanded initially; logo/cover uploads follow in the same left
+column, beside publishing settings. This keeps the description column useful rather
+than leaving a large blank area above a full-width media row. Narrow screens retain
+the same details/media/publishing reading order in a single column.
+Project URLs are generated server-side from the name with automatic collision suffixes;
+the editor has no slug field, and editing preserves existing project URLs.
 The project field comes first and selects a real work project; inline creation is
-saved atomically with its public page. Native select and date controls retain the
-journal's accepted browser-owned popup behavior. See docs/project-journal.md for
+saved atomically with its public page. The project field uses the shared
+`components/journal/Select.tsx` Radix Select adapter: trigger-width, collision-aware,
+height-bounded popup with 44px rows, colored folder icons, selected check and a
+separate create-project row. It portals into the journal shell to inherit light,
+dark and scenery tokens. `app/(journal)/journal.css` owns geometry; pixel tokens
+own colors and global scrollbars. Status uses the same authored Select with universal
+Not started / In progress / Paused / Completed labels and neutral activity icons;
+new pages default to In progress. Archive/restore is a separate action staged until
+Save project; archived records retain an explicit Archived option until restored.
+Stored PLANNING/BUILDING values remain compatible; shared projectStatusLabels owns
+English/Spanish labels in the editor, project list and public view. Visibility and
+date controls retain the journal's accepted browser-owned popup behavior. See docs/project-journal.md for
 publication, task visibility, subscription and visit semantics.
+
+Project logo and cover uploads use the shared ImageAttachments logo/cover variants:
+a square logo preview (contain) and a wide cover preview (cover), clickable to add or
+replace, with a small accessible remove control. Native file controls are hidden
+behind real keyboard-accessible buttons. Local previews appear during upload;
+failed replacements retain the saved image. File type/2 MB validation, upload status
+and inline errors stay in the shared uploader. Other attachment layouts are preserved.
+
+ProjectEditor uses restrained Lucide cues: a sage sprout emblem, section icons,
+status-specific icons, and a globe/lock for visibility. The project picker reads the
+existing work-project color through projectColorStyle; work-projects API includes
+that existing color field. Status and visibility always retain their text labels.
+These accents use growth, accent and muted runtime roles, with no new palette.
+
+The project editor temporarily omits the Links & dates section (website, GitHub and
+start-date inputs). Existing values remain in the edit payload and are preserved.
+
+My blog (`/@username`) groups profile identity, lifetime statistics and owner actions
+in a shared journal-card glass surface. Empty project/update states reuse journal-card;
+ProfileAchievements participates in the canonical scenery blur and forced-colors
+adapter in app/appearance.css. Statistics use four columns, two on narrow screens.
+AppearanceProvider resolves both literal and URL-encoded @ handles through the
+existing usernameFromHandle helper. Default paper themes retain their tokens.
+
+The public project Map tab (`?tab=map`) is a read-only connected diagram: project
+summary and total progress on the left, completion-status branches and task lists
+on the right. It uses real pending/completed states, not fictional phases: the
+current data model has no phase-to-task relation. It reuses the existing public
+20-task page, showTasks privacy gate and URL pagination. Branch counts are project
+wide; a visible notice distinguishes page tasks from total counts. Task checkmarks
+are status icons, not editing controls. The diagram fills the page without the
+usual sidebar/stat strip, follows existing paper/glass tokens, and stacks at 1000px
+and 600px without horizontal canvas scrolling. ProjectMap and journal.css own it.
+
+The workspace Menu links to `/projects/public` as Blogs; My Projects omits the
+Explore public projects link. Make project blog sits at the right of the Project
+blogs section heading as a quiet secondary action, stacking full-width on mobile.
+The task edit dialog uses the same action label and existing creation route.
+
+Project blogs management reuses the public catalog card classes and shared CSS
+loaded by JournalLayout: logo/status identity, optional right-hand description,
+centered focus/session metrics, equal-height rounded cards and compact owner
+actions. It uses two columns then one on mobile. No public-profile shortcut is
+shown. Public card titles open the project; private titles open its editor. The
+stretched title link leaves edit/post/focus actions independently interactive.
+
+When the first project-blog page loads successfully with no items, management shows
+only Make project blog, right-aligned beneath the work-project list (full-width on
+mobile). No section heading, empty panel or extra divider is rendered. Loading and
+errors remain explicit; later empty pages retain navigation back to previous pages.
+
+Feed and personal updates share the journal-posts presentation: a compact heading
+and shortcut row inside one journal-card, with a separate solid-border empty-state
+card and secondary action. Loading and error content also use journal-card. All
+these surfaces inherit the canonical scenery blur/paper token adapter, including
+forced colors; no local glass palette is added. Cards use 16px corners, controls
+8px corners, and the heading/action stack on narrow screens.
+
+BlogHeader omits My blog from navigation. The signed-in avatar opens the canonical
+user profile through userProfileHref (`/user/username`), with a localized profile
+accessible label. It no longer links to the public journal profile.
+
+The Pomo blogs avatar opens the canonical user profile with `?view=blogs`. The
+existing UserProfilePage has a blogs navigation variant, rendering BlogHeader in
+all loading/error/content states with natural top spacing and no workspace nav.
+Profile data, actions and glass adapters are reused. Without this query, user
+profiles retain workspace navigation; canonical redirects preserve the query.
+
+KofiWidget is also omitted on `/user/*?view=blogs`, including its support dialog;
+query changes update this condition through useSearchParams with a null Suspense
+fallback. Ordinary workspace profiles retain the support widget.
+
+The achievements scenery surface applies to both garden-page (including embedded
+blog profiles) and journal-shell: paper-token background, 20px inner padding and
+a complete border accompany the shared blur. Neither shell gets blur alone.
