@@ -5,6 +5,7 @@ import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 import { isValidAnonymousId } from '@/lib/anonymousProfile'
 import { consumeVisitor, lockVisitor, VISITOR_COOKIE } from '@/lib/guestVisits'
 import { getRequestCountry } from '@/lib/userCountry'
+import { buildVisitorDetails } from '@/lib/visitorDetails'
 
 export const dynamic = 'force-dynamic'
 
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
       await tx.visitorIdentity.upsert({ where: { id }, create: { id }, update: {} })
       await tx.guestVisit.upsert({
         where: { id }, update: {},
-        create: { id, pagePath, ipAddress, countryCode: getRequestCountry(request) },
+        create: { id, pagePath, ipAddress, countryCode: getRequestCountry(request), details: buildVisitorDetails(request, body?.details) },
       })
     })
     const response = new NextResponse(null, { status: 204, headers: { 'Cache-Control': 'no-store' } })

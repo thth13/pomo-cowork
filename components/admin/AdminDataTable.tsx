@@ -1,18 +1,22 @@
 'use client'
 
 import CountryFlag from '@/components/CountryFlag'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import { userProfileHref } from '@/lib/userProfile'
 import { useAdminData } from './useAdminData'
+import AdminVisitorDetails from './AdminVisitorDetails'
+import AdminVisitorDeleteDialog from './AdminVisitorDeleteDialog'
+import { useAuthStore } from '@/store/useAuthStore'
+import type { VisitorDetails } from '@/lib/visitorDetails'
 
 export type AdminDataKind = 'directory' | 'wall' | 'habits' | 'visitors'
 type Person = { id: string; username: string; isAnonymous: boolean }
 type UserRow = Person & { countryCode: string | null; createdAt: string; lastSeenAt: string | null; totalMinutes: number; totalPomodoros: number; sessionsCount: number }
 type WallRow = { id: string; message: string; createdAt: string; author: Person; profileUser: Person }
 type HabitRow = { id: string; title: string; startDate: string; archived: boolean; createdAt: string; user: Person; _count: { completions: number } }
-type VisitorRow = { id: string; ipAddress: string | null; countryCode: string | null; pagePath: string; createdAt: string }
+type VisitorRow = { id: string; ipAddress: string | null; countryCode: string | null; pagePath: string; createdAt: string; details: VisitorDetails | null }
 type ListData = { rows: (UserRow | WallRow | HabitRow | VisitorRow)[]; total: number; page: number; pageSize: number }
 const titles = { directory: 'All users', wall: 'Wall messages', habits: 'Habits', visitors: 'New visitors' }
 const countryNames = new Intl.DisplayNames(['en'], { type: 'region', fallback: 'none' })
@@ -30,11 +34,29 @@ const person = (user: Person) => <Link className="admin-person-link" href={userP
 export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
   const [page, setPage] = useState(1)
   const [userType, setUserType] = useState('registered')
+  const token = useAuthStore(state => state.token)
+  const [selectedVisit, setSelectedVisit] = useState<VisitorRow | null>(null)
+  const [deleted, setDeleted] = useState(false)
+  const refreshButton = useRef<HTMLButtonElement>(null)
+  const focusAfterDelete = useRef(false)
   const onlineIds = useConnectionStore(state => state.onlineUserIds)
   const connected = useConnectionStore(state => state.isConnected)
   const body = JSON.stringify({ kind, page, userType })
   const { data, error, loading, refresh } = useAdminData<ListData>('/api/admin/data', body)
-  const headers = kind === 'visitors' ? ['IP address', 'Country', 'Landing page', 'Visited · Kyiv'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions']
+  const headers = kind === 'visitors' ? ['IP address', 'Country', 'Browser / OS', 'Device', 'Landing page', 'Referrer', 'Visited · Kyiv', 'Details', 'Manage'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions']
+
+  useEffect(() => {
+    setSelectedVisit(null)
+    setDeleted(false)
+    focusAfterDelete.current = false
+  }, [token])
+
+  useEffect(() => {
+    if (!loading && focusAfterDelete.current) {
+      focusAfterDelete.current = false
+      refreshButton.current?.focus({ preventScroll: true })
+    }
+  }, [loading])
 
   return <section aria-label={titles[kind]}>
     <div className="admin-data-toolbar">
@@ -42,17 +64,26 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
         {kind === 'habits' && <p>All active and archived habits, newest first.</p>}
         {kind === 'wall' && <p>All existing profile wall messages, newest first.</p>}
         {kind === 'visitors' && <p>First visits without an account. Removed after sign-in, registration, or anonymous profile creation.</p>}
+        {kind === 'visitors' && <p>Browser and device information is reported or inferred and may be limited. Referrers may be unavailable.</p>}
       </div>
-      <button type="button" onClick={refresh} disabled={loading}>Refresh</button>
+      <button ref={refreshButton} type="button" onClick={refresh} disabled={loading}>Refresh</button>
     </div>
     {kind === 'directory' && <div className="admin-data-filters" role="group" aria-label="Account type">{['registered', 'anonymous'].map(value => <button type="button" key={value} aria-pressed={userType === value} onClick={() => { setUserType(value); setPage(1) }}>{value === 'registered' ? 'Registered' : 'Unregistered'}</button>)}</div>}
     {error && <p role="alert" className="admin-data-error">{error}</p>}
+    {kind === 'visitors' && <div role="status" className="admin-visit-feedback">{deleted ? 'Visit deleted.' : ''}</div>}
     <div className="admin-data-frame" aria-busy={loading}>
       {loading ? <p className="admin-data-state" role="status">Loading {titles[kind].toLowerCase()}…</p> : data ? <>
         <div className="admin-table-scroll" tabIndex={0} role="region" aria-label={`${titles[kind]} table`}>
           <table><caption className="sr-only">{titles[kind]}</caption><thead><tr>{headers.map(header => <th key={header} scope="col">{header}</th>)}</tr></thead>
             <tbody>{data.rows.length === 0 ? <tr><td colSpan={headers.length} className="admin-data-state">No {titles[kind].toLowerCase()} found.</td></tr> : data.rows.map(row => {
-              if ('pagePath' in row) return <tr key={row.id}><td>{row.ipAddress || '—'}</td><td>{countryFlag(row.countryCode)}</td><td className="admin-message-cell">{row.pagePath}</td><td>{date(row.createdAt)}</td></tr>
+              if ('pagePath' in row) return <tr key={row.id}>
+                <td>{row.ipAddress || '—'}</td><td>{countryFlag(row.countryCode)}</td>
+                <td><div>{[row.details?.browser, row.details?.browserVersion].filter(Boolean).join(' ') || '—'}</div><div className="admin-data-note">{[row.details?.os, row.details?.osVersion].filter(Boolean).join(' ') || '—'}</div></td>
+                <td>{row.details?.deviceType || '—'}</td>
+                <td className="admin-message-cell">{row.pagePath}</td><td className="admin-message-cell">{row.details?.referrer || '—'}</td>
+                <td>{date(row.createdAt)}</td><td><AdminVisitorDetails details={row.details} /></td>
+                <td><button type="button" className="community-button admin-visit-delete" aria-label={`Delete visit from ${row.ipAddress || 'unknown IP'} to ${row.pagePath}`} onClick={() => { setDeleted(false); setSelectedVisit(row) }}>Delete</button></td>
+              </tr>
               if ('message' in row) return <tr key={row.id}><td><div className="admin-wall-participants"><Link href={userProfileHref(row.author)}>{row.author.username}</Link><span aria-hidden="true">→</span><span className="sr-only">to</span><Link href={userProfileHref(row.profileUser)}>{row.profileUser.username}</Link></div></td><td className="admin-message-cell">{row.message}</td><td>{date(row.createdAt)}</td></tr>
               if ('title' in row) return <tr key={row.id}><td className="admin-message-cell">{row.title}</td><td>{person(row.user)}</td><td><span className={`admin-status ${row.archived ? 'admin-status-archived' : 'admin-status-active'}`}>{row.archived ? 'Archived' : 'Active'}</span></td><td>{row.startDate}</td><td>{row._count.completions}</td><td>{date(row.createdAt)}</td></tr>
               return <tr key={row.id}><td>{person(row)}{connected && onlineIds[row.id] && <span className="admin-online-status">Online</span>}</td><td>{countryFlag(row.countryCode)}</td><td>{date(row.createdAt)}</td><td>{date(row.lastSeenAt)}</td><td>{Math.floor(row.totalMinutes / 60)}h {row.totalMinutes % 60}m</td><td>{row.totalPomodoros}</td><td>{row.sessionsCount}</td></tr>
@@ -62,5 +93,12 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
         <nav className="admin-data-pagination" aria-label={`${titles[kind]} pages`}><span>{data.total ? (data.page - 1) * data.pageSize + 1 : 0}–{Math.min(data.page * data.pageSize, data.total)} of {data.total} · Page {data.page} of {Math.max(1, Math.ceil(data.total / data.pageSize))}</span><div><button type="button" disabled={data.page <= 1} onClick={() => setPage(data.page - 1)}>Previous</button><button type="button" disabled={data.page * data.pageSize >= data.total} onClick={() => setPage(data.page + 1)}>Next</button></div></nav>
       </> : <p className="admin-data-state">Use Refresh to try loading this list again.</p>}
     </div>
+    {selectedVisit && <AdminVisitorDeleteDialog key={`${token}:${selectedVisit.id}`} visit={selectedVisit} token={token}
+      onClose={() => setSelectedVisit(null)} onDeleted={() => {
+        setSelectedVisit(null)
+        setDeleted(true)
+        focusAfterDelete.current = true
+        refresh()
+      }} />}
   </section>
 }

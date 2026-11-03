@@ -748,6 +748,32 @@ does not block product use; the client retries server/network failures twice. Ad
 reads remain protected by authorizeAdmin and use the existing table pagination and
 manual refresh, with no IP-based merging of separate browsers.
 
+The user's November 3, 2026 request extends the same visit with available browser and
+device metadata. `lib/visitorDetails.ts` owns bounded server normalization and
+conservative browser/OS/device inference from UA and low-entropy Client Hints. The
+tracker snapshots browser-exposed locale, timezone, display/viewport, pixel density,
+touch, reported logical processors, approximate RAM, connection class/data saver,
+cookie availability, DNT/GPC signals and display/motion preferences. Unsupported
+capabilities are null, never guessed. Browser versions may be reduced, Windows NT
+versions are kept as reported, and device classes are estimates, not hardware models.
+Referrers keep only HTTP(S) origin/path, dropping credentials, query and fragment.
+All fields are on GuestVisit.details and are deleted with that visit on conversion;
+the first snapshot is never overwritten. Existing records remain readable with null
+details. AdminVisitorDetails reuses the native disclosure pattern from Beep messages
+and the shared admin definition-list styles, with keyboard focus and an explicit
+Not recorded state. No new permissions or external enrichment services are requested.
+
+Per the user's November 3 clarification, manual deletion is scoped to New visitors.
+`DELETE /api/admin/visitors?id=…` authorizes via authorizeAdmin, validates the identity,
+and shares the tracking/conversion lock. It deletes the visit and all metadata while
+retaining the consumed identity marker, preventing recreation on reload or delayed
+requests. Repeated deletion is idempotent. The visitor table reuses Paywall activity's
+CommunityDialog project-action confirmation: named IP/path/Kyiv time, permanent-removal
+copy, Cancel initially focused, pending dismissal/repeats blocked, 15-second timeout,
+abort on unmount/account change, and inline retry errors. Success announces deletion,
+refreshes the existing server-clamped page and focuses Refresh. No migration is needed
+for manual deletion; runtime verification stays with the user.
+
 Primary overview metrics use `useConnectionStore.totalOnlineCount` only while
 connected, and `/api/admin/overview.todayAnonymous` counts currently anonymous
 accounts created today in Kyiv. Converted guests are classified as registered

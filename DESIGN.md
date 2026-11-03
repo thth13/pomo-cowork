@@ -1206,10 +1206,19 @@ rendered; plain backgrounds and forced colors retain the shared opaque surfaces.
 ## Administration dashboard
 
 New visitors (`/admin#visitors`) reuses AdminDataTable, CountryFlag and the existing
-admin tokens without new styles. Rows show IP, country, first landing pathname and
+admin tokens. Rows show IP, country, first landing pathname and
 Kyiv timestamp, newest first, with 50-row pagination and the shared loading, empty,
 retry and error states. Registered and persisted anonymous profiles are excluded;
 conversion removes the initial visit. Unknown IP or country is shown as a dash.
+The November 3 expansion adds Browser / OS, Device and Referrer columns plus native
+Visitor details disclosure, sharing the existing Beep disclosure tokens and semantic
+definition lists. Its keyboard focus matches admin controls. Capability data is
+labelled as reported/estimated; historical rows without it say Not recorded. The
+entry snapshot includes locale, timezone, screen/viewport, pixel density, touch,
+reported CPU/memory, connection class, preferences and privacy signals when available.
+Each visitor row has a Delete action, following Paywall activity's CommunityDialog
+confirmation and danger styling. Success refreshes the clamped page, announces Visit
+deleted and focuses Refresh; errors remain in the dialog for retry.
 
 `/admin` is an intentional visual exception requested by the user: a conventional,
 white dashboard, independent of the public pixel identity and the saved dark theme.

@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
       const { page, skip, take } = paging(total)
       const rows = await prisma.guestVisit.findMany({
         skip, take, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        select: { id: true, ipAddress: true, countryCode: true, pagePath: true, createdAt: true },
+        select: { id: true, ipAddress: true, countryCode: true, pagePath: true, createdAt: true, details: true },
       })
       return respond(rows, total, page)
     }
