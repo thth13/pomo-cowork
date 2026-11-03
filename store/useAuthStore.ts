@@ -32,7 +32,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, anonymousId: localStorage.getItem('anonymous_user_id') }),
       })
 
       if (response.ok) {

@@ -5,7 +5,7 @@ import { Send, Square } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
-import { beepDetail, BeepRequestError } from '@/lib/beepClient'
+import { beepDetail, beepRequestHeaders, BeepRequestError } from '@/lib/beepClient'
 import { logBeepClick, logBeepEvent } from '@/lib/beepEvents'
 import { beepStreamEvents } from '@/lib/beepStream'
 import { beepHistory, BEEP_MESSAGE_LIMIT, type BeepMessage, type BeepConversationInfo } from '@/lib/beepChat'
@@ -82,7 +82,7 @@ export default function BeepChat({ messages, onMessagesChange, onSpeakingChange,
     const retryMessages = messages.at(-1)?.role === 'assistant' ? messages.slice(0, -1) : messages
     const lastUser = retryMessages.at(-1)
     const requestId = retry && lastUser?.requestId ? lastUser.requestId : crypto.randomUUID()
-    let savedConversation = token ? conversation ?? { id: crypto.randomUUID(), revision: 0 } : null
+    let savedConversation = conversation ?? { id: crypto.randomUUID(), revision: 0 }
     if (savedConversation) onConversationChange(savedConversation)
     const nextMessages: BeepMessage[] = retry ? retryMessages.map((message, index) => index === retryMessages.length - 1 ? { ...message, requestId, status: 'pending' } : message) : [...messages, { role: 'user', content, requestId, status: 'pending' }]
     const controller = new AbortController()
@@ -100,7 +100,7 @@ export default function BeepChat({ messages, onMessagesChange, onSpeakingChange,
     let answer = ''
     let completed = false
     try {
-      if (retry && savedConversation && token) {
+      if (retry && savedConversation) {
         try {
           const detail = await beepDetail(savedConversation.id, token, controller.signal)
           if (!mounted.current || useAuthStore.getState().token !== token) return
@@ -121,7 +121,7 @@ export default function BeepChat({ messages, onMessagesChange, onSpeakingChange,
       }
       const response = await fetch('/api/beep/chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        headers: { 'Content-Type': 'application/json', ...beepRequestHeaders(token) },
         body: JSON.stringify({ messages: beepHistory(nextMessages), ...(savedConversation ? { conversationId: savedConversation.id, revision: savedConversation.revision, requestId } : {}), context: { page: pathname, language, timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, device: window.matchMedia('(max-width: 719px)').matches ? 'mobile' : 'desktop' } }),
         signal: controller.signal,
       })
@@ -185,7 +185,7 @@ export default function BeepChat({ messages, onMessagesChange, onSpeakingChange,
     {error && <div className={styles.chatError} role="alert">
       <p>{text[error]}</p>
       {!['conflict', 'save_failed'].includes(error) && retryQuestion?.role === 'user' && <button type="button" disabled={busy || locked} onClick={() => { void send(retryQuestion.content, true) }}>{text.retry}</button>}
-      {conversation && token && <button type="button" data-beep-action="chat_reload" disabled={busy} onClick={() => {
+      {conversation && <button type="button" data-beep-action="chat_reload" disabled={busy} onClick={() => {
         if (onReload) { onReload(); setError(null); return }
         void beepDetail(conversation.id, token).then(detail => {
           if (mounted.current && useAuthStore.getState().token === token) { onConversationChange(detail.conversation); onMessagesChange(detail.messages); setError(detail.active ? 'conflict' : null) }

@@ -9,6 +9,8 @@ import path from 'node:path'
 import { createHash } from 'node:crypto'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { ensureAnonymousUser } from '@/lib/anonymousServer'
+import { isValidAnonymousId } from '@/lib/anonymousProfile'
 import { hasActiveProAccess } from '@/lib/proAccess'
 import { BEEP_HISTORY_CHAR_LIMIT, BEEP_HISTORY_LIMIT, BEEP_MESSAGE_LIMIT, type BeepMessage } from '@/lib/beepChat'
 
@@ -86,11 +88,12 @@ export async function POST(request: NextRequest) {
   const token = getTokenFromHeader(request.headers.get('authorization'))
   const identity = token ? verifyToken(token) : null
   if (token && !identity) return reply('unauthorized', 401)
-  const persistent = Boolean(identity)
+  const anonymousId = request.headers.get('x-anonymous-id')?.trim()
+  if (!identity && !isValidAnonymousId(anonymousId)) return reply('invalid_request', 400)
   const conversationId = 'conversationId' in payload ? payload.conversationId : undefined
   const requestId = 'requestId' in payload ? payload.requestId : undefined
   const revision = 'revision' in payload ? payload.revision : undefined
-  if (persistent && (!isBeepId(conversationId) || !isBeepId(requestId) || typeof revision !== 'number' || !Number.isSafeInteger(revision) || revision < 0)) return reply('invalid_request', 400)
+  if (!isBeepId(conversationId) || !isBeepId(requestId) || typeof revision !== 'number' || !Number.isSafeInteger(revision) || revision < 0) return reply('invalid_request', 400)
 
   // Proxy headers must be overwritten by the deployment's trusted reverse proxy.
   // Unknown guests share one bucket rather than using a spoofable browser ID.
@@ -119,11 +122,13 @@ export async function POST(request: NextRequest) {
     userBucket.busy = false
   }
   try {
-    const user = identity ? await prisma.user.findUnique({ where: { id: identity.userId }, select: { isAnonymous: true, isPro: true, proExpiresAt: true } }) : null
-    if (identity && !user) return reply('unauthorized', 401)
-    if (identity && isBeepId(conversationId) && isBeepId(requestId) && typeof revision === 'number') {
+    const user = identity
+      ? await prisma.user.findUnique({ where: { id: identity.userId }, select: { id: true, isAnonymous: true, isPro: true, proExpiresAt: true } })
+      : await ensureAnonymousUser(prisma, anonymousId!)
+    if (!user) return reply('unauthorized', 401)
+    if (isBeepId(conversationId) && isBeepId(requestId) && typeof revision === 'number') {
       const last = messages[messages.length - 1]
-      turn = await beginBeepTurn({ userId: identity.userId, conversationId, requestId, revision, content: last.content,
+      turn = await beginBeepTurn({ userId: user.id, conversationId, requestId, revision, content: last.content,
         greeting: revision === 0 && messages[0].role === 'assistant' ? messages[0].content : undefined })
       if (turn.replay !== undefined) {
         saved = true

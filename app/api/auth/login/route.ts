@@ -1,11 +1,12 @@
 import { recordUserCountry } from '@/lib/userCountry'
+import { removeRequestGuestVisit } from '@/lib/guestVisits'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { comparePasswords, generateToken } from '@/lib/auth'
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password } = await request.json()
+    const { email, password, anonymousId } = await request.json()
 
     if (!email || !password) {
       return NextResponse.json(
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     await recordUserCountry(request, user.id)
+    await removeRequestGuestVisit(request, anonymousId)
 
     // Generate JWT token
     const token = generateToken({

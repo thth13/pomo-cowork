@@ -29,6 +29,7 @@ const sections = [
   { id: 'referrals', label: 'Referral links', icon: Link2, description: 'Manage campaign links and track the people they bring to Pomo.' },
   { id: 'users', label: 'Pro users', icon: Crown, description: 'Manage Premium access and review active memberships.' },
   { id: 'directory', label: 'All users', icon: Users, description: 'Registered and guest accounts with focus statistics, as in the user directory.' },
+  { id: 'visitors', label: 'New visitors', icon: MousePointer2, description: 'Visitors without a registered or anonymous profile, with their first landing page. Times are shown in Kyiv time.' },
   { id: 'wall', label: 'Wall messages', icon: MessageCircle, description: 'Messages posted on every user profile.' },
   { id: 'beep', label: 'Beep messages', icon: MessageSquare, description: 'Saved conversations with Mr. Beep across all accounts. All times are shown in Kyiv time.' },
   { id: 'beep-events', label: 'Beep activity', icon: MousePointer2, description: 'Onboarding and other interactions with Mr. Beep.' },
@@ -89,7 +90,7 @@ export default function AdminPage() {
             {section === 'beep' && <AdminBeepMessages />}
             {section === 'beep-events' && <AdminBeepEvents />}
             <AdminReferralManager section={section} />
-            {(['directory', 'wall', 'habits'] as string[]).includes(section) && <AdminDataTable key={section} kind={section as AdminDataKind} />}
+            {(['directory', 'wall', 'habits', 'visitors'] as string[]).includes(section) && <AdminDataTable key={section} kind={section as AdminDataKind} />}
             {eventsVisited && <div hidden={section !== 'events'}><AdminPaywallEvents /></div>}
           </>}
         </main>

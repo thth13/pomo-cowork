@@ -1,4 +1,5 @@
 import { recordUserCountry } from '@/lib/userCountry'
+import { removeRequestGuestVisit } from '@/lib/guestVisits'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { generateToken, hashPassword } from '@/lib/auth'
@@ -166,6 +167,7 @@ export async function GET(request: NextRequest) {
     }
 
     await recordUserCountry(request, user.id)
+    await removeRequestGuestVisit(request)
 
     // Генерируем JWT токен
     await recordReferralSignup(referralCode, user.id)

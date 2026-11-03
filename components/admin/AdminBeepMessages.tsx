@@ -44,7 +44,7 @@ export default function AdminBeepMessages() {
       </div>
       <button type="button" onClick={refresh} disabled={loading}>Refresh</button>
     </div>
-    <p className="admin-data-note admin-beep-note">Each turn contains a user message and Beep’s reply. Unsaved guest chats are unavailable. Model, token usage and response duration are not recorded.</p>
+    <p className="admin-data-note admin-beep-note">Each turn contains a user message and Beep’s reply, including guest conversations. Model, token usage and response duration are not recorded.</p>
     <div className="admin-data-filters admin-beep-filters" role="group" aria-label="Reply status">
       {Object.entries(statuses).map(([value, label]) => <button type="button" key={value} aria-pressed={status === value} onClick={() => navigate({ beepStatus: value === 'all' ? null : value, beepPage: null })}>{label}</button>)}
     </div>
