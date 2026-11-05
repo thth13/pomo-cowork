@@ -37,6 +37,7 @@ export default function PublicProjectView({ project, user, overview, tab, posts,
   const tasks = <section className="journal-card public-project-tasks">
     <div className="journal-row"><h2>{t('Working on now', 'En qué estamos trabajando')}</h2><span className="journal-muted">{overview.completedTasks} / {overview.totalTasks}</span></div>
     {!project.showTasks ? <p className="journal-muted">{t('Task names are private. Follow the project’s progress in the dev blog.', 'Los nombres de las tareas son privados. Sigue los avances en el blog.')}</p> : !overview.tasks.length ? <p className="journal-muted">{t('No tasks to show yet.', 'Aún no hay tareas para mostrar.')}</p> : <ul>{overview.tasks.slice(0, tab === 'overview' ? 5 : 20).map(task => <li key={task.id}><span className="public-task-check" data-done={task.completed} aria-label={task.completed ? t('Completed', 'Completada') : t('To do', 'Pendiente')}>{task.completed ? '✓' : '·'}</span><span className={task.completed ? 'public-task-done' : ''}>{task.title}</span></li>)}</ul>}
+    <Link href="?tab=map">{t('Open task tree →', 'Abrir árbol de tareas →')}</Link>
     {tab === 'overview' && overview.tasks.length > 5 && <Link href="?tab=tasks">{t('View all tasks →', 'Ver todas las tareas →')}</Link>}
   </section>
   const activity = <section className="journal-card">
@@ -60,10 +61,10 @@ export default function PublicProjectView({ project, user, overview, tab, posts,
       </div>
       {!preview && <OwnerActions userId={user.id} projectId={project.id} />}
       <nav className="journal-tabs public-project-tabs" aria-label={t('Project sections', 'Secciones del proyecto')}>
-        {[['overview', t('Overview', 'Resumen')], ['activity', t('Activity', 'Actividad')], ['tasks', t('Tasks', 'Tareas')], ['map', t('Map', 'Mapa')], ['blog', t('Dev blog', 'Blog de desarrollo')]].map(([key, label]) => <Link key={key} href={`?tab=${key}`} aria-current={tab === key ? 'page' : undefined}>{label}</Link>)}
+        {[['overview', t('Overview', 'Resumen')], ['activity', t('Activity', 'Actividad')], ['tasks', t('Tasks', 'Tareas')], ['map', t('Task tree', 'Árbol de tareas')], ['blog', t('Dev blog', 'Blog de desarrollo')]].map(([key, label]) => <Link key={key} href={`?tab=${key}`} aria-current={tab === key ? 'page' : undefined}>{label}</Link>)}
       </nav>
     </header>
-    {tab === 'map' ? <><ProjectMap project={project} overview={overview} />{project.showTasks && pagination}</> : <>
+    {tab === 'map' ? <ProjectMap project={project} overview={overview} pagination={pagination} /> : <>
     <dl className="public-project-stats">
       <div className="journal-card"><dt><Clock3 size={16} />{t('Total focus time', 'Tiempo de concentración')}</dt><dd>{number(overview.seconds / 3600)}<small> h</small></dd><small>{t('From project sessions', 'De las sesiones del proyecto')}</small></div>
       <div className="journal-card"><dt><Sprout size={16} />{t('Pomodoros', 'Pomodoros')}</dt><dd>{number(overview.pomodoros)}</dd><small>{t('Completed focus sessions', 'Sesiones Pomodoro completadas')}</small></div>

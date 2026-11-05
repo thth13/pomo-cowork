@@ -1670,15 +1670,24 @@ adapter in app/appearance.css. Statistics use four columns, two on narrow screen
 AppearanceProvider resolves both literal and URL-encoded @ handles through the
 existing usernameFromHandle helper. Default paper themes retain their tokens.
 
-The public project Map tab (`?tab=map`) is a read-only connected diagram: project
-summary and total progress on the left, completion-status branches and task lists
-on the right. It uses real pending/completed states, not fictional phases: the
-current data model has no phase-to-task relation. It reuses the existing public
-20-task page, showTasks privacy gate and URL pagination. Branch counts are project
-wide; a visible notice distinguishes page tasks from total counts. Task checkmarks
-are status icons, not editing controls. The diagram fills the page without the
-usual sidebar/stat strip, follows existing paper/glass tokens, and stacks at 1000px
-and 600px without horizontal canvas scrolling. ProjectMap and journal.css own it.
+The public project's Task tree tab (`?tab=map`) is a WBS-style connected diagram:
+project summary on the left, one real task per middle branch, and local subtasks
+on the right. The user's reference now owns this view's explicit visual exception: always-dark
+full-screen CommunityDialog task-tree variant, forest-black #101512 grid, #1c2521
+cards, #151c17 subtask panels, #e1e7ed ink and #94ad7c sage progress. These scoped
+runtime tokens live in journal.css and do not change the site theme. SVG Bézier
+connections follow measured card positions through ResizeObserver. The three-column
+canvas retains horizontal scrolling on small screens rather than stacking. The
+shared dialog owns Escape, focus containment/restoration and close; its task-tree
+variant locks background scrolling. Close returns to project overview. Pagination
+stays inside the modal. No fictional task phases or in-progress state is introduced.
+ProjectSubtasks owns owner-only addition and completion with native labeled
+checkboxes and journal form controls. Storage is versioned and scoped by account,
+project and task; drafts remain in the input on save failure, invalid saved data
+is not overwritten, and storage events refresh other tabs. Visitors see a local-only
+notice. Subtask completion never changes server task status or project progress.
+The existing showTasks privacy gate and 20-task URL pagination remain authoritative.
+Task tree is linked from project navigation and the task summary.
 
 The workspace Menu links to `/projects/public` as Blogs; My Projects omits the
 Explore public projects link. Make project blog sits at the right of the Project

@@ -1164,3 +1164,22 @@ projectSocialApi.ts, projectOverview.ts and the existing journal authorization r
 - Deleting a page deletes its blog/social records, preserving work tasks/sessions.
   Deleting the work project detaches the journal page without deleting its posts.
 - Runtime/browser checks, builds and tsc remain user-owned for this task.
+
+
+## Project task tree
+
+Source: user request for project → tasks → locally stored subtasks.
+`ProjectMap` keeps the public `showTasks` gate and existing task pagination.
+`ProjectSubtasks` allows only the signed-in project owner to add and check subtasks;
+versioned localStorage keys include account, project and task IDs. Local completion
+has no effect on server tasks or project progress. Each mutation reads the latest
+stored list; storage events refresh other tabs. Invalid/inaccessible storage shows
+an inline error and is never silently replaced; failed additions keep their input.
+Visitors cannot see the owner's browser data. English/Spanish labels, journal
+buttons, native checkboxes and pixel runtime tokens remain canonical.
+
+The task tree opens in CommunityDialog's full-screen `task-tree` variant, with its
+own dark palette per the reference. Escape/close returns to `?tab=overview`.
+Background scrolling is locked only for this variant; native modal behavior owns
+focus isolation. The canvas owns both scroll axes and keeps project → task →
+subtask geometry on narrow devices. Task pagination is inside the dialog.

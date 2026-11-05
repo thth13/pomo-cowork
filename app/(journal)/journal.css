@@ -1388,58 +1388,88 @@ body:has(.product-scenery) .journal-select-popup {
   body:has(.product-scenery) .journal-select-popup { -webkit-backdrop-filter: none; backdrop-filter: none; }
 }
 
-/* Read-only project map: existing project totals and public task pages. */
-.journal-main:has(.project-map) { max-width: 1440px; }
-.project-map { margin-top: 24px; }
-.project-map-caption { margin-bottom: 18px; }
-.project-map-caption h2 { margin-bottom: 4px; }
-.project-map-caption p { margin: 4px 0; font-size: 12px; color: var(--pixel-muted); }
-.project-map-canvas { display: grid; grid-template-columns: minmax(200px, .8fr) minmax(0, 2fr); align-items: center; gap: 32px; padding: 28px; border: 1px solid var(--pixel-line); border-radius: 16px; background-image: linear-gradient(color-mix(in srgb, var(--pixel-line) 18%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--pixel-line) 18%, transparent) 1px, transparent 1px); background-size: 28px 28px; }
-.project-map .journal-card { border-radius: 12px; padding: 20px; }
-.project-map h3 { margin: 12px 0 4px; font-size: 17px; line-height: 1.4; }
-.project-map p { color: var(--pixel-muted); font-size: 13px; line-height: 1.6; }
-.project-map .project-map-root { position: relative; border: 2px solid var(--pixel-growth); }
-.project-map-root::after { content: ''; position: absolute; top: 50%; left: 100%; width: 34px; border-top: 2px dashed var(--pixel-line); }
-.project-map-root > p { margin: 8px 0 0; }
-.project-map-progress { border-top: 1px solid var(--pixel-line); margin-top: 20px; padding-top: 14px; }
-.project-map-progress > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+/* Full-screen task tree: fixed reference palette, independent of site theme. */
+.community-dialog.task-tree-dialog {
+  --pixel-page: #101512; --pixel-paper: #1c2521; --pixel-screen: #26302a;
+  --pixel-ink: #e1e7ed; --pixel-muted: #9aa69f; --pixel-line: #303b34;
+  --pixel-growth: #94ad7c; --pixel-accent: #94ad7c; --pixel-shadow: transparent;
+  --pixel-scroll-track: #101512; --pixel-scroll-thumb: #46534a;
+  position: fixed; inset: 0; width: 100%; height: 100dvh; max-width: none;
+  max-height: none; margin: 0; padding: 0; border: 0; border-radius: 0;
+  background: var(--pixel-page); color: var(--pixel-ink); color-scheme: dark;
+  box-shadow: none; overflow: hidden;
+}
+.community-dialog.task-tree-dialog[open] { display: flex; flex-direction: column; }
+.task-tree-dialog::backdrop { background: #101512; }
+.task-tree-dialog .community-dialog-heading { flex-shrink: 0; align-items: center; padding: max(14px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) 14px max(24px, env(safe-area-inset-left)); border-bottom: 1px solid var(--pixel-line); }
+.task-tree-dialog .community-dialog-heading h2 { font-family: inherit; font-size: 14px; font-weight: 600; color: var(--pixel-ink); overflow-wrap: anywhere; }
+.task-tree-dialog .community-icon-button { display: grid; place-items: center; flex-shrink: 0; width: 40px; height: 40px; border: 1px solid var(--pixel-line); border-radius: 8px; background: var(--pixel-paper); color: var(--pixel-ink); cursor: pointer; box-shadow: none; }
+.task-tree-dialog .community-icon-button:hover { background: var(--pixel-screen); }
+.task-tree-dialog .community-dialog-body { display: flex; flex: 1; min-height: 0; padding: 0; overflow: hidden; }
+.task-tree-dialog :is(button, a, input, [tabindex]):focus-visible { outline: 2px solid var(--pixel-growth); outline-offset: 3px; }
+.project-map { display: flex; flex-direction: column; width: 100%; min-height: 0; }
+.project-map-caption { flex-shrink: 0; padding: 12px 24px; }
+.project-map-caption h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.project-map-caption p { margin: 2px 0; font-size: 12px; color: var(--pixel-muted); }
+.project-map-caption p:first-of-type { color: var(--pixel-ink); }
+.project-map-scroll { flex: 1; min-height: 0; overflow: auto; overscroll-behavior: contain; padding-bottom: env(safe-area-inset-bottom); background-image: linear-gradient(#18201a 1px, transparent 1px), linear-gradient(90deg, #18201a 1px, transparent 1px); background-size: 54px 54px; scrollbar-color: #46534a #101512; }
+.project-map-canvas { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(260px, .85fr) minmax(0, 2.65fr); align-items: center; gap: clamp(80px, 7vw, 140px); width: 100%; min-width: 1180px; max-width: 2000px; min-height: 100%; margin: 0 auto; padding: 56px clamp(40px, 6vw, 120px); }
+.project-map-connections { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; z-index: -1; }
+.project-map-connections path { fill: none; stroke: var(--pixel-line); stroke-width: 3; stroke-dasharray: 5 6; }
+.project-map-connections circle { fill: var(--pixel-line); }
+.project-map-connections circle[data-completed=true] { fill: var(--pixel-growth); }
+.project-map-node { min-width: 0; border: 1px solid var(--pixel-line); border-radius: 18px; background: var(--pixel-paper); padding: 24px; box-shadow: 0 10px 18px rgb(0 0 0 / 8%); }
+.project-map h3 { margin: 14px 0 4px; font-family: inherit; font-size: 21px; font-weight: 700; line-height: 1.4; color: var(--pixel-ink); overflow-wrap: anywhere; }
+.project-map p { color: var(--pixel-muted); line-height: 1.65; }
+.project-map-root { position: relative; border: 3px solid #647b58; padding: 30px; }
+.project-map-root::after { content: ''; position: absolute; top: calc(50% - 6px); left: calc(100% + 3px); width: 12px; height: 12px; border-radius: 50%; background: var(--pixel-growth); }
+.project-map-root > p { margin: 8px 0 0; font-size: 16px; overflow-wrap: anywhere; }
+.project-map-badge { display: inline-block; padding: 4px 11px; border: 1px solid var(--pixel-line); border-radius: 5px; color: var(--pixel-muted); font-size: 12px; font-weight: 700; text-transform: uppercase; }
+.project-map-root > .project-map-badge, .project-map-branch[data-completed=true] .project-map-badge { color: var(--pixel-growth); border-color: #44523c; background: #283227; }
+.project-map-progress { border-top: 1px solid var(--pixel-line); margin-top: 24px; padding-top: 18px; }
+.project-map-progress > div { display: flex; align-items: center; justify-content: space-between; gap: 10px; color: var(--pixel-muted); font-size: 15px; }
 .project-map-progress strong { color: var(--pixel-growth); font-variant-numeric: tabular-nums; }
-.project-map-progress progress { display: block; appearance: none; width: 100%; height: 6px; margin: 8px 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--pixel-screen); accent-color: var(--pixel-growth); }
+.project-map-progress progress { display: block; appearance: none; width: 100%; height: 8px; margin: 10px 0; border: 0; border-radius: 8px; overflow: hidden; background: var(--pixel-screen); accent-color: var(--pixel-growth); }
 .project-map-progress progress::-webkit-progress-bar { background: var(--pixel-screen); }
 .project-map-progress progress::-webkit-progress-value { background: var(--pixel-growth); border-radius: 8px; }
 .project-map-progress progress::-moz-progress-bar { background: var(--pixel-growth); border-radius: 8px; }
-.project-map-progress small { font-size: 11px; }
-.project-map-branches { display: grid; gap: 28px; border-left: 2px dashed var(--pixel-line); padding-left: 28px; min-width: 0; }
-.project-map-branch { display: grid; grid-template-columns: minmax(140px, .8fr) minmax(0, 1.3fr); gap: 28px; align-items: center; min-width: 0; }
-.project-map-status, .project-map-notice { position: relative; }
-.project-map-status::before, .project-map-notice::before { content: ''; position: absolute; top: 50%; right: 100%; width: 30px; border-top: 2px dashed var(--pixel-line); }
-.project-map-status::after { content: ''; position: absolute; top: 50%; left: 100%; width: 30px; border-top: 2px dashed var(--pixel-line); }
-.project-map-status p { margin: 0; }
-.project-map-status .journal-badge { display: inline-block; color: var(--pixel-muted); font-size: 10px; }
-.project-map-branch[data-completed=true] .project-map-status .journal-badge { color: var(--pixel-growth); background: color-mix(in srgb, var(--pixel-growth) 10%, transparent); }
-.project-map-task-panel { min-width: 0; }
-.project-map-task-panel ul { display: grid; gap: 14px; list-style: none; padding: 0; margin: 0; }
-.project-map-task-panel li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; line-height: 1.6; }
-.project-map-task-panel li > svg { flex-shrink: 0; margin-top: 2px; color: var(--pixel-muted); }
-.project-map-branch[data-completed=true] .project-map-task-panel li > svg { color: var(--pixel-growth); }
+.project-map-progress small { font-size: 11px; color: var(--pixel-muted); }
+.project-map-branches { display: grid; gap: 46px; min-width: 0; }
+.project-map-branch { display: grid; grid-template-columns: minmax(240px, .9fr) minmax(340px, 1.6fr); gap: clamp(64px, 7vw, 140px); align-items: center; min-width: 0; }
+.project-map-status { position: relative; min-height: 150px; display: flex; flex-direction: column; align-items: flex-start; justify-content: center; }
+.project-map-status::after { content: ''; position: absolute; top: 50%; left: calc(100% + 26px); width: calc(clamp(64px, 7vw, 140px) - 52px); border-top: 2px dashed #65716a; }
+.project-map-task-panel { background: #151c17; padding: 28px 32px; }
+.project-map-task-panel ul { display: grid; gap: 16px; list-style: none; padding: 0; margin: 0; }
+.project-map-task-panel li { display: flex; align-items: flex-start; gap: 10px; font-size: 16px; line-height: 1.6; }
 .project-map-task-done { text-decoration: line-through; color: var(--pixel-muted); }
-.project-map-task-panel p, .project-map-notice p { margin: 0; }
-@media (max-width: 1000px) {
-  .project-map-canvas { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 20px; }
-  .project-map-root::after { top: 100%; left: 28px; height: 26px; width: 0; border-top: 0; border-left: 2px dashed var(--pixel-line); }
-  .project-map-branches { margin-left: 28px; }
-}
+.project-map-task-panel p, .project-map-notice p { margin: 0; font-size: 14px; }
+.project-subtasks-heading { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 18px; font-size: 12px; color: var(--pixel-muted); }
+.project-subtasks-heading > span { font-variant-numeric: tabular-nums; }
+.project-subtask-check { display: flex; align-items: flex-start; gap: 14px; cursor: pointer; width: 100%; min-height: 36px; }
+.project-subtask-check span { overflow-wrap: anywhere; }
+.project-subtask-check input { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 4px; accent-color: #1683ff; cursor: pointer; }
+.project-subtask-check:hover { color: var(--pixel-growth); }
+.project-subtask-form { display: flex; gap: 8px; margin-top: 20px; }
+.project-subtask-form > input { min-width: 0; width: 100%; border: 1px solid var(--pixel-line); border-radius: 8px; padding: 8px 10px; background: var(--pixel-page); color: var(--pixel-ink); font: inherit; font-size: 13px; }
+.task-tree-dialog .journal-button.secondary { background: var(--pixel-paper); color: var(--pixel-ink); border: 1px solid var(--pixel-line); border-radius: 8px; box-shadow: none; }
+.project-subtask-form > .journal-button { flex-shrink: 0; min-width: 40px; min-height: 40px; padding: 8px; }
+.project-subtasks button:enabled { cursor: pointer; }
+.project-subtasks button:enabled:hover { background: var(--pixel-screen); }
+.project-subtasks button:enabled:active { transform: translateY(1px); }
+.project-subtasks :disabled { opacity: .55; cursor: not-allowed; }
+.project-subtasks .journal-error p { color: #efab99; }
+.task-tree-dialog .journal-pagination { padding: 20px 24px; margin: 0; background: var(--pixel-page); color: var(--pixel-ink); }
+.public-project-tasks > a { display: inline-block; margin: 12px 16px 0 0; }
 @media (max-width: 600px) {
-  .project-map-canvas { padding: 14px; }
-  .project-map .journal-card { padding: 16px; }
-  .project-map-branches { padding-left: 16px; margin-left: 12px; }
-  .project-map-root::after { left: 12px; }
-  .project-map-branch { grid-template-columns: minmax(0, 1fr); gap: 14px; }
-  .project-map-status::before, .project-map-notice::before { width: 18px; }
-  .project-map-status::after { top: 100%; left: 22px; height: 16px; width: 0; border-top: 0; border-left: 2px dashed var(--pixel-line); }
+  .task-tree-dialog .community-dialog-heading { padding-left: 16px; padding-right: 16px; }
+  .project-map-caption { padding: 10px 16px; }
+  .project-map-canvas { min-width: 1180px; padding: 32px 24px; }
 }
 @media (forced-colors: active) {
-  .project-map-canvas { background-image: none; }
+  .community-dialog.task-tree-dialog { --pixel-page: Canvas; --pixel-paper: Canvas; --pixel-screen: Canvas; --pixel-ink: CanvasText; --pixel-muted: CanvasText; --pixel-line: CanvasText; --pixel-growth: Highlight; }
+  .project-map-scroll { background-image: none; }
+  .project-map-node, .project-map-badge { background: Canvas; border-color: CanvasText; color: CanvasText; }
+  .project-map-connections path { stroke: CanvasText; }
   .project-map-progress progress { forced-color-adjust: auto; }
 }
 
