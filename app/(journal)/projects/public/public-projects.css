@@ -57,7 +57,30 @@
 .project-catalog-followers { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; color: var(--pixel-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .project-catalog-pagination { display: flex; align-items: center; justify-content: center; gap: 20px; margin-top: 28px; font-size: 13px; }
 .project-catalog-pagination button { display: inline-flex; align-items: center; gap: 8px; }
-.project-catalog-empty { display: flex; flex-direction: column; align-items: center; text-align: center; }
+.project-catalog .project-catalog-empty,
+.project-catalog .project-catalog-state { margin: 0; min-height: 340px; padding: clamp(24px, 4vw, 48px); border-style: solid; border-radius: 16px; }
+.project-catalog-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.journal-main .project-catalog-empty h2 { max-width: 560px; font-size: clamp(20px, 2.5vw, 26px); }
+.journal-main .project-catalog-empty p { max-width: 520px; margin: 0 0 24px; color: var(--pixel-muted); }
+.project-catalog-empty .journal-button { border-radius: 8px; }
+.project-catalog-state > .journal-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 242px; margin: 0; padding: 0; border: 0; }
+.catalog-placeholder { display: block; background: var(--catalog-inset); border-radius: 4px; animation: journal-pulse 1.5s ease-in-out infinite; }
+.catalog-placeholder-stack { display: grid; gap: 7px; }
+.catalog-placeholder-title { width: 85%; height: 23px; }
+.catalog-placeholder-short { width: 56px; max-width: 100%; height: 14px; }
+.catalog-placeholder-label { width: 100px; max-width: 100%; height: 18px; }
+.catalog-placeholder-number { width: 28px; height: 20px; }
+.catalog-placeholder-value { width: 42px; height: 26px; }
+.catalog-placeholder-bookmark { width: 18px; height: 22px; align-self: start; margin: 9px 3px; }
+.catalog-placeholder-track { width: 100%; height: 5px; }
+.project-catalog-skeleton .project-catalog-logo { border-radius: 12px; }
+.project-catalog-skeleton .project-catalog-avatar { border-radius: 50%; }
+@media (prefers-reduced-motion: reduce) {
+  .catalog-placeholder { animation: none; }
+}
+@media (forced-colors: active) {
+  .catalog-placeholder { background: GrayText; animation: none; }
+}
 .project-catalog-empty > svg { color: var(--pixel-growth); margin-bottom: 16px; }
 :is(.project-catalog, .project-blog-cards) :is(a, button) { cursor: pointer; }
 :is(.project-catalog, .project-blog-cards) :is(a, button):focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 3px; }

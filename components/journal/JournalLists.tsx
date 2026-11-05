@@ -57,20 +57,20 @@ function Posts({
     query = useJournalQuery<PageResult<Post>>(`${mode}?page=${page}`),
     t = useJournalText()
   return <section className="journal-posts">
-    <header className="journal-card journal-posts-header">
+    {mode === 'feed' ? <h1 className="sr-only">{t('Feed', 'Actividad')}</h1> : <header className="journal-card journal-posts-header">
     <div className="journal-row journal-posts-heading">
-      <h1>{mode === 'feed' ? t('From projects and people you follow', 'De los proyectos y personas que sigues') : t('Your updates', 'Tus actualizaciones')}</h1>
+      <h1>{t('Your updates', 'Tus actualizaciones')}</h1>
       <Link className="journal-button" href="/journal/compose">{t('Post update', 'Publicar actualización')}</Link>
     </div>
     <div className="journal-actions journal-posts-shortcuts">
       <Link href="/discover">{t('Discover people', 'Descubrir personas')}</Link>
       <Link href="/journal/monthly">{t('Monthly Wrapped', 'Resumen del mes')}</Link>
     </div>
-    </header>
+    </header>}
     {query.loading ? <div className="journal-card journal-posts-state"><JournalLoading /></div> : query.error ? <div className="journal-card journal-posts-state"><QueryError error={query.error} retry={query.reload} /></div> : <>
       {query.data?.items.length === 0 && <section className="journal-card journal-empty journal-posts-empty">
-        <h2>{mode === 'feed' ? t('Follow people to see what they are building.', 'Sigue a personas para ver lo que están creando.') : t('Share what you have been working on.', 'Comparte en qué has estado trabajando.')}</h2>
-        <Link className="journal-button secondary" href={mode === 'feed' ? '/discover' : '/journal/compose'}>{mode === 'feed' ? t('Discover people', 'Descubrir personas') : t('Post update', 'Publicar actualización')}</Link>
+        <h2>{mode === 'feed' ? t('No public updates yet.', 'Todavía no hay actualizaciones públicas.') : t('Share what you have been working on.', 'Comparte en qué has estado trabajando.')}</h2>
+        <Link className="journal-button secondary" href="/journal/compose">{t('Post update', 'Publicar actualización')}</Link>
       </section>}
       {query.data?.items.map(post => <div key={post.id}>
         {mode === 'posts' && <div className="journal-row">

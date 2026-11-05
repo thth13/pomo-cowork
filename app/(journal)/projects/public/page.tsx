@@ -1,6 +1,6 @@
 import { Suspense } from 'react'
 import PublicProjects from '@/components/journal/PublicProjects'
-import { JournalLoading } from '@/components/journal/Primitives'
+import PublicProjectsLoading from '@/components/journal/PublicProjectsLoading'
 import { journalMetadata } from '@/lib/journal/metadata'
 
 export const metadata = journalMetadata(
@@ -11,5 +11,5 @@ export const metadata = journalMetadata(
 )
 
 export default function Page() {
-  return <Suspense fallback={<JournalLoading />}><PublicProjects /></Suspense>
+  return <Suspense fallback={<div className="project-catalog"><PublicProjectsLoading /></div>}><PublicProjects /></Suspense>
 }

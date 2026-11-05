@@ -175,16 +175,10 @@ export async function postsApi(request: NextRequest, id?: string) {
   })
 }
 export async function feedApi(request: NextRequest) {
-  const user = await requireUser(request)
+  await requireUser(request)
   const page = pageNumber(request.nextUrl.searchParams.get('page'))
   const posts = await prisma.journalPost.findMany({
-    where: {
-      ...publicPost,
-      AND: [{ OR: [
-        { author: { followers: { some: { followerId: user.id } } } },
-        { project: { followers: { some: { userId: user.id } } } },
-      ] }]
-    },
+    where: publicPost,
     include: postInclude,
     orderBy: [{
       publishedAt: 'desc'

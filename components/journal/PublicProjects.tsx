@@ -9,7 +9,8 @@ import { useI18n } from '@/components/I18nProvider'
 import { useJournalQuery, useJournalText } from '@/lib/journal/client'
 import { projectStatusLabels } from '@/lib/journal/projectStatus'
 import { PageResult, PublicProjectListing, profileHref } from '@/lib/journal/types'
-import { JournalLoading, QueryError } from './Primitives'
+import { QueryError } from './Primitives'
+import PublicProjectsLoading from './PublicProjectsLoading'
 import FollowButton from './FollowButton'
 
 function CatalogCard({ project }: { project: PublicProjectListing }) {
@@ -85,7 +86,7 @@ export default function PublicProjects() {
   return <section className="project-catalog" aria-labelledby="public-projects-title">
     <h1 id="public-projects-title" className="sr-only">{t('Public projects', 'Proyectos públicos')}</h1>
     <div className="project-catalog-content" aria-busy={query.loading}>
-      {query.loading ? <JournalLoading /> : query.error ? <QueryError error={query.error} retry={query.reload} /> : query.data?.items.length ? <div className="project-catalog-grid">{query.data.items.map(project => <CatalogCard key={project.id} project={project} />)}</div> : <section className="journal-empty project-catalog-empty"><Sprout size={32} aria-hidden="true" /><h2>{page > 1 ? t('No more projects on this page', 'No hay más proyectos en esta página') : t('The next project could be yours', 'El próximo proyecto podría ser el tuyo')}</h2><p>{t('Share a public project and let others follow your progress.', 'Comparte un proyecto público y permite que otros sigan tus avances.')}</p>{page > 1 ? <button className="journal-button secondary" onClick={() => change({ page: '1' })}>{t('Back to first page', 'Volver a la primera página')}</button> : <Link className="journal-button" href="/projects/public/new">{t('Share your project', 'Comparte tu proyecto')}</Link>}</section>}
+      {query.loading ? <PublicProjectsLoading /> : query.error ? <div className="journal-card project-catalog-state"><QueryError error={query.error} retry={query.reload} /></div> : query.data?.items.length ? <div className="project-catalog-grid">{query.data.items.map(project => <CatalogCard key={project.id} project={project} />)}</div> : <section className="journal-card journal-empty project-catalog-empty"><Sprout size={32} aria-hidden="true" /><h2>{page > 1 ? t('No more projects on this page', 'No hay más proyectos en esta página') : t('The next project could be yours', 'El próximo proyecto podría ser el tuyo')}</h2><p>{t('Share a public project and let others follow your progress.', 'Comparte un proyecto público y permite que otros sigan tus avances.')}</p>{page > 1 ? <button className="journal-button secondary" onClick={() => change({ page: '1' })}>{t('Back to first page', 'Volver a la primera página')}</button> : <Link className="journal-button" href="/projects/public/new">{t('Share your project', 'Comparte tu proyecto')}</Link>}</section>}
     </div>
     {!query.loading && !query.error && (page > 1 || query.data?.hasMore) && <nav className="project-catalog-pagination" aria-label={t('Project pages', 'Páginas de proyectos')}><button type="button" disabled={page <= 1} onClick={() => change({ page: String(page - 1) })}><ArrowLeft size={16} aria-hidden="true" />{t('Previous', 'Anterior')}</button><span>{t('Page', 'Página')} {page}</span><button type="button" disabled={!query.data?.hasMore} onClick={() => change({ page: String(page + 1) })}>{t('Next', 'Siguiente')}<ArrowRight size={16} aria-hidden="true" /></button></nav>}
   </section>

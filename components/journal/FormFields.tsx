@@ -65,7 +65,7 @@ export function ImageAttachments({
   onChange: (images: string[]) => void;
   onBusy: (busy: boolean) => void;
   max?: number;
-  variant?: 'logo' | 'cover';
+  variant?: 'logo' | 'cover' | 'gallery';
   label?: string;
 }) {
   const [busy, setBusy] = useState(false),
@@ -80,7 +80,7 @@ export function ImageAttachments({
   const upload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     event.target.value = ''
-    if (!file || uploadLock.current) return
+    if (!file || uploadLock.current || ((!variant || variant === 'gallery') && images.length >= max)) return
     setError('')
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type) || !file.size || file.size > 2 * 1024 * 1024) {
       setError(t('Choose a PNG, JPEG or WebP image up to 2 MB.', 'Elige una imagen PNG, JPEG o WebP de hasta 2 MB.'))
@@ -94,7 +94,7 @@ export function ImageAttachments({
       const body = new FormData()
       body.append('image', file)
       const result = await journalApi<{ url: string }>('images', { method: 'POST', body })
-      onChange(variant ? [result.url] : [...images, result.url])
+      onChange(variant && variant !== 'gallery' ? [result.url] : [...images, result.url])
     } catch (e) {
       setError(e instanceof Error ? e.message : t('Upload failed. Please try again.', 'No se pudo subir la imagen. Inténtalo de nuevo.'))
     } finally {
@@ -103,6 +103,27 @@ export function ImageAttachments({
       onBusy(false)
       setPreview(null)
     }
+  }
+  if (variant === 'gallery') {
+    return <div className="journal-image-picker journal-image-picker--gallery">
+      <input ref={inputRef} className="journal-image-picker-input" type="file" accept="image/png,image/jpeg,image/webp" disabled={busy || images.length >= max} aria-label={t('Add image', 'Añadir imagen')} tabIndex={-1} onChange={upload} />
+      <div className="journal-image-gallery">
+        {images.map((src, index) => <div key={`${src}-${index}`} className="journal-image-picker-frame">
+          <div className="journal-image-gallery-preview"><JournalImage src={src} alt={`${t('Attached image', 'Imagen adjunta')} ${index + 1}`} /></div>
+          <button type="button" className="journal-image-picker-remove" disabled={busy} aria-label={`${t('Remove image', 'Quitar imagen')} ${index + 1}`} title={t('Remove image', 'Quitar imagen')} onClick={() => { onChange(images.filter((_, i) => i !== index)); setError(''); pickerRef.current?.focus() }}><X size={15} aria-hidden="true" /></button>
+        </div>)}
+        <button ref={pickerRef} type="button" className="journal-image-picker-target" disabled={busy || images.length >= max} aria-busy={busy} aria-describedby={helpId} onClick={() => inputRef.current?.click()}>
+          {preview ? <><JournalImage src={preview} alt={t('Image preview', 'Vista previa de imagen')} /><span className="journal-image-picker-caption"><Upload size={14} aria-hidden="true" />{t('Uploading…', 'Subiendo…')}</span></> : <span className="journal-image-picker-empty">
+            <ImagePlus size={26} strokeWidth={1.4} aria-hidden="true" />
+            <span>{images.length >= max ? t('Image limit reached', 'Límite de imágenes alcanzado') : t('Add image', 'Añadir imagen')}</span>
+            <small>{images.length} / {max}</small>
+          </span>}
+        </button>
+      </div>
+      <small id={helpId}>{t('PNG, JPEG or WebP · up to 2 MB each', 'PNG, JPEG o WebP · hasta 2 MB por imagen')}</small>
+      <span className="sr-only" role="status">{busy ? t('Uploading…', 'Subiendo…') : ''}</span>
+      {error && <p className="journal-field-error" role="alert">{error}</p>}
+    </div>
   }
   if (variant) {
     const action = images[0] ? t('Replace image', 'Cambiar imagen') : t('Upload image', 'Subir imagen')

@@ -47,6 +47,33 @@ The identity stays content-sized. Forced colors hides the decorative cover.
 
 ## Public project directory
 
+Update cards separate author/type, linked project, written content, focus snapshot
+and publication date. Icons label the post type, project, metrics, tracked period
+and social actions. Focus metrics share a compact two-column inset panel; tracked
+period and publication date have explicit localized labels. Shared UpdateCard owns
+this hierarchy across feed, profiles and post detail, using existing glass tokens.
+Post reactions display only an icon and count, without borders or button backgrounds;
+localized accessible labels and tooltips identify actions, and a filled heart marks
+the liked state. Keyboard focus and comfortable hit areas remain available.
+Likes update the heart and count optimistically, reconcile with the server response,
+and roll back with inline error feedback on failure. A separate mutation lock prevents
+duplicate requests without blocking comments. Liking triggers a brief heart pop;
+reduced-motion disables the animation, and pending likes retain their full opacity.
+
+The update composer reuses the public project editor's journal-card glass shell,
+heading emblem, control tokens, two-column content/publishing layout and footer.
+Text, preview and image attachments occupy the main column; focus stats and
+visibility occupy the inset settings panel. Mobile stacks the columns. Inner
+panels use token-derived tints without adding another backdrop blur.
+Composer attachments use the shared ImageAttachments gallery variant: image tiles,
+an upload tile with a count, local upload preview and individual remove controls.
+The gallery preserves the four-image limit and project image-picker styling.
+Composer route/authentication and existing-post loading share a form-shaped skeleton
+with the editor's glass shell, header, content/settings columns, image area and footer.
+Its responsive layout matches the form and pulse honors reduced motion. New forms
+render without waiting for project options or focus statistics, which retain their
+own loading states.
+
 `/projects/public` is a guest-accessible catalog of public project pages. The supplied
 reference is superseded by the requested compact redesign: a 44px logo beside the
 name and status, an optional right-hand description, slim task progress, three equal
@@ -63,6 +90,12 @@ The streak counter is omitted; the seven weekly bars fill the remaining width af
 preserve the product identity; catalog cards use a 16px radius and collapse to two
 then one column. Inter owns dense text; tabular numerals align statistics.
 `app/(journal)/projects/public/public-projects.css` owns this route's geometry.
+Catalog loading uses PublicProjectsLoading for both Suspense and query loading:
+twelve placeholders reuse the real responsive card grid, header, progress, metrics,
+weekly activity and author footer geometry, with reduced-motion support.
+Catalog empty, loading and error states reuse `journal-card`, including the shared
+scenery glass surface, blur and forced-colors fallback. State panels use the same
+16px radius as catalog cards, a solid border and responsive inner spacing.
 The journal query, error/loading primitives, Radix JournalSelect and FollowButton
 remain canonical. The bookmark is a project-follow variant, with the same auth and
 mutation behavior as the public page. The toolbar, result count, search, status filter and sort controls are removed.
@@ -1706,9 +1739,13 @@ only Make project blog, right-aligned beneath the work-project list (full-width 
 mobile). No section heading, empty panel or extra divider is rendered. Loading and
 errors remain explicit; later empty pages retain navigation back to previous pages.
 
-Feed and personal updates share the journal-posts presentation: a compact heading
-and shortcut row inside one journal-card, with a separate solid-border empty-state
-card and secondary action. Loading and error content also use journal-card. All
+Personal updates keep a compact heading and shortcut row inside one journal-card.
+Feed starts directly with its content and retains only a visually hidden page heading;
+it shows all public updates newest-first, regardless of author or project follows.
+The existing public-post visibility filter, sign-in requirement and pagination remain.
+the introductory heading, publish action and shortcut panel are omitted on `/feed`.
+Both use a separate solid-border empty-state card and secondary action.
+Loading and error content also use journal-card. All
 these surfaces inherit the canonical scenery blur/paper token adapter, including
 forced colors; no local glass palette is added. Cards use 16px corners, controls
 8px corners, and the heading/action stack on narrow screens.
