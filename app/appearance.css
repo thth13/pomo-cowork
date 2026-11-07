@@ -675,3 +675,18 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
     background: var(--scene-task-hover);
   }
 }
+
+/* Reveal additional appearance rows in place. */
+.appearance-options-reveal { display: grid; grid-template-rows: 0fr; transition: grid-template-rows 280ms ease; }
+.appearance-options-reveal[data-expanded="true"] { grid-template-rows: 1fr; }
+.appearance-options-clip { min-height: 0; overflow: hidden; }
+.appearance-options-rest { padding-top: 12px; }
+.appearance-expand { display: flex; justify-content: center; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; width: 100%; min-height: 32px; margin-top: 8px; color: inherit; background: transparent; border: 0; border-radius: 3px; cursor: pointer; }
+.appearance-expand:hover { background: var(--pixel-screen); }
+.appearance-expand:active { background: var(--pixel-shadow); }
+.appearance-expand:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.appearance-expand svg { transition: transform 280ms ease; }
+.appearance-expand[aria-expanded="true"] svg { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .appearance-options-reveal, .appearance-expand svg { transition: none; }
+}

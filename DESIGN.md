@@ -50,6 +50,11 @@ The admin Product updates section uses existing cards/buttons and confirmation
 behavior. Preview is independent of delivery; sending is an explicit administrator
 action. See `docs/product-updates.md` for rollout and future-release authoring.
 
+Update activity in the same admin section reuses the admin table frame, horizontal
+overflow, pagination, loading/error/empty states and `useAdminData`. Each row shows
+the user's avatar (initial fallback), display name/username, release, action and
+Kyiv timestamp with seconds. Existing admin CSS tokens own its presentation.
+
 ## Admin latest user activity
 
 Overview and All metrics reuse `AdminRecentUsers` for a registered-user count and
@@ -1846,3 +1851,10 @@ fallback. Ordinary workspace profiles retain the support widget.
 The achievements scenery surface applies to both garden-page (including embedded
 blog profiles) and journal-shell: paper-token background, 20px inner padding and
 a complete border accompany the shared blur. Neither shell gets blur alone.
+
+
+Appearance settings keep the full-width default background separate, followed by
+two complete rows of scenery (three per row on desktop), and one row each of timer fonts and
+site themes, following their existing responsive grid columns. A full-width Show all / Show less control with a chevron
+smoothly reveals the remaining rows downward in place and collapses them
+on a second click. Reduced motion disables the transition.

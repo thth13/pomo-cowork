@@ -23,6 +23,13 @@ accounts. No email or push is sent. The requested audience and click-to-open
 behavior are documented in `docs/product-updates.md`; permission ownership remains
 `lib/adminRequest.ts` / `lib/admin.ts`.
 
+Product update activity records reaching the scroll body's bottom and explicit
+dialog closure once each per opening. Close includes Escape, the close/Done buttons
+and ordinary release-link navigation. Modified link clicks keep the dialog open.
+Preview and account-change hiding create no events. The event API verifies the
+notification belongs to the authenticated account and matches the release; admin
+reads use `authorizeAdmin`. See `docs/product-updates.md` for event semantics.
+
 ProjectList saving feedback belongs to the initiating control: project creation,
 the parent project's add-task button, the changed task's checkbox, or the corresponding
 rename/delete action. Spinner icons preserve control geometry, respect reduced motion,
@@ -1195,3 +1202,14 @@ own dark palette per the reference. Escape/close returns to `?tab=overview`.
 Background scrolling is locked only for this variant; native modal behavior owns
 focus isolation. The canvas owns both scroll axes and keeps project → task →
 subtask geometry on narrow devices. Task pagination is inside the dialog.
+
+
+Appearance catalog overflow expands inline with a full-width Show all / Show less
+button and chevron; visible text follows the active English/Spanish locale.
+The full-width default background is separate from the two scenery rows; desktop
+shows six scenery thumbnails in two rows of three. Fonts/themes retain one row.
+Narrow layouts follow their existing responsive column count.
+The button exposes localized expand/collapse labels and aria-expanded/aria-controls.
+Collapsed options are hidden from keyboard and assistive technology. Expansion and
+collapse animate height unless reduced motion is enabled. Selection retains the
+same native radio group, appearance store and entitlement checks.

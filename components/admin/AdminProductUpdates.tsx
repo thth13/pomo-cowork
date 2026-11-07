@@ -6,6 +6,7 @@ import CommunityDialog from '@/components/CommunityDialog'
 import { useAdminData } from '@/components/admin/useAdminData'
 import { openProductUpdate, PRODUCT_UPDATES } from '@/lib/productUpdates'
 import { useAuthStore } from '@/store/useAuthStore'
+import AdminProductUpdateEvents from './AdminProductUpdateEvents'
 
 interface DeliveryStatus { users: number; updates: { id: string; sent: number }[] }
 
@@ -68,6 +69,7 @@ export default function AdminProductUpdates() {
         </div>
       </article>
     })}
+    <AdminProductUpdateEvents />
     <CommunityDialog open={Boolean(selection)} title="Send this update?" busy={busy} onClose={() => setSelectedId(null)}>
       <p><strong>{selection?.title.en}</strong></p>
       <p>This sends an in-app notification to {remaining.toLocaleString()} registered accounts that have not received this update. Opening the notification shows the illustrated update. No email or push notification is sent.</p>

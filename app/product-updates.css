@@ -26,6 +26,8 @@
 .admin-update-card h2 { font-size: 20px; font-weight: 600; }
 .admin-update-card p { margin-top: 10px; color: var(--admin-muted); line-height: 1.6; }
 .admin-update-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+.admin-update-person { display: flex; align-items: center; gap: 10px; }
+.admin-update-person img { object-fit: cover; }
 .notification-entry--product_update { --notification-accent: var(--pixel-growth); }
 @media (max-width: 479px) {
   .product-update-scroll { padding: 18px; }

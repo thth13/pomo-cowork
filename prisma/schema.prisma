@@ -38,6 +38,7 @@ model User {
   beepPreferences BeepPreferences?
   beepConversations BeepConversation[]
   beepEvents BeepEvent[]
+  productUpdateEvents ProductUpdateEvent[]
 
   achievements UserAchievement[]
   achievementState AchievementState?
@@ -123,6 +124,20 @@ model BeepEvent {
   @@index([visitId, createdAt])
   @@index([userId, createdAt])
   @@map("beep_events")
+}
+
+model ProductUpdateEvent {
+  id String @id @default(cuid())
+  sessionId String @db.VarChar(36)
+  productUpdateId String @db.VarChar(80)
+  action String @db.VarChar(24)
+  userId String
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sessionId, action])
+  @@index([createdAt, id])
+  @@map("product_update_events")
 }
 
 model PaywallEvent {

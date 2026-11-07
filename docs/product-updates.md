@@ -34,6 +34,33 @@ requests and retries safe. A later send can reach newly registered accounts with
 notifying existing recipients again. A timeout does not prove failure: refresh the
 delivery count before retrying.
 
+## Engagement log
+
+Apply `20261107130000_product_update_events` with `npm run prisma:migrate` and
+regenerate the Prisma client with `npm exec -- prisma generate` before using the
+engagement log. These commands were not run while preparing the change.
+
+`/admin#updates` includes a paginated activity table (50 events per page), newest
+first, with avatar, display name/username, release, action and server-recorded time
+in Europe/Kyiv including seconds. Refresh reloads the table. No historical scroll
+or close events can be reconstructed.
+
+- `scrolled_to_end`: an actual scroll reaches within 4px of the content bottom,
+  once per opening. Simply opening a dialog does not count as scrolling.
+- `closed`: close button, Escape, Done or ordinary release-link navigation,
+  once per opening. Modified link clicks keep the dialog open.
+- Reopening the notification starts a new session. Admin preview, account changes,
+  unmounts and closing the browser/tab do not create events.
+
+`POST /api/product-updates/events` verifies the token and the matching owned update
+notification. It stores the server timestamp and user ID, never a client-supplied
+identity. The user relation supplies current names/avatars; deleting an account
+cascades to its events. Unique user/session/action keys prevent duplicate retries.
+The client retries a failed request once and uses keepalive for link navigation;
+logging never blocks reading or closing. Events can be lost if both attempts fail.
+Admin reads require `authorizeAdmin`. Manually verify repeated bottom scrolling,
+each close method, reopening, previews, unauthorized events, pagination and retry.
+
 ## Add a future release
 
 - Add a stable, unique ID to `PRODUCT_UPDATES` in `lib/productUpdates.ts`.

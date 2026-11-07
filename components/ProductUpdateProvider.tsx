@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowUpRight, Plus } from 'lucide-react'
@@ -12,7 +12,8 @@ import { getProductUpdate, OPEN_PRODUCT_UPDATE, productUpdateCopy, type OpenProd
 export default function ProductUpdateProvider() {
   const { language } = useI18n()
   const token = useAuthStore(state => state.token)
-  const [visible, setVisible] = useState<(OpenProductUpdateDetail & { owner: string | null }) | null>(null)
+  const [visible, setVisible] = useState<(OpenProductUpdateDetail & { owner: string | null; sessionId: string }) | null>(null)
+  const recorded = useRef(new Set<string>())
   const [status, setStatus] = useState<'idle' | 'saving' | 'error'>('idle')
   const [retry, setRetry] = useState(0)
   const active = visible?.owner === token ? visible : null
@@ -23,8 +24,9 @@ export default function ProductUpdateProvider() {
     const open = (event: Event) => {
       const detail = (event as CustomEvent<OpenProductUpdateDetail>).detail
       if (!detail || typeof detail.updateId !== 'string') return
+      recorded.current.clear()
       setStatus('idle')
-      setVisible({ updateId: detail.updateId, notificationId: typeof detail.notificationId === 'string' ? detail.notificationId : undefined, owner: useAuthStore.getState().token })
+      setVisible({ updateId: detail.updateId, notificationId: typeof detail.notificationId === 'string' ? detail.notificationId : undefined, owner: useAuthStore.getState().token, sessionId: crypto.randomUUID() })
     }
     window.addEventListener(OPEN_PRODUCT_UPDATE, open)
     return () => window.removeEventListener(OPEN_PRODUCT_UPDATE, open)
@@ -49,10 +51,38 @@ export default function ProductUpdateProvider() {
     return () => { disposed = true; controller.abort(); window.clearTimeout(timeout) }
   }, [active, update, token, retry])
 
+  function record(action: 'scrolled_to_end' | 'closed') {
+    if (!active?.notificationId || !update || !token || useAuthStore.getState().token !== token || recorded.current.has(action)) return
+    recorded.current.add(action)
+    const body = JSON.stringify({ updateId: update.id, notificationId: active.notificationId, sessionId: active.sessionId, action })
+    // Keep the request alive when a release link navigates away. Retrying uses
+    // the same session/action key, so an uncertain response cannot duplicate it.
+    void (async () => {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (useAuthStore.getState().token !== token) return
+        const controller = new AbortController()
+        const timeout = window.setTimeout(() => controller.abort(), 10_000)
+        try {
+          const response = await fetch('/api/product-updates/events', {
+            method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body, keepalive: true, signal: controller.signal,
+          })
+          if (response.ok || response.status < 500) return
+        } catch { /* Retry once without blocking the dialog. */ }
+        finally { window.clearTimeout(timeout) }
+      }
+    })()
+  }
+
+  function close() { record('closed'); setVisible(null) }
+
   if (!active) return null
   return <CommunityDialog open variant="product-update" title={copy.label}
-    description={update?.summary[language]} onClose={() => setVisible(null)}>
-    <div className="product-update-scroll">
+    description={update?.summary[language]} onClose={close}>
+    <div key={active.sessionId} className="product-update-scroll" onScroll={event => {
+      const element = event.currentTarget
+      if (element.scrollTop > 0 && element.scrollHeight - element.scrollTop - element.clientHeight <= 4) record('scrolled_to_end')
+    }}>
       {update ? update.sections.map((section, index) => <section className="product-update-section" key={index}>
         {section.image && <Image className="product-update-image" src={section.image} alt={section.imageAlt?.[language] ?? ''} width={1200} height={600} />}
         <h3>{section.title[language]}</h3>
@@ -60,7 +90,7 @@ export default function ProductUpdateProvider() {
         {section.actions && <div className="product-update-actions">
           {section.actions.map(action => <Link key={action.href} href={action.href}
             className={`community-button${action.primary ? ' community-button-primary' : ''}`}
-            onClick={event => { if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) setVisible(null) }}>
+            onClick={event => { if (!event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey) close() }}>
             {action.primary ? <Plus size={17} aria-hidden="true" /> : <ArrowUpRight size={17} aria-hidden="true" />}
             {action.label[language]}
           </Link>)}
@@ -79,7 +109,7 @@ export default function ProductUpdateProvider() {
         {status === 'saving' && <p>{copy.saving}</p>}
         {status === 'error' && <><p>{copy.readError}</p><button type="button" className="product-update-retry" onClick={() => setRetry(value => value + 1)}>{copy.retry}</button></>}
       </div>
-      <button type="button" className="community-button" onClick={() => setVisible(null)}>{copy.done}</button>
+      <button type="button" className="community-button" onClick={close}>{copy.done}</button>
     </footer>
   </CommunityDialog>
 }

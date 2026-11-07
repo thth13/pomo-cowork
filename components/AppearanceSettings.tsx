@@ -1,14 +1,50 @@
 'use client'
 
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
+import { Children, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, Crown, Film, Flame, Leaf, Loader2, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
+import { ChevronDown, Check, Crown, Film, Flame, Leaf, Loader2, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
 import { BACKGROUNDS, isAnimatedBackground, isPremiumBackground, isPremiumTimerFont, isPremiumWindowDesign, PLAY_BACKGROUND_EVENT, TIMER_FONTS, WINDOW_DESIGNS } from '@/lib/appearance'
 import { appearanceCopy } from '@/lib/i18n/appearance'
 import { useI18n } from '@/components/I18nProvider'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
 import { PaywallModal } from '@/components/PaywallModal'
+
+function AppearanceOptions({ title, className, children }: { title: string; className: string; children: ReactNode }) {
+  const [expanded, setExpanded] = useState(false)
+  const [columns, setColumns] = useState(className === 'appearance-fonts' ? 5 : 3)
+  const previewRef = useRef<HTMLDivElement>(null)
+  const contentId = useId()
+  const { language } = useI18n()
+  const options = Children.toArray(children)
+  // The default background spans its own row and does not count toward scenery rows.
+  const visibleCount = className === 'appearance-scenes' ? 1 + columns * 2 : columns
+
+  useEffect(() => {
+    const preview = previewRef.current
+    if (!preview) return
+    const updateColumns = () => setColumns(getComputedStyle(preview).gridTemplateColumns.split(' ').length)
+    updateColumns()
+    const observer = new ResizeObserver(updateColumns)
+    observer.observe(preview)
+    return () => observer.disconnect()
+  }, [])
+
+  return <>
+    <div ref={previewRef} className={className}>{options.slice(0, visibleCount)}</div>
+    <div id={contentId} className="appearance-options-reveal" data-expanded={expanded} aria-hidden={!expanded}>
+      <div className="appearance-options-clip">
+        <div className={`${className} appearance-options-rest`} style={{ visibility: expanded ? 'visible' : 'hidden' }}>{options.slice(visibleCount)}</div>
+      </div>
+    </div>
+    {options.length > visibleCount && <button type="button" className="appearance-expand" aria-controls={contentId} aria-expanded={expanded}
+      aria-label={`${expanded ? appearanceCopy[language].collapseOptions : appearanceCopy[language].expandOptions}: ${title}`}
+      onClick={() => setExpanded(value => !value)}>
+      <span>{expanded ? appearanceCopy[language].collapseOptions : appearanceCopy[language].expandOptions}</span>
+      <ChevronDown size={18} aria-hidden="true" />
+    </button>}
+  </>
+}
 
 function AppearanceChoice({ premium, locked, name, value, checked, busy, label, className = '', onSelect, onUnlock, children }: {
   premium: boolean
@@ -67,6 +103,14 @@ export default function AppearanceSettings() {
     }
   }, [open])
 
+  const mediaFeedback = (
+    <div className="appearance-media-feedback" role="status" aria-live="polite">
+      {mediaStatus === 'loading' && <span className="sr-only">{copy.loading}</span>}
+      {mediaStatus === 'error' && <><span>{state.failedBackgroundId && `${copy.names[state.failedBackgroundId]}: `}{copy.error}</span><button type="button" onClick={state.retryMedia}>{copy.retry}</button></>}
+      {mediaStatus === 'blocked' && copy.blocked}
+    </div>
+  )
+
   return (
     <>
       <button ref={triggerRef} type="button" className="timer-appearance-trigger" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label={copy.trigger} title={copy.trigger} data-no-translate>
@@ -97,7 +141,7 @@ export default function AppearanceSettings() {
           <div className="appearance-body">
             <fieldset className="appearance-section">
               <legend>{copy.backgrounds}</legend>
-              <div className="appearance-scenes">
+              <AppearanceOptions title={copy.backgrounds} className="appearance-scenes">
                 {BACKGROUNDS.map(background => (
                   <AppearanceChoice key={background.id} premium={isPremiumBackground(background.id)} locked={isPremiumBackground(background.id) && !state.hasProAccess}
                     name={radioName} value={background.id} checked={(state.pendingBackgroundId ?? state.backgroundId) === background.id} busy={loadingBackgroundId === background.id}
@@ -119,12 +163,8 @@ export default function AppearanceSettings() {
                     </span>
                   </AppearanceChoice>
                 ))}
-              </div>
-              <div className="appearance-media-feedback" role="status" aria-live="polite">
-                {mediaStatus === 'loading' && <span className="sr-only">{copy.loading}</span>}
-                {mediaStatus === 'error' && <><span>{state.failedBackgroundId && `${copy.names[state.failedBackgroundId]}: `}{copy.error}</span><button type="button" onClick={state.retryMedia}>{copy.retry}</button></>}
-                {mediaStatus === 'blocked' && copy.blocked}
-              </div>
+              </AppearanceOptions>
+              {mediaFeedback}
               {isAnimatedBackground(selected) && (
                 <div className="appearance-video-options">
                   <p>{reducedMotion ? copy.reducedMotion : selected.kind === 'video' ? copy.silent : copy.animatedSilent}</p>
@@ -146,7 +186,7 @@ export default function AppearanceSettings() {
             </fieldset>
             <fieldset className="appearance-section">
               <legend>{copy.font}</legend>
-              <div className="appearance-fonts">
+              <AppearanceOptions title={copy.font} className="appearance-fonts">
                 {TIMER_FONTS.map(font => (
                   <AppearanceChoice key={font} className="appearance-font-choice" premium={isPremiumTimerFont(font)} locked={isPremiumTimerFont(font) && !state.hasProAccess}
                     name={fontName} value={font} checked={state.timerFont === font}
@@ -156,11 +196,11 @@ export default function AppearanceSettings() {
                     <span className="appearance-choice-label">{copy.fonts[font]}{state.timerFont === font && <Check size={13} aria-hidden="true" />}</span>
                   </AppearanceChoice>
                 ))}
-              </div>
+              </AppearanceOptions>
             </fieldset>
             <fieldset className="appearance-section">
               <legend>{copy.windowDesign}</legend>
-              <div className="appearance-window-designs">
+              <AppearanceOptions title={copy.windowDesign} className="appearance-window-designs">
                 {WINDOW_DESIGNS.map(design => (
                   <AppearanceChoice key={design} className="appearance-window-choice" premium={isPremiumWindowDesign(design)} locked={isPremiumWindowDesign(design) && !state.hasProAccess}
                     name={windowDesignName} value={design} checked={state.windowDesign === design}
@@ -179,7 +219,7 @@ export default function AppearanceSettings() {
                     <span className="appearance-choice-description">{copy.windowDesigns[design].description}</span>
                   </AppearanceChoice>
                 ))}
-              </div>
+              </AppearanceOptions>
             </fieldset>
           </div>
           <footer className="appearance-footer">
