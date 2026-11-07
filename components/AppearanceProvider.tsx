@@ -12,6 +12,16 @@ const sceneryRoutes = /^\/(?:beep|daily-flow|rooms|leaderboard|stats|statistics|
 export function AppearanceProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const backgroundId = useAppearanceStore(state => state.backgroundId)
+  const windowDesign = useAppearanceStore(state => state.windowDesign)
+  const hydrated = useAppearanceStore(state => state.hydrated)
+
+  useEffect(() => {
+    if (!hydrated) return
+    const root = document.documentElement
+    root.dataset.windowDesign = windowDesign
+    return () => { delete root.dataset.windowDesign }
+  }, [windowDesign, hydrated])
+
   useEffect(() => {
     useAppearanceStore.getState().hydrate()
     let expiryTimeout: number | undefined

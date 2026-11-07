@@ -2,7 +2,7 @@
 
 import { isTaskSelectionLocked } from '@/lib/taskSelection'
 
-import { useEffect, useId, useRef } from 'react'
+import { useEffect, useId, useRef, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { PictureInPicture2, X } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
@@ -123,7 +123,7 @@ export function TimerPictureInPicture({
           </header>
           <div className="mini-timer-display">
             <div className={`mini-timer-digits${formattedTime.length > 5 ? ' mini-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={sessionLabel} aria-live="off">
-              {formattedTime}
+              <span className="timer-numerals" style={{ '--timer-character-count': formattedTime.length } as CSSProperties}>{formattedTime}</span>
             </div>
             {focusTaskLabel ? <p className="mini-timer-flow-task">{focusTaskLabel}</p> : <TaskPicker
               variant="mini-timer"

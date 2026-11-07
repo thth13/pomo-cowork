@@ -1,0 +1,476 @@
+/* Window materials are independent of scenery, timer typography and theme.
+   Glass keeps the established appearance.css treatment; opaque materials adapt
+   its local scene roles instead of changing foreground colors or layouts. */
+@media (forced-colors: none) {
+  :root[data-window-design="paper"], .appearance-window-preview[data-window-design="paper"] {
+    --window-material-paper: #f6efdc;
+    --window-material-screen: #e8dfc7;
+    --window-material-ink: #453c2b;
+    --window-material-muted: #6f634b;
+    --window-material-line: #a89a7a;
+    --window-material-accent: #855b32;
+    --window-material-scheme: light;
+    --window-material-texture: repeating-linear-gradient(0deg, transparent 0 3px, rgb(90 69 32 / 3%) 3px 4px);
+    --window-radius: 3px;
+    --timer-focus-on-dark: #855b32;
+    --timer-short-break-on-dark: #49663a;
+    --timer-long-break-on-dark: #46627a;
+    --window-shadow: 3px 3px 0 #d4c7a8, 4px 4px 0 #a89a7a, 0 8px 20px rgb(39 30 14 / 12%);
+  }
+
+  :root[data-window-design="terminal"], .appearance-window-preview[data-window-design="terminal"] {
+    --window-material-paper: #101c17;
+    --window-material-screen: #1b3025;
+    --window-material-ink: #bce7c7;
+    --window-material-muted: #8eb89d;
+    --window-material-line: #44765b;
+    --window-material-accent: #9dd9ac;
+    --window-material-scheme: dark;
+    --window-material-texture: none;
+    --window-radius: 2px;
+    --window-shadow: inset 0 0 0 1px rgb(157 217 172 / 8%);
+  }
+
+  :root[data-window-design="neon"], .appearance-window-preview[data-window-design="neon"] {
+    --window-material-paper: #18172d;
+    --window-material-screen: #292441;
+    --window-material-ink: #f1edff;
+    --window-material-muted: #c4bddf;
+    --window-material-line: #8e7be8;
+    --window-material-accent: #c9b8ff;
+    --window-material-scheme: dark;
+    --window-material-texture: none;
+    --window-radius: 16px;
+    --window-shadow: 0 0 0 1px rgb(142 123 232 / 35%), 0 0 20px rgb(142 123 232 / 22%), inset 0 0 18px rgb(142 123 232 / 7%);
+  }
+
+  :root:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+    --window-scene-panel: var(--window-material-paper);
+    --window-scene-task: var(--window-material-paper);
+    --window-scene-task-hover: var(--window-material-screen);
+    --window-scene-popover: var(--window-material-paper);
+    --window-scene-border: var(--window-material-line);
+    --window-product-page: var(--window-material-paper);
+    --window-product-screen: var(--window-material-screen);
+    --window-backdrop: none;
+    --window-material-text-shadow: none;
+  }
+
+  /* Material palettes stay local to app windows; page scenery and semantic
+     action colors retain their existing owners. Previews reuse these tokens. */
+  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body :is(
+    .workspace-window, .workspace-navigation-panel, .workspace-account-card,
+    .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
+    .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
+    .focus-project-actions-menu, .project-color-menu, .active-session-reactions-menu,
+    .feedback-panel, .feedback-prompt, [data-beep-surface],
+    .focus-station, .working-sidebar, .seo-timer, .seo-social,
+    .workspace-dock, .workspace-navigation-control
+  ) {
+    --pixel-paper: var(--window-material-paper);
+    --pixel-page: var(--window-material-paper);
+    --pixel-screen: var(--window-material-screen);
+    --pixel-ink: var(--window-material-ink);
+    --pixel-muted: var(--window-material-muted);
+    --pixel-line: var(--window-material-line);
+    --pixel-accent: var(--window-material-accent);
+    --pixel-tomato-ink: var(--window-material-accent);
+    --pixel-tomato-soft: var(--window-material-screen);
+    color-scheme: var(--window-material-scheme);
+    color: var(--window-material-ink);
+    background: var(--window-material-texture), var(--window-material-paper);
+    border-color: var(--window-material-line);
+    border-radius: var(--window-radius);
+    box-shadow: var(--window-shadow);
+    text-shadow: none;
+  }
+
+  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window-content > div {
+    color: var(--window-material-ink);
+    background: transparent;
+  }
+
+  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .dark\:bg-slate-700, .dark\:bg-slate-800) {
+    background-color: var(--window-material-paper);
+  }
+
+  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white) {
+    color: var(--window-material-ink);
+  }
+
+  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600) {
+    color: var(--window-material-muted);
+  }
+
+  html[data-window-design="paper"] body :is(.pomodoro-home, .seo-shell) :is(.pixel-timer-settings, .pixel-timer-popout, .timer-appearance-trigger, .timer-mode-tab, .coworker-tile-profile, .coworker-tile-menu):hover {
+    color: var(--window-material-ink);
+  }
+
+  html[data-window-design="paper"] body :is(.pomodoro-home, .seo-shell) [data-timer-panel] {
+    --timer-focus-color: #855b32;
+    --timer-short-break-color: #49663a;
+    --timer-long-break-color: #46627a;
+  }
+
+  html[data-window-design="terminal"] body :is(.workspace-window-handle, .appearance-header h2, .community-dialog:not(.kofi-support-dialog) .community-dialog-heading h2) {
+    font-family: 'Courier New', monospace;
+    letter-spacing: .025em;
+  }
+
+  html[data-window-design="terminal"] body .workspace-window-heading {
+    border-bottom-style: dashed;
+    background: var(--window-material-screen);
+  }
+
+  :root:is([data-window-design="matte"], [data-window-design="pixel"], [data-window-design="outline"]) {
+    --window-scene-panel: #141c19;
+    --window-scene-task: #0c1210;
+    --window-scene-task-hover: #1c2821;
+    --window-scene-popover: #141917;
+    --window-product-page: #0c1210;
+    --window-product-screen: #2a382e;
+    --window-backdrop: none;
+  }
+
+  :root[data-window-design="matte"] {
+    --window-radius: 14px;
+    --window-shadow: 0 12px 32px rgb(0 0 0 / 18%);
+  }
+
+  :root[data-window-design="pixel"] {
+    --window-radius: 2px;
+    --window-shadow: 4px 4px 0 rgb(0 0 0 / 30%);
+    --window-scene-border: rgb(255 255 255 / 38%);
+  }
+
+  :root[data-window-design="outline"] {
+    --window-radius: 6px;
+    --window-shadow: none;
+    --window-scene-border: rgb(255 255 255 / 42%);
+  }
+
+  :root[data-window-design="clear-glass"] {
+    --window-radius: 12px;
+    --window-shadow: inset 0 1px 0 rgb(255 255 255 / 20%), 0 8px 24px rgb(0 0 0 / 8%);
+    --window-scene-panel: rgb(20 28 25 / 18%);
+    --window-scene-task: rgb(12 18 16 / 12%);
+    --window-scene-task-hover: rgb(12 18 16 / 24%);
+    --window-scene-popover: rgb(20 25 23 / 22%);
+    --window-product-page: rgb(12 18 16 / 18%);
+    --window-product-screen: rgb(42 56 46 / 16%);
+    --window-backdrop: blur(6px) saturate(110%);
+    --window-shell-fill: color-mix(in srgb, var(--pixel-paper) 18%, transparent);
+  }
+
+  :root[data-window-design="minimal"] {
+    --window-radius: 2px;
+    --window-shadow: none;
+    --window-scene-panel: transparent;
+    --window-scene-task: transparent;
+    --window-scene-task-hover: rgb(12 18 16 / 15%);
+    --window-scene-popover: transparent;
+    --window-product-page: transparent;
+    --window-product-screen: transparent;
+    --window-backdrop: none;
+    --window-shell-fill: transparent;
+  }
+
+  html:is([data-window-design="clear-glass"], [data-window-design="minimal"]) body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) {
+    --window-shell-fill: var(--window-scene-panel);
+    --window-text-shadow: 0 1px 2px #000, 0 0 4px rgb(0 0 0 / 80%);
+  }
+
+  html:is([data-window-design="clear-glass"], [data-window-design="minimal"]) body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.workspace-window, .focus-station, .working-sidebar, .appearance-dialog) :is(h1, h2, h3, p, label, legend, span) {
+    text-shadow: var(--window-text-shadow);
+  }
+
+  /* Apply transparent materials on plain backgrounds as well as scenery.
+     This is a fill, never element opacity: text and controls stay fully visible. */
+  html:is([data-window-design="clear-glass"], [data-window-design="minimal"]) body :is(
+    .workspace-window, .workspace-navigation-panel, .workspace-account-card,
+    .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
+    .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
+    .focus-project-actions-menu, .project-color-menu, .active-session-reactions-menu,
+    .feedback-panel, .feedback-prompt, [data-beep-surface],
+    .focus-station, .working-sidebar, .seo-timer, .seo-social,
+    .workspace-dock, .workspace-navigation-control
+  ) {
+    background: var(--window-shell-fill);
+    text-shadow: var(--window-text-shadow, none);
+    box-shadow: var(--window-shadow);
+    -webkit-backdrop-filter: var(--window-backdrop);
+    backdrop-filter: var(--window-backdrop);
+  }
+
+  /* Remove nested panel/header fills, but retain selected and hover states. */
+  html:is([data-window-design="clear-glass"], [data-window-design="minimal"]) body :is(
+    .workspace-window-heading, .workspace-window-content > div,
+    .workspace-menu-heading, .appearance-header, .appearance-footer,
+    .community-dialog:not(.kofi-support-dialog) .community-dialog-heading,
+    .feedback-header, .focus-station .flow-surface
+  ) {
+    background: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  html[data-window-design="minimal"] body .workspace-window :is(div, section, header, footer, ul):is(
+    .bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100,
+    .dark\:bg-slate-700, .dark\:bg-slate-800
+  ) {
+    background: transparent;
+  }
+
+  html[data-window-design="minimal"] body :is(.workspace-window, .appearance-dialog, .community-dialog:not(.kofi-support-dialog)) {
+    --pixel-paper: transparent;
+    --pixel-screen: transparent;
+  }
+
+  html[data-window-design="outline"] body :is(.workspace-window, .appearance-dialog, .community-dialog:not(.kofi-support-dialog)) {
+    border-width: 1px;
+    border-color: var(--scene-border, var(--pixel-muted));
+  }
+
+  /* Only window shells own this geometry. Embedded panels and the Daily Flow
+     content keep their existing transparent surfaces; Ko-fi owns its own theme. */
+  html[data-window-design]:not([data-window-design="glass"]) body :is(
+    .workspace-window,
+    .workspace-navigation-panel,
+    .workspace-account-card,
+    .community-dialog:not(.kofi-support-dialog),
+    .appearance-dialog,
+    .wrapped-dialog,
+    .guest-signup-dialog,
+    .notifications-panel,
+    .rank-toast,
+    .task-popover,
+    .focus-project-actions-menu,
+    .project-color-menu,
+    .active-session-reactions-menu,
+    .feedback-panel,
+    .feedback-prompt,
+    [data-beep-surface]
+  ) {
+    border-radius: var(--window-radius);
+    box-shadow: var(--window-shadow);
+    -webkit-backdrop-filter: var(--window-backdrop, none);
+    backdrop-filter: var(--window-backdrop, none);
+  }
+
+  html[data-window-design]:not([data-window-design="glass"]) :is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(
+    .focus-station, .working-sidebar, .seo-timer, .seo-social,
+    .workspace-dock, .workspace-navigation-control
+  ) {
+    border-radius: var(--window-radius);
+    box-shadow: var(--window-shadow);
+  }
+
+  html[data-window-design]:not([data-window-design="glass"]) .workspace-window-heading {
+    border-radius: calc(var(--window-radius) - 2px) calc(var(--window-radius) - 2px) 0 0;
+  }
+
+  html[data-window-design]:not([data-window-design="glass"]) .workspace-window-content {
+    border-radius: 0 0 calc(var(--window-radius) - 2px) calc(var(--window-radius) - 2px);
+  }
+
+  html[data-window-design="matte"] body .workspace-window .workspace-window-heading {
+    background: color-mix(in srgb, var(--pixel-ink) 4%, transparent);
+  }
+
+  html[data-window-design="pixel"] body .workspace-window .workspace-window-heading {
+    background: var(--pixel-screen);
+    box-shadow: inset 0 -1px 0 var(--pixel-line);
+  }
+
+  html[data-window-design="pixel"] .workspace-window-handle span {
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    line-height: 1.8;
+  }
+
+  @media (max-width: 600px) {
+    html[data-window-design]:not([data-window-design="glass"]) body .community-dialog.wrapped-dialog {
+      border-radius: 0;
+      box-shadow: none;
+    }
+  }
+}
+
+/* Each miniature keeps its own material, even when another design is selected. */
+.appearance-window-designs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.appearance-window-choice .appearance-choice-label {
+  font-weight: 650;
+}
+
+.appearance-window-choice .appearance-choice-label svg {
+  flex-shrink: 0;
+}
+
+.appearance-choice-description {
+  padding: 0 5px 6px;
+  color: var(--pixel-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  pointer-events: none;
+}
+
+.appearance-window-preview {
+  display: grid;
+  place-items: center;
+  height: 96px;
+  padding: 14px 18px;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 20% 90%, #b94e3e 0%, transparent 65%),
+    linear-gradient(135deg, #e1e6d6, #647b5b);
+}
+
+.appearance-window-sample {
+  display: block;
+  width: 100%;
+  max-width: 116px;
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 3px;
+  background: rgb(20 28 25 / 60%);
+  box-shadow: 0 5px 12px rgb(0 0 0 / 18%);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+.appearance-window-sample-header {
+  display: flex;
+  gap: 4px;
+  padding: 7px 8px;
+  border-bottom: 1px solid rgb(255 255 255 / 20%);
+  background: rgb(255 255 255 / 6%);
+}
+
+.appearance-window-sample-header i {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #d3ded3;
+}
+
+.appearance-window-sample-body {
+  display: grid;
+  gap: 5px;
+  padding: 10px 8px;
+}
+
+.appearance-window-sample-body i {
+  height: 3px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 52%);
+}
+
+.appearance-window-sample-body i:nth-child(2) { width: 68%; }
+.appearance-window-sample-body i:last-child { width: 42%; background: #e39a87; }
+
+.appearance-window-preview[data-window-design="matte"] .appearance-window-sample {
+  border-radius: 10px;
+  background: #141c19;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.appearance-window-preview[data-window-design="pixel"] .appearance-window-sample {
+  border: 2px solid #d3ded3;
+  border-radius: 1px;
+  background: #141c19;
+  box-shadow: 4px 4px 0 rgb(0 0 0 / 45%);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.appearance-window-preview[data-window-design="pixel"] .appearance-window-sample-header {
+  background: #2a382e;
+  border-bottom-color: #d3ded3;
+}
+
+.appearance-window-preview[data-window-design="pixel"] i { border-radius: 0; }
+
+.appearance-window-preview[data-window-design="clear-glass"] .appearance-window-sample {
+  border-radius: 9px;
+  background: rgb(20 28 25 / 18%);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 20%);
+  -webkit-backdrop-filter: blur(1px);
+  backdrop-filter: blur(1px);
+}
+
+.appearance-window-preview[data-window-design="minimal"] .appearance-window-sample {
+  background: transparent;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.appearance-window-preview:is([data-window-design="clear-glass"], [data-window-design="minimal"]) .appearance-window-sample-header {
+  background: transparent;
+}
+
+.appearance-window-preview[data-window-design="outline"] .appearance-window-sample {
+  border: 1px solid #d3ded3;
+  border-radius: 5px;
+  background: #141c19;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+@media (forced-colors: none) {
+  .appearance-window-preview:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample {
+    background: var(--window-material-texture), var(--window-material-paper);
+    border-color: var(--window-material-line);
+    border-radius: min(10px, var(--window-radius));
+    box-shadow: var(--window-shadow);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  .appearance-window-preview:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-header {
+    background: var(--window-material-screen);
+    border-color: var(--window-material-line);
+  }
+
+  .appearance-window-preview:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample i {
+    background: var(--window-material-muted);
+  }
+
+  .appearance-window-preview:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-body i:last-child {
+    background: var(--window-material-accent);
+  }
+
+  .appearance-window-preview[data-window-design="terminal"] .appearance-window-sample-header {
+    border-bottom-style: dashed;
+  }
+
+  .appearance-window-preview[data-window-design="terminal"] i { border-radius: 0; }
+}
+
+@media (max-width: 479px) {
+  .appearance-window-designs { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .appearance-window-preview { height: 80px; padding: 10px; }
+  .appearance-choice-description { font-size: 10px; }
+}
+
+@media (max-width: 359px) {
+  .appearance-window-designs { grid-template-columns: 1fr; }
+  .appearance-window-choice { display: grid; grid-template-columns: 88px minmax(0, 1fr); column-gap: 8px; }
+  .appearance-window-preview { grid-row: 1 / 3; }
+}
+
+@media (forced-colors: active) {
+  .appearance-window-preview { background: Canvas; }
+  .appearance-window-preview[data-window-design] .appearance-window-sample { border-color: CanvasText; background: Canvas; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .appearance-window-preview[data-window-design] .appearance-window-sample-header { background: Canvas; border-color: CanvasText; }
+  .appearance-window-preview .appearance-window-sample i { background: CanvasText; }
+}

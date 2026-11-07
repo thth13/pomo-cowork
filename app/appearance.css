@@ -101,16 +101,16 @@
 }
 
 /* All digit faces share the existing line box, so changing faces cannot move controls. */
-[data-timer-font="pixel"] { --timer-face: var(--font-pixel); }
-[data-timer-font="sans"] { --timer-face: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-[data-timer-font="serif"] { --timer-face: Georgia, 'Times New Roman', serif; }
-[data-timer-font="mono"] { --timer-face: 'Courier New', Courier, monospace; }
-[data-timer-font="rounded"] { --timer-face: 'Trebuchet MS', Verdana, sans-serif; }
-[data-timer-font="orbitron"] { --timer-face: var(--font-timer-orbitron), 'Trebuchet MS', sans-serif; }
-[data-timer-font="space-grotesk"] { --timer-face: var(--font-timer-space), system-ui, sans-serif; }
-[data-timer-font="cormorant"] { --timer-face: var(--font-timer-cormorant), Georgia, serif; }
-[data-timer-font="bebas"] { --timer-face: var(--font-timer-bebas), Impact, sans-serif; }
-[data-timer-font="vt323"] { --timer-face: var(--font-timer-terminal), 'Courier New', monospace; }
+[data-timer-font="pixel"] { --timer-face: var(--font-pixel); --timer-optical-scale: 1; --timer-glyph-width: 1; }
+[data-timer-font="sans"] { --timer-face: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; --timer-optical-scale: 1.4; --timer-glyph-width: .68; }
+[data-timer-font="serif"] { --timer-face: Georgia, 'Times New Roman', serif; --timer-optical-scale: 1.5; --timer-glyph-width: .7; }
+[data-timer-font="mono"] { --timer-face: 'Courier New', Courier, monospace; --timer-optical-scale: 1.5; --timer-glyph-width: .65; }
+[data-timer-font="rounded"] { --timer-face: 'Trebuchet MS', Verdana, sans-serif; --timer-optical-scale: 1.45; --timer-glyph-width: .68; }
+[data-timer-font="orbitron"] { --timer-face: var(--font-timer-orbitron), 'Trebuchet MS', sans-serif; --timer-optical-scale: 1.18; --timer-glyph-width: .85; }
+[data-timer-font="space-grotesk"] { --timer-face: var(--font-timer-space), system-ui, sans-serif; --timer-optical-scale: 1.4; --timer-glyph-width: .7; }
+[data-timer-font="cormorant"] { --timer-face: var(--font-timer-cormorant), Georgia, serif; --timer-optical-scale: 1.7; --timer-glyph-width: .65; }
+[data-timer-font="bebas"] { --timer-face: var(--font-timer-bebas), Impact, sans-serif; --timer-optical-scale: 1.55; --timer-glyph-width: .55; }
+[data-timer-font="vt323"] { --timer-face: var(--font-timer-terminal), 'Courier New', monospace; --timer-optical-scale: 1.65; --timer-glyph-width: .72; }
 .pixel-timer-digits[data-timer-font], .mini-timer-digits[data-timer-font], .appearance-font-sample[data-timer-font] { font-family: var(--timer-face); font-variant-numeric: tabular-nums lining-nums; }
 .pixel-timer-digits[data-timer-font]:not([data-timer-font="pixel"]),
 .mini-timer-digits[data-timer-font]:not([data-timer-font="pixel"]) { letter-spacing: -.045em; font-weight: 500; }
@@ -118,6 +118,32 @@
 .pixel-timer-digits[data-timer-font="serif"], .mini-timer-digits[data-timer-font="serif"] { font-weight: 400; }
 .pixel-timer-digits:is([data-timer-font="bebas"], [data-timer-font="vt323"]),
 .mini-timer-digits:is([data-timer-font="bebas"], [data-timer-font="vt323"]) { font-weight: 400; letter-spacing: 0; }
+
+
+/* The outer line box keeps the timer layout stable. Only the numeral face grows;
+   container width caps long values and narrow native mini-timer windows. */
+.pixel-timer-digits[data-timer-font], .mini-timer-digits[data-timer-font] {
+  container-type: inline-size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: content-box;
+  height: 1.4em;
+}
+.mini-timer-digits[data-timer-font] { width: 100%; height: 1.25em; }
+.timer-numerals {
+  display: block;
+  flex-shrink: 0;
+  font-size: min(calc(1em * var(--timer-optical-scale, 1)), calc(100cqi / (var(--timer-character-count, 5) * var(--timer-glyph-width, 1))));
+  line-height: 1;
+  white-space: nowrap;
+}
+/* VT323 is unusually condensed. Include the wider face in the width budget,
+   including its Courier fallback, so long values still fit the container. */
+[data-timer-font="vt323"] > .timer-numerals {
+  transform: scaleX(1.2);
+  transform-origin: center;
+}
 
 .timer-appearance-trigger { position: absolute; top: 10px; right: 58px; display: grid; place-items: center; width: 44px; height: 44px; padding: 10px; color: inherit; border: 1px solid transparent; border-radius: 3px; }
 .pixel-timer-screen .pixel-timer-settings { display: grid; place-items: center; width: 44px; height: 44px; }
@@ -172,10 +198,11 @@ button.appearance-choice:focus-visible { outline: 3px solid var(--pixel-accent);
   .appearance-scene-loading > svg { animation: none; }
 }
 .appearance-fonts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
-.appearance-font-sample { display: grid; place-items: center; min-height: 56px; font-size: 26px; letter-spacing: -.06em; pointer-events: none; }
-.appearance-font-sample[data-timer-font="pixel"] { font-size: 15px; }
+.appearance-font-sample { container-type: inline-size; display: grid; place-items: center; min-height: 56px; font-size: 20px; letter-spacing: -.06em; pointer-events: none; }
+/* Pixel's wide glyphs and high baseline need a compact, optically centered preview. */
+.appearance-font-sample[data-timer-font="pixel"] { font-size: 15px; letter-spacing: 0; }
+.appearance-font-sample[data-timer-font="pixel"] .timer-numerals { transform: translateY(.1em); }
 .appearance-font-choice[data-premium] .appearance-font-sample { min-height: 76px; padding-top: 20px; }
-.appearance-font-sample[data-timer-font="orbitron"] { font-size: clamp(17px, 4.6vw, 23px); }
 .appearance-font-sample:is([data-timer-font="bebas"], [data-timer-font="vt323"]) { font-weight: 400; letter-spacing: 0; }
 .appearance-font-choice .appearance-choice-label { padding-inline: 3px; }
 .appearance-media-feedback { min-height: 28px; padding-top: 8px; font-size: 12px; line-height: 1.5; color: var(--pixel-muted); }
@@ -228,9 +255,9 @@ button.appearance-choice:focus-visible { outline: 3px solid var(--pixel-accent);
   body:has(.product-scenery) .notifications-page :is(.notifications-history-list, .notifications-history-state) {
     background: var(--pixel-paper);
     border-color: var(--pixel-line);
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%), 0 12px 36px rgb(0 0 0 / 16%);
-    -webkit-backdrop-filter: blur(18px) saturate(110%);
-    backdrop-filter: blur(18px) saturate(110%);
+    box-shadow: var(--window-shadow, inset 0 0 0 1px rgb(255 255 255 / 5%), 0 12px 36px rgb(0 0 0 / 16%));
+    -webkit-backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
+    backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
   }
   body:has(.product-scenery) .notifications-page .notification-entry--unread {
     background: rgb(0 0 0 / 26%);
@@ -244,21 +271,21 @@ button.appearance-choice:focus-visible { outline: 3px solid var(--pixel-accent);
 .product-scenery { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 .product-scenery .workspace-background { position: absolute; z-index: 0; }
 body:has(.product-scenery) :is(.garden-page, .journal-shell, .settings-page) {
-  --pixel-page: rgb(12 18 16 / 76%);
-  --pixel-paper: rgb(20 28 25 / 72%);
-  --pixel-screen: rgb(42 56 46 / 78%);
-  --pixel-ink: #f7f8f3;
-  --pixel-muted: #d3ded3;
-  --pixel-line: rgb(255 255 255 / 23%);
+  --pixel-page: var(--window-product-page, rgb(12 18 16 / 76%));
+  --pixel-paper: var(--window-scene-panel, rgb(20 28 25 / 72%));
+  --pixel-screen: var(--window-product-screen, rgb(42 56 46 / 78%));
+  --pixel-ink: var(--window-material-ink, #f7f8f3);
+  --pixel-muted: var(--window-material-muted, #d3ded3);
+  --pixel-line: var(--window-material-line, rgb(255 255 255 / 23%));
   --pixel-shadow: rgb(0 0 0 / 24%);
   --pixel-accent: #e39a87;
-  --pixel-tomato-ink: #ffb29f;
+  --pixel-tomato-ink: var(--window-material-accent, #ffb29f);
   --pixel-tomato-soft: rgb(227 154 135 / 17%);
   --pixel-growth: #b2d0a8;
   --pixel-scroll-track: rgb(12 18 16 / 45%);
   --pixel-scroll-thumb: rgb(255 255 255 / 30%);
   color: var(--pixel-ink);
-  color-scheme: dark;
+  color-scheme: var(--window-material-scheme, dark);
   position: relative;
   z-index: 1;
   min-height: 100dvh;
@@ -266,9 +293,9 @@ body:has(.product-scenery) :is(.garden-page, .journal-shell, .settings-page) {
 }
 body:has(.product-scenery) :is(.garden-page, .journal-shell) :is(.flow-surface, .beep-history-layout, .community-panel, .community-metrics, .rooms-global, .room-card, .room-detail-header, .pixel-panel, .lb-totals, .lb-leader, .stats-overview, .stats-panel, .insight-hero, .insight-panel, .insight-state, .insight-pro, .habits-today, .habit-create-panel, .habit-statistics, .habit-history, .habit-archive, .ranks-ladder, .ranks-example, .journal-card, .profile-achievements) {
   border-color: var(--pixel-line);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 5%), 0 12px 36px rgb(0 0 0 / 16%);
-  -webkit-backdrop-filter: blur(18px) saturate(110%);
-  backdrop-filter: blur(18px) saturate(110%);
+  box-shadow: var(--window-shadow, inset 0 0 0 1px rgb(255 255 255 / 5%), 0 12px 36px rgb(0 0 0 / 16%));
+  -webkit-backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
+  backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
 }
 body:has(.product-scenery) :is(.garden-page, .journal-shell) .profile-achievements {
   padding: 20px;
@@ -296,9 +323,9 @@ body:has(.product-scenery) .settings-page :is(.bg-gradient-to-br, .bg-gradient-t
 body:has(.product-scenery) .settings-page :is(.text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white, .dark\:text-slate-200) { color: var(--pixel-ink); }
 body:has(.product-scenery) .settings-page :is(.text-slate-400, .text-slate-500, .text-slate-600, .dark\:text-slate-300, .dark\:text-slate-400) { color: var(--pixel-muted); }
 body:has(.product-scenery) .settings-page :is(.border-slate-200, .border-slate-300, .dark\:border-slate-700) { border-color: var(--pixel-line); }
-body:has(.product-scenery) .settings-page :is(.bg-white\/80, .bg-white\/85, .bg-white\/90) { -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
+body:has(.product-scenery) .settings-page :is(.bg-white\/80, .bg-white\/85, .bg-white\/90) { -webkit-backdrop-filter: var(--window-backdrop, blur(18px)); backdrop-filter: var(--window-backdrop, blur(18px)); }
 body:has(.product-scenery) .settings-page :is(input, textarea)::placeholder { color: var(--pixel-muted); }
-body:has(.product-scenery) :is(.notifications-panel, .rank-toast, .wrapped-dialog) { --pixel-paper: rgb(20 28 25 / 90%); --pixel-ink: #f7f8f3; --pixel-muted: #d3ded3; --pixel-line: rgb(255 255 255 / 23%); color-scheme: dark; }
+body:has(.product-scenery) :is(.notifications-panel, .rank-toast, .wrapped-dialog) { --pixel-paper: var(--window-scene-panel, rgb(20 28 25 / 90%)); --pixel-ink: var(--window-material-ink, #f7f8f3); --pixel-muted: var(--window-material-muted, #d3ded3); --pixel-line: var(--window-material-line, rgb(255 255 255 / 23%)); color-scheme: var(--window-material-scheme, dark); }
 @media (forced-colors: active) {
   .product-scenery { display: none; }
   body:has(.product-scenery) :is(.garden-page, .journal-shell, .settings-page) { --pixel-page: Canvas; --pixel-paper: Canvas; --pixel-screen: Canvas; --pixel-ink: CanvasText; --pixel-muted: CanvasText; --pixel-line: CanvasText; --pixel-shadow: transparent; --pixel-accent: Highlight; --pixel-tomato-ink: Highlight; --pixel-growth: Highlight; color: CanvasText; background: Canvas; color-scheme: light; }
@@ -311,18 +338,18 @@ body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notificatio
 body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu, .active-session-reactions-menu, .paywall-dialog, .auth-dialog, .feedback-widget),
 body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) [data-companion-controls],
 .task-popover[data-background-mode] {
-  --scene-panel: rgb(20 28 25 / 68%);
-  --scene-primary: rgb(255 255 255 / 96%);
-  --scene-secondary: rgb(255 255 255 / 82%);
-  --scene-icon: rgb(255 255 255 / 86%);
-  --scene-border: rgb(255 255 255 / 16%);
-  --scene-hover: rgb(255 255 255 / 7%);
-  --scene-selected: rgb(255 255 255 / 10%);
-  --scene-shadow: 0 2px 6px rgb(0 0 0 / 30%);
-  --scene-accent: #e39a87;
-  --scene-task: rgb(12 18 16 / 62%);
-  --scene-task-hover: rgb(12 18 16 / 72%);
-  --scene-popover: rgb(20 25 23 / 96%);
+  --scene-panel: var(--window-scene-panel, rgb(20 28 25 / 68%));
+  --scene-primary: var(--window-material-ink, rgb(255 255 255 / 96%));
+  --scene-secondary: var(--window-material-muted, rgb(255 255 255 / 82%));
+  --scene-icon: var(--window-material-ink, rgb(255 255 255 / 86%));
+  --scene-border: var(--window-scene-border, rgb(255 255 255 / 16%));
+  --scene-hover: var(--window-material-screen, rgb(255 255 255 / 7%));
+  --scene-selected: var(--window-material-screen, rgb(255 255 255 / 10%));
+  --scene-shadow: var(--window-material-text-shadow, 0 2px 6px rgb(0 0 0 / 30%));
+  --scene-accent: var(--window-material-accent, #e39a87);
+  --scene-task: var(--window-scene-task, rgb(12 18 16 / 62%));
+  --scene-task-hover: var(--window-scene-task-hover, rgb(12 18 16 / 72%));
+  --scene-popover: var(--window-scene-popover, rgb(20 25 23 / 96%));
 }
 /* The local scrim supplies contrast even over white imagery; no global dark wash. */
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.focus-station, .working-sidebar, .seo-timer, .seo-social, .workspace-dock, .workspace-navigation-control, .workspace-window) {
@@ -331,8 +358,8 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
   border-color: var(--scene-border);
   border-radius: 3px;
   box-shadow: inset 0 0 0 1px var(--scene-border), 0 12px 40px rgb(0 0 0 / 18%);
-  -webkit-backdrop-filter: blur(18px) saturate(110%);
-  backdrop-filter: blur(18px) saturate(110%);
+  -webkit-backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
+  backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
 }
 /* Workspace content shares the same scene roles in both themes. */
 .pomodoro-home:has(.workspace-background) :is(.workspace-window, .daily-flow-content) {
@@ -351,7 +378,7 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
   --pixel-scroll-thumb: var(--scene-border);
   --pixel-scroll-hover: var(--scene-secondary);
   --pixel-scroll-active: var(--scene-primary);
-  color-scheme: dark;
+  color-scheme: var(--window-material-scheme, dark);
 }
 /* The focus station already owns the glass shell; Flow must not paint a second one. */
 .pomodoro-home:has(.workspace-background) .daily-flow-content .flow-surface {
@@ -417,7 +444,7 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.pixel-timer-settings, .pixel-timer-popout, .timer-appearance-trigger):is(:hover, [aria-pressed="true"]) { color: #fff; background: var(--scene-hover); border-color: var(--scene-border); }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .current-task-trigger {
   color: var(--scene-primary); background: var(--scene-task); border-color: var(--scene-border);
-  -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: var(--window-backdrop, blur(10px)); backdrop-filter: var(--window-backdrop, blur(10px));
 }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .current-task-trigger svg { color: var(--scene-icon); }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .current-task-trigger:is(:hover:not(:disabled), [aria-expanded="true"]) { background: var(--scene-task-hover); border-color: rgb(255 255 255 / 30%); }
@@ -453,8 +480,8 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
   --pixel-screen: var(--scene-hover);
   --pixel-tomato-ink: var(--scene-accent);
   background: var(--scene-popover);
-  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-  color-scheme: dark;
+  -webkit-backdrop-filter: var(--window-backdrop, blur(20px)); backdrop-filter: var(--window-backdrop, blur(20px));
+  color-scheme: var(--window-material-scheme, dark);
   scrollbar-color: rgb(255 255 255 / 35%) transparent;
 }
 .task-popover[data-background-mode] .task-option-row[data-selected="true"] { background: var(--scene-selected); }
@@ -511,13 +538,13 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
     --pixel-accent: var(--scene-primary);
     --pixel-tomato-ink: var(--scene-accent);
     --pixel-tomato-soft: var(--scene-selected);
-    color-scheme: dark;
+    color-scheme: var(--window-material-scheme, dark);
     color: var(--scene-primary);
     background: var(--scene-panel);
     border-color: var(--scene-border);
     box-shadow: 0 8px 28px rgb(0 0 0 / 18%);
-    -webkit-backdrop-filter: blur(18px) saturate(110%);
-    backdrop-filter: blur(18px) saturate(110%);
+    -webkit-backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
+    backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
   }
   body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) .feedback-trigger:is(:hover, [aria-expanded="true"]) {
     background: var(--scene-task-hover);
@@ -577,13 +604,13 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
     --pixel-scroll-thumb: var(--scene-border);
     --pixel-scroll-hover: var(--scene-secondary);
     --pixel-scroll-active: var(--scene-primary);
-    color-scheme: dark;
+    color-scheme: var(--window-material-scheme, dark);
     color: var(--scene-primary);
     background: var(--scene-panel);
     border-color: var(--scene-border);
     box-shadow: inset 0 0 0 1px var(--scene-border), 0 12px 40px rgb(0 0 0 / 18%);
-    -webkit-backdrop-filter: blur(18px) saturate(110%);
-    backdrop-filter: blur(18px) saturate(110%);
+    -webkit-backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
+    backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
   }
   body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.timer-settings-dialog, .appearance-dialog) :is(button, input, a):focus-visible { outline-color: var(--scene-primary); }
   body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) .timer-settings-save { color: #fff3ed; }
@@ -630,15 +657,15 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
     --pixel-scroll-thumb: var(--scene-border);
     --pixel-scroll-hover: var(--scene-secondary);
     --pixel-scroll-active: var(--scene-primary);
-    color-scheme: dark;
+    color-scheme: var(--window-material-scheme, dark);
     color: var(--scene-primary);
   }
   body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) [data-beep-surface] {
     background: var(--scene-panel);
     border-color: var(--scene-border);
     box-shadow: inset 0 0 0 1px var(--scene-border), var(--scene-shadow);
-    -webkit-backdrop-filter: blur(18px) saturate(110%);
-    backdrop-filter: blur(18px) saturate(110%);
+    -webkit-backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
+    backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
   }
   body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) [data-companion-controls] textarea::placeholder {
     color: var(--scene-secondary);

@@ -1,0 +1,148 @@
+/* Site-wide adapter for the material selected by AppearanceProvider.
+   Page/control colors stay opaque; transparency belongs to content surfaces. */
+@media (forced-colors: none) {
+  :root[data-window-design] {
+    --site-scheme: light;
+    --site-page: var(--pixel-page);
+    --site-paper: var(--pixel-paper);
+    --site-screen: var(--pixel-screen);
+    --site-ink: var(--pixel-ink);
+    --site-muted: var(--pixel-muted);
+    --site-line: var(--pixel-line);
+    --site-accent: var(--pixel-accent);
+  }
+
+  :root.dark[data-window-design] { --site-scheme: dark; }
+
+  :root:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+    --pixel-page: color-mix(in srgb, var(--window-material-paper) 92%, var(--window-material-ink));
+    --pixel-paper: var(--window-material-paper);
+    --pixel-screen: var(--window-material-screen);
+    --pixel-ink: var(--window-material-ink);
+    --pixel-muted: var(--window-material-muted);
+    --pixel-line: var(--window-material-line);
+    --pixel-accent: var(--window-material-accent);
+    --pixel-tomato-ink: var(--window-material-accent);
+    --pixel-tomato-soft: var(--window-material-screen);
+    --pixel-scroll-track: var(--window-material-paper);
+    --pixel-scroll-thumb: var(--window-material-line);
+    --pixel-scroll-hover: var(--window-material-muted);
+    --pixel-scroll-active: var(--window-material-ink);
+    --pixel-shadow: color-mix(in srgb, var(--window-material-paper) 80%, #000);
+    --site-scheme: var(--window-material-scheme);
+  }
+
+  /* Dark-mode selectors have the same priority as their light counterpart. */
+  :root.dark:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+    --site-scheme: var(--window-material-scheme);
+  }
+
+  :root[data-window-design="paper"] { --pixel-growth: #647b5b; }
+  :root:is([data-window-design="terminal"], [data-window-design="neon"]) { --pixel-growth: #a7bc91; }
+
+  html[data-window-design] body {
+    --site-surface: var(--pixel-paper);
+    color: var(--pixel-ink);
+    background-color: var(--pixel-page);
+    color-scheme: var(--site-scheme);
+  }
+
+  html[data-window-design="glass"] body {
+    --site-surface: color-mix(in srgb, var(--pixel-paper) 78%, transparent);
+  }
+
+  html[data-window-design="clear-glass"] body { --site-surface: var(--window-shell-fill); }
+  html[data-window-design="minimal"] body { --site-surface: transparent; }
+
+  /* Match the existing scene palette where scenery actually renders. */
+  html[data-window-design] body:has(.product-scenery) {
+    --site-surface: var(--window-scene-panel, rgb(20 28 25 / 68%));
+  }
+
+  html[data-window-design] body :is(
+    .card, .pixel-panel, .community-panel, .community-metrics,
+    .rooms-global, .room-card, .room-detail-header,
+    .lb-totals, .lb-leader, .stats-overview, .stats-panel,
+    .insight-hero, .insight-panel, .insight-state, .insight-pro,
+    .habits-today, .habit-create-panel, .habit-statistics, .habit-history, .habit-archive,
+    .ranks-ladder, .ranks-example, .journal-card, .profile-achievements,
+    .settings-panel, .settings-avatar-card, .settings-profile-account,
+    .notifications-history-list, .notifications-history-state,
+    .flow-surface, .beep-history-layout,
+    .blog-note, .blog-feature, .blog-session, .blog-intro-note,
+    .seo-workspace, .seo-card, .seo-steps, .seo-advantage,
+    .admin-metric, .admin-overview-panel, .admin-loading
+  ):not(:where(.workspace-window *, .daily-flow-content *, .kofi-support-dialog *)) {
+    color: var(--pixel-ink);
+    background: var(--window-material-texture, none), var(--site-surface);
+    border-color: var(--pixel-line);
+    border-radius: var(--window-radius, 3px);
+    box-shadow: var(--window-shadow, 0 8px 24px rgb(0 0 0 / 10%));
+    -webkit-backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
+    backdrop-filter: var(--window-backdrop, blur(18px) saturate(110%));
+  }
+
+  /* Legacy utility cards share the material without giving buttons or avatars
+     card geometry. Their existing layout and scrolling remain untouched. */
+  html[data-window-design] body :is(div, section, article, aside):is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl):not(:where(.kofi-support-dialog *, .appearance-window-preview, .appearance-window-preview *)) {
+    border-radius: var(--window-radius, 3px);
+  }
+
+  html[data-window-design] body :is(div, section, article, aside):is(.bg-white, .bg-white\/70, .bg-white\/80, .bg-white\/85, .bg-white\/90):is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl):not(:where(.workspace-window *, .kofi-support-dialog *, .appearance-window-preview, .appearance-window-preview *)) {
+    background: var(--window-material-texture, none), var(--site-surface);
+    border-color: var(--pixel-line);
+    box-shadow: var(--window-shadow, 0 8px 24px rgb(0 0 0 / 10%));
+    -webkit-backdrop-filter: var(--window-backdrop, blur(18px));
+    backdrop-filter: var(--window-backdrop, blur(18px));
+  }
+
+  /* Compatibility for older utility-based pages, forms and tables. */
+  html[data-window-design] body :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-gray-950, .text-slate-700, .text-slate-800, .text-slate-900, .text-slate-950, .text-zinc-700, .text-zinc-800, .text-zinc-900, .text-zinc-950):not(:where(.kofi-support-dialog, .kofi-support-dialog *, .appearance-window-preview, .appearance-window-preview *)) {
+    color: var(--pixel-ink);
+  }
+
+  html[data-window-design] body :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-400, .text-slate-500, .text-slate-600, .text-zinc-400, .text-zinc-500, .text-zinc-600):not(:where(.kofi-support-dialog, .kofi-support-dialog *, .appearance-window-preview, .appearance-window-preview *)) {
+    color: var(--pixel-muted);
+  }
+
+  html[data-window-design] body :is(.bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .bg-zinc-50, .bg-zinc-100):not(:where(.kofi-support-dialog, .kofi-support-dialog *, .appearance-window-preview, .appearance-window-preview *)) {
+    background-color: var(--pixel-screen);
+  }
+
+  html[data-window-design] body :is(.border-gray-200, .border-gray-300, .border-slate-200, .border-slate-300, .border-zinc-200, .border-zinc-300):not(:where(.kofi-support-dialog, .kofi-support-dialog *, .appearance-window-preview, .appearance-window-preview *)) {
+    border-color: var(--pixel-line);
+  }
+
+  /* Admin formerly had an independent palette. Resolve aliases from root site
+     roles, never from its local pixel aliases (which would form a cycle). */
+  html[data-window-design] body .admin-shell {
+    --admin-surface: var(--site-paper);
+    --admin-subtle: var(--site-screen);
+    --admin-line: var(--site-line);
+    --admin-ink: var(--site-ink);
+    --admin-secondary: var(--site-ink);
+    --admin-muted: var(--site-muted);
+    --admin-accent: var(--site-accent);
+    --admin-accent-hover: var(--site-accent);
+    --admin-accent-soft: var(--site-screen);
+    --admin-accent-line: var(--site-line);
+    --pixel-scroll-track: var(--site-paper);
+    --pixel-scroll-thumb: var(--site-line);
+    --pixel-scroll-hover: var(--site-muted);
+    --pixel-scroll-active: var(--site-ink);
+    color-scheme: var(--site-scheme);
+  }
+
+  html[data-window-design] body .admin-brand-icon {
+    background: var(--site-ink);
+    color: var(--site-paper);
+  }
+
+  html[data-window-design] body :is(main, .min-h-screen):is(.bg-slate-50, .bg-gray-50, .bg-white, .bg-gradient-to-br) {
+    background: var(--pixel-page);
+  }
+
+  html[data-window-design="terminal"] body :is(main, .admin-shell) :is(h1, h2) {
+    font-family: 'Courier New', monospace;
+  }
+}

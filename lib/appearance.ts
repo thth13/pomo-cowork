@@ -21,9 +21,13 @@ export const BACKGROUNDS = [
 
 export const PREMIUM_TIMER_FONTS = ['orbitron', 'space-grotesk', 'cormorant', 'bebas', 'vt323'] as const
 export const TIMER_FONTS = ['pixel', 'sans', 'serif', 'mono', 'rounded', ...PREMIUM_TIMER_FONTS] as const
+export const FREE_WINDOW_DESIGNS = ['glass', 'matte', 'pixel'] as const
+export const PREMIUM_WINDOW_DESIGNS = ['clear-glass', 'minimal', 'outline', 'paper', 'terminal', 'neon'] as const
+export const WINDOW_DESIGNS = [...FREE_WINDOW_DESIGNS, ...PREMIUM_WINDOW_DESIGNS] as const
 export const PLAY_BACKGROUND_EVENT = 'pomo:play-background'
 export type BackgroundId = (typeof BACKGROUNDS)[number]['id']
 export type TimerFont = (typeof TIMER_FONTS)[number]
+export type WindowDesign = (typeof WINDOW_DESIGNS)[number]
 
 export function isAnimatedBackground(background: (typeof BACKGROUNDS)[number]): boolean {
   return background.kind === 'video' || 'animation' in background
@@ -38,9 +42,14 @@ export function isPremiumTimerFont(font: TimerFont): boolean {
   return PREMIUM_TIMER_FONTS.some(premiumFont => premiumFont === font)
 }
 
+export function isPremiumWindowDesign(design: WindowDesign): boolean {
+  return PREMIUM_WINDOW_DESIGNS.some(premiumDesign => premiumDesign === design)
+}
+
 export const DEFAULT_APPEARANCE = {
   backgroundId: 'default' as BackgroundId,
   timerFont: 'pixel' as TimerFont,
+  windowDesign: 'glass' as WindowDesign,
   videoPaused: false,
 }
 
@@ -49,6 +58,7 @@ export function parseAppearance(value: unknown): typeof DEFAULT_APPEARANCE {
   return {
     backgroundId: BACKGROUNDS.find(background => background.id === saved.backgroundId)?.id ?? 'default',
     timerFont: TIMER_FONTS.find(font => font === saved.timerFont) ?? 'pixel',
+    windowDesign: WINDOW_DESIGNS.find(design => design === saved.windowDesign) ?? 'glass',
     videoPaused: saved.videoPaused === true,
   }
 }

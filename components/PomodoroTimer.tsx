@@ -5,7 +5,7 @@ import { isTaskSelectionLocked } from '@/lib/taskSelection'
 import { dailyFlowCopy } from '@/lib/i18n/dailyFlow'
 import { useDailyFlowStore } from '@/store/useDailyFlowStore'
 import { usePetStore } from '@/store/usePetStore'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { Settings } from 'lucide-react'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useTimerActionsStore } from '@/store/useTimerActionsStore'
@@ -1444,7 +1444,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         <div className="pixel-timer-status"><span className="pixel-led timer-mode-marker" aria-hidden="true" />{getSessionTypeLabel(activeSessionType)}</div>
         {presentation !== 'minimal' && <AppearanceSettings />}
         <button type="button" onClick={openSettings} className="pixel-timer-settings" aria-label={t.settingsModal.title} title={t.settingsModal.title}><Settings size={18} /></button>
-        <div className={`pixel-timer-digits ${timerDisplaySeconds >= 6000 ? 'pixel-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={getSessionTypeLabel(activeSessionType)}>{formatTime(timerDisplaySeconds)}</div>
+        <div className={`pixel-timer-digits ${timerDisplaySeconds >= 6000 ? 'pixel-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={getSessionTypeLabel(activeSessionType)}><span className="timer-numerals" style={{ '--timer-character-count': formatTime(timerDisplaySeconds).length } as CSSProperties}>{formatTime(timerDisplaySeconds)}</span></div>
         <div className="pixel-timer-track" role="progressbar" aria-label={getSessionTypeLabel(activeSessionType)} aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
           {Array.from({ length: 24 }, (_, i) => <span key={i} className={progress >= (i + 1) / 24 * 100 ? 'filled' : ''} />)}
         </div>

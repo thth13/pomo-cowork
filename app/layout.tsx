@@ -8,6 +8,8 @@ import './daily-goal.css'
 import './journal-picker.css'
 import './wrapped.css'
 import './achievements.css'
+import './window-design.css'
+import './site-appearance.css'
 import WrappedProvider from '@/components/wrapped/WrappedProvider'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
@@ -16,6 +18,7 @@ import { Bebas_Neue, Cormorant_Garamond, Inter, Orbitron, Space_Grotesk, VT323 }
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AppearanceProvider } from '@/components/AppearanceProvider'
+import { FREE_WINDOW_DESIGNS } from '@/lib/appearance'
 import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
@@ -81,7 +84,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <script
@@ -93,6 +96,13 @@ export default function RootLayout({
                 document.documentElement.classList.add(theme);
               } catch (e) {
                 document.documentElement.classList.add('light');
+              }
+              try {
+                const appearance = JSON.parse(localStorage.getItem('pomo:appearance:v1') || 'null');
+                const design = appearance && appearance.windowDesign;
+                document.documentElement.dataset.windowDesign = ${JSON.stringify(FREE_WINDOW_DESIGNS)}.includes(design) ? design : 'glass';
+              } catch (e) {
+                document.documentElement.dataset.windowDesign = 'glass';
               }
             `,
           }}

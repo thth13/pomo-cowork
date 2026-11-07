@@ -708,6 +708,54 @@ an unavailable average and a timer link.
 
 ## Personal timer appearance
 
+The selected material now applies site-wide. `app/site-appearance.css` owns the
+root palette adapter, semantic card surfaces, neutral utility compatibility and
+admin palette bridge. Paper, Terminal and Neon set page, text, form and scrollbar
+roles globally; all nine materials style content cards on product, journal, blog,
+tool and admin pages. Surface transparency never makes inverse text or native
+control colors transparent. Existing layouts, table scrolling, semantic action
+colors and imagery remain component-owned. Admin no longer opts out of the selected
+material. Scenery keeps its existing route scope; changing a material does not load
+background media on additional routes. Ko-fi retains its provider-owned surface.
+The settings label is Site theme / Tema del sitio, with the existing storage key,
+cross-tab synchronization and Glass reset default.
+
+Site theme is the last group in Appearance, after backgrounds and timer fonts, with native radio cards and miniature
+window previews. Glass preserves the existing scenery blur and paper fallback. Matte
+uses opaque surfaces, 14px corners and a soft shadow; Pixel uses opaque surfaces, 2px
+corners, a hard offset shadow and pixel window captions. Dense content keeps Inter.
+Clear glass reduces the scenic panel fill from 68% to 18% and blur from 18px to 6px;
+plain backgrounds use an 18% paper tint. No background removes window fills, header
+fills, blur and shadows while retaining borders, controls and interaction states.
+Outline uses opaque surfaces, 6px corners, fine borders and no shadow. The transparent
+variants clear embedded workspace panel fills as well as their outer shells; scenic
+text receives a dark shadow to improve legibility. Previews illustrate each material.
+Paper adds a warm #f6efdc surface with a fine CSS texture and layered edges;
+Terminal uses #101c17 panels, green details and monospace window headings; Neon
+uses #18172d panels with a static violet glow and 16px corners. Each material owns
+a complete local foreground, muted, border and control palette, independent of
+scenery and the page theme. Dense content and semantic action colors stay shared.
+Their previews reuse the material tokens; no new assets or animation are required.
+The nine choices use three columns on desktop and two on narrow screens.
+Glass, Matte and Pixel are free; the remaining six styles require active Pro access.
+Locked cards show the shared Pro badge and open the existing paywall. Style changes
+apply immediately, independently of scenery, timer font and light/dark theme.
+The store checks access when choosing, restoring and syncing preferences. Without
+Pro, a saved premium choice falls back to Glass but is retained for reactivation.
+Before auth is verified, the early page bootstrap applies only free themes. The browser preference and cross-tab updates belong to
+`useAppearanceStore`; missing or invalid saved styles fall back to Glass, and Reset
+appearance restores it. The settings dialog itself previews the current material.
+
+`app/window-design.css` owns `--window-radius`, `--window-shadow`, `--window-backdrop`
+and opaque `--window-scene-*` adapters. `app/appearance.css` consumes those adapters
+at its existing local scene-token owners, including portalled dialogs. Scenery retains
+its dark readable palette in both themes; opaque panel/task/popover colors are
+#141c19, #0c1210 and #141917. Default backgrounds retain the light/dark pixel palette.
+Workspace windows, shared dialogs, menus and scenery shells share the chosen material.
+Rounded headers and scrolling bodies keep resize handles outside the window accessible.
+Daily Flow keeps one outer surface; Ko-fi retains its provider-owned presentation and
+the mobile recap remains full screen. Forced colors keeps system surfaces and outlines.
+
 The timer's icon-only Appearance button sits at the top beside Settings, with a localized
 accessible name and tooltip. On narrow screens the status sits below the icon row.
 It opens a native modal dialog with a compact scenery
@@ -808,6 +856,16 @@ Without active Pro, these tiles are native buttons that close the appearance dia
 and open the same PaywallModal used by `/statistics`, keeping checkout above all other UI.
 it scrolls within a bounded dialog while the header and Done action remain reachable.
 English/Spanish text follows I18nProvider via `lib/i18n/appearance.ts`.
+
+Timer digits use per-face optical scaling in `app/appearance.css`: Pixel 1×,
+sans/Space 1.4×, serif/mono 1.5×, rounded 1.45×, Orbitron 1.18×, Cormorant 1.7×,
+Bebas 1.55× and VT323 1.65×. `.timer-numerals` scales only the face inside the
+existing line box, keeping surrounding controls stable. A container-width cap
+uses the actual formatted character count and a conservative per-face glyph width
+to fit long values and narrow windows. Main timer, native mini timer and font
+previews share this rule. VT323 alone uses a 1.2× horizontal optical correction
+to soften its condensed proportions without increasing height. Its .72em glyph
+width budget accounts for the expansion and the Courier fallback on narrow screens.
 
 `data-timer-font` maps pixel, system sans, Georgia, Courier New and Trebuchet MS to
 `--timer-face` in `app/appearance.css`, with local fallbacks. Only timer numerals change,

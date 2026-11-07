@@ -1,4 +1,4 @@
-/* Admin is intentionally independent of the public workspace theme. */
+/* Admin defaults; site-appearance.css adapts these roles to the selected theme. */
 .admin-shell {
   --admin-surface: #ffffff;
   --admin-subtle: #f5f7fa;

@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, Crown, Film, Flame, Leaf, Loader2, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
-import { BACKGROUNDS, isAnimatedBackground, isPremiumBackground, isPremiumTimerFont, PLAY_BACKGROUND_EVENT, TIMER_FONTS } from '@/lib/appearance'
+import { BACKGROUNDS, isAnimatedBackground, isPremiumBackground, isPremiumTimerFont, isPremiumWindowDesign, PLAY_BACKGROUND_EVENT, TIMER_FONTS, WINDOW_DESIGNS } from '@/lib/appearance'
 import { appearanceCopy } from '@/lib/i18n/appearance'
 import { useI18n } from '@/components/I18nProvider'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
@@ -44,6 +44,7 @@ export default function AppearanceSettings() {
   const descriptionId = useId()
   const radioName = useId()
   const fontName = useId()
+  const windowDesignName = useId()
   const state = useAppearanceStore()
   const reducedMotion = useReducedMotionPreference()
   const selected = BACKGROUNDS.find(background => background.id === state.backgroundId) ?? BACKGROUNDS[0]
@@ -151,8 +152,31 @@ export default function AppearanceSettings() {
                     name={fontName} value={font} checked={state.timerFont === font}
                     label={`${copy.fonts[font]}${isPremiumTimerFont(font) && !state.hasProAccess ? `. ${copy.unlockPremium}` : ''}`}
                     onSelect={() => state.setTimerFont(font)} onUnlock={openPaywall}>
-                    <span className="appearance-font-sample" data-timer-font={font} aria-hidden="true">25:00</span>
+                    <span className="appearance-font-sample" data-timer-font={font} aria-hidden="true"><span className="timer-numerals">25:00</span></span>
                     <span className="appearance-choice-label">{copy.fonts[font]}{state.timerFont === font && <Check size={13} aria-hidden="true" />}</span>
+                  </AppearanceChoice>
+                ))}
+              </div>
+            </fieldset>
+            <fieldset className="appearance-section">
+              <legend>{copy.windowDesign}</legend>
+              <div className="appearance-window-designs">
+                {WINDOW_DESIGNS.map(design => (
+                  <AppearanceChoice key={design} className="appearance-window-choice" premium={isPremiumWindowDesign(design)} locked={isPremiumWindowDesign(design) && !state.hasProAccess}
+                    name={windowDesignName} value={design} checked={state.windowDesign === design}
+                    label={`${copy.windowDesigns[design].name}. ${copy.windowDesigns[design].description}${isPremiumWindowDesign(design) && !state.hasProAccess ? `. ${copy.unlockPremium}` : ''}`}
+                    onSelect={() => state.setWindowDesign(design)} onUnlock={openPaywall}>
+                    <span className="appearance-window-preview" data-window-design={design} aria-hidden="true">
+                      <span className="appearance-window-sample">
+                        <span className="appearance-window-sample-header"><i /><i /><i /></span>
+                        <span className="appearance-window-sample-body"><i /><i /><i /></span>
+                      </span>
+                    </span>
+                    <span className="appearance-choice-label">
+                      {copy.windowDesigns[design].name}
+                      {state.windowDesign === design && <Check size={13} aria-hidden="true" />}
+                    </span>
+                    <span className="appearance-choice-description">{copy.windowDesigns[design].description}</span>
                   </AppearanceChoice>
                 ))}
               </div>

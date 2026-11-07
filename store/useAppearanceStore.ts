@@ -1,7 +1,7 @@
 'use client'
 
 import { create } from 'zustand'
-import { BACKGROUNDS, DEFAULT_APPEARANCE, isPremiumBackground, isPremiumTimerFont, parseAppearance, type BackgroundId, type TimerFont } from '@/lib/appearance'
+import { BACKGROUNDS, DEFAULT_APPEARANCE, isPremiumBackground, isPremiumTimerFont, isPremiumWindowDesign, parseAppearance, type BackgroundId, type TimerFont, type WindowDesign } from '@/lib/appearance'
 import { hasActiveProAccess } from '@/lib/proAccess'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -11,6 +11,7 @@ type MediaStatus = 'idle' | 'loading' | 'ready' | 'error' | 'blocked'
 interface AppearanceStore {
   backgroundId: BackgroundId
   timerFont: TimerFont
+  windowDesign: WindowDesign
   videoPaused: boolean
   hydrated: boolean
   hasProAccess: boolean
@@ -24,6 +25,7 @@ interface AppearanceStore {
   syncProAccess: () => void
   setBackground: (id: BackgroundId) => void
   setTimerFont: (font: TimerFont) => void
+  setWindowDesign: (design: WindowDesign) => void
   setVideoPaused: (paused: boolean) => void
   setMediaStatus: (id: BackgroundId, status: MediaStatus) => void
   retryMedia: () => void
@@ -42,6 +44,7 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => {
     return {
       ...savedAppearance,
       hasProAccess,
+      windowDesign: !hasProAccess && isPremiumWindowDesign(savedAppearance.windowDesign) ? DEFAULT_APPEARANCE.windowDesign : savedAppearance.windowDesign,
       backgroundId: !hasProAccess && isPremiumBackground(savedAppearance.backgroundId) ? DEFAULT_APPEARANCE.backgroundId : savedAppearance.backgroundId,
       timerFont: !hasProAccess && isPremiumTimerFont(savedAppearance.timerFont) ? DEFAULT_APPEARANCE.timerFont : savedAppearance.timerFont,
     }
@@ -154,6 +157,10 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => {
     setTimerFont: timerFont => {
       if (isPremiumTimerFont(timerFont) && !canUsePremium()) return
       save({ timerFont })
+    },
+    setWindowDesign: windowDesign => {
+      if (isPremiumWindowDesign(windowDesign) && !canUsePremium()) return
+      save({ windowDesign })
     },
     setVideoPaused: videoPaused => save({ videoPaused }),
     setMediaStatus: (id, mediaStatus) => {
