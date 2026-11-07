@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { BACKGROUNDS } from '@/lib/appearance'
 import { useJournalText } from '@/lib/journal/client'
 import type { Author, Project } from '@/lib/journal/types'
 import type { ProjectOverview } from '@/lib/journal/projectOverview'
@@ -13,7 +14,7 @@ export default function PublicProjectDemo({ tab, today }: { tab: string; today: 
   const user: Author = { id: 'demo-author', username: 'alex-demo', displayName: 'Alex Morgan', avatarUrl: null }
   const project: Project = {
     id: 'demo-project', userId: user.id, workProjectId: null, name: 'Pomo Cowork', slug: 'pomo-cowork',
-    imageUrl: '/icons/favicon-192.png', coverUrl: '/backgrounds/images/pixel-autumn.png',
+    imageUrl: '/icons/favicon-192.png', coverUrl: BACKGROUNDS.find(background => background.id === 'pixel-autumn')?.src ?? null,
     description: t('A cozy place to focus, work together, and make every study session count. Building one Pomodoro at a time.', 'Un lugar acogedor para concentrarse, trabajar juntos y aprovechar cada sesión. Un Pomodoro a la vez.'),
     content: '', status: 'BUILDING', visibility: 'PUBLIC', pinned: true, websiteUrl: null, githubUrl: null,
     startedAt: day(-42), completedAt: null, showTasks: true, views: 1248, stats: { seconds: 86.5 * 3600, sessions: 214 },

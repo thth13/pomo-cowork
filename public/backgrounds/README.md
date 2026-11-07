@@ -19,11 +19,12 @@ the existing image preloading, error recovery and contrast sampling behavior.
 Magic Academy was generated and revised with the built-in `image_gen` tool on 2026-10-23.
 It is an original fantasy academy, with a landscape JPEG at quality 84 and a 320px
 gallery thumbnail at quality 75, available with active Pro access through the background catalog.
-The active Gothic revision uses versioned asset paths to refresh cached backgrounds.
+The active Gothic revision uses distinct asset filenames to refresh cached backgrounds.
 
 Generated with the built-in `image_gen` tool on 2026-10-20. These are original generated
-landscapes and abstract gradients, not photographs of identified real locations. The selected outputs live in
-this repository; no upload or external image host is needed for the new wallpapers.
+landscapes and abstract gradients, not photographs of identified real locations. The selected outputs and
+gallery thumbnails are hosted on the CDN configured by `BLOB_BASE_URL`, under
+`backgrounds/images/` with the filenames below. Local copies have been removed.
 
 | Catalog ID | Wallpaper | Gallery thumbnail |
 | --- | --- | --- |
@@ -70,7 +71,7 @@ Constraints: no lettering, logos, watermark, UI, borders. No floating embers or 
 
 **magic-academy — active Gothic revision**
 
-The revision was edited from the initial academy artwork; only the Gothic version is retained in this repository.
+The revision was edited from the initial academy artwork; only the Gothic version is used in the catalog.
 
 ```text
 Use case: style-transfer

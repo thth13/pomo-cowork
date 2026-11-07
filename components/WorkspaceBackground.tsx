@@ -96,7 +96,7 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
   return (
     <div className="workspace-background" aria-hidden="true">
       {!posterFailed && (
-        // Local and Blob assets; CORS allows contrast sampling through canvas.
+        // CDN assets use CORS to allow contrast sampling through canvas.
         // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={imageRef}
