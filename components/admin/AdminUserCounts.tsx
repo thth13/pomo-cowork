@@ -1,0 +1,52 @@
+'use client'
+
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { useAdminData } from './useAdminData'
+
+type UserCounts = { month: string; registered: number; anonymous: number; total: number; updatedAt: string }
+
+export default function AdminUserCounts() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const params = useSearchParams()
+  const selected = params.get('usersMonth') ?? 'all'
+  const month = /^(?!0000)\d{4}-(0[1-9]|1[0-2])$/.test(selected) ? selected : 'all'
+  const { data, loading, error, refresh } = useAdminData<UserCounts>(`/api/admin/user-counts?month=${month}`)
+  const period = month === 'all' ? 'All time' : new Intl.DateTimeFormat('en-GB', {
+    month: 'long', year: 'numeric', timeZone: 'UTC',
+  }).format(new Date(`${month}-01T00:00:00Z`))
+
+  function selectMonth(value: string) {
+    const next = new URLSearchParams(params.toString())
+    next.set('usersMonth', value || 'all')
+    router.replace(`${pathname}?${next}#user-counts`, { scroll: false })
+  }
+
+  const metrics = [
+    { label: 'Registered users', value: data?.registered, note: 'Accounts with registration' },
+    { label: 'Anonymous users', value: data?.anonymous, note: 'Guest accounts' },
+    { label: 'Total users', value: data?.total, note: 'Registered + anonymous accounts' },
+  ]
+
+  return <section className="admin-statistics admin-user-counts" aria-label="User counts">
+    <div className="admin-data-toolbar">
+      <div><h2>{period}</h2><p>Accounts created during the selected period.</p></div>
+      <button type="button" onClick={refresh} disabled={loading}>{loading ? 'Loading…' : 'Refresh'}</button>
+    </div>
+    <div className="admin-data-filters admin-user-counts-period" role="group" aria-label="Account creation period">
+      <label htmlFor="admin-users-month">Month</label>
+      <input id="admin-users-month" type="month" min="0001-01" max="9999-12" value={month === 'all' ? '' : month} onChange={event => selectMonth(event.target.value)} />
+      <button type="button" aria-pressed={month === 'all'} onClick={() => selectMonth('all')}>All time</button>
+    </div>
+    {error && <p role="alert" className="admin-data-error">{error} Use Refresh to try again.</p>}
+    <div className="admin-metrics" aria-busy={loading}>
+      {metrics.map(({ label, value, note }) => <div className="admin-metric" key={label}>
+        <h3 className="admin-metric-label">{label}</h3>
+        <strong>{value?.toLocaleString('en-US') ?? '—'}</strong>
+        <p className="admin-metric-note">{note}</p>
+      </div>)}
+    </div>
+    <p className="admin-data-note" role="status">{loading ? 'Loading user counts…' : data?.total === 0 ? 'No accounts were created during this period.' : data ? `${data.total.toLocaleString('en-US')} accounts · ${period}` : 'User counts unavailable.'}</p>
+    <p className="admin-data-note">Counts use existing accounts and their current registered or anonymous status. Deleted accounts and visitors without an account are excluded. Months follow Kyiv time.</p>
+  </section>
+}

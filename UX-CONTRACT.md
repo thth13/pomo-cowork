@@ -735,6 +735,18 @@ Verification is static; app execution, builds and tsc remain user-owned.
 
 ## Administration navigation
 
+User counts (`#user-counts`) shows registered, anonymous and combined totals.
+Source: user request; `prisma/schema.prisma` User.createdAt/isAnonymous and
+`app/api/admin/user-counts/route.ts`. The endpoint applies `authorizeAdmin` before
+queries and disables caching. Counts use current account status and creation
+dates, exclude deleted accounts and visitors without a User record, and do not
+claim historical registration-conversion dates. `usersMonth=YYYY-MM` or `all`
+persists in the URL; default is all time. Kyiv month boundaries account for DST.
+The native month picker accepts OS-owned locale/geometry/keyboard behavior;
+clearing it or pressing All time restores totals. `useAdminData` owns loading,
+timeout, cancellation, errors, retry and stale-response protection. Verification
+of runtime behavior remains user-owned; no build, project start or tsc is run.
+
 `app/admin/page.tsx` owns the admin shell and hash navigation. Overview, referrals,
 users, support, and events are separately addressable sections; browser history
 restores selection. Existing `paywallPage` links still open activity, and pagination

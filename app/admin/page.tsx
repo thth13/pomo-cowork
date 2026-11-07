@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { ArrowLeft, ArrowUpRight, Crown, LayoutDashboard, Link2, MessageSquare, MousePointer2, ShieldCheck, Users, MessageCircle, ListChecks, BarChart3 } from 'lucide-react'
 import AdminAllMetrics from '@/components/admin/AdminAllMetrics'
+import AdminUserCounts from '@/components/admin/AdminUserCounts'
 import AdminOverview from '@/components/admin/AdminOverview'
 import AdminProductUpdates from '@/components/admin/AdminProductUpdates'
 import AdminBeepMessages from '@/components/admin/AdminBeepMessages'
@@ -28,6 +29,7 @@ const sections = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, description: '' },
   { id: 'updates', label: 'Product updates', icon: MessageSquare, description: 'Preview illustrated updates and send in-app notifications to registered accounts.' },
   { id: 'metrics', label: 'All metrics', icon: BarChart3, description: 'Community totals, current activity, and all-time records.' },
+  { id: 'user-counts', label: 'User counts', icon: Users, description: 'Registered and anonymous account counts by creation month. Calendar months use Kyiv time.' },
   { id: 'referrals', label: 'Referral links', icon: Link2, description: 'Manage campaign links and track the people they bring to Pomo.' },
   { id: 'users', label: 'Pro users', icon: Crown, description: 'Manage Premium access and review active memberships.' },
   { id: 'directory', label: 'All users', icon: Users, description: 'Registered and guest accounts with focus statistics, as in the user directory.' },
@@ -90,6 +92,7 @@ export default function AdminPage() {
             {section === 'updates' && <AdminProductUpdates />}
             {section === 'overview' && <AdminOverview />}
             {section === 'metrics' && <AdminAllMetrics />}
+            {section === 'user-counts' && <AdminUserCounts />}
             {section === 'beep' && <AdminBeepMessages />}
             {section === 'beep-events' && <AdminBeepEvents />}
             <AdminReferralManager section={section} />

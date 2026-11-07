@@ -173,6 +173,13 @@ body:has(.admin-shell) { background: #f5f7fa; }
 .admin-referrer-filter select:hover { border-color: var(--admin-accent); }
 .admin-referrer-filter select:focus-visible { outline: 2px solid var(--admin-accent); outline-offset: 2px; }
 .admin-statistics { margin-bottom: 28px; }
+.admin-user-counts .admin-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.admin-user-counts-period { align-items: center; flex-wrap: wrap; }
+.admin-user-counts-period label { color: var(--admin-secondary); font-size: 12px; }
+.admin-user-counts-period input { min-width: 0; max-width: 100%; padding: 9px 12px; border: 1px solid var(--admin-line); background: var(--admin-surface); color: var(--admin-ink); cursor: pointer; }
+.admin-user-counts-period input:hover { border-color: var(--admin-accent); }
+.admin-user-counts > .admin-data-note + .admin-data-note { margin-top: 8px; }
+@media (max-width: 800px) { .admin-user-counts .admin-metrics { grid-template-columns: minmax(0, 1fr); } }
 .admin-recent-users { margin-top: 28px; }
 .admin-recent-users > .admin-data-note { margin-bottom: 16px; }
 .admin-statistics .admin-metrics { margin-bottom: 12px; }
