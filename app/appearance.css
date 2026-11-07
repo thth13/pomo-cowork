@@ -335,7 +335,7 @@ body:has(.product-scenery) :is(.notifications-panel, .rank-toast, .wrapped-dialo
 /* One layout, two surface treatments. Portalled tasks explicitly carry this variant. */
 :is(.pomodoro-home, .seo-shell):has(.workspace-background),
 body:has(:is(.pomodoro-home, .seo-shell) .workspace-background) :is(.notifications-panel, .rank-toast, .wrapped-dialog, .timer-settings-dialog, .appearance-dialog),
-body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu, .active-session-reactions-menu, .paywall-dialog, .auth-dialog, .feedback-widget),
+body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu, .active-session-reactions-menu, .paywall-dialog, .auth-dialog, .product-update-dialog, .feedback-widget),
 body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) [data-companion-controls],
 .task-popover[data-background-mode] {
   --scene-panel: var(--window-scene-panel, rgb(20 28 25 / 68%));
@@ -529,7 +529,7 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
 /* Feedback and native dialogs share the workspace glass, even outside its container.
    Follow the rendered scenery rather than a saved preference on unrelated routes. */
 @media (forced-colors: none) {
-  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu, .active-session-reactions-menu, .paywall-dialog, .auth-dialog, .feedback-panel, .feedback-prompt, .feedback-trigger) {
+  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.focus-project-actions-menu, .project-action-dialog, .project-color-menu, .active-session-reactions-menu, .paywall-dialog, .auth-dialog, .product-update-dialog, .feedback-panel, .feedback-prompt, .feedback-trigger) {
     --pixel-paper: var(--scene-task);
     --pixel-screen: var(--scene-hover);
     --pixel-ink: var(--scene-primary);
@@ -564,7 +564,7 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
   body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) .active-session-reactions-menu {
     border-radius: 3px;
   }
-  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.paywall-dialog, .auth-dialog) {
+  body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell .workspace-background)) :is(.paywall-dialog, .auth-dialog, .product-update-dialog) {
     --pixel-shadow: var(--scene-selected);
     --pixel-growth: var(--timer-short-break-on-dark);
     --pixel-scroll-track: var(--scene-task);

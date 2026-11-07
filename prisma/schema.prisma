@@ -198,6 +198,7 @@ enum RoomInviteStatus {
 }
 
 enum NotificationType {
+  PRODUCT_UPDATE
   PREMIUM_GRANTED
   ROOM_INVITE
   WALL_MESSAGE
@@ -288,12 +289,14 @@ model Notification {
 
   roomInviteId  String?
   roomInvite    RoomInvite?      @relation(fields: [roomInviteId], references: [id], onDelete: SetNull)
+  productUpdateId String? @db.VarChar(80)
   wrappedMonth String? @db.VarChar(10)
   wallMessageId String?
   wallMessage   UserWallMessage? @relation("WallMessageNotifications", fields: [wallMessageId], references: [id], onDelete: SetNull)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, productUpdateId])
   @@index([userId, readAt])
   @@map("notifications")
 }

@@ -57,6 +57,7 @@ export async function GET(request: NextRequest) {
             inviter: { select: { id: true, username: true, avatarUrl: true } },
           },
         },
+        productUpdateId: true,
         wrappedMonth: true,
         wallMessageId: true,
         wallMessage: {

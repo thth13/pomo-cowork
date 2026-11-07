@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import useSWRInfinite from 'swr/infinite'
-import { Bell, Check, Mail, Trophy, CalendarDays, Crown } from 'lucide-react'
+import { Bell, Check, Mail, Trophy, CalendarDays, Crown, Sparkles } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import PersonalNavigation from '@/components/PersonalNavigation'
 import AuthModal from '@/components/AuthModal'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
+import { getProductUpdate, openProductUpdate, productUpdateCopy } from '@/lib/productUpdates'
 import { notificationsCopy } from '@/lib/i18n/notifications'
 import { monthLabel } from '@/lib/wrapped/analytics'
 import type { NotificationItem } from '@/types'
@@ -35,7 +36,7 @@ async function fetchHistory([url, token]: [string, string]): Promise<HistoryPage
   }
 }
 
-const icons = { ROOM_INVITE: Mail, WALL_MESSAGE: Mail, RANK_UP: Trophy, MONTHLY_WRAPPED: CalendarDays, PREMIUM_GRANTED: Crown }
+const icons = { ROOM_INVITE: Mail, WALL_MESSAGE: Mail, RANK_UP: Trophy, MONTHLY_WRAPPED: CalendarDays, PREMIUM_GRANTED: Crown, PRODUCT_UPDATE: Sparkles }
 
 export default function NotificationsHistory() {
   const { token, isAuthenticated, isLoading: authLoading } = useAuthStore()
@@ -132,6 +133,7 @@ export default function NotificationsHistory() {
           {items.length > 0 && <>
             <ol className="notifications-history-list">
               {items.map(item => {
+                const productUpdate = getProductUpdate(item.productUpdateId)
                 const Icon = icons[item.type] ?? Bell
                 const pendingInvite = item.type === 'ROOM_INVITE' && item.roomInvite?.status === 'PENDING'
                 return <li key={item.id} className={`notification-entry notification-entry--${item.type.toLowerCase()}${item.readAt ? '' : ' notification-entry--unread'}`}>
@@ -139,18 +141,19 @@ export default function NotificationsHistory() {
                     <span className="sr-only">{item.readAt ? copy.read : copy.unread}</span>
                     <div className="notifications-history-meta">
                       <div className="notifications-history-title">
-                        <h2 id={`notification-${item.id}`}>{item.title}</h2>
+                        <h2 id={`notification-${item.id}`}>{productUpdate?.title[language] ?? item.title}</h2>
                         <span className="notifications-history-badge"><Icon size={13} aria-hidden="true" />{copy.types[item.type]}</span>
                       </div>
                       <time dateTime={item.createdAt}>{formatDate(item.createdAt)}</time>
                     </div>
-                    <p className="notifications-history-message">{item.message}</p>
+                    <p className="notifications-history-message">{productUpdate?.summary[language] ?? item.message}</p>
                     {item.roomInvite && <dl className="notifications-history-details"><div><dt>{copy.room}</dt><dd>{item.roomInvite.room.name}</dd></div><div><dt>{copy.from}</dt><dd>{item.roomInvite.inviter.username}</dd></div><div><dt>{copy.types.ROOM_INVITE}</dt><dd>{copy.statuses[item.roomInvite.status]}</dd></div></dl>}
                     {item.wallMessage && <p className="notifications-history-detail">{copy.from}: <strong>{item.wallMessage.author.username}</strong></p>}
                     {item.wrappedMonth && <p className="notifications-history-detail"><strong>{monthLabel({ monthStart: item.wrappedMonth }, language)}</strong></p>}
                     <div className="notifications-history-actions">
                       {pendingInvite && <><button className="notification-invite-action notification-invite-accept" disabled={busy !== null || expired} onClick={() => void update(item, 'accept')}>{copy.accept}</button><button className="notification-invite-action notification-invite-decline" disabled={busy !== null || expired} onClick={() => void update(item, 'decline')}>{copy.decline}</button></>}
                       {item.roomInvite?.status === 'ACCEPTED' && <Link href={`/rooms/${item.roomInvite.roomId}`} prefetch={false}>{copy.openRoom} →</Link>}
+                      {item.type === 'PRODUCT_UPDATE' && item.productUpdateId && <button type="button" className="notification-invite-action notification-invite-accept" onClick={() => openProductUpdate({ updateId: item.productUpdateId!, notificationId: item.readAt ? undefined : item.id })}><Sparkles size={16} aria-hidden="true" />{productUpdateCopy[language].open}</button>}
                       {item.type === 'MONTHLY_WRAPPED' && item.wrappedMonth && <button type="button" className="notification-invite-action notification-invite-accept notifications-history-recap" onClick={() => window.dispatchEvent(new CustomEvent('open-monthly-wrapped', { detail: item.wrappedMonth }))}><CalendarDays size={16} aria-hidden="true" />{copy.openRecap}</button>}
                       {!item.readAt && !pendingInvite && <button className="notification-invite-action notification-invite-decline" disabled={busy !== null || expired} onClick={() => void update(item, 'read')}><Check size={14} aria-hidden="true" />{copy.markRead}</button>}
                       {busy === item.id && <span role="status">{copy.working}</span>}

@@ -9,7 +9,7 @@ export const notificationsCopy = {
     expired: 'Your session has expired. Sign in again to continue.',
     accept: 'Accept', decline: 'Decline', openRoom: 'Open room', openProfile: 'View profile', openRecap: 'Open recap',
     working: 'Saving…', room: 'Room', from: 'From',
-    types: { ROOM_INVITE: 'Room invitation', WALL_MESSAGE: 'Wall message', RANK_UP: 'Rank up', MONTHLY_WRAPPED: 'Monthly recap', PREMIUM_GRANTED: 'Premium access' },
+    types: { PRODUCT_UPDATE: 'Product update', ROOM_INVITE: 'Room invitation', WALL_MESSAGE: 'Wall message', RANK_UP: 'Rank up', MONTHLY_WRAPPED: 'Monthly recap', PREMIUM_GRANTED: 'Premium access' },
     statuses: { PENDING: 'Pending', ACCEPTED: 'Accepted', DECLINED: 'Declined' },
   },
   es: {
@@ -22,7 +22,7 @@ export const notificationsCopy = {
     expired: 'Tu sesión ha caducado. Inicia sesión de nuevo para continuar.',
     accept: 'Aceptar', decline: 'Rechazar', openRoom: 'Abrir sala', openProfile: 'Ver perfil', openRecap: 'Abrir resumen',
     working: 'Guardando…', room: 'Sala', from: 'De',
-    types: { ROOM_INVITE: 'Invitación a sala', WALL_MESSAGE: 'Mensaje en el muro', RANK_UP: 'Nuevo rango', MONTHLY_WRAPPED: 'Resumen mensual', PREMIUM_GRANTED: 'Acceso Premium' },
+    types: { PRODUCT_UPDATE: 'Actualización', ROOM_INVITE: 'Invitación a sala', WALL_MESSAGE: 'Mensaje en el muro', RANK_UP: 'Nuevo rango', MONTHLY_WRAPPED: 'Resumen mensual', PREMIUM_GRANTED: 'Acceso Premium' },
     statuses: { PENDING: 'Pendiente', ACCEPTED: 'Aceptada', DECLINED: 'Rechazada' },
   },
 } as const

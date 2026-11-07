@@ -7,6 +7,7 @@ import { ClipLoader } from 'react-spinners'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
+import { getProductUpdate, productUpdateCopy } from '@/lib/productUpdates'
 import { notificationsCopy } from '@/lib/i18n/notifications'
 import type { NotificationItem } from '@/types'
 import type { RefObject } from 'react'
@@ -88,6 +89,7 @@ export default function NotificationsMenu({
           ) : (
             <div className="notifications-panel-list">
               {notifications.map((n) => {
+                const update = getProductUpdate(n.productUpdateId)
                 const isInvite =
                   n.readAt === null &&
                   n.type === 'ROOM_INVITE' &&
@@ -106,7 +108,13 @@ export default function NotificationsMenu({
                     key={n.id}
                     className={`notification-entry notification-entry--${n.type.toLowerCase()}${isUnread ? ' notification-entry--unread' : ''}`}
                   >
-                    {n.type === 'MONTHLY_WRAPPED' && n.wrappedMonth ? (
+                    {n.type === 'PRODUCT_UPDATE' && n.productUpdateId ? (
+                      <button type="button" onClick={() => onNotificationClick?.(n)} className="notification-entry-action wrapped-notification-action">
+                        <strong>{update?.title[language] ?? n.title}</strong>
+                        <span>{update?.summary[language] ?? n.message}</span>
+                        <span>{productUpdateCopy[language].open} →</span>
+                      </button>
+                    ) : n.type === 'MONTHLY_WRAPPED' && n.wrappedMonth ? (
                       <button type="button" onClick={() => onNotificationClick?.(n)} className="wrapped-notification-action notification-entry-action">
                         <strong>{copy.notification}</strong>
                         <span>{monthLabel({ monthStart: n.wrappedMonth }, language)}</span>

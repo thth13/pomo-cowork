@@ -11,6 +11,18 @@
 
 ## Canonical UI map
 
+Product update notifications reuse `Notification`, the existing owner-scoped read
+API, Navbar inbox and notification history. `ProductUpdateProvider` and the
+`CommunityDialog` product-update variant own explicit-click viewing; no automatic
+opening occurs. Opening the inbox does not mark these notifications read. Opening
+a known release marks it read with inline failure/retry while leaving content
+available. Preview has no read/delivery side effect; account changes hide old content.
+The admin Product updates workflow uses server `authorizeAdmin`, explicit send
+confirmation and a unique user/release key for idempotent delivery to registered
+accounts. No email or push is sent. The requested audience and click-to-open
+behavior are documented in `docs/product-updates.md`; permission ownership remains
+`lib/adminRequest.ts` / `lib/admin.ts`.
+
 ProjectList saving feedback belongs to the initiating control: project creation,
 the parent project's add-task button, the changed task's checkbox, or the corresponding
 rename/delete action. Spinner icons preserve control geometry, respect reduced motion,

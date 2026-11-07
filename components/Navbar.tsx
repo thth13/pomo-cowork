@@ -15,6 +15,7 @@ import Image from 'next/image'
 import { useRoomStore } from '@/store/useRoomStore'
 import { NotificationItem } from '@/types'
 import NotificationsMenu from './NotificationsMenu'
+import { openProductUpdate } from '@/lib/productUpdates'
 import PixelSprout from '@/components/PixelSprout'
 import { habitsCopy } from '@/lib/i18n/habits'
 import { gardenCopy } from '@/lib/i18n/garden'
@@ -243,6 +244,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     const toMark = items.filter(
       (n) =>
         n.readAt === null &&
+        n.type !== 'PRODUCT_UPDATE' &&
         !openedReadRef.current.has(n.id) &&
         !(n.type === 'ROOM_INVITE' && n.roomInvite?.status === 'PENDING')
     )
@@ -312,6 +314,14 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
 
   const handleNotificationClick = async (notification: NotificationItem) => {
     if (!authHeaders) return
+    if (notification.type === 'PRODUCT_UPDATE' && notification.productUpdateId) {
+      setIsNotificationsOpen(false)
+      setIsMenuOpen(false)
+      setIsMobileMenuOpen(false)
+      compactTriggerRef.current?.focus({ preventScroll: true })
+      openProductUpdate({ updateId: notification.productUpdateId, notificationId: notification.readAt ? undefined : notification.id })
+      return
+    }
     if (notification.type === 'MONTHLY_WRAPPED' && notification.wrappedMonth) {
       setIsNotificationsOpen(false)
       window.dispatchEvent(new CustomEvent('open-monthly-wrapped', { detail: notification.wrappedMonth }))

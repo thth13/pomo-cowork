@@ -95,13 +95,14 @@ export interface RoomInvite {
 
 export interface NotificationItem {
   id: string
-  type: 'ROOM_INVITE' | 'WALL_MESSAGE' | 'RANK_UP' | 'MONTHLY_WRAPPED' | 'PREMIUM_GRANTED'
+  type: 'ROOM_INVITE' | 'WALL_MESSAGE' | 'RANK_UP' | 'MONTHLY_WRAPPED' | 'PREMIUM_GRANTED' | 'PRODUCT_UPDATE'
   title: string
   message: string
   readAt: string | null
   createdAt: string
   roomInviteId: string | null
   roomInvite: RoomInvite | null
+  productUpdateId?: string | null
   wrappedMonth?: string | null
   wallMessageId?: string | null
   wallMessage?: {

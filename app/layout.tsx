@@ -10,6 +10,8 @@ import './wrapped.css'
 import './achievements.css'
 import './window-design.css'
 import './site-appearance.css'
+import './product-updates.css'
+import ProductUpdateProvider from '@/components/ProductUpdateProvider'
 import WrappedProvider from '@/components/wrapped/WrappedProvider'
 import '@fortawesome/fontawesome-svg-core/styles.css'
 import { config } from '@fortawesome/fontawesome-svg-core'
@@ -117,6 +119,7 @@ export default function RootLayout({
                 <RankUpToast />
                 <AchievementNotifications />
                 <PremiumGrantModal />
+                <ProductUpdateProvider />
               <JournalToast />
                 <WrappedProvider>{children}</WrappedProvider>
                 <WalkingCompanion />

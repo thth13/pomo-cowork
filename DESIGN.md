@@ -29,6 +29,27 @@ spacing:
 
 # Pomo Pocket Garden
 
+## Illustrated product updates
+
+`ProductUpdateProvider` opens an app-owned `CommunityDialog` only after a user
+clicks an update notification or an admin preview. The first release describes
+Pomo blogs first, followed by themes and timer fonts, with localized English/Spanish
+copy in `lib/productUpdates.ts`. Blogs have localized browser screenshots of the actual project directory
+and built-in demo project, using mock data without real user content. The feedback
+widget is hidden during capture. Images retain native aspect ratios, captions and links to the directory and existing public-project
+creation form. Navigation closes the dialog; modified clicks retain it. The two
+appearance SVG illustrations retain their existing layout. Blog images are real
+screenshots; appearance images are illustrations. The update dialog reuses the paywall shell and its compact pixel heading, muted
+header surface and unframed close control. The title is the localized What’s new
+label. Sections use 17px Inter headings, quiet bullet points and 2px image corners.
+`app/product-updates.css` owns the 720px dialog, fixed header/footer,
+scrolling body, responsive gutters and content typography; the shared theme owns
+colors and material. Images reserve their ratio and have localized alternative text.
+Inter owns readable text; no autoplay, animation, carousel or forced opening is added.
+The admin Product updates section uses existing cards/buttons and confirmation
+behavior. Preview is independent of delivery; sending is an explicit administrator
+action. See `docs/product-updates.md` for rollout and future-release authoring.
+
 ## Admin latest user activity
 
 Overview and All metrics reuse `AdminRecentUsers` for a registered-user count and

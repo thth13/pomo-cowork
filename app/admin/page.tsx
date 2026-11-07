@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { ArrowLeft, ArrowUpRight, Crown, LayoutDashboard, Link2, MessageSquare, MousePointer2, ShieldCheck, Users, MessageCircle, ListChecks, BarChart3 } from 'lucide-react'
 import AdminAllMetrics from '@/components/admin/AdminAllMetrics'
 import AdminOverview from '@/components/admin/AdminOverview'
+import AdminProductUpdates from '@/components/admin/AdminProductUpdates'
 import AdminBeepMessages from '@/components/admin/AdminBeepMessages'
 import AdminBeepEvents from '@/components/admin/AdminBeepEvents'
 import AdminDataTable, { type AdminDataKind } from '@/components/admin/AdminDataTable'
@@ -25,6 +26,7 @@ const AdminPaywallEvents = dynamic(() => import('@/components/AdminPaywallEvents
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, description: '' },
+  { id: 'updates', label: 'Product updates', icon: MessageSquare, description: 'Preview illustrated updates and send in-app notifications to registered accounts.' },
   { id: 'metrics', label: 'All metrics', icon: BarChart3, description: 'Community totals, current activity, and all-time records.' },
   { id: 'referrals', label: 'Referral links', icon: Link2, description: 'Manage campaign links and track the people they bring to Pomo.' },
   { id: 'users', label: 'Pro users', icon: Crown, description: 'Manage Premium access and review active memberships.' },
@@ -85,6 +87,7 @@ export default function AdminPage() {
         <main className="admin-content" id="admin-content" tabIndex={-1}>
           <div className="admin-page-heading"><div><p className="admin-eyebrow">ADMIN CONSOLE</p><h1>{active.label}</h1>{active.description && <p>{active.description}</p>}</div><Link href="/" className="admin-site-link">Open website<ArrowUpRight size={16} aria-hidden="true" /></Link></div>
           {isLoading ? <div className="admin-loading" role="status">Loading account…</div> : <>
+            {section === 'updates' && <AdminProductUpdates />}
             {section === 'overview' && <AdminOverview />}
             {section === 'metrics' && <AdminAllMetrics />}
             {section === 'beep' && <AdminBeepMessages />}
