@@ -741,7 +741,9 @@ Source: user request; `prisma/schema.prisma` User.createdAt/isAnonymous and
 queries and disables caching. Counts use current account status and creation
 dates, exclude deleted accounts and visitors without a User record, and do not
 claim historical registration-conversion dates. `usersMonth=YYYY-MM` or `all`
-persists in the URL; default is all time. Kyiv month boundaries account for DST.
+persists in the URL; default is the current Kyiv month. Previous/next arrows
+change the month across year boundaries; in All time they step from the current
+Kyiv month. Kyiv month boundaries account for DST.
 The native month picker accepts OS-owned locale/geometry/keyboard behavior;
 clearing it or pressing All time restores totals. `useAdminData` owns loading,
 timeout, cancellation, errors, retry and stale-response protection. Verification

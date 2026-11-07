@@ -1406,8 +1406,9 @@ rendered; plain backgrounds and forced colors retain the shared opaque surfaces.
 ## Administration dashboard
 
 User counts (`/admin#user-counts`) reuses the admin toolbar, metric cards and
-scoped tokens for registered, anonymous and combined account totals. All time is
-the initial period; a labelled native month input accepts the platform-owned
+scoped tokens for registered, anonymous and combined account totals. The current
+Kyiv month is the initial period; previous/next arrow buttons flank the labelled
+native month input, including year transitions. The input accepts the platform-owned
 calendar popup, locale and keyboard behavior. The `usersMonth` URL parameter
 preserves the selected creation month. Three cards form one desktop row and
 stack below 800px. Loading/unavailable values use a dash; errors offer Refresh

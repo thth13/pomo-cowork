@@ -175,6 +175,9 @@ body:has(.admin-shell) { background: #f5f7fa; }
 .admin-statistics { margin-bottom: 28px; }
 .admin-user-counts .admin-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .admin-user-counts-period { align-items: center; flex-wrap: wrap; }
+.admin-user-counts-month-nav { display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 100%; }
+.admin-user-counts-month-nav button { display: grid; place-items: center; flex: none; min-width: 44px; min-height: 44px; padding: 8px; cursor: pointer; }
+.admin-user-counts-month-nav button:disabled { cursor: default; }
 .admin-user-counts-period label { color: var(--admin-secondary); font-size: 12px; }
 .admin-user-counts-period input { min-width: 0; max-width: 100%; padding: 9px 12px; border: 1px solid var(--admin-line); background: var(--admin-surface); color: var(--admin-ink); cursor: pointer; }
 .admin-user-counts-period input:hover { border-color: var(--admin-accent); }
