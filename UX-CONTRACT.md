@@ -736,6 +736,10 @@ Verification is static; app execution, builds and tsc remain user-owned.
 ## Administration navigation
 
 User counts (`#user-counts`) shows registered, anonymous and combined totals.
+Registration conversion is registered / combined totals × 100%, using the same
+selected creation period and current account status. Display one decimal place,
+or a dash when the total is zero or unavailable. The formula is visible; supporting
+copy distinguishes this account share from a visitor-to-registration funnel.
 Source: user request; `prisma/schema.prisma` User.createdAt/isAnonymous and
 `app/api/admin/user-counts/route.ts`. The endpoint applies `authorizeAdmin` before
 queries and disables caching. Counts use current account status and creation

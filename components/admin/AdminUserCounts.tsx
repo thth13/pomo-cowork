@@ -33,9 +33,14 @@ export default function AdminUserCounts() {
   }
 
   const metrics = [
-    { label: 'Registered users', value: data?.registered, note: 'Accounts with registration' },
-    { label: 'Anonymous users', value: data?.anonymous, note: 'Guest accounts' },
-    { label: 'Total users', value: data?.total, note: 'Registered + anonymous accounts' },
+    { label: 'Registered users', value: data?.registered.toLocaleString('en-US'), note: 'Accounts with registration' },
+    { label: 'Anonymous users', value: data?.anonymous.toLocaleString('en-US'), note: 'Guest accounts' },
+    { label: 'Total users', value: data?.total.toLocaleString('en-US'), note: 'Registered + anonymous accounts' },
+    {
+      label: 'Registration conversion',
+      value: data && data.total > 0 ? (data.registered / data.total).toLocaleString('en-US', { style: 'percent', minimumFractionDigits: 1, maximumFractionDigits: 1 }) : undefined,
+      note: 'Registered ÷ total users × 100%',
+    },
   ]
 
   return <section className="admin-statistics admin-user-counts" aria-label="User counts">
@@ -56,11 +61,12 @@ export default function AdminUserCounts() {
     <div className="admin-metrics" aria-busy={loading}>
       {metrics.map(({ label, value, note }) => <div className="admin-metric" key={label}>
         <h3 className="admin-metric-label">{label}</h3>
-        <strong>{value?.toLocaleString('en-US') ?? '—'}</strong>
+        <strong>{value ?? '—'}</strong>
         <p className="admin-metric-note">{note}</p>
       </div>)}
     </div>
     <p className="admin-data-note" role="status">{loading ? 'Loading user counts…' : data?.total === 0 ? 'No accounts were created during this period.' : data ? `${data.total.toLocaleString('en-US')} accounts · ${period}` : 'User counts unavailable.'}</p>
     <p className="admin-data-note">Counts use existing accounts and their current registered or anonymous status. Deleted accounts and visitors without an account are excluded. Months follow Kyiv time.</p>
+    <p className="admin-data-note">Conversion is the share of currently registered accounts among all accounts created in this period. It does not measure visits that led to registration. With no accounts, conversion is unavailable.</p>
   </section>
 }

@@ -1410,8 +1410,10 @@ scoped tokens for registered, anonymous and combined account totals. The current
 Kyiv month is the initial period; previous/next arrow buttons flank the labelled
 native month input, including year transitions. The input accepts the platform-owned
 calendar popup, locale and keyboard behavior. The `usersMonth` URL parameter
-preserves the selected creation month. Three cards form one desktop row and
-stack below 800px. Loading/unavailable values use a dash; errors offer Refresh
+preserves the selected creation month. Four cards, including registration conversion,
+form one desktop row, two columns below 1200px and stack below 800px.
+Conversion uses registered / total accounts, formatted as a percentage with one
+decimal place; zero total is unavailable. Loading/unavailable values use a dash; errors offer Refresh
 and zero counts have an explicit empty-period message. No new tokens are added.
 
 Overview and All metrics show unique online timer users across all rooms, including
