@@ -33,6 +33,7 @@ import AchievementNotifications from '@/components/achievements/AchievementNotif
 import JournalToast from '@/components/journal/JournalToast'
 import PremiumGrantModal from '@/components/PremiumGrantModal'
 import WalkingCompanion from '@/components/companion/WalkingCompanion'
+import PersistentTimerProvider from '@/components/PersistentTimerProvider'
 
 config.autoAddCss = false
 
@@ -121,7 +122,9 @@ export default function RootLayout({
                 <PremiumGrantModal />
                 <ProductUpdateProvider />
               <JournalToast />
-                <WrappedProvider>{children}</WrappedProvider>
+                <PersistentTimerProvider>
+                  <WrappedProvider>{children}</WrappedProvider>
+                </PersistentTimerProvider>
                 <WalkingCompanion />
                 <KofiWidget />
                 <div className="hidden sm:block">

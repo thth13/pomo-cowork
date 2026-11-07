@@ -1217,3 +1217,16 @@ The button exposes localized expand/collapse labels and aria-expanded/aria-contr
 Collapsed options are hidden from keyboard and assistive technology. Expansion and
 collapse animate height unless reduced motion is enabled. Selection retains the
 same native radio group, appearance store and entitlement checks.
+
+
+## Timer across navigation
+
+PersistentTimerProvider owns the single PomodoroTimerRuntime in the root layout.
+TimerSlot registers a page target and its presentation options; leaving that slot
+keeps the runtime, session synchronization, completion and picture-in-picture alive.
+FloatingTimer is visible only while a session exists, including pause; before start,
+after stop and after completion it is hidden. It shows the shared countdown (or elapsed tracking time), pause/resume
+and stop through the existing timer actions. Its link returns to the originating
+route and query. Pages with a full timer omit the corner duplicate. Direct entry
+to other routes restores account sessions through the existing useSessionRestore.
+The floating runtime leaves those pages' document titles to their route metadata.

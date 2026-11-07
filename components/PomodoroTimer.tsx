@@ -7,6 +7,9 @@ import { useDailyFlowStore } from '@/store/useDailyFlowStore'
 import { usePetStore } from '@/store/usePetStore'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { Settings } from 'lucide-react'
+import { createPortal } from 'react-dom'
+import { TimerSlot } from '@/components/TimerMountContext'
+import FloatingTimer from '@/components/FloatingTimer'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useTimerActionsStore } from '@/store/useTimerActionsStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -37,12 +40,11 @@ import AuthModal from '@/components/AuthModal'
 import GuestSignupModal from '@/components/GuestSignupModal'
 import { recordGuestFocusCompletion } from '@/lib/guestSignupPrompt'
 import { PaywallModal } from '@/components/PaywallModal'
-import { TimerErrorBoundary } from '@/components/TimerErrorBoundary'
 import { useTaskMenu } from '@/hooks/useTaskMenu'
 import { useThrottle } from '@/hooks/useThrottle'
 import { useI18n } from '@/components/I18nProvider'
 
-interface PomodoroTimerProps {
+export interface PomodoroTimerProps {
   dailyFlow?: boolean
   idleTitle?: string
   onSessionComplete?: () => void
@@ -187,7 +189,7 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
 }
 
 
-function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false, showRoomSwitch = true, dailyFlow = false }: PomodoroTimerProps) {
+export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false, showRoomSwitch = true, dailyFlow = false }: PomodoroTimerProps & { target?: HTMLElement; returnHref: string }) {
   const flowTaskTitle = useDailyFlowStore(state => {
     const taskId = state.data.queue[0]
     return dailyFlow ? state.data.tasks.find(task => task.id === taskId)?.title : undefined
@@ -199,6 +201,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
   const timerFont = useAppearanceStore(state => state.timerFont)
   const { t, language } = useI18n()
   const pictureInPicture = useDocumentPictureInPicture()
+  const [pictureInPictureAnchor, setPictureInPictureAnchor] = useState<HTMLDivElement | null>(null)
   const {
     isRunning,
     timeRemaining,
@@ -499,6 +502,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
 
   // Update page title with timer time
   useEffect(() => {
+    if (!target) return
     if (isRunning && currentSession && (timeRemaining > 0 || isTimeTrackingSession)) {
       const timeStr = formatTime(timerDisplaySeconds)
       const sessionLabel = getSessionTypeLabel(activeSessionType as SessionType)
@@ -506,11 +510,7 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
     } else {
       document.title = idleTitle
     }
-
-    return () => {
-      document.title = idleTitle
-    }
-  }, [idleTitle, getSessionTypeLabel, isRunning, currentSession, timeRemaining, timerDisplaySeconds, activeSessionType, isTimeTrackingSession])
+  }, [target, idleTitle, getSessionTypeLabel, isRunning, currentSession, timeRemaining, timerDisplaySeconds, activeSessionType, isTimeTrackingSession])
 
   const getSessionDuration = useCallback((type: SessionType): number => {
     switch (type) {
@@ -1390,99 +1390,21 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       : ((currentSession.duration * 60 - timeRemaining) / (currentSession.duration * 60)) * 100
     : 0
 
-  return (
-    <div className="flex flex-col items-center" data-timer-panel data-timer-mode={activeSessionType}>
-      {showRoomSwitch && (currentRoomId || lastRoomId) && (
-        <button
-          type="button"
-          onClick={() => {
-            if (isRoomSwitchDisabled) return
-            if (currentRoomId) {
-              resetToGlobal()
-              return
-            }
-
-            if (!lastRoomId) return
-            setCurrentRoom({ id: lastRoomId, name: lastRoomName, backgroundGradientKey: lastRoomBackgroundGradientKey })
-          }}
-          disabled={isRoomSwitchDisabled}
-          className="mb-3 text-xs sm:text-sm text-gray-600 dark:text-slate-300 disabled:opacity-60"
-          title={
-            isRoomSwitchDisabled
-              ? t.room.stopToSwitch
-              : currentRoomId
-                ? `${t.room.switchTo} ${t.room.global}`
-                : `${t.room.switchTo} ${lastRoomName}`
-          }
-        >
-          {t.room.label}:{' '}
-          <span className="font-semibold underline underline-offset-2">{currentRoomId ? currentRoomName : t.room.global}</span>
-        </button>
-      )}
-
-      {focusPresets && <div className="seo-tool-options" role="group" aria-label={t.timer.focus}>
-        {[[50, 10], [60, 10], [90, 20]].map(([work, rest]) => <button
-          type="button" key={work} disabled={Boolean(currentSession) || isStarting || isStopping}
-          aria-pressed={workDuration === work && shortBreak === rest}
-          onClick={() => {
-            if (useTimerStore.getState().currentSession) return
-            clearAutoStart()
-            setIsTimeTrackerMode(false)
-            setSessionType(SessionType.WORK)
-            initializeWithSettings({ workDuration: work, shortBreak: rest, longBreak: 20, longBreakAfter: 4 })
-          }}
-        >{work} / {rest}</button>)}
-      </div>}
-      <div className="pixel-timer-screen">
-        {presentation !== 'minimal' && <TimerPictureInPicture
-          controller={pictureInPicture}
-          focusTaskLabel={flowTaskTitle}
-          actions={timerActions}
-          formattedTime={formatTime(timerDisplaySeconds)}
-          sessionLabel={getSessionTypeLabel(activeSessionType)}
-          sessionType={activeSessionType}
-          selectedTask={selectedTask}
-          taskOptions={filteredTaskOptions}
-          onSelectTask={handleTaskSelect}
-          progress={progress}
-          isTimeTracking={isTimeTrackingSession}
-        />}
-        <div className="pixel-timer-status"><span className="pixel-led timer-mode-marker" aria-hidden="true" />{getSessionTypeLabel(activeSessionType)}</div>
-        {presentation !== 'minimal' && <AppearanceSettings />}
-        <button type="button" onClick={openSettings} className="pixel-timer-settings" aria-label={t.settingsModal.title} title={t.settingsModal.title}><Settings size={18} /></button>
-        <div className={`pixel-timer-digits ${timerDisplaySeconds >= 6000 ? 'pixel-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={getSessionTypeLabel(activeSessionType)}><span className="timer-numerals" style={{ '--timer-character-count': formatTime(timerDisplaySeconds).length } as CSSProperties}>{formatTime(timerDisplaySeconds)}</span></div>
-        {!isTimeTrackingSession && <div className="pixel-timer-track" role="progressbar" aria-label={getSessionTypeLabel(activeSessionType)} aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
-          {Array.from({ length: 24 }, (_, i) => <span key={i} className={progress >= (i + 1) / 24 * 100 ? 'filled' : ''} />)}
-        </div>}
-      </div>
-
-      {dailyFlow && restoreError && <div className="flow-error" role="alert">
-        <p>{dailyFlowCopy[language].timerSyncError}</p>
-        <button type="button" className="btn btn-secondary" onClick={() => { void mutateSessions().catch(() => {}) }}>{dailyFlowCopy[language].retryTimer}</button>
-      </div>}
-      <TimerControls
-        {...timerActions}
-        sessionType={activeSessionType}
-        onSessionTypeChange={handleSessionTypeChange}
-      >
-        {showProject && <ProjectPicker />}
-        {!dailyFlow && <TaskPicker
-          sessionType={activeSessionType}
-          isDisabled={isTaskPickerDisabled}
-          isOpen={isTaskMenuOpen}
-          onToggle={() => setIsTaskMenuOpen((state) => !state)}
-          onClose={() => setIsTaskMenuOpen(false)}
-          taskPickerRef={taskPickerRef}
-          taskDropdownRef={taskDropdownRef}
-          selectedTask={selectedTask}
-          onSelectTask={handleTaskSelect}
-          filteredTaskOptions={filteredTaskOptions}
-          taskSearch={taskSearch}
-          onTaskSearchChange={setTaskSearch}
-          hasTaskOptions={taskOptions.length > 0}
-        />}
-      </TimerControls>
-
+  const overlays = <>
+    <TimerPictureInPicture
+      controller={pictureInPicture}
+      triggerTarget={target && presentation !== 'minimal' ? pictureInPictureAnchor : null}
+      focusTaskLabel={flowTaskTitle}
+      actions={timerActions}
+      formattedTime={formatTime(timerDisplaySeconds)}
+      sessionLabel={getSessionTypeLabel(activeSessionType)}
+      sessionType={activeSessionType}
+      selectedTask={selectedTask}
+      taskOptions={filteredTaskOptions}
+      onSelectTask={handleTaskSelect}
+      progress={progress}
+      isTimeTracking={isTimeTrackingSession}
+    />
       <SettingsModal
         isOpen={isSettingsOpen}
         settings={settingsForm}
@@ -1526,14 +1448,96 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
       />
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
 
-    </div>
-  )
+  </>
+
+  return <>
+    {target ? createPortal(
+    <div className="flex flex-col items-center" data-timer-panel data-timer-mode={activeSessionType}>
+      {showRoomSwitch && (currentRoomId || lastRoomId) && (
+        <button
+          type="button"
+          onClick={() => {
+            if (isRoomSwitchDisabled) return
+            if (currentRoomId) {
+              resetToGlobal()
+              return
+            }
+
+            if (!lastRoomId) return
+            setCurrentRoom({ id: lastRoomId, name: lastRoomName, backgroundGradientKey: lastRoomBackgroundGradientKey })
+          }}
+          disabled={isRoomSwitchDisabled}
+          className="mb-3 text-xs sm:text-sm text-gray-600 dark:text-slate-300 disabled:opacity-60"
+          title={
+            isRoomSwitchDisabled
+              ? t.room.stopToSwitch
+              : currentRoomId
+                ? `${t.room.switchTo} ${t.room.global}`
+                : `${t.room.switchTo} ${lastRoomName}`
+          }
+        >
+          {t.room.label}:{' '}
+          <span className="font-semibold underline underline-offset-2">{currentRoomId ? currentRoomName : t.room.global}</span>
+        </button>
+      )}
+
+      {focusPresets && <div className="seo-tool-options" role="group" aria-label={t.timer.focus}>
+        {[[50, 10], [60, 10], [90, 20]].map(([work, rest]) => <button
+          type="button" key={work} disabled={Boolean(currentSession) || isStarting || isStopping}
+          aria-pressed={workDuration === work && shortBreak === rest}
+          onClick={() => {
+            if (useTimerStore.getState().currentSession) return
+            clearAutoStart()
+            setIsTimeTrackerMode(false)
+            setSessionType(SessionType.WORK)
+            initializeWithSettings({ workDuration: work, shortBreak: rest, longBreak: 20, longBreakAfter: 4 })
+          }}
+        >{work} / {rest}</button>)}
+      </div>}
+      <div className="pixel-timer-screen" ref={setPictureInPictureAnchor}>
+        <div className="pixel-timer-status"><span className="pixel-led timer-mode-marker" aria-hidden="true" />{getSessionTypeLabel(activeSessionType)}</div>
+        {presentation !== 'minimal' && <AppearanceSettings />}
+        <button type="button" onClick={openSettings} className="pixel-timer-settings" aria-label={t.settingsModal.title} title={t.settingsModal.title}><Settings size={18} /></button>
+        <div className={`pixel-timer-digits ${timerDisplaySeconds >= 6000 ? 'pixel-timer-digits-long' : ''}`} data-timer-font={timerFont} role="timer" aria-label={getSessionTypeLabel(activeSessionType)}><span className="timer-numerals" style={{ '--timer-character-count': formatTime(timerDisplaySeconds).length } as CSSProperties}>{formatTime(timerDisplaySeconds)}</span></div>
+        {!isTimeTrackingSession && <div className="pixel-timer-track" role="progressbar" aria-label={getSessionTypeLabel(activeSessionType)} aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={100}>
+          {Array.from({ length: 24 }, (_, i) => <span key={i} className={progress >= (i + 1) / 24 * 100 ? 'filled' : ''} />)}
+        </div>}
+      </div>
+
+      {dailyFlow && restoreError && <div className="flow-error" role="alert">
+        <p>{dailyFlowCopy[language].timerSyncError}</p>
+        <button type="button" className="btn btn-secondary" onClick={() => { void mutateSessions().catch(() => {}) }}>{dailyFlowCopy[language].retryTimer}</button>
+      </div>}
+      <TimerControls
+        {...timerActions}
+        sessionType={activeSessionType}
+        onSessionTypeChange={handleSessionTypeChange}
+      >
+        {showProject && <ProjectPicker />}
+        {!dailyFlow && <TaskPicker
+          sessionType={activeSessionType}
+          isDisabled={isTaskPickerDisabled}
+          isOpen={isTaskMenuOpen}
+          onToggle={() => setIsTaskMenuOpen((state) => !state)}
+          onClose={() => setIsTaskMenuOpen(false)}
+          taskPickerRef={taskPickerRef}
+          taskDropdownRef={taskDropdownRef}
+          selectedTask={selectedTask}
+          onSelectTask={handleTaskSelect}
+          filteredTaskOptions={filteredTaskOptions}
+          taskSearch={taskSearch}
+          onTaskSearchChange={setTaskSearch}
+          hasTaskOptions={taskOptions.length > 0}
+        />}
+      </TimerControls>
+    </div>,
+    target
+    ) : currentSession && <FloatingTimer actions={timerActions} formattedTime={formatTime(timerDisplaySeconds)}
+      sessionLabel={getSessionTypeLabel(activeSessionType)} href={returnHref} />}
+    {overlays}
+  </>
 }
 
 export default function PomodoroTimer(props: PomodoroTimerProps) {
-  return (
-    <TimerErrorBoundary>
-      <PomodoroTimerInner {...props} />
-    </TimerErrorBoundary>
-  )
+  return <TimerSlot {...props} />
 }

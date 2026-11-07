@@ -60,7 +60,7 @@
   }
 
   html[data-window-design] body :is(
-    .card, .pixel-panel, .community-panel, .community-metrics,
+    .card, .pixel-panel, .community-panel, .community-metrics, [data-floating-timer],
     .rooms-global, .room-card, .room-detail-header,
     .lb-totals, .lb-leader, .stats-overview, .stats-panel,
     .insight-hero, .insight-panel, .insight-state, .insight-pro,

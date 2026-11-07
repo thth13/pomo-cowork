@@ -15,6 +15,7 @@ import { TaskOption } from '@/types/task'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 
 interface TimerPictureInPictureProps {
+  triggerTarget: HTMLElement | null
   focusTaskLabel?: string
   controller: ReturnType<typeof useDocumentPictureInPicture>
   actions: TimerActionsProps
@@ -29,6 +30,7 @@ interface TimerPictureInPictureProps {
 }
 
 export function TimerPictureInPicture({
+  triggerTarget,
   controller,
   focusTaskLabel,
   actions,
@@ -88,31 +90,33 @@ export function TimerPictureInPicture({
 
   return (
     <>
-      <button
-        ref={triggerRef}
-        type="button"
-        className="pixel-timer-popout"
-        onClick={pipWindow ? close : open}
-        disabled={isOpening}
-        aria-label={label}
-        aria-pressed={!!pipWindow}
-        aria-busy={isOpening}
-        aria-describedby={message ? messageId : undefined}
-        title={label}
-      >
-        <PictureInPicture2 size={18} aria-hidden="true" />
-      </button>
-      <div className="pixel-mini-timer-message" hidden={!message}>
-        <p id={messageId} role="status">{message}</p>
-        {message && (
-          <button type="button" className="pixel-mini-timer-dismiss" aria-label={t.common.close} title={t.common.close} onClick={() => {
-            clearError()
-            triggerRef.current?.focus()
-          }}>
-            <X size={16} aria-hidden="true" />
-          </button>
-        )}
-      </div>
+      {triggerTarget && createPortal(<>
+        <button
+          ref={triggerRef}
+          type="button"
+          className="pixel-timer-popout"
+          onClick={pipWindow ? close : open}
+          disabled={isOpening}
+          aria-label={label}
+          aria-pressed={!!pipWindow}
+          aria-busy={isOpening}
+          aria-describedby={message ? messageId : undefined}
+          title={label}
+        >
+          <PictureInPicture2 size={18} aria-hidden="true" />
+        </button>
+        <div className="pixel-mini-timer-message" hidden={!message}>
+          <p id={messageId} role="status">{message}</p>
+          {message && (
+            <button type="button" className="pixel-mini-timer-dismiss" aria-label={t.common.close} title={t.common.close} onClick={() => {
+              clearError()
+              triggerRef.current?.focus()
+            }}>
+              <X size={16} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      </>, triggerTarget)}
       {pipWindow && createPortal(
         <main className="mini-timer" data-timer-mode={sessionType} lang={language} data-no-translate="true">
           <header className="mini-timer-header">

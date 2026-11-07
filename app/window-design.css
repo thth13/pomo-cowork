@@ -63,7 +63,7 @@
     .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
     .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
     .focus-project-actions-menu, .project-color-menu, .active-session-reactions-menu,
-    .feedback-panel, .feedback-prompt, [data-beep-surface],
+    .feedback-panel, .feedback-prompt, [data-beep-surface], [data-floating-timer],
     .focus-station, .working-sidebar, .seo-timer, .seo-social,
     .workspace-dock, .workspace-navigation-control
   ) {
@@ -191,7 +191,7 @@
     .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
     .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
     .focus-project-actions-menu, .project-color-menu, .active-session-reactions-menu,
-    .feedback-panel, .feedback-prompt, [data-beep-surface],
+    .feedback-panel, .feedback-prompt, [data-beep-surface], [data-floating-timer],
     .focus-station, .working-sidebar, .seo-timer, .seo-social,
     .workspace-dock, .workspace-navigation-control
   ) {
@@ -250,7 +250,8 @@
     .active-session-reactions-menu,
     .feedback-panel,
     .feedback-prompt,
-    [data-beep-surface]
+    [data-beep-surface],
+    [data-floating-timer]
   ) {
     border-radius: var(--window-radius);
     box-shadow: var(--window-shadow);

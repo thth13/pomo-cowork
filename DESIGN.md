@@ -1871,3 +1871,21 @@ two complete rows of scenery (three per row on desktop), and one row each of tim
 site themes, following their existing responsive grid columns. A full-width Show all / Show less control with a chevron
 smoothly reveals the remaining rows downward in place and collapses them
 on a second click. Reduced motion disables the transition.
+
+
+## Persistent corner timer
+
+`PersistentTimerProvider` owns one mounted Pomodoro runtime across route changes.
+Page timer slots receive its full display through a portal; leaving a slot shows
+a compact bottom-left timer, with safe-area gutters, tabular digits, pause/resume,
+stop and a link back to its originating timer page. The corner timer appears only
+for an active or paused session; idle, stopped and completed sessions hide it.
+The existing store, session services, completion flow and native picture-in-picture
+window remain the shared owners; navigation does not create a second clock.
+`FloatingTimer.module.css` consumes the canonical pixel paper, ink, muted, screen,
+line, shadow and accent tokens and the selected timer font through `--timer-face`.
+Its `data-floating-timer` marker participates in the shared site-surface, window-material
+and rendered-scenery adapters, including their blur, texture, radius and shadow.
+The existing system-color fallback remains active in forced colors.
+English/Spanish labels come from the existing locale dictionaries. The corner
+surface stays below modal layers and uses native links/buttons with visible focus.
