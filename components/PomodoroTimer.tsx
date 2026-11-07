@@ -167,7 +167,13 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
     case 'SET_AUTO_START_ENABLED':
       return { ...state, isAutoStartEnabled: action.payload }
     case 'SET_TIME_TRACKER_MODE':
-      return { ...state, isTimeTrackerMode: action.payload }
+      return {
+        ...state,
+        isTimeTrackerMode: action.payload,
+        sessionType: !action.payload && state.sessionType === SessionType.TIME_TRACKING
+          ? SessionType.WORK
+          : state.sessionType,
+      }
     case 'SET_PREFERENCES':
       return {
         ...state,
@@ -1489,17 +1495,21 @@ function PomodoroTimerInner({ onSessionComplete, idleTitle = 'Pomo Cowork', init
         onToggleAutoStart={() => setIsAutoStartEnabled((prev) => !prev)}
         isTimeTrackerMode={isTimeTrackerMode}
         onToggleTimeTrackerMode={async () => {
-          if (isTimerRunning) {
+          if (isTimerRunning || isStarting || isStopping || isPausing || isResuming) {
             return
           }
 
           const nextValue = !isTimeTrackerMode
+          clearAutoStart()
 
-          if (nextValue && currentSession) {
-            await handleStop()
+          if (currentSession) {
+            await handleStop(true)
           }
 
+          const nextType = nextValue ? SessionType.TIME_TRACKING : SessionType.WORK
+          setSessionType(nextType)
           setIsTimeTrackerMode(nextValue)
+          previewSessionType(nextType)
         }}
         onOpenPaywall={openPaywallOrRegister}
         isProMember={isProMember}
