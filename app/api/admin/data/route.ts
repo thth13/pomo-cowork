@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import type { Prisma } from '@prisma/client'
+import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { authorizeAdmin } from '@/lib/adminRequest'
 import { getEffectiveMinutes } from '@/lib/sessionStats'
@@ -29,13 +29,22 @@ export async function POST(request: NextRequest) {
       return { page, skip: (page - 1) * pageSize, take: pageSize }
     }
     if (body.kind === 'visitors') {
-      const total = await prisma.guestVisit.count()
+      if (body.referrer !== undefined && (typeof body.referrer !== 'string' || body.referrer.length > 500)) {
+        return NextResponse.json({ error: 'Invalid referrer filter.' }, { status: 400 })
+      }
+      // Read the saved, sanitized URL; missing historical details also count as unknown.
+      const source = Prisma.sql`NULLIF(details->>'referrer', '')`
+      const filter = body.referrer === '__none__' ? Prisma.sql`WHERE ${source} IS NULL`
+        : body.referrer ? Prisma.sql`WHERE ${source} = ${body.referrer}` : Prisma.empty
+      const [counts, referrers] = await Promise.all([
+        prisma.$queryRaw<{ total: bigint }[]>`SELECT COUNT(*) AS total FROM guest_visits ${filter}`,
+        prisma.$queryRaw<{ referrer: string }[]>`SELECT DISTINCT ${source} AS referrer FROM guest_visits WHERE ${source} IS NOT NULL ORDER BY referrer`,
+      ])
+      const total = Number(counts[0].total)
       const { page, skip, take } = paging(total)
-      const rows = await prisma.guestVisit.findMany({
-        skip, take, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
-        select: { id: true, ipAddress: true, countryCode: true, pagePath: true, createdAt: true, details: true },
-      })
-      return respond(rows, total, page)
+      const rows = await prisma.$queryRaw`SELECT id, "ipAddress", "countryCode", "pagePath", "createdAt", details
+        FROM guest_visits ${filter} ORDER BY "createdAt" DESC, id DESC LIMIT ${take} OFFSET ${skip}`
+      return NextResponse.json({ rows, total, page, pageSize, referrers: referrers.map(row => row.referrer) }, { headers: { 'Cache-Control': 'private, no-store' } })
     }
     if (body.kind === 'directory' || body.kind === 'online') {
       const where: Prisma.UserWhereInput = body.kind === 'online' ? { id: { in: body.onlineIds } } : { isAnonymous: body.userType === 'anonymous' }

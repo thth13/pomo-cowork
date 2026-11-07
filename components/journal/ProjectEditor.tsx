@@ -55,7 +55,7 @@ function Editor({
     router = useRouter()
   const requestKey = useRef<string>()
   const [values, setValues] = useState({
-    name: project?.name || initialWorkProject?.title || '',
+    name: project?.name || '',
     workProjectId: project?.workProjectId || initialWorkProject?.id || '',
     newProjectName: '',
     showTasks: project?.showTasks || false,
@@ -124,6 +124,7 @@ function Editor({
       <div className="project-editor-layout">
       <section className="project-editor-main" aria-labelledby="project-details-title">
       <h2 id="project-details-title" className="project-editor-section-title"><FolderOpen size={17} aria-hidden="true" />{t('Project details', 'Detalles del proyecto')}</h2>
+      <Field label={t('Title', 'Título')} name="name" value={values.name} maxLength={100} required error={error('name')} onChange={e => update('name', e.target.value)} />
       <div className="project-editor-project-field">
         <label id="work-project-label" htmlFor="work-project">{t('Project', 'Proyecto')}</label>
         <JournalSelect
@@ -138,7 +139,7 @@ function Editor({
           placeholderIcon={<FolderOpen size={17} />}
           onValueChange={value => {
             const item = options.data?.items.find(p => p.id === value) || (options.data?.selected?.id === value ? options.data.selected : null)
-            setValues(v => ({ ...v, workProjectId: value, newProjectName: '', name: item?.title || '', ...(!project ? { startedAt: (item?.createdAt || new Date().toISOString()).slice(0, 10) } : {}) }))
+            setValues(v => ({ ...v, workProjectId: value, newProjectName: '', ...(!project ? { startedAt: (item?.createdAt || new Date().toISOString()).slice(0, 10) } : {}) }))
             setDirty(true)
           }}
           options={[
@@ -162,7 +163,7 @@ function Editor({
         {options.data?.hasMore && <button type="button" onClick={() => setProjectPage(p => p + 1)}>{t('More projects', 'Más proyectos')}</button>}
       </div>}
       {duplicate && <p role="status">{t('This project already has a page.', 'Este proyecto ya tiene una página.')} <Link href={`/projects/${duplicate}/edit`}>{t('Edit its page', 'Editar su página')}</Link></p>}
-      {values.workProjectId === '__new__' && <Field label={t('New project name', 'Nombre del nuevo proyecto')} name="newProjectName" value={values.newProjectName} maxLength={100} required error={error('newProjectName')} onChange={e => { update('newProjectName', e.target.value); update('name', e.target.value) }} />}
+      {values.workProjectId === '__new__' && <Field label={t('New project name', 'Nombre del nuevo proyecto')} name="newProjectName" value={values.newProjectName} maxLength={100} required error={error('newProjectName')} onChange={e => update('newProjectName', e.target.value)} />}
       <p className="journal-muted">{t('Your project’s focus time and progress will appear on this page.', 'El tiempo de concentración y los avances de tu proyecto aparecerán en esta página.')}</p>
       <Area label={t('Short description', 'Descripción breve')} name="description" value={values.description} rows={2} maxLength={280} onChange={e => update('description', e.target.value)} error={error('description')} />
       <details className="project-editor-disclosure" open>

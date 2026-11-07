@@ -852,6 +852,19 @@ All metrics reuses its current-statistics cards without its online-user list.
 
 ## Anonymous presence
 
+Admin overview counts distinct users with unexpired active or paused socket timer
+sessions across every room, including guests. Disconnect shows an unavailable
+value. Month-to-date new users counts all User records by creation date, including
+anonymous profiles, using Europe/Kyiv boundaries; visitors without profiles are
+separate. Monthly registered remains a separate metric with isAnonymous: false
+and the same month boundaries. New visitors filters exact saved referrer URLs server-side before count
+and 50-row pagination. Missing, null or empty referrers match Direct / unknown.
+The labelled native select accepts OS-owned popup behavior. Its options cover all
+current saved visits independently of the selected filter and page. The URL owns
+visitorsReferrer and visitorsPage; filter changes reset page 1 and preserve sibling
+parameters and the section hash. Authorization, no-store responses and stale-request
+cancellation keep the existing admin owners. Runtime verification is user-owned.
+
 Admin latest user activity uses `/api/admin/recent-users`, guarded by
 `authorizeAdmin`, to count currently registered accounts with `lastSeenAt` within
 the trailing 7 or 30 times 24 hours. Unknown and future timestamps are excluded.

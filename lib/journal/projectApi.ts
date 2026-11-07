@@ -53,14 +53,13 @@ export async function projectsApi(request: NextRequest, id?: string) {
   }
   const data = await body(request)
   const createId = id ? undefined : requestId(data)
+  const name = text(data, 'name', 100, true)
   const workProjectId = text(data, 'workProjectId', 100)
   const newProjectName = text(data, 'newProjectName', 100)
   const newTaskId = newProjectName ? `work-${requestId(data)}` : null
   const workProject = workProjectId ? await prisma.task.findFirst({ where: { id: workProjectId, userId: user.id, parentId: null } }) : null
   if (workProjectId && !workProject) throw new JournalError('Choose one of your projects.', 400, 'workProjectId')
   if (!workProject && !newProjectName && (!previous || previous.workProjectId)) throw new JournalError('Choose a project or create one.', 400, 'workProjectId')
-  const name = workProject?.title || newProjectName || previous!.name
-  if (name.length > 100) throw new JournalError('Shorten the project name to 100 characters.', 400, 'workProjectId')
   const baseSlug = slugify(name)
   const slug = previous?.slug || baseSlug
   const image = (await ownedImages(data.imageUrl ? [data.imageUrl] : [], user.id))[0] || null

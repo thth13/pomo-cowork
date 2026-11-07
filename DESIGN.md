@@ -1405,6 +1405,15 @@ rendered; plain backgrounds and forced colors retain the shared opaque surfaces.
 
 ## Administration dashboard
 
+Overview and All metrics show unique online timer users across all rooms, including
+paused timers and guests, from the existing live session store. Monthly new users
+includes registered and anonymous accounts created in the current Kyiv month.
+Monthly registered remains a separate card counting only registered accounts.
+New visitors adds a labelled native Referrer select using existing admin tokens;
+the OS owns its popup geometry and keyboard behavior. Options come from saved
+referrers across the entire current visitor list, with All and Direct / unknown.
+The filter and page persist in the URL; changing the filter resets pagination.
+
 New visitors (`/admin#visitors`) reuses AdminDataTable, CountryFlag and the existing
 admin tokens. Rows show IP, country, first landing pathname and
 Kyiv timestamp, newest first, with 50-row pagination and the shared loading, empty,
@@ -1762,7 +1771,10 @@ than leaving a large blank area above a full-width media row. Narrow screens ret
 the same details/media/publishing reading order in a single column.
 Project URLs are generated server-side from the name with automatic collision suffixes;
 the editor has no slug field, and editing preserves existing project URLs.
-The project field comes first and selects a real work project; inline creation is
+An independent required Title field comes first, followed by the project selector.
+Selecting or creating a work project preserves the page title. The server saves
+that title separately and uses it to generate new page URLs; editing keeps the URL.
+The project field selects a real work project; inline creation is
 saved atomically with its public page. The project field uses the shared
 `components/journal/Select.tsx` Radix Select adapter: trigger-width, collision-aware,
 height-bounded popup with 44px rows, colored folder icons, selected check and a

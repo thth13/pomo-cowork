@@ -3,6 +3,7 @@
 import CountryFlag from '@/components/CountryFlag'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import { userProfileHref } from '@/lib/userProfile'
 import { useAdminData } from './useAdminData'
@@ -17,7 +18,7 @@ type UserRow = Person & { countryCode: string | null; createdAt: string; lastSee
 type WallRow = { id: string; message: string; createdAt: string; author: Person; profileUser: Person }
 type HabitRow = { id: string; title: string; startDate: string; archived: boolean; createdAt: string; user: Person; _count: { completions: number } }
 type VisitorRow = { id: string; ipAddress: string | null; countryCode: string | null; pagePath: string; createdAt: string; details: VisitorDetails | null }
-type ListData = { rows: (UserRow | WallRow | HabitRow | VisitorRow)[]; total: number; page: number; pageSize: number }
+type ListData = { rows: (UserRow | WallRow | HabitRow | VisitorRow)[]; total: number; page: number; pageSize: number; referrers?: string[] }
 const titles = { directory: 'All users', wall: 'Wall messages', habits: 'Habits', visitors: 'New visitors' }
 const countryNames = new Intl.DisplayNames(['en'], { type: 'region', fallback: 'none' })
 const countryFlag = (code: string | null) => {
@@ -32,7 +33,25 @@ const date = (value: string | null) => value ? new Intl.DateTimeFormat('en-GB', 
 const person = (user: Person) => <Link className="admin-person-link" href={userProfileHref(user)}>{user.username}<small>{user.isAnonymous ? 'Guest' : 'Registered'} · {user.id}</small></Link>
 
 export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
-  const [page, setPage] = useState(1)
+  const router = useRouter()
+  const pathname = usePathname()
+  const params = useSearchParams()
+  const [localPage, setLocalPage] = useState(1)
+  const rawPage = Number(params.get('visitorsPage') ?? 1)
+  const page = kind === 'visitors' ? (Number.isSafeInteger(rawPage) && rawPage > 0 ? rawPage : 1) : localPage
+  const referrer = kind === 'visitors' ? params.get('visitorsReferrer') ?? '' : ''
+  const [referrers, setReferrers] = useState<string[]>([])
+  function navigateVisitors(nextReferrer: string, nextPage: number) {
+    const next = new URLSearchParams(params.toString())
+    if (nextReferrer) next.set('visitorsReferrer', nextReferrer)
+    else next.delete('visitorsReferrer')
+    next.set('visitorsPage', String(nextPage))
+    router.replace(`${pathname}?${next}${window.location.hash}`, { scroll: false })
+  }
+  function setPage(nextPage: number) {
+    if (kind === 'visitors') navigateVisitors(referrer, nextPage)
+    else setLocalPage(nextPage)
+  }
   const [userType, setUserType] = useState('registered')
   const token = useAuthStore(state => state.token)
   const [selectedVisit, setSelectedVisit] = useState<VisitorRow | null>(null)
@@ -41,8 +60,11 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
   const focusAfterDelete = useRef(false)
   const onlineIds = useConnectionStore(state => state.onlineUserIds)
   const connected = useConnectionStore(state => state.isConnected)
-  const body = JSON.stringify({ kind, page, userType })
+  const body = JSON.stringify({ kind, page, userType, ...(kind === 'visitors' ? { referrer } : {}) })
   const { data, error, loading, refresh } = useAdminData<ListData>('/api/admin/data', body)
+  useEffect(() => {
+    if (data?.referrers) setReferrers(data.referrers)
+  }, [data])
   const headers = kind === 'visitors' ? ['IP address', 'Country', 'Browser / OS', 'Device', 'Landing page', 'Referrer', 'Visited · Kyiv', 'Details', 'Manage'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions']
 
   useEffect(() => {
@@ -69,6 +91,15 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
       <button ref={refreshButton} type="button" onClick={refresh} disabled={loading}>Refresh</button>
     </div>
     {kind === 'directory' && <div className="admin-data-filters" role="group" aria-label="Account type">{['registered', 'anonymous'].map(value => <button type="button" key={value} aria-pressed={userType === value} onClick={() => { setUserType(value); setPage(1) }}>{value === 'registered' ? 'Registered' : 'Unregistered'}</button>)}</div>}
+    {kind === 'visitors' && <div className="admin-data-filters admin-referrer-filter">
+      <label htmlFor="visitor-referrer">Referrer</label>
+      <select id="visitor-referrer" value={referrer} onChange={event => navigateVisitors(event.target.value, 1)}>
+        <option value="">All referrers</option>
+        <option value="__none__">Direct / unknown referrer</option>
+        {referrer && referrer !== '__none__' && !referrers.includes(referrer) && <option value={referrer}>{referrer}</option>}
+        {referrers.map(value => <option key={value} value={value}>{value}</option>)}
+      </select>
+    </div>}
     {error && <p role="alert" className="admin-data-error">{error}</p>}
     {kind === 'visitors' && <div role="status" className="admin-visit-feedback">{deleted ? 'Visit deleted.' : ''}</div>}
     <div className="admin-data-frame" aria-busy={loading}>

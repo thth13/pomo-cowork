@@ -32,17 +32,18 @@ export async function GET(request: NextRequest) {
     const local = kyivParts(now)
     const dayStart = kyivMidnight(local.year, local.month, local.day)
     const monthStart = kyivMidnight(local.year, local.month, 1)
-    const [todayRegistered, todayAnonymous, monthlyRegistered, todayStartedTimers, paywallActions, habits, activeHabits, wallMessages] = await Promise.all([
+    const [todayRegistered, todayAnonymous, monthlyRegistered, monthlyUsers, todayStartedTimers, paywallActions, habits, activeHabits, wallMessages] = await Promise.all([
       prisma.user.count({ where: { isAnonymous: false, createdAt: { gte: dayStart, lte: now } } }),
       prisma.user.count({ where: { isAnonymous: true, createdAt: { gte: dayStart, lte: now } } }),
       prisma.user.count({ where: { isAnonymous: false, createdAt: { gte: monthStart, lte: now } } }),
+      prisma.user.count({ where: { createdAt: { gte: monthStart, lte: now } } }),
       prisma.pomodoroSession.count({ where: { startedAt: { gte: dayStart, lte: now } } }),
       prisma.paywallEvent.count(),
       prisma.habit.count(),
       prisma.habit.count({ where: { archived: false } }),
       prisma.userWallMessage.count(),
     ])
-    return NextResponse.json({ todayRegistered, todayAnonymous, monthlyRegistered, todayStartedTimers, paywallActions, habits, activeHabits, wallMessages, updatedAt: now.toISOString() }, { headers: { 'Cache-Control': 'private, no-store' } })
+    return NextResponse.json({ todayRegistered, todayAnonymous, monthlyRegistered, monthlyUsers, todayStartedTimers, paywallActions, habits, activeHabits, wallMessages, updatedAt: now.toISOString() }, { headers: { 'Cache-Control': 'private, no-store' } })
   } catch (error) {
     console.error('Admin overview failed:', error)
     return NextResponse.json({ error: 'Could not load overview. Please retry.' }, { status: 500 })
