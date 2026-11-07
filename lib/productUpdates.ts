@@ -1,12 +1,19 @@
 type Localized = { en: string; es: string }
+export const PRODUCT_UPDATE_NOTIFICATION_TITLE: Localized = {
+  en: 'New Pomo Cowork update',
+  es: 'Nueva actualización de Pomo Cowork',
+}
+
 export interface ProductUpdate {
   id: string
   title: Localized
   summary: Localized
   sections: {
+    heading?: Localized
     title: Localized
     body: Localized
     image?: string
+    headingImage?: { src: string; alt: Localized; width: number; height: number }
     imageAlt?: Localized
     illustrations?: { src: Localized; alt: Localized; caption: Localized; width: number; height: number }[]
     actions?: { href: string; label: Localized; primary?: boolean }[]
@@ -23,7 +30,9 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [{
     es: 'Comparte tus proyectos y avances con Pomo blogs. Además, nueve temas y cifras más legibles.',
   },
   sections: [{
+    heading: { en: 'Pomo blogs', es: 'Pomo blogs' },
     title: { en: 'Share your progress with Pomo blogs', es: 'Comparte tus avances con Pomo blogs' },
+    headingImage: { src: '/updates/pomo-blogs-logo.svg', alt: { en: 'Pomo blogs', es: 'Pomo blogs' }, width: 1200, height: 300 },
     body: {
       en: 'Give your projects a public home. Publish updates about what you are working on, share milestones and discover what others are building.',
       es: 'Dale a tus proyectos un espacio público. Publica novedades sobre tu trabajo, comparte hitos y descubre lo que están creando los demás.',
@@ -60,6 +69,7 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [{
       es: 'Dale me gusta a las publicaciones y participa en los comentarios.',
     }],
   }, {
+    heading: { en: 'Site themes', es: 'Temas del sitio' },
     title: { en: 'Nine ways to make it yours', es: 'Nueve formas de hacerlo tuyo' },
     body: {
       en: 'Choose the material and mood of your workspace, from soft glass to warm paper and a glowing neon frame.',
@@ -75,6 +85,7 @@ export const PRODUCT_UPDATES: ProductUpdate[] = [{
       es: 'Cristal ligero deja ver mucho más del fondo. Sin fondo elimina el relleno, el desenfoque y las sombras.',
     }],
   }, {
+    heading: { en: 'Timer fonts', es: 'Tipografías del temporizador' },
     title: { en: 'Timer fonts that feel the right size', es: 'Cifras con el tamaño adecuado' },
     body: {
       en: 'Each font now has its own visual scale, so changing fonts no longer makes the timer unexpectedly tiny.',

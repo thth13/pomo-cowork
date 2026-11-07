@@ -8,7 +8,10 @@ Blog PNGs in `public/updates/` are screenshots of the running application, captu
 in English and Spanish with sample data: the catalog uses browser-intercepted mock
 responses, and the project uses the existing `/projects/demo` preview. No real user
 data is included. The floating feedback widget and its prompt are hidden only during
-capture. The theme and font SVGs remain illustrations.
+capture. The theme and font SVGs remain illustrations. The blogs section also
+opens with `public/updates/pomo-blogs-logo.svg`, a wordmark matching the blog
+header. Each feature has a localized heading above its imagery: Pomo blogs, Site
+themes and Timer fonts. Thin lines separate the feature sections.
 
 ## Preview and delivery
 

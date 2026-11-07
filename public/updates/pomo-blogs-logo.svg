@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title">
+  <title id="title">Pomo blogs</title>
+  <rect width="1200" height="300" rx="4" fill="#f1efe7"/>
+  <g font-family="Inter, Arial, sans-serif" font-size="112" letter-spacing="-6">
+    <text x="600" y="185" text-anchor="middle"><tspan fill="#303a32" font-weight="650">Pomo</tspan><tspan dx="18" fill="#983e32" font-weight="400">blogs</tspan></text>
+  </g>
+</svg>

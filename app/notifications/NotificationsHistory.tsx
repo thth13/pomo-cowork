@@ -9,7 +9,7 @@ import PersonalNavigation from '@/components/PersonalNavigation'
 import AuthModal from '@/components/AuthModal'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
-import { getProductUpdate, openProductUpdate, productUpdateCopy } from '@/lib/productUpdates'
+import { getProductUpdate, openProductUpdate, productUpdateCopy, PRODUCT_UPDATE_NOTIFICATION_TITLE } from '@/lib/productUpdates'
 import { notificationsCopy } from '@/lib/i18n/notifications'
 import { monthLabel } from '@/lib/wrapped/analytics'
 import type { NotificationItem } from '@/types'
@@ -141,7 +141,7 @@ export default function NotificationsHistory() {
                     <span className="sr-only">{item.readAt ? copy.read : copy.unread}</span>
                     <div className="notifications-history-meta">
                       <div className="notifications-history-title">
-                        <h2 id={`notification-${item.id}`}>{productUpdate?.title[language] ?? item.title}</h2>
+                        <h2 id={`notification-${item.id}`}>{item.type === 'PRODUCT_UPDATE' ? PRODUCT_UPDATE_NOTIFICATION_TITLE[language] : item.title}</h2>
                         <span className="notifications-history-badge"><Icon size={13} aria-hidden="true" />{copy.types[item.type]}</span>
                       </div>
                       <time dateTime={item.createdAt}>{formatDate(item.createdAt)}</time>

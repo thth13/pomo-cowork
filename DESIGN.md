@@ -41,7 +41,12 @@ creation form. Navigation closes the dialog; modified clicks retain it. The two
 appearance SVG illustrations retain their existing layout. Blog images are real
 screenshots; appearance images are illustrations. The update dialog reuses the paywall shell and its compact pixel heading, muted
 header surface and unframed close control. The title is the localized What’s new
-label. Sections use 17px Inter headings, quiet bullet points and 2px image corners.
+label. The blogs section starts with a Pomo blogs SVG wordmark matching the blog
+header typography and paper/ink/tomato palette. Each section starts with a clear
+22px Inter feature heading above its imagery (Pomo blogs, Site themes, Timer fonts).
+The descriptive subheadings use 17px Inter,
+quiet bullet points and 2px image corners. Sections retain thin 1px separators
+with 24px margins and padding.
 `app/product-updates.css` owns the 720px dialog, fixed header/footer,
 scrolling body, responsive gutters and content typography; the shared theme owns
 colors and material. Images reserve their ratio and have localized alternative text.

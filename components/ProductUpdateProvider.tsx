@@ -84,8 +84,10 @@ export default function ProductUpdateProvider() {
       if (element.scrollTop > 0 && element.scrollHeight - element.scrollTop - element.clientHeight <= 4) record('scrolled_to_end')
     }}>
       {update ? update.sections.map((section, index) => <section className="product-update-section" key={index}>
+        {section.heading && <h3 className="product-update-section-heading">{section.heading[language]}</h3>}
+        {section.headingImage && <Image className="product-update-brand-image" src={section.headingImage.src} alt={section.headingImage.alt[language]} width={section.headingImage.width} height={section.headingImage.height} />}
         {section.image && <Image className="product-update-image" src={section.image} alt={section.imageAlt?.[language] ?? ''} width={1200} height={600} />}
-        <h3>{section.title[language]}</h3>
+        {section.heading ? <h4>{section.title[language]}</h4> : <h3>{section.title[language]}</h3>}
         <p>{section.body[language]}</p>
         {section.actions && <div className="product-update-actions">
           {section.actions.map(action => <Link key={action.href} href={action.href}

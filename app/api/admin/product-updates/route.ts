@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authorizeAdmin } from '@/lib/adminRequest'
 import { prisma } from '@/lib/db'
-import { getProductUpdate, PRODUCT_UPDATES } from '@/lib/productUpdates'
+import { getProductUpdate, PRODUCT_UPDATES, PRODUCT_UPDATE_NOTIFICATION_TITLE } from '@/lib/productUpdates'
 
 export const dynamic = 'force-dynamic'
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     const sent = await prisma.$executeRaw`
       INSERT INTO "notifications" ("id", "userId", "type", "title", "message", "productUpdateId", "createdAt")
       SELECT 'product-update:' || md5(${update.id} || ':' || u."id"), u."id",
-        'PRODUCT_UPDATE'::"NotificationType", ${update.title.en}, ${update.summary.en}, ${update.id}, NOW()
+        'PRODUCT_UPDATE'::"NotificationType", ${PRODUCT_UPDATE_NOTIFICATION_TITLE.en}, ${update.summary.en}, ${update.id}, NOW()
       FROM "users" u
       WHERE u."isAnonymous" = false
       ON CONFLICT ("userId", "productUpdateId") DO NOTHING
