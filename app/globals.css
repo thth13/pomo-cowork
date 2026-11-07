@@ -4339,6 +4339,14 @@ html[data-mini-timer] body {
   padding-bottom: 0;
 }
 
+[data-timer-panel][data-timer-mode="TIME_TRACKING"] .pixel-timer-screen {
+  margin-bottom: 12px;
+}
+
+[data-timer-panel][data-timer-mode="TIME_TRACKING"] .pixel-timer-digits {
+  padding-bottom: 8px;
+}
+
 [data-timer-panel] .pixel-timer-track {
   max-width: 340px;
   margin-inline: auto;

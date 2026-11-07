@@ -11,7 +11,7 @@ interface NotificationToastProps {
   onClose: () => void
   type?: 'info' | 'warning' | 'error' | 'success'
   duration?: number
-  variant?: 'default' | 'rank-up' | 'monthly-wrapped'
+  variant?: 'default' | 'rank-up' | 'monthly-wrapped' | 'product-update'
   notificationKey?: string
   title?: string
   description?: string
@@ -80,7 +80,7 @@ export default function NotificationToast({
     },
   }
 
-  if (variant === 'rank-up' || variant === 'monthly-wrapped') {
+  if (variant === 'rank-up' || variant === 'monthly-wrapped' || variant === 'product-update') {
     return (
       <div className="notification-corner" data-i18n-ignore>
         <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
@@ -103,7 +103,7 @@ export default function NotificationToast({
                 <p className="rank-toast-eyebrow">{title}</p>
                 <p className="rank-toast-name">{message}</p>
                 <p className="rank-toast-description">{description}</p>
-                {action && <div className={variant === 'monthly-wrapped' ? 'mt-3 text-xs' : 'mt-2 text-xs underline underline-offset-4'}>{action}</div>}
+                {action && <div className={variant === 'rank-up' ? 'mt-2 text-xs underline underline-offset-4' : 'mt-3 text-xs'}>{action}</div>}
               </div>
               <button type="button" className="rank-toast-close" onClick={onClose} aria-label={t.common.close}>
                 <X size={16} aria-hidden="true" />

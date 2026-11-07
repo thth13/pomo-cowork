@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowUpRight, Plus } from 'lucide-react'
 import CommunityDialog from '@/components/CommunityDialog'
+import ProductUpdateToast from '@/components/ProductUpdateToast'
 import { useI18n } from '@/components/I18nProvider'
 import { useAuthStore } from '@/store/useAuthStore'
 import { getProductUpdate, OPEN_PRODUCT_UPDATE, productUpdateCopy, type OpenProductUpdateDetail } from '@/lib/productUpdates'
@@ -76,8 +77,7 @@ export default function ProductUpdateProvider() {
 
   function close() { record('closed'); setVisible(null) }
 
-  if (!active) return null
-  return <CommunityDialog open variant="product-update" title={copy.label}
+  return <><ProductUpdateToast />{active && <CommunityDialog open variant="product-update" title={copy.label}
     description={update?.summary[language]} onClose={close}>
     <div key={active.sessionId} className="product-update-scroll" onScroll={event => {
       const element = event.currentTarget
@@ -113,5 +113,5 @@ export default function ProductUpdateProvider() {
       </div>
       <button type="button" className="community-button" onClick={close}>{copy.done}</button>
     </footer>
-  </CommunityDialog>
+  </CommunityDialog>}</>
 }

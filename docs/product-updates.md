@@ -24,10 +24,15 @@ themes and Timer fonts. Thin lines separate the feature sections.
 3. Review the recipient count, choose **Send notification**, then confirm the named
    release. Only registered, non-anonymous accounts present at send time receive it.
    Sending is not automatic on deployment or on page visits.
-4. Users receive an ordinary in-app inbox notification through the existing
-   notification refresh cycle (on load and the five-minute refresh). There is no
-   email, browser push, or automatic modal opening. Clicking the notification opens
-   the illustrated dialog. It can be reopened from notification history.
+4. Users receive an in-app inbox notification through the existing notification
+   refresh cycle (on load and the five-minute refresh). A shared corner toast shows
+   the localized release title, summary and an action to open the illustrated
+   dialog. It waits while the tab is hidden, a modal is open or another corner
+   toast is visible. Each notification is announced once per account in this
+   browser (localStorage, with an in-memory fallback). Dismissing or timing out
+   the toast leaves the inbox notification unread. There is no email, browser
+   push or automatic modal opening. The dialog can also be opened from the inbox
+   and notification history.
 
 No notifications have been sent by preparing this implementation. Delivery is an
 explicit admin action protected by the existing server `authorizeAdmin` policy.
@@ -81,7 +86,9 @@ each close method, reopening, previews, unauthorized events, pagination and retr
 ## Ownership and manual checks
 
 `CommunityDialog` owns native focus containment, Escape/close and focus return.
-`ProductUpdateProvider` listens only for explicit `open-product-update` events. It
+`ProductUpdateProvider` opens the dialog on explicit `open-product-update` events.
+Its `ProductUpdateToast` consumes the navbar's owner-scoped `notifications-loaded`
+snapshot without adding a second polling request. It
 renders the content immediately, marks the owner-scoped notification read with the
 existing PATCH API, and keeps content open with a retry message on network failure.
 Changing accounts hides the previous account's dialog and cancels its read request.

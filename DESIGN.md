@@ -32,7 +32,13 @@ spacing:
 ## Illustrated product updates
 
 `ProductUpdateProvider` opens an app-owned `CommunityDialog` only after a user
-clicks an update notification or an admin preview. The first release describes
+clicks an update notification, its toast action or an admin preview.
+`ProductUpdateToast` reuses `NotificationToast` with the `product-update` variant
+and the existing recap action button styling. It shows localized release copy
+for 12 seconds, pauses on hover/focus/hidden tabs, waits for dialogs and other
+corner toasts, and deduplicates per account/notification in browser storage.
+Closing it leaves the inbox entry unread; account changes hide the toast.
+The first release describes
 Pomo blogs first, followed by themes and timer fonts, with localized English/Spanish
 copy in `lib/productUpdates.ts`. Blogs have localized browser screenshots of the actual project directory
 and built-in demo project, using mock data without real user content. The feedback
@@ -966,7 +972,9 @@ loading/error states. Its content reserves 84px plus the top safe area, reduced 
 
 `ActiveSessionTimer` owns the profile's current-session display. Time Tracking shows
 elapsed minutes and seconds, matching the main timer, with its localized mode label
-and no duration progress bar. Pomodoro sessions retain their remaining-time countdown.
+and no duration progress bar. The main Time Tracker also omits the progress bar,
+uses 8px bottom padding below the digits and a 12px gap before the controls.
+Pomodoro sessions retain their remaining-time countdown.
 The profile API includes active and paused public sessions; paused displays use saved
 remaining seconds and stop ticking. Existing profile surfaces and typography remain canonical.
 

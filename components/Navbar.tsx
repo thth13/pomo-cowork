@@ -141,6 +141,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
       const visible = all.filter((n) => n.readAt === null)
       setUnreadCount(data.unreadCount)
       setNotifications(visible)
+      window.dispatchEvent(new CustomEvent('notifications-loaded', { detail: { owner: token, notifications: visible } }))
     } catch {
       // Keep the last inbox/badge; opening it or the next interval can retry.
     } finally {

@@ -14,7 +14,11 @@
 Product update notifications reuse `Notification`, the existing owner-scoped read
 API, Navbar inbox and notification history. `ProductUpdateProvider` and the
 `CommunityDialog` product-update variant own explicit-click viewing; no automatic
-opening occurs. Opening the inbox does not mark these notifications read. Opening
+opening occurs. `ProductUpdateToast` consumes Navbar's account-scoped inbox
+snapshots and reuses `NotificationToast` for a 12-second invitation with a localized
+open action. It waits for visible tabs and a free corner without an open modal;
+browser storage deduplicates each account/notification, with a memory fallback.
+Dismissal leaves the notification unread. Opening the inbox does not mark these notifications read. Opening
 a known release marks it read with inline failure/retry while leaving content
 available. Preview has no read/delivery side effect; account changes hide old content.
 The admin Product updates workflow uses server `authorizeAdmin`, explicit send
