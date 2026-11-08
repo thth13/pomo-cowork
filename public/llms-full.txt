@@ -1,0 +1,124 @@
+# Pomo Cowork — expanded product guide
+
+> Pomo Cowork is an online workspace for focused work and study, built around a Pomodoro timer, tasks, live coworker presence, and shared rooms. This document summarizes public product information and links to the relevant pages.
+
+Website: https://pomo-co.work
+Short navigation guide: https://pomo-co.work/llms.txt
+Public URL directory: https://pomo-co.work/sitemap.xml
+
+## What Pomo Cowork does
+
+[The main workspace](https://pomo-co.work/) combines a focus timer with tools for organizing work and seeing other people working. It is useful for students, writers, developers, freelancers, and remote workers who want a defined work interval and a sense of company.
+
+The workspace includes projects and tasks, background sounds, work history, daily goals, habits, progress tracking, and chat. Mr. Beep is an animated companion that helps users navigate the interface. Feature availability can depend on account state and subscription; the [pricing page](https://pomo-co.work/pricing) is the reference for current plans.
+
+Pomo Cowork provides tools and practical guidance. It does not guarantee productivity gains, exam results, or health outcomes.
+
+## Starting a focus session
+
+1. Open the main workspace or a relevant timer page.
+2. Choose a concrete task, such as outlining a paragraph or answering a set of practice questions.
+3. Select the focus duration and start the timer.
+4. Work on that task until the interval ends, then take a break.
+5. Return for another interval or review the work completed.
+
+The familiar Pomodoro starting pattern is 25 minutes of focus, a five-minute short break, and a longer break after four focus intervals. The main timer also supports configurable durations, pause, resume, and stopping a session early. Saved preferences and specialized tool defaults may use a different pattern.
+
+Finishing a timer session and completing a task are separate actions. A break is not counted as focus time. Tools may have different timing limits and storage behavior, so their own page descriptions take precedence over general examples here.
+
+## Guest use and accounts
+
+The main timer can be started without registering. Guest activity is associated with the browser's anonymous identity; clearing browser data or changing devices can affect access to that activity. An account provides an identity for saved activity and a profile.
+
+Some tools, including study planners, store their data locally in the browser. Account timer synchronization does not mean every local plan or preference is synchronized across devices. Consult the specific tool for its storage behavior.
+
+## Choosing a timer
+
+- [Pomodoro timer](https://pomo-co.work/pomodoro-timer): Start with a familiar cycle of focused work and planned breaks.
+- [Study timer](https://pomo-co.work/study-timer): Give reading, revision, or practice a defined work period.
+- [Focus timer](https://pomo-co.work/focus-timer): Set aside time for a single task.
+- [Deep work timer](https://pomo-co.work/deep-work-timer): Plan a sustained block for demanding work.
+- [Reading timer](https://pomo-co.work/reading-timer): Time a reading session.
+- [Coding timer](https://pomo-co.work/coding-timer): Break programming work into focused intervals.
+- [Writing sprint timer](https://pomo-co.work/writing-sprint-timer): Give drafting a fixed period before reviewing the result.
+- [Timeboxing timer](https://pomo-co.work/timeboxing-timer): Assign a time budget to a task.
+
+For a specific duration, use the [25-minute](https://pomo-co.work/25-minute-timer), [30-minute](https://pomo-co.work/30-minute-timer), [45-minute](https://pomo-co.work/45-minute-timer), [50-minute](https://pomo-co.work/50-minute-timer), [60-minute](https://pomo-co.work/60-minute-timer), or [90-minute timer](https://pomo-co.work/90-minute-timer).
+
+For a work-and-break pattern, see [25/5 Pomodoro](https://pomo-co.work/25-5-pomodoro), [50/10 Pomodoro](https://pomo-co.work/50-10-pomodoro), and the [52/17 rule](https://pomo-co.work/52-17-rule). These are alternative starting rhythms, not requirements to work for a particular duration.
+
+## Visual environment and sound
+
+The workspace offers appearance settings and background sounds. Available choices depend on the options shown in the app and the user's plan.
+
+- [Aesthetic Pomodoro timer](https://pomo-co.work/aesthetic-pomodoro-timer): Focus sessions with a customizable visual setting.
+- [Minimalist study timer](https://pomo-co.work/minimalist-study-timer): A simpler study timer presentation.
+- [Fullscreen timer](https://pomo-co.work/fullscreen-timer): A timer intended for a larger, more visible display.
+- [Lofi timer](https://pomo-co.work/lofi-timer): A focus page organized around a lofi atmosphere.
+- [Rain timer](https://pomo-co.work/rain-timer): A focus page organized around rain ambience.
+
+## Studying and working with other people
+
+[Rooms](https://pomo-co.work/rooms) provide spaces for coworking. The main workspace also shows live coworker presence. Participants can work on different tasks while sharing a period of focused work.
+
+A simple session starts with an agreed time, a short statement of each person's task, a quiet work interval, and a check-in afterward. Shared presence does not imply that every participant has the same task or an automatically synchronized countdown.
+
+- [Pomodoro with friends](https://pomo-co.work/pomodoro-with-friends): Work through focus sessions with company.
+- [Study with friends](https://pomo-co.work/study-with-friends): Study alongside other people.
+- [Online study room](https://pomo-co.work/online-study-room): Find an entry point for online group study.
+- [Virtual coworking room](https://pomo-co.work/virtual-coworking-room): Work independently in a shared online setting.
+- [Coworking session guide](https://pomo-co.work/blog/how-to-run-online-coworking-session): Practical advice on agendas, quiet work, and check-ins.
+
+## Study methods and exam preparation
+
+The study tools combine timers with explanations of learning workflows. A timer structures practice; it does not assess mastery or replace study material.
+
+- [Active recall timer](https://pomo-co.work/active-recall-timer): Practice retrieving information before checking the source.
+- [Blurting timer](https://pomo-co.work/blurting-timer): Write what you remember, then compare it with your notes.
+- [Spaced repetition timer](https://pomo-co.work/spaced-repetition-timer): Set aside time for review sessions.
+- [Feynman technique timer](https://pomo-co.work/feynman-technique-timer): Practice explaining a topic and identifying gaps.
+- [Study timer for exams](https://pomo-co.work/study-timer-for-exams): Structure revision into focused blocks.
+- [Exam timer](https://pomo-co.work/exam-timer): Practice working within a time budget.
+
+Exam-specific pages include [SAT](https://pomo-co.work/sat-timer), [ACT](https://pomo-co.work/act-timer), [GCSE](https://pomo-co.work/gcse-study-timer), [A-Level](https://pomo-co.work/a-level-study-timer), [IELTS](https://pomo-co.work/ielts-study-timer), and [TOEFL](https://pomo-co.work/toefl-study-timer). These are study aids, not official exam providers or authoritative sources of exam rules.
+
+## Planning study time
+
+- [Weekly study planner](https://pomo-co.work/weekly-study-planner): Organize subjects and focus blocks around available days and time. Plans are saved locally in the browser.
+- [Exam study planner](https://pomo-co.work/exam-study-planner): Organize exam preparation using the available study budget.
+- [Exam revision planner](https://pomo-co.work/exam-revision-planner): Plan revision work before an exam.
+- [Pomodoro calculator](https://pomo-co.work/pomodoro-calculator): Estimate time allocated to focus sessions and breaks.
+
+A realistic plan starts with actual availability and specific tasks. Breaks take time too. Leave room for work that takes longer than expected, and adjust the next block when a session is missed. The [weekly study planning guide](https://pomo-co.work/blog/how-to-make-weekly-study-plan) explains this approach with examples.
+
+## Common questions
+
+### Is Pomo Cowork only for students?
+
+No. The timer can structure work such as writing, programming, administration, and reading as well as study. Specialized pages offer examples for different tasks.
+
+### Do I need an account to start?
+
+The main timer supports guest use. Account-specific features and saved activity have their own requirements. Guest access should not be treated as a promise of permanent storage across devices.
+
+### Must I use 25-minute sessions?
+
+No. The classic 25/5 pattern is a starting point. Timer settings and specialized pages offer other durations and patterns.
+
+### Is everything free?
+
+Pomo Cowork has free and Pro options. Use the [current pricing page](https://pomo-co.work/pricing) for feature limits, prices, billing periods, and subscription details rather than assuming all tools or customizations are included in every plan.
+
+### Where can I learn the method?
+
+Start with the [Pomodoro technique guide](https://pomo-co.work/blog/pomodoro-technique-guide). The [blog](https://pomo-co.work/blog) also covers study planning, focused work, and coworking.
+
+## Policies and content scope
+
+- [Privacy policy](https://pomo-co.work/privacy): Data handling information.
+- [Terms of service](https://pomo-co.work/terms): Conditions for using Pomo Cowork.
+- [Refund policy](https://pomo-co.work/refund): Refund information.
+- [robots.txt](https://pomo-co.work/robots.txt): Crawler rules.
+- [Sitemap](https://pomo-co.work/sitemap.xml): Broader public URL coverage.
+
+This is an expanded public product summary, not an export of user content or every page on the site. It excludes private tasks, personal statistics, chats, and unpublished material. Linked pages remain the reference for current details; this document does not change crawl permissions or grant access to private content.
