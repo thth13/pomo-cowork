@@ -1,5 +1,7 @@
 'use client'
 
+import { isPomodoroEffectPath } from '@/lib/seoRoutes'
+
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { BACKGROUNDS, PLAY_BACKGROUND_EVENT } from '@/lib/appearance'
@@ -151,6 +153,6 @@ export default function WorkspaceBackground() {
   const backgroundId = useAppearanceStore(state => state.backgroundId)
   const revision = useAppearanceStore(state => state.mediaRevision)
   const scene = BACKGROUNDS.find(background => background.id === backgroundId)
-  if (pathname.replace(/\/$/, '') === '/pomodoro-effect' || !scene || scene.kind === 'default') return null
+  if (isPomodoroEffectPath(pathname) || !scene || scene.kind === 'default') return null
   return <BackgroundMedia key={`${scene.id}:${revision}`} scene={scene} />
 }

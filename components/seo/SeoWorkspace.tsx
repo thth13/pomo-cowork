@@ -49,7 +49,7 @@ export default function SeoWorkspace({ title, defaults, timerNote, minimalGuide 
   return (
     <div className={`seo-workspace${social ? ' seo-workspace-social' : ''}${workspaceTasks ? ' seo-workspace-with-tasks' : ''}${appearance === 'aesthetic' ? ' seo-workspace-aesthetic' : ''}${quiet ? ' seo-workspace-intent' : ''}${experience ? ` seo-experience-${experience}` : ''}`}>
       <section className="seo-timer" id="focus-timer" aria-labelledby="timer-heading" tabIndex={-1}>
-        <h2 id="timer-heading" className={compactWorkspace ? 'sr-only' : undefined}>{experience === 'clock' ? 'Your online flip clock' : experience === 'exam' ? 'Your practice countdown' : experience === 'reading' ? 'Your reading session' : experience === 'classroom' ? 'Your classroom countdown' : 'Your next focus session'}</h2>
+        <h2 id="timer-heading" className={compactWorkspace ? 'sr-only' : undefined}>{language === 'es' && (!experience || experience === 'minimal') ? 'Tu próxima sesión de concentración' : experience === 'clock' ? 'Your online flip clock' : experience === 'exam' ? 'Your practice countdown' : experience === 'reading' ? 'Your reading session' : experience === 'classroom' ? 'Your classroom countdown' : 'Your next focus session'}</h2>
         <div className="seo-timer-live" lang={language}>
           {quiet ? <FocusStage>
             {content}
@@ -68,7 +68,7 @@ export default function SeoWorkspace({ title, defaults, timerNote, minimalGuide 
             <p role="status">{language === 'es' ? 'Cargando proyectos…' : 'Loading projects…'}</p>
           ) : <ProjectList />}
         </section>}
-        <noscript><p>Enable JavaScript to run the interactive timer and see live sessions.</p></noscript>
+        <noscript><p>{language === 'es' ? 'Activa JavaScript para utilizar el temporizador interactivo.' : 'Enable JavaScript to run the interactive timer and see live sessions.'}</p></noscript>
       </section>
       {!quiet && <aside className="seo-social" aria-labelledby="social-heading">
         {!compactWorkspace && <p className="seo-eyebrow">A little company</p>}
@@ -82,7 +82,7 @@ export default function SeoWorkspace({ title, defaults, timerNote, minimalGuide 
           ) : <ActiveSessions variant="page" />}
         </div>
         <div className="seo-social-links">
-          <Link className="seo-text-link" href="/rooms">Explore study rooms <span aria-hidden="true">↗</span></Link>
+          <Link className="seo-text-link" href="/rooms">{language === 'es' ? 'Explorar salas de estudio' : 'Explore study rooms'} <span aria-hidden="true">↗</span></Link>
           {!compactWorkspace && <HomeLink className="seo-text-link">Open the shared workspace <span aria-hidden="true">↗</span></HomeLink>}
         </div>
       </aside>}

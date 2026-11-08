@@ -1937,3 +1937,22 @@ Workspace return links use `HomeLink` (including server-rendered blog/tool shell
 which resolves the current locale through I18nProvider. Event-driven returns use
 `currentHomeHref()` at navigation time. Explicit language selectors retain their
 fixed language URLs; returning from another screen must not select English.
+
+## Spanish Pomodoro Effect
+
+`/es/efecto-pomodoro` reuses SeoLandingPage and the minimal SeoWorkspace timer.
+`lib/seoSpanishPages.ts` owns server-rendered Spanish editorial content; the Spanish
+tools shell reuses existing tools.css geometry and tokens with localized navigation.
+The English and Spanish effect pages have reciprocal language links, self-canonicals,
+hreflang and sitemap alternatives. Both suppress scenery, companion and support-widget
+chrome through the shared route registry. The Spanish homepage links to the guide.
+
+## Spanish group study timer
+
+`/es/temporizador-de-estudio-en-grupo` reuses the group study timer, project/task
+list and live participants. Spanish copy explains that countdown controls are
+individual and the participant list spans the shared workspace. The existing
+Spanish tools shell, tools.css and theme tokens own presentation.
+`localizedSeoPaths` owns both translated tool routes, reciprocal hreflang,
+sitemap entries and language-switch destinations. The Spanish homepage links
+to the group study page; WorkspaceInvite and shared section labels are localized.

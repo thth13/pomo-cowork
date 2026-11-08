@@ -156,6 +156,36 @@ export const seoToolLabels: Record<SeoSlug, string> = {
   'silent-reading-timer': 'Silent Reading Timer',
 }
 
+export const POMODORO_EFFECT_PATHS = {
+  en: '/pomodoro-effect',
+  es: '/es/efecto-pomodoro',
+  'x-default': '/pomodoro-effect',
+} as const
+
+export const GROUP_STUDY_PATHS = {
+  en: '/group-study-timer',
+  es: '/es/temporizador-de-estudio-en-grupo',
+  'x-default': '/group-study-timer',
+} as const
+
+type SeoLanguagePaths = { en: string; es: string; 'x-default': string }
+
+export const localizedSeoPaths: Partial<Record<SeoSlug, SeoLanguagePaths>> = {
+  'pomodoro-effect': POMODORO_EFFECT_PATHS,
+  'group-study-timer': GROUP_STUDY_PATHS,
+}
+
+export function findSeoLanguagePaths(pathname: string) {
+  const path = pathname.replace(/\/$/, '')
+  return Object.values(localizedSeoPaths).find(paths => paths?.en === path || paths?.es === path)
+}
+
+export function isPomodoroEffectPath(pathname: string) {
+  const path = pathname.replace(/\/$/, '')
+  return path === POMODORO_EFFECT_PATHS.en || path === POMODORO_EFFECT_PATHS.es
+}
+
 export function isSeoPath(pathname: string) {
+  if (findSeoLanguagePaths(pathname)) return true
   return [...seoSlugs, ...plannerSlugs].some((slug) => pathname === `/${slug}` || pathname === `/${slug}/`)
 }

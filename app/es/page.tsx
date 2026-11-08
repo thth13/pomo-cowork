@@ -50,12 +50,15 @@ export default function SpanishHomePage() {
         </ol>
         <p>El método Pomodoro te ayuda a dividir el trabajo en pasos manejables. Puedes adaptar la duración de cada sesión y de las pausas a tu ritmo.</p>
 
+        <p><Link href="/es/efecto-pomodoro">Descubre qué es el efecto Pomodoro y cómo aplicarlo al estudio.</Link></p>
+
         <h2>Un temporizador de estudio para preparar exámenes</h2>
         <p>Organiza el repaso por temas y asigna una tarea a cada sesión: resolver ejercicios, practicar vocabulario o recordar lo aprendido sin mirar los apuntes. Alternar tiempo de estudio y descansos te permite planificar una tarde de repaso con un principio y un final claros.</p>
 
         <h2>Estudia con amigos y trabaja en compañía online</h2>
         <p>Comparte un espacio de concentración con otras personas en tiempo real. Puedes crear una sala privada para tu grupo de estudio o tu equipo y utilizar el chat para comentar los avances entre sesiones. Cada persona trabaja en sus tareas, con la compañía del grupo.</p>
         <p><Link href="/rooms">Explorar las salas para estudiar y trabajar</Link></p>
+        <p><Link href="/es/temporizador-de-estudio-en-grupo">Usar el temporizador de estudio en grupo con proyectos y tareas.</Link></p>
 
         <h2>Personaliza tu temporizador Pomodoro</h2>
         <p>Ajusta los minutos de trabajo, los descansos cortos y las pausas largas. Elige sonidos de ambiente y configura las notificaciones para acompañar tus sesiones de lectura, escritura, programación o estudio. No tienes que mantener el ciclo de 25 y 5 si necesitas otro ritmo.</p>

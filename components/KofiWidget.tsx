@@ -1,5 +1,7 @@
 'use client'
 
+import { isPomodoroEffectPath } from '@/lib/seoRoutes'
+
 import { Suspense, useEffect, useState } from 'react'
 import { KoFiPanel } from 'react-kofi'
 import CommunityDialog from '@/components/CommunityDialog'
@@ -31,7 +33,7 @@ function KofiWidgetContent() {
     setMounted(true)
   }, [])
 
-  if (!mounted || isLoading || pathname.replace(/\/$/, '') === '/pomodoro-effect' || isProjectBlogRoute(pathname) || isBlogProfile) return null
+  if (!mounted || isLoading || isPomodoroEffectPath(pathname) || isProjectBlogRoute(pathname) || isBlogProfile) return null
 
   return (
     <>

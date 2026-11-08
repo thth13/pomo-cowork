@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from 'react'
 import {
   defaultLanguage,
   languages,
@@ -8,6 +8,7 @@ import {
   type LanguageCode,
 } from '@/lib/i18n/translations'
 import { usePathname, useRouter } from 'next/navigation'
+import { findSeoLanguagePaths } from '@/lib/seoRoutes'
 import DomTranslationBridge from '@/components/DomTranslationBridge'
 
 type DeepString<T> = {
@@ -34,7 +35,7 @@ function isLanguageCode(value: string | null): value is LanguageCode {
 export function I18nProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
-  const routeLanguage = pathname === '/es' || pathname.startsWith('/es/') ? 'es' : pathname === '/' ? 'en' : null
+  const routeLanguage = pathname === '/es' || pathname.startsWith('/es/') ? 'es' : pathname === '/' || Boolean(findSeoLanguagePaths(pathname)) ? 'en' : null
   const [preferredLanguage, setLanguageState] = useState<LanguageCode>(defaultLanguage)
   const language: LanguageCode = routeLanguage ?? preferredLanguage
 
@@ -54,13 +55,14 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.lang = language
   }, [language, pathname])
 
-  const setLanguage = (nextLanguage: LanguageCode) => {
+  const setLanguage = useCallback((nextLanguage: LanguageCode) => {
     setLanguageState(nextLanguage)
     try { localStorage.setItem(storageKey, nextLanguage) } catch { /* Keep the selection in memory. */ }
     if (routeLanguage && nextLanguage !== routeLanguage) {
-      router.push(`${nextLanguage === 'es' ? '/es' : '/'}${window.location.search}${window.location.hash}`, { scroll: false })
+      const destination = findSeoLanguagePaths(pathname)?.[nextLanguage] ?? (nextLanguage === 'es' ? '/es' : '/')
+      router.push(`${destination}${window.location.search}${window.location.hash}`, { scroll: false })
     }
-  }
+  }, [pathname, routeLanguage, router])
 
   const value = useMemo<I18nContextValue>(
     () => ({
@@ -69,7 +71,7 @@ export function I18nProvider({ children }: { children: React.ReactNode }) {
       setLanguage,
       t: translations[language],
     }),
-    [language]
+    [language, setLanguage]
   )
 
   return (
