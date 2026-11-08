@@ -1,5 +1,6 @@
 import 'react-kofi/dist/kofi.css'
 import './globals.css'
+import DocumentHtml from '@/components/DocumentHtml'
 import './appearance.css'
 import './feedback.css'
 import './community.css'
@@ -87,7 +88,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <DocumentHtml>
       <head>
         <link rel="describedby" href="/llms.txt" type="text/plain" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -138,6 +139,6 @@ export default function RootLayout({
           </I18nProvider>
         </ThemeProvider>
       </body>
-    </html>
+    </DocumentHtml>
   )
 }

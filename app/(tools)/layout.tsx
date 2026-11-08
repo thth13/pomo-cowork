@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import ThemeToggle from '@/components/ThemeToggle'
 import WorkspaceBackground from '@/components/WorkspaceBackground'
 import './tools.css'
@@ -9,18 +10,18 @@ export default function ToolsLayout({ children }: { children: React.ReactNode })
       <WorkspaceBackground />
       <a className="seo-skip" href="#seo-content">Skip to content</a>
       <header className="seo-header">
-        <Link className="seo-brand" href="/">Pomo Cowork</Link>
+        <HomeLink className="seo-brand">Pomo Cowork</HomeLink>
         <nav aria-label="Main navigation">
           <Link href="/weekly-study-planner">Plan your study</Link>
           <Link href="/rooms">Rooms</Link>
           <Link href="/blog">Blog</Link>
-          <Link href="/">Workspace <span aria-hidden="true">↗</span></Link>
+          <HomeLink>Workspace <span aria-hidden="true">↗</span></HomeLink>
           <ThemeToggle />
         </nav>
       </header>
       {children}
       <footer className="seo-footer">
-        <Link className="seo-brand" href="/">Pomo Cowork</Link>
+        <HomeLink className="seo-brand">Pomo Cowork</HomeLink>
         <nav aria-label="Footer navigation"><Link href="/weekly-study-planner">Plan your study</Link><Link href="/pricing">Pricing</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav>
       </footer>
     </div>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { notFound } from 'next/navigation'
 import JsonLd from '@/components/blog/JsonLd'
 import { SITE_URL, blogCopy, formatPostDate, getBlogPost, getBlogPosts, postUrl, renderMarkdown } from '@/lib/blog'
@@ -48,7 +49,7 @@ export default async function BlogPostPage({ params }: Props) {
           ] },
         ],
       }} />
-      <nav className="blog-breadcrumbs" aria-label={copy.back}><Link href="/">{copy.home}</Link><span aria-hidden="true">/</span><Link href="/blog">{copy.blog}</Link><span aria-hidden="true">/</span><span aria-current="page">{post.title}</span></nav>
+      <nav className="blog-breadcrumbs" aria-label={copy.back}><HomeLink>{copy.home}</HomeLink><span aria-hidden="true">/</span><Link href="/blog">{copy.blog}</Link><span aria-hidden="true">/</span><span aria-current="page">{post.title}</span></nav>
       <article>
         <header className="blog-article-header">
           <p className="blog-eyebrow">{post.category}</p>
@@ -59,7 +60,7 @@ export default async function BlogPostPage({ params }: Props) {
         </header>
         <div className="blog-prose" dangerouslySetInnerHTML={{ __html: content }} />
       </article>
-      <aside className="blog-cta"><h2>{copy.cta}</h2><p>{copy.intro}</p><Link href="/">{copy.start} <span aria-hidden="true">→</span></Link></aside>
+      <aside className="blog-cta"><h2>{copy.cta}</h2><p>{copy.intro}</p><HomeLink>{copy.start} <span aria-hidden="true">→</span></HomeLink></aside>
       {related.length > 0 && <section className="blog-related"><h2>{copy.related}</h2><ul>{related.map((item) => <li key={item.slug}><Link href={`/blog/${item.slug}`}>{item.title}</Link></li>)}</ul></section>}
       <Link className="blog-back" href="/blog">← {copy.back}</Link>
     </main>

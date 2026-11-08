@@ -1,6 +1,6 @@
 'use client'
 
-import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { ArrowUpRight, Clock3, Hourglass, Layers3 } from 'lucide-react'
 import type { StatisticsData } from '@/lib/statistics'
 import { SectionHeading, useStatisticsCopy } from './shared'
@@ -20,6 +20,6 @@ export default function SessionOverview({ data }: { data: StatisticsData }) {
       {metrics.map(({ label, value, icon: Icon }) => <div key={label}><dt><Icon size={15} strokeWidth={1.5} aria-hidden="true" /><span>{label}</span></dt><dd>{value}</dd></div>)}
     </dl>
     {totalSessions ? <p className="insight-footnote">{copy.sessionOverviewNote}</p>
-      : <div className="insight-session-empty"><p>{copy.emptyBody}</p><Link href="/" className="insight-text-link">{copy.start}<ArrowUpRight size={15} aria-hidden="true" /></Link></div>}
+      : <div className="insight-session-empty"><p>{copy.emptyBody}</p><HomeLink className="insight-text-link">{copy.start}<ArrowUpRight size={15} aria-hidden="true" /></HomeLink></div>}
   </section>
 }

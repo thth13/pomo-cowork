@@ -5,7 +5,7 @@ import { createClassicStatisticsPreview, type Stats, type HeatmapDay } from '@/l
 import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
-import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import './stats.css'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
@@ -1379,11 +1379,11 @@ export default function StatsPage() {
       <main className="stats-layout">
         <header className="stats-intro">
           <h1>{language === 'es' ? 'Mis estadísticas' : 'My statistics'}</h1>
-          <Link href="/" className="stats-timer-link">
+          <HomeLink className="stats-timer-link">
             <FontAwesomeIcon icon={faStopwatch} aria-hidden="true" />
             {language === 'es' ? 'Volver al temporizador' : 'Back to timer'}
             <span aria-hidden="true">↗</span>
-          </Link>
+          </HomeLink>
         </header>
 
         {loading ? (

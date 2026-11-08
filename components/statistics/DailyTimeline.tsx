@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { ArrowUpRight, Clock3 } from 'lucide-react'
 import type { StatisticsData, FocusTimelineSession } from '@/lib/statistics'
 import { SectionHeading, timeLabel, useStatisticsCopy } from './shared'
@@ -30,6 +30,6 @@ export default function DailyTimeline({ data, sessions }: { data: StatisticsData
       {active && <div className="insight-timeline-detail" aria-live="polite"><Clock3 size={17} aria-hidden="true" /><strong>{time(active.start)}–{time(active.end)}</strong><span>{duration(active.minutes)} {copy.focused}</span><span className="insight-timeline-task">{active.task || copy.untitled}</span></div>}
       <p className="insight-footnote">{copy.timelineNote}</p>
       <details className="insight-session-list"><summary>{copy.sessionList} ({sessions.length})</summary><ol>{sessions.map((session) => <li key={session.id}><button type="button" aria-pressed={active?.id === session.id} onClick={() => setSelected(session.id)}><span>{time(session.start)}–{time(session.end)}</span><span>{session.task || copy.untitled}</span><strong>{duration(session.minutes)}</strong></button></li>)}</ol></details>
-    </> : <div className="insight-timeline-empty"><Clock3 size={26} aria-hidden="true" /><div><h3>{copy.noToday}</h3><p>{copy.noTodayBody}</p></div><Link href="/" className="insight-button">{copy.start}<ArrowUpRight size={16} aria-hidden="true" /></Link></div>}
+    </> : <div className="insight-timeline-empty"><Clock3 size={26} aria-hidden="true" /><div><h3>{copy.noToday}</h3><p>{copy.noTodayBody}</p></div><HomeLink className="insight-button">{copy.start}<ArrowUpRight size={16} aria-hidden="true" /></HomeLink></div>}
   </section>
 }

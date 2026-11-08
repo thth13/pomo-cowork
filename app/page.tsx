@@ -2,13 +2,13 @@ import type { Metadata } from 'next'
 import HomeWorkspace from '@/components/HomeWorkspace'
 import WorkspaceBackground from '@/components/WorkspaceBackground'
 import PomodoroOverview from '@/components/PomodoroOverview'
-import { HOME_TITLE, HOME_DESCRIPTION } from '@/lib/homeSeo'
+import { HOME_TITLE, HOME_DESCRIPTION, HOME_LANGUAGES } from '@/lib/homeSeo'
 import './daily-flow/daily-flow.css'
 
 export const metadata: Metadata = {
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
-  alternates: { canonical: '/' },
+  alternates: { canonical: '/', languages: HOME_LANGUAGES },
   openGraph: {
     title: HOME_TITLE,
     description: HOME_DESCRIPTION,

@@ -1920,3 +1920,20 @@ and rendered-scenery adapters, including their blur, texture, radius and shadow.
 The existing system-color fallback remains active in forced colors.
 English/Spanish labels come from the existing locale dictionaries. The corner
 surface stays below modal layers and uses native links/buttons with visible focus.
+
+## Spanish search homepage
+
+`/es` reuses HomeWorkspace and the established timer, typography and theme tokens.
+Its visible server-rendered guide below the workspace owns the Spanish h1,
+Pomodoro instructions, study/coworking copy and FAQs. `app/es/spanish-home.css`
+only adds reading-column geometry using existing paper, ink and line tokens.
+The homepage URL owns language (`/` English, `/es` Spanish); browser preferences
+continue to apply on other routes. Homepage language controls are crawlable links.
+DocumentHtml sets the initial document language from the route; I18nProvider owns
+interactive translations. Both homepages have self-canonicals and reciprocal
+language alternatives. Spanish targets the language globally, not only Spain.
+
+Workspace return links use `HomeLink` (including server-rendered blog/tool shells),
+which resolves the current locale through I18nProvider. Event-driven returns use
+`currentHomeHref()` at navigation time. Explicit language selectors retain their
+fixed language URLs; returning from another screen must not select English.

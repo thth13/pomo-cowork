@@ -1,5 +1,7 @@
 'use client'
 
+import { currentHomeHref } from '@/lib/homeNavigation'
+
 import { Crown, Timer, Coffee, Armchair, Repeat2, Check, Loader2, ArrowRight } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useWorkspaceModeStore } from '@/store/useWorkspaceModeStore'
@@ -149,7 +151,7 @@ export const SettingsModal = memo(function SettingsModal({
               onClick={() => {
                 onClose()
                 setMode('daily-flow')
-                if (pathname !== '/') router.push('/')
+                if (pathname !== currentHomeHref()) router.push(currentHomeHref())
               }}>
               {t.settingsModal.openDailyFlow}<ArrowRight size={15} aria-hidden="true" />
             </button>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { ArrowDown, ArrowUpRight, BookOpen, Clock3 } from 'lucide-react'
 import { BLOG_DESCRIPTION, SITE_URL, blogCopy, formatPostDate, getBlogPosts, postUrl } from '@/lib/blog'
 import JsonLd from '@/components/blog/JsonLd'
@@ -59,7 +60,7 @@ export default async function BlogPage() {
                 </div>
                 <h3 id="blog-session-heading">Find your next<br />25 minutes.</h3>
                 <p>Pick one task. Settle in. Put a little of what you read into practice.</p>
-                <Link href="/">Open the timer <ArrowUpRight size={18} aria-hidden="true" /></Link>
+                <HomeLink>Open the timer <ArrowUpRight size={18} aria-hidden="true" /></HomeLink>
               </aside>
             </div>
             {otherPosts.length > 0 && (
@@ -75,7 +76,7 @@ export default async function BlogPage() {
               </div>
             )}
           </>
-        ) : <p className="blog-empty">Our first guide is on its way. <Link href="/">Start a focus session</Link> while you wait.</p>}
+        ) : <p className="blog-empty">Our first guide is on its way. <HomeLink>Start a focus session</HomeLink> while you wait.</p>}
       </section>
     </main>
   )

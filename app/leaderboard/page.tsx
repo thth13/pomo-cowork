@@ -3,6 +3,7 @@
 import { userProfileHref } from '@/lib/userProfile'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import Image from 'next/image'
 import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Crown, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
 import { DayPicker, type DateRange } from 'react-day-picker'
@@ -235,7 +236,7 @@ export default function LeaderboardPage() {
               </div>
               {loading ? <PersonalPageSkeleton variant="leaderboard" />
                 : error ? <div className="lb-state" role="alert"><Trophy size={32} aria-hidden="true" /><h3>{t.leaderboard.errorTitle}</h3><p>{t.leaderboard.errorDescription}</p><button type="button" className="lb-button" onClick={() => setRetry(value => value + 1)}>{t.leaderboard.tryAgain}</button></div>
-                : leaderboard.length === 0 ? <div className="lb-state"><Sprout size={36} aria-hidden="true" /><h3>{t.leaderboard.emptyTitle}</h3><p>{t.leaderboard.emptyDescriptionPrefix} {data?.periodLabel}.</p><Link href="/" className="btn btn-primary">{copy.startFocus}</Link></div>
+                : leaderboard.length === 0 ? <div className="lb-state"><Sprout size={36} aria-hidden="true" /><h3>{t.leaderboard.emptyTitle}</h3><p>{t.leaderboard.emptyDescriptionPrefix} {data?.periodLabel}.</p><HomeLink className="btn btn-primary">{copy.startFocus}</HomeLink></div>
                 : filtered.length === 0 ? <div className="lb-state" role="status"><Search size={32} aria-hidden="true" /><h3>{t.leaderboard.noMatchesTitle}</h3><p>{t.leaderboard.noMatchesDescription} “{view.search}”</p><button type="button" className="lb-button" onClick={clearSearch}>{copy.clearSearch}</button></div>
                 : <>
                   <div className="lb-table-wrap">
@@ -271,7 +272,7 @@ export default function LeaderboardPage() {
                     <div className="lb-progress-label"><span>{t.leaderboard.progressToFirst}</span><strong>{progress}%</strong></div>
                     <progress className="lb-progress" value={progress} max={100} aria-label={t.leaderboard.progressToFirst} />
                   </> : <div className="lb-personal-empty"><Sprout size={36} aria-hidden="true" /><p>{currentUser && !currentUser.isAnonymous ? `${t.leaderboard.timeToAppearPrefix} ${data?.periodLabel ?? ''} ${t.leaderboard.timeToAppearSuffix}` : t.leaderboard.loginToSeePosition}</p></div>}
-                  <Link href="/" className="btn btn-primary lb-focus-link">{copy.startFocus}<ArrowUpRight size={16} aria-hidden="true" /></Link>
+                  <HomeLink className="btn btn-primary lb-focus-link">{copy.startFocus}<ArrowUpRight size={16} aria-hidden="true" /></HomeLink>
                   <p className="lb-encouragement">{copy.encouragement}</p>
                 </div>
               </section>

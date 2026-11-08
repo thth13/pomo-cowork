@@ -1,9 +1,12 @@
 'use client'
 
+import { currentHomeHref } from '@/lib/homeNavigation'
+
 import { userProfileHref } from '@/lib/userProfile'
 import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import Highcharts from 'highcharts'
 import CommunityDialog from '@/components/CommunityDialog'
 import ProfileAchievements from '@/components/achievements/ProfileAchievements'
@@ -130,7 +133,7 @@ export default function UserProfilePage({ userId, navigation = 'workspace' }: { 
 
   const handleLogout = () => {
     logout()
-    router.push('/')
+    router.push(currentHomeHref())
   }
 
   useEffect(() => {
@@ -502,7 +505,7 @@ export default function UserProfilePage({ userId, navigation = 'workspace' }: { 
   if (loading || error || !profile) {
     return <div className={`community-page garden-page profile-page${inBlogs ? ' blog-profile-page' : ''}`} lang={language} data-no-translate>{inBlogs ? <BlogHeader /> : <Navbar compact />}<main className={`community-layout${isOwnProfile && !inBlogs ? ' personal-page-frame' : ''}`}>
       {!inBlogs && isOwnProfile && <PersonalNavigation />}
-      {!inBlogs && !isOwnProfile && <div className="mb-6 flex justify-end"><Link href="/" className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</Link></div>}
+      {!inBlogs && !isOwnProfile && <div className="mb-6 flex justify-end"><HomeLink className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</HomeLink></div>}
       {loading ? <PersonalPageSkeleton variant="profile" /> : <div className="community-panel community-state">
         <Sprout aria-hidden="true" /><h1>{copy.userNotFound}</h1><p>{error}</p><button type="button" className="community-button" onClick={() => setRetry(value => value + 1)}>{copy.retry}</button>
       </div>}
@@ -514,7 +517,7 @@ export default function UserProfilePage({ userId, navigation = 'workspace' }: { 
       {inBlogs ? <BlogHeader /> : <Navbar compact />}
       <main className={`community-layout${isOwnProfile && !inBlogs ? ' personal-page-frame' : ''}`}>
         {!inBlogs && isOwnProfile && <PersonalNavigation />}
-        {!inBlogs && !isOwnProfile && <div className="mb-6 flex justify-end"><Link href="/" className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</Link></div>}
+        {!inBlogs && !isOwnProfile && <div className="mb-6 flex justify-end"><HomeLink className="community-button"><ArrowLeft size={16} aria-hidden="true" />{copy.back}</HomeLink></div>}
         <header className="profile-header">
           {profile.user.avatarUrl ? <Image src={profile.user.avatarUrl} alt="" width={88} height={88} className="community-avatar profile-avatar" /> : <span className="community-avatar profile-avatar" aria-hidden="true">{profile.user.username.charAt(0).toUpperCase()}</span>}
           <div className="profile-identity">

@@ -2,7 +2,7 @@
 
 import { userProfileHref } from '@/lib/userProfile'
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft, Sprout } from 'lucide-react'
 import Navbar from '@/components/Navbar'
@@ -30,7 +30,7 @@ export default function ProfilePage() {
     <main className={`community-layout${showingProfile ? ' personal-page-frame' : ''}`}>
       {showingProfile && <PersonalNavigation />}
       {showingProfile ? <PersonalPageSkeleton variant="profile" /> : <>
-        <Link href="/" className="community-link"><ArrowLeft size={15} aria-hidden="true" />{copy.back}</Link>
+        <HomeLink className="community-link"><ArrowLeft size={15} aria-hidden="true" />{copy.back}</HomeLink>
         <section className="community-panel community-state">
           <Sprout aria-hidden="true" /><h1>{copy.authTitle}</h1><p>{copy.authHint}</p>
           <button type="button" className="community-button community-button-primary" onClick={() => setAuthOpen(true)}>{copy.signIn}</button>

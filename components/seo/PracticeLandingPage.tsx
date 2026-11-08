@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import JsonLd from '@/components/blog/JsonLd'
 import type { PracticeSeoPage } from '@/lib/seoPracticePages'
 import { seoToolLabels, type SeoSlug } from '@/lib/seoRoutes'
@@ -63,6 +64,6 @@ export default function PracticeLandingPage({ slug, page }: { slug: SeoSlug; pag
       <h2 id="practice-related-heading">Another way to spend the next few minutes</h2>
       <ul>{page.related.map(related => <li key={related}><Link href={`/${related}`}>{seoToolLabels[related]}<span aria-hidden="true">↗</span></Link></li>)}</ul>
     </nav>
-    <footer className={styles.pageFooter}><span>Keep this session simple.</span><a href="#focus-timer">Back to the timer ↑</a><Link href="/">Explore Pomo Cowork ↗</Link></footer>
+    <footer className={styles.pageFooter}><span>Keep this session simple.</span><a href="#focus-timer">Back to the timer ↑</a><HomeLink>Explore Pomo Cowork ↗</HomeLink></footer>
   </main>
 }

@@ -1,0 +1,40 @@
+.spanish-home-overview {
+  position: relative;
+  max-width: 800px;
+  margin: 32px auto;
+  padding: 24px clamp(16px, 4vw, 32px);
+  color: var(--pixel-ink);
+  background: var(--pixel-paper);
+  border: 1px solid var(--pixel-line);
+}
+
+.spanish-home-overview h3 {
+  margin: 20px 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.spanish-home-overview ol {
+  list-style: decimal;
+  padding-inline-start: 24px;
+  font-size: 14px;
+}
+
+.spanish-home-overview li + li,
+.spanish-home-overview p + p {
+  margin-top: 8px;
+}
+
+.spanish-home-overview a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.spanish-home-overview a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.spanish-home-overview a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}

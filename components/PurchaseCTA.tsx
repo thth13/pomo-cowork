@@ -1,5 +1,7 @@
 'use client'
 
+import { currentHomeHref } from '@/lib/homeNavigation'
+
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { initializePaddle, Paddle, CheckoutEventNames, Environments } from '@paddle/paddle-js'
@@ -58,7 +60,7 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
           const authToken = useAuthStore.getState().token ?? (typeof window !== 'undefined' ? localStorage.getItem('token') : null)
           if (transactionId && authToken) {
             activateTransaction(transactionId, authToken)
-              .then(() => router.push('/'))
+              .then(() => router.push(currentHomeHref()))
               .catch(error => {
                 console.error('Paddle activation error:', error)
                 setCheckoutDone(false)
@@ -100,7 +102,7 @@ export default function PurchaseCTA({ priceLabel, planName, planId }: PurchaseCT
       if (authToken) headers.Authorization = `Bearer ${authToken}`
       await fetch('/api/purchase', { method: 'POST', headers, body: JSON.stringify({ planId }) })
       await checkAuth()
-      router.push('/')
+      router.push(currentHomeHref())
     } finally {
       setIsProcessing(false)
       setIsPurchaseModalOpen(false)

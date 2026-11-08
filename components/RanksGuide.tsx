@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { ArrowLeft, ArrowUpRight } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import { ranksCopy } from '@/lib/i18n/ranks'
@@ -17,7 +18,7 @@ export default function RanksGuide() {
   return (
     <main className="ranks-guide" lang={language} data-i18n-ignore>
       <nav className="ranks-nav" aria-label={copy.eyebrow}>
-        <Link href="/" className="ranks-link"><ArrowLeft size={15} aria-hidden="true" />{copy.timer}</Link>
+        <HomeLink className="ranks-link"><ArrowLeft size={15} aria-hidden="true" />{copy.timer}</HomeLink>
         <Link href="/statistics" className="ranks-link">{copy.statistics}<ArrowUpRight size={15} aria-hidden="true" /></Link>
       </nav>
       <header className="ranks-intro">

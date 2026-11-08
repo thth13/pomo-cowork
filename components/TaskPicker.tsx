@@ -102,7 +102,7 @@ export const TaskPicker = memo(function TaskPicker({
   const openProjects = () => {
     close()
     const handled = !window.dispatchEvent(new Event('pomo:open-projects', { cancelable: true }))
-    if (!handled) router.push('/?panel=tasks')
+    if (!handled) router.push(`${language === 'es' ? '/es' : '/'}?panel=tasks`)
     if (variant === 'mini-timer') window.focus()
   }
   const select = (task: TaskOption | null) => {
@@ -302,7 +302,7 @@ export const TaskPicker = memo(function TaskPicker({
                         </div>
                       )
                     })}
-                    {!options.length && !query && <p className="task-popover-message">{copy.empty}{' '}<a href="/?panel=tasks" className="underline underline-offset-2 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={event => {
+                    {!options.length && !query && <p className="task-popover-message">{copy.empty}{' '}<a href={`${language === 'es' ? '/es' : '/'}?panel=tasks`} className="underline underline-offset-2 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" onClick={event => {
                       if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
                       event.preventDefault()
                       openProjects()

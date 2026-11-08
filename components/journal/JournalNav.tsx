@@ -1,6 +1,7 @@
 'use client'
 import { userProfileHref } from '@/lib/userProfile'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/Navbar'
 import BackToTimer from '@/components/BackToTimer'
@@ -34,7 +35,7 @@ export default function JournalNav(){
 
   if (useCompactNav) return <Navbar compact />
 
-  return <header className="journal-nav"><Link href="/" className="journal-brand">Pomo Cowork</Link><nav aria-label={t('Journal navigation','Navegación del diario')}>
-    <Link href="/">{t('Timer','Temporizador')}</Link><Link href="/feed">{t('Feed','Novedades')}</Link><Link href="/projects">{t('My projects','Mis proyectos')}</Link><Link href="/projects/public">{t('Public projects','Proyectos públicos')}</Link><Link href="/journal">{t('My updates','Mis actualizaciones')}</Link><Link href={user ? userProfileHref(user) : '/settings/profile'}>{t('My profile','Mi perfil')}</Link><Link href="/settings/profile">{t('Edit profile','Editar perfil')}</Link><ThemeToggle/>
+  return <header className="journal-nav"><HomeLink className="journal-brand">Pomo Cowork</HomeLink><nav aria-label={t('Journal navigation','Navegación del diario')}>
+    <HomeLink>{t('Timer','Temporizador')}</HomeLink><Link href="/feed">{t('Feed','Novedades')}</Link><Link href="/projects">{t('My projects','Mis proyectos')}</Link><Link href="/projects/public">{t('Public projects','Proyectos públicos')}</Link><Link href="/journal">{t('My updates','Mis actualizaciones')}</Link><Link href={user ? userProfileHref(user) : '/settings/profile'}>{t('My profile','Mi perfil')}</Link><Link href="/settings/profile">{t('Edit profile','Editar perfil')}</Link><ThemeToggle/>
   </nav></header>
 }

@@ -1,11 +1,29 @@
 'use client'
 
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ChevronDown } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
 import type { LanguageCode } from '@/lib/i18n/translations'
 
 export default function LanguageSwitcher({ variant = 'default' }: { variant?: 'default' | 'settings' }) {
   const { language, languages, setLanguage, t } = useI18n()
+
+  const pathname = usePathname()
+
+  if (pathname === '/' || pathname === '/es') {
+    return (
+      <nav aria-label={t.language.label} className="flex items-center gap-3 text-xs" data-i18n-ignore>
+        {languages.map((item) => (
+          <Link key={item.code} href={item.code === 'es' ? '/es' : '/'} hrefLang={item.code} lang={item.code}
+            aria-current={language === item.code ? 'page' : undefined}
+            className="inline-flex min-h-11 items-center underline-offset-4 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 aria-[current=page]:underline">
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+    )
+  }
 
   return (
     <label className={variant === 'settings' ? 'settings-language-switcher' : 'relative inline-flex items-center text-xs text-gray-500 transition-colors hover:text-gray-800 focus-within:text-gray-800 dark:text-slate-400 dark:hover:text-slate-200 dark:focus-within:text-slate-200'}>

@@ -5,6 +5,7 @@ import { plannerLabels, plannerSlugs } from '@/lib/plannerPages'
 export default function PomodoroOverview() {
   return (
     <section className="pomodoro-overview" aria-label="About the Pomodoro timer" lang="en" data-no-translate>
+      <nav aria-label="Language" data-i18n-ignore><Link href="/es" hrefLang="es" lang="es">Español</Link></nav>
       <h1>Online Pomodoro Timer for Focused Work</h1>
       <p className="pomodoro-overview-intro">
         Pomo Cowork is a free online Pomodoro timer built for people who work better

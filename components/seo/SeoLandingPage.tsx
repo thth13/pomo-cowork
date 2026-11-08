@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import JsonLd from '@/components/blog/JsonLd'
 import SeoWorkspace from './SeoWorkspace'
 import WorkspaceInvite from './WorkspaceInvite'
@@ -109,7 +110,7 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
       </section>
       <section className="seo-advantage" aria-labelledby="advantage-heading">
         <div><p className="seo-eyebrow">The Pomo Cowork difference</p><h2 id="advantage-heading">{page.advantageHeading}</h2></div>
-        <div><p>{page.advantage}</p><Link className="seo-text-link" href="/">Explore the full workspace <span aria-hidden="true">↗</span></Link>{page.social && <Link className="seo-text-link" href="/pricing">See room and Pro options</Link>}</div>
+        <div><p>{page.advantage}</p><HomeLink className="seo-text-link">Explore the full workspace <span aria-hidden="true">↗</span></HomeLink>{page.social && <Link className="seo-text-link" href="/pricing">See room and Pro options</Link>}</div>
       </section>
       </>}
       <section id="faq" className="seo-section seo-faq" aria-labelledby="faq-heading">
@@ -128,7 +129,7 @@ export default function SeoLandingPage({ slug }: { slug: SeoSlug }) {
       {!page.minimalGuide && <section className="seo-final" aria-labelledby="final-heading">
         <h2 id="final-heading">{page.finalHeading}</h2>
         <p>{page.finalCopy}</p>
-        {page.compactWorkspace ? <Link className="seo-button" href="/">Open workspace <span aria-hidden="true">↗</span></Link> : <a className="seo-button" href="#focus-timer">{page.cta} <span aria-hidden="true">↑</span></a>}
+        {page.compactWorkspace ? <HomeLink className="seo-button">Open workspace <span aria-hidden="true">↗</span></HomeLink> : <a className="seo-button" href="#focus-timer">{page.cta} <span aria-hidden="true">↑</span></a>}
       </section>}
     </main>
   )

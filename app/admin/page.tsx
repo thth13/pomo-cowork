@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { notFound } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { ArrowLeft, ArrowUpRight, Crown, LayoutDashboard, Link2, MessageSquare, MousePointer2, ShieldCheck, Users, MessageCircle, ListChecks, BarChart3 } from 'lucide-react'
 import AdminAllMetrics from '@/components/admin/AdminAllMetrics'
 import AdminUserCounts from '@/components/admin/AdminUserCounts'
@@ -82,12 +83,12 @@ export default function AdminPage() {
         <nav aria-label="Admin sections" className="admin-nav">
           {sections.map(({ id, label, icon: Icon }) => <a key={id} href={`#${id}`} aria-current={section === id ? 'page' : undefined}><Icon size={18} aria-hidden="true" /><span>{label}</span>{section === id && <span className="admin-nav-dot" />}</a>)}
         </nav>
-        <div className="admin-sidebar-bottom"><Link href="/"><ArrowLeft size={17} aria-hidden="true" />Back to workspace</Link></div>
+        <div className="admin-sidebar-bottom"><HomeLink><ArrowLeft size={17} aria-hidden="true" />Back to workspace</HomeLink></div>
       </aside>
       <div className="admin-workspace">
         <header className="admin-topbar"><div className="admin-breadcrumb">Workspace <span>/</span> <strong>{active.label}</strong></div><div className="admin-account"><span className="admin-avatar" aria-hidden="true">{(user?.username || user?.email || 'A').slice(0, 1).toUpperCase()}</span><span>{user?.username || 'Admin'}<small>Administrator</small></span></div></header>
         <main className="admin-content" id="admin-content" tabIndex={-1}>
-          <div className="admin-page-heading"><div><p className="admin-eyebrow">ADMIN CONSOLE</p><h1>{active.label}</h1>{active.description && <p>{active.description}</p>}</div><Link href="/" className="admin-site-link">Open website<ArrowUpRight size={16} aria-hidden="true" /></Link></div>
+          <div className="admin-page-heading"><div><p className="admin-eyebrow">ADMIN CONSOLE</p><h1>{active.label}</h1>{active.description && <p>{active.description}</p>}</div><HomeLink className="admin-site-link">Open website<ArrowUpRight size={16} aria-hidden="true" /></HomeLink></div>
           {isLoading ? <div className="admin-loading" role="status">Loading account…</div> : <>
             {section === 'updates' && <AdminProductUpdates />}
             {section === 'overview' && <AdminOverview />}

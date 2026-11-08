@@ -1,5 +1,7 @@
 'use client'
 
+import { currentHomeHref } from '@/lib/homeNavigation'
+
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -69,7 +71,7 @@ export function FocusProjectButton({
   return <>
     <button type="button" className="journal-button" disabled={Boolean(session)} onClick={() => {
       select(userId, projectId, name)
-      router.push('/')
+      router.push(currentHomeHref())
     }}>
       {t('Focus on this project', 'Enfocarme en este proyecto')}
     </button>

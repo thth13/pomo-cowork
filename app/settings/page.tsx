@@ -1,5 +1,7 @@
 'use client'
 
+import { currentHomeHref } from '@/lib/homeNavigation'
+
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { 
@@ -349,7 +351,7 @@ export default function SettingsPage() {
         setAvatarRemoved(false)
         
         // Мгновенный редирект на страницу профиля
-        router.push('/')
+        router.push(currentHomeHref())
       } else {
         const error = await response.json()
         setSaveMessage(error.error || 'Failed to save settings')

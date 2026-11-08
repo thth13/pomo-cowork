@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { usePathname } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
@@ -21,10 +22,10 @@ export default function PersonalNavigation() {
 
   return (
     <nav className="personal-navigation" aria-label={language === 'es' ? 'Navegación personal' : 'Personal navigation'}>
-      <Link href="/" className="personal-navigation-timer">
+      <HomeLink className="personal-navigation-timer">
         <ArrowLeft size={15} aria-hidden="true" />
         {language === 'es' ? 'Volver al temporizador' : 'Back to timer'}
-      </Link>
+      </HomeLink>
       {destinations.map(({ href, label, matches }) => {
         const active = matches(pathname)
         return (

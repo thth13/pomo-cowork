@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { ArrowUpRight, LockKeyhole, RefreshCw, Sprout } from 'lucide-react'
 import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
@@ -61,7 +62,7 @@ export default function StatisticsDashboard() {
     {loading ? <StatisticsSkeleton />
       : !signedIn || expired ? <div className="insight-state"><Sprout size={42} strokeWidth={1.3} aria-hidden="true" /><h2>{expired ? copy.expired : copy.signInTitle}</h2><p>{copy.signInBody}</p><button type="button" className="insight-button insight-button-primary" onClick={() => setShowAuth(true)}>{copy.signIn}<ArrowUpRight size={16} aria-hidden="true" /></button></div>
       : error && !data ? <div className="insight-state" role="alert"><h2>{copy.error}</h2><p>{copy.errorBody}</p><button type="button" className="insight-button" onClick={retry}>{copy.retry}<RefreshCw size={16} aria-hidden="true" /></button></div>
-      : data && details && !data.summary.totalSessions ? <div className="insight-state insight-empty"><Sprout size={52} strokeWidth={1.2} aria-hidden="true" /><h2>{copy.empty}</h2><p>{copy.emptyBody}</p><Link href="/" className="insight-button insight-button-primary">{copy.start}<ArrowUpRight size={16} aria-hidden="true" /></Link></div>
+      : data && details && !data.summary.totalSessions ? <div className="insight-state insight-empty"><Sprout size={52} strokeWidth={1.2} aria-hidden="true" /><h2>{copy.empty}</h2><p>{copy.emptyBody}</p><HomeLink className="insight-button insight-button-primary">{copy.start}<ArrowUpRight size={16} aria-hidden="true" /></HomeLink></div>
       : data ? <>
         {error && <div className="insight-refresh-error" role="status">{copy.refreshingError}<button type="button" className="insight-text-link" onClick={retry}>{copy.retry}</button></div>}
         <FocusHero data={data} />

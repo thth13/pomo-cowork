@@ -26,7 +26,7 @@ import Habits from '@/components/Habits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
 import { getRank } from '@/lib/ranks'
-import { HOME_TITLE } from '@/lib/homeSeo'
+import { HOME_TITLE, ES_HOME_TITLE } from '@/lib/homeSeo'
 import FocusSounds from '@/components/FocusSounds'
 import { useAmbientSounds } from '@/hooks/useAmbientSounds'
 import { ambientSoundsCopy } from '@/lib/i18n/ambientSounds'
@@ -307,7 +307,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
             <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
               {mode === 'daily-flow'
                 ? <DailyFlow onExit={() => setMode('timer')} onSessionComplete={handleSessionComplete} />
-                : <PomodoroTimer showRoomSwitch={false} idleTitle={HOME_TITLE} onSessionComplete={handleSessionComplete} />}
+                : <PomodoroTimer showRoomSwitch={false} idleTitle={language === 'es' ? ES_HOME_TITLE : HOME_TITLE} onSessionComplete={handleSessionComplete} />}
             </section>
             <aside id="workspace-working" className="working-sidebar" data-collapsed={workingCollapsed} aria-label={t.activeSessions.title}>
               <RoomSwitch />

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import AuthModal from '@/components/AuthModal'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -24,11 +24,11 @@ export default function WorkspaceInvite() {
         </div>
         <div className="seo-workspace-invite-actions">
           {signedIn ? (
-            <Link className="seo-button" href="/">Open workspace <span aria-hidden="true">↗</span></Link>
+            <HomeLink className="seo-button">Open workspace <span aria-hidden="true">↗</span></HomeLink>
           ) : (
             <>
               <button className="seo-button" type="button" disabled={!mounted || isLoading} onClick={() => setAuthOpen(true)}>Create an account</button>
-              <Link className="seo-text-link" href="/">Explore workspace <span aria-hidden="true">↗</span></Link>
+              <HomeLink className="seo-text-link">Explore workspace <span aria-hidden="true">↗</span></HomeLink>
             </>
           )}
         </div>

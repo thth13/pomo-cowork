@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
 import { Plus, Timer } from 'lucide-react'
@@ -32,7 +33,7 @@ export default function BlogHeader() {
         {links.map(link => <Link key={link.href} href={link.href} aria-current={link.active ? 'page' : undefined}>{link.label}</Link>)}
       </nav>
       <div className="blog-header-actions">
-        <Link href="/" className="blog-header-timer" aria-label={t('Open timer', 'Abrir temporizador')} title={t('Open timer', 'Abrir temporizador')}><Timer size={17} aria-hidden="true" /><span>{t('Timer', 'Temporizador')}</span></Link>
+        <HomeLink className="blog-header-timer" aria-label={t('Open timer', 'Abrir temporizador')} title={t('Open timer', 'Abrir temporizador')}><Timer size={17} aria-hidden="true" /><span>{t('Timer', 'Temporizador')}</span></HomeLink>
         <ThemeToggle variant="menu" />
         <Link href="/projects/public/new" className="blog-header-publish" aria-label={t('Share project', 'Compartir proyecto')} title={t('Share project', 'Compartir proyecto')}><Plus size={16} aria-hidden="true" /><span>{t('Share project', 'Compartir proyecto')}</span></Link>
         {signedIn ? <Link href={`${userProfileHref(user)}?view=blogs`} className="blog-header-account" title={user.username} aria-label={t('Open my profile', 'Abrir mi perfil')}>

@@ -1,5 +1,7 @@
 'use client'
 
+import { currentHomeHref } from '@/lib/homeNavigation'
+
 import { userProfileHref } from '@/lib/userProfile'
 import { useCallback, useEffect, useMemo, useRef, useState, useId, type ReactNode } from 'react'
 import Link from 'next/link'
@@ -310,7 +312,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
     logout()
     setIsMenuOpen(false)
     setIsMobileMenuOpen(false)
-    router.push('/')
+    router.push(currentHomeHref())
   }
 
   const handleNotificationClick = async (notification: NotificationItem) => {
@@ -454,7 +456,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
           </div>
         )}
         {!compact && <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <Link prefetch={false} href="/" className="flex items-center space-x-2 md:space-x-3">
+          <Link prefetch={false} href={language === 'es' ? '/es' : '/'} className="flex items-center space-x-2 md:space-x-3">
             <div className="w-10 h-10 bg-rose-100 dark:bg-rose-500/20 rounded-xl flex items-center justify-center">
               <PixelSprout className="w-10 h-10" />
             </div>
@@ -466,9 +468,9 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-2">
             <Link prefetch={false}
-              href="/" 
+              href={language === 'es' ? '/es' : '/'}
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                pathname === '/' 
+                (pathname === '/' || pathname === '/es')
                   ? 'bg-rose-600 text-white'
                   : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'
               }`}
@@ -744,7 +746,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
 
             <nav className="workspace-menu-links" aria-label={gardenCopy[language].menu}>
               {[
-                { href: '/', label: t.nav.timer, icon: Timer, active: pathname === '/' },
+                { href: language === 'es' ? '/es' : '/', label: t.nav.timer, icon: Timer, active: (pathname === '/' || pathname === '/es') },
                 ...(isAuthenticated && user ? [{ href: '/projects', label: language === 'es' ? 'Proyectos' : 'Projects', icon: BookOpen, active: pathname.startsWith('/projects') && !pathname.startsWith('/projects/public') }] : []),
                 { href: '/projects/public', label: 'Blogs', icon: Sprout, active: pathname.startsWith('/projects/public') },
                 { href: currentRoomId ? `/rooms/${currentRoomId}` : '/rooms', label: t.nav.rooms, icon: Users, active: pathname.startsWith('/rooms') },

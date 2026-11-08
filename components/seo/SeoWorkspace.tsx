@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import HomeLink from '@/components/HomeLink'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import ActiveSessions from '@/components/ActiveSessions'
 import ProjectList from '@/components/ProjectList'
@@ -82,7 +83,7 @@ export default function SeoWorkspace({ title, defaults, timerNote, minimalGuide 
         </div>
         <div className="seo-social-links">
           <Link className="seo-text-link" href="/rooms">Explore study rooms <span aria-hidden="true">↗</span></Link>
-          {!compactWorkspace && <Link className="seo-text-link" href="/">Open the shared workspace <span aria-hidden="true">↗</span></Link>}
+          {!compactWorkspace && <HomeLink className="seo-text-link">Open the shared workspace <span aria-hidden="true">↗</span></HomeLink>}
         </div>
       </aside>}
     </div>

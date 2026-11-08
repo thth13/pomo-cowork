@@ -7,6 +7,7 @@ import {
   translations,
   type LanguageCode,
 } from '@/lib/i18n/translations'
+import { usePathname, useRouter } from 'next/navigation'
 import DomTranslationBridge from '@/components/DomTranslationBridge'
 
 type DeepString<T> = {
@@ -31,27 +32,34 @@ function isLanguageCode(value: string | null): value is LanguageCode {
 }
 
 export function I18nProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<LanguageCode>(defaultLanguage)
+  const pathname = usePathname()
+  const router = useRouter()
+  const routeLanguage = pathname === '/es' || pathname.startsWith('/es/') ? 'es' : pathname === '/' ? 'en' : null
+  const [preferredLanguage, setLanguageState] = useState<LanguageCode>(defaultLanguage)
+  const language: LanguageCode = routeLanguage ?? preferredLanguage
 
   useEffect(() => {
-    const storedLanguage = localStorage.getItem(storageKey)
-    if (isLanguageCode(storedLanguage)) {
-      setLanguageState(storedLanguage)
-      document.documentElement.lang = storedLanguage
+    if (routeLanguage) {
+      setLanguageState(routeLanguage)
+      try { localStorage.setItem(storageKey, routeLanguage) } catch { /* Use the URL when storage is unavailable. */ }
       return
     }
-
+    let storedLanguage: string | null = null
+    try { storedLanguage = localStorage.getItem(storageKey) } catch { /* Fall back to the browser language. */ }
     const browserLanguage = navigator.language.split('-')[0]
-    if (isLanguageCode(browserLanguage)) {
-      setLanguageState(browserLanguage)
-      document.documentElement.lang = browserLanguage
-    }
-  }, [])
+    setLanguageState(isLanguageCode(storedLanguage) ? storedLanguage : isLanguageCode(browserLanguage) ? browserLanguage : defaultLanguage)
+  }, [routeLanguage])
+
+  useEffect(() => {
+    document.documentElement.lang = language
+  }, [language, pathname])
 
   const setLanguage = (nextLanguage: LanguageCode) => {
     setLanguageState(nextLanguage)
-    localStorage.setItem(storageKey, nextLanguage)
-    document.documentElement.lang = nextLanguage
+    try { localStorage.setItem(storageKey, nextLanguage) } catch { /* Keep the selection in memory. */ }
+    if (routeLanguage && nextLanguage !== routeLanguage) {
+      router.push(`${nextLanguage === 'es' ? '/es' : '/'}${window.location.search}${window.location.hash}`, { scroll: false })
+    }
   }
 
   const value = useMemo<I18nContextValue>(
