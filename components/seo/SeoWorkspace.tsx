@@ -16,9 +16,9 @@ import FocusSounds from '@/components/FocusSounds'
 import { useAmbientSounds } from '@/hooks/useAmbientSounds'
 import type { SeoPage } from '@/lib/seoPages'
 
-type Props = Pick<SeoPage, 'title' | 'defaults' | 'timerNote' | 'compactWorkspace' | 'workspaceTasks' | 'social' | 'socialHeading' | 'socialCopy' | 'appearance' | 'experience'>
+type Props = Pick<SeoPage, 'title' | 'defaults' | 'timerNote' | 'minimalGuide' | 'compactWorkspace' | 'workspaceTasks' | 'social' | 'socialHeading' | 'socialCopy' | 'appearance' | 'experience'>
 
-export default function SeoWorkspace({ title, defaults, timerNote, compactWorkspace = false, workspaceTasks = false, social, socialHeading, socialCopy, appearance, experience }: Props) {
+export default function SeoWorkspace({ title, defaults, timerNote, minimalGuide = false, compactWorkspace = false, workspaceTasks = false, social, socialHeading, socialCopy, appearance, experience }: Props) {
   const [mounted, setMounted] = useState(false)
   const isLoading = useAuthStore((state) => state.isLoading)
   const isConnected = useConnectionStore((state) => state.isConnected)
@@ -35,6 +35,7 @@ export default function SeoWorkspace({ title, defaults, timerNote, compactWorksp
       <span>{language === 'es' ? 'Preparando el temporizador…' : 'Getting your timer ready…'}</span>
     </div>
   ) : <PomodoroTimer idleTitle={title} initialSettings={defaults}
+    showTaskPicker={!minimalGuide} showRoomSwitch={!minimalGuide}
     presentation={experience === 'minimal' || experience === 'fullscreen' || experience === 'aesthetic' ? 'minimal' : undefined}
     focusPresets={experience === 'deep-work' || experience === 'coding'} showProject={experience === 'coding'}
     resetLabel={language === 'es' ? 'Reiniciar' : 'Reset'} />
@@ -51,7 +52,7 @@ export default function SeoWorkspace({ title, defaults, timerNote, compactWorksp
         <div className="seo-timer-live" lang={language}>
           {quiet ? <FocusStage>
             {content}
-            {experience === 'minimal' && <p className="seo-online-count">
+            {experience === 'minimal' && !compactWorkspace && <p className="seo-online-count">
               {!mounted ? '—' : isConnected ? `${totalOnlineCount} ${language === 'es' ? 'en línea' : 'online'}` : (language === 'es' ? 'Reconectando…' : 'Reconnecting…')}
             </p>}
             {sounds && <SeoSounds />}

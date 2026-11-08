@@ -54,6 +54,7 @@ export interface PomodoroTimerProps {
   focusPresets?: boolean
   showRoomSwitch?: boolean
   showProject?: boolean
+  showTaskPicker?: boolean
 }
 
 interface TimerSettingsForm {
@@ -189,7 +190,7 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
 }
 
 
-export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false, showRoomSwitch = true, dailyFlow = false }: PomodoroTimerProps & { target?: HTMLElement; returnHref: string }) {
+export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false, showTaskPicker = true, showRoomSwitch = true, dailyFlow = false }: PomodoroTimerProps & { target?: HTMLElement; returnHref: string }) {
   const flowTaskTitle = useDailyFlowStore(state => {
     const taskId = state.data.queue[0]
     return dailyFlow ? state.data.tasks.find(task => task.id === taskId)?.title : undefined
@@ -1514,7 +1515,7 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
         onSessionTypeChange={handleSessionTypeChange}
       >
         {showProject && <ProjectPicker />}
-        {!dailyFlow && <TaskPicker
+        {!dailyFlow && showTaskPicker && <TaskPicker
           sessionType={activeSessionType}
           isDisabled={isTaskPickerDisabled}
           isOpen={isTaskMenuOpen}

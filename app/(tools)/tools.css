@@ -160,6 +160,32 @@
 .seo-sounds { max-width: 440px; margin: 24px auto 0; border-top: 1px solid var(--pixel-line); text-align: left; }
 .seo-sounds > summary { padding: 14px 0; font-weight: 600; font-size: 14px; }
 .seo-experience-minimal .pixel-timer-track, .seo-experience-fullscreen .pixel-timer-track { display: none; }
+
+/* A quiet, timer-first layout for short explanatory search pages. */
+.seo-content-minimal-guide { max-width: 800px; }
+.seo-shell.garden-page:has(.seo-content-minimal-guide) { background-image: none; }
+/* Override the global window material only for this unboxed timer surface. */
+html body .seo-shell .seo-content-minimal-guide :is(.seo-workspace, .seo-timer) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+.seo-content-minimal-guide .seo-hero { text-align: center; margin-inline: auto; padding-block: 40px 8px; }
+.seo-content-minimal-guide .seo-hero h1 { font-size: clamp(26px, 4vw, 36px); }
+.seo-content-minimal-guide .seo-intro { margin-inline: auto; font-size: 15px; }
+.seo-content-minimal-guide .seo-workspace { border: 0; background: transparent; }
+.seo-content-minimal-guide .seo-timer { padding: 12px 0 40px; }
+.seo-content-minimal-guide .seo-timer-live { min-height: 380px; }
+.seo-content-minimal-guide .seo-focus-stage:not(.is-expanded):not(:fullscreen) { padding-inline: 0; }
+.seo-content-minimal-guide .seo-stage-toolbar .seo-button { background: transparent; color: var(--pixel-muted); border-color: transparent; font-size: 12px; padding-inline: 12px; }
+.seo-content-minimal-guide .seo-stage-toolbar .seo-button:hover { color: var(--pixel-ink); background: var(--pixel-screen); }
+.seo-content-minimal-guide .seo-guide { display: block; max-width: 640px; margin-inline: auto; padding-block: 32px; border-top: 1px solid var(--pixel-line); }
+.seo-content-minimal-guide .seo-guide h2,
+.seo-content-minimal-guide .seo-section > h2 { font-size: 22px; }
+.seo-content-minimal-guide .seo-section { max-width: 640px; margin-inline: auto; padding-block: 28px; }
 .seo-experience-coding .journal-picker { width: min(100%, 420px); margin: 12px auto; }
 @media (max-width: 500px) {
   .seo-workspace-intent .seo-timer { padding: 12px; }

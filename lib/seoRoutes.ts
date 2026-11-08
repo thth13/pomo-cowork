@@ -2,6 +2,7 @@ import { plannerSlugs } from './plannerPages'
 
 export const seoSlugs = [
   'pomodoro-timer',
+  'pomodoro-effect',
   'study-timer',
   'focus-timer',
   'aesthetic-timer',
@@ -80,6 +81,7 @@ export type SeoSlug = typeof seoSlugs[number]
 
 export const seoToolLabels: Record<SeoSlug, string> = {
   'pomodoro-timer': 'Pomodoro Timer',
+  'pomodoro-effect': 'Pomodoro Effect',
   'study-timer': 'Study Timer',
   'focus-timer': 'Focus Timer',
   'aesthetic-timer': 'Aesthetic Timer',

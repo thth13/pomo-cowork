@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { BACKGROUNDS, PLAY_BACKGROUND_EVENT } from '@/lib/appearance'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
@@ -146,9 +147,10 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
 }
 
 export default function WorkspaceBackground() {
+  const pathname = usePathname()
   const backgroundId = useAppearanceStore(state => state.backgroundId)
   const revision = useAppearanceStore(state => state.mediaRevision)
   const scene = BACKGROUNDS.find(background => background.id === backgroundId)
-  if (!scene || scene.kind === 'default') return null
+  if (pathname.replace(/\/$/, '') === '/pomodoro-effect' || !scene || scene.kind === 'default') return null
   return <BackgroundMedia key={`${scene.id}:${revision}`} scene={scene} />
 }

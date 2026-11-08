@@ -31,7 +31,7 @@ function KofiWidgetContent() {
     setMounted(true)
   }, [])
 
-  if (!mounted || isLoading || isProjectBlogRoute(pathname) || isBlogProfile) return null
+  if (!mounted || isLoading || pathname.replace(/\/$/, '') === '/pomodoro-effect' || isProjectBlogRoute(pathname) || isBlogProfile) return null
 
   return (
     <>

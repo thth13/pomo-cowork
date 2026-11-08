@@ -633,6 +633,14 @@ restoration of the user's own timer remain separate database-backed workflows.
 
 ## Search landing pages
 
+`/pomodoro-effect` uses the minimal-guide variant: a short centered heading,
+an unboxed centered minimal PomodoroTimer, two explanatory paragraphs, three
+FAQ disclosures and three related links. Promotional sections, live presence,
+registration invitation and repeated CTAs are omitted. The existing timer,
+metadata and FAQ schema remain canonical; tools.css owns scoped geometry.
+This route uses a flat theme background without scenery, grid, gradients or timer
+card material. Task/room pickers and the Ko-fi support widget are omitted.
+
 The routes in `lib/seoRoutes.ts` use the document-scrolling `app/(tools)` shell.
 The English copy in `lib/seoPages.ts`, `lib/seoAdditionalPages.ts`, and `lib/seoExamPages.ts`
 is rendered on the server and excluded from DOM translation. Inter owns the readable headings and prose; the pixel face remains

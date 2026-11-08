@@ -23,6 +23,7 @@ export interface SeoPage {
   experience?: 'aesthetic' | 'lofi' | 'fullscreen' | 'clock' | 'minimal' | 'deep-work' | 'exam' | 'reading' | 'coding' | 'classroom'
   defaults: { workDuration: number; shortBreak: number; longBreak: number; longBreakAfter: number }
   timerNote: string
+  minimalGuide?: boolean
   compactWorkspace?: boolean
   workspaceTasks?: boolean
   socialHeading: string
@@ -38,6 +39,7 @@ export interface SeoPage {
   advantage: string
   faq: { question: string; answer: string }[]
   resources?: { label: string; url: string }[]
+  resourcesHeading?: string
   related: SeoSlug[]
   finalHeading: string
   finalCopy: string
@@ -46,6 +48,43 @@ export interface SeoPage {
 // Keywords are editorial targets, not a meta-keywords tag. Each route has its
 // own intent, examples and answers; the shared component only owns presentation.
 export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
+  'pomodoro-effect': {
+    keyword: 'Pomodoro effect',
+    secondaryKeywords: ['what is the pomodoro effect', 'why pomodoro works', 'pomodoro technique benefits'],
+    title: 'Pomodoro Effect: What It Is & How to Try It | Pomo Cowork',
+    description: 'Discover the Pomodoro effect: one task, focused intervals, and planned breaks. Try a free 25-minute timer and find a rhythm that works for you.',
+    heading: 'Pomodoro effect',
+    intro: 'One task. 25 minutes of focus. A little room to breathe.',
+    cta: 'Start a session',
+    minimalGuide: true,
+    compactWorkspace: true,
+    experience: 'minimal',
+    social: false,
+    defaults: { workDuration: 25, shortBreak: 5, longBreak: 15, longBreakAfter: 4 },
+    timerNote: '25 min focus · 5 min break · Longer break after 4 rounds',
+    socialHeading: '',
+    socialCopy: '',
+    explanationHeading: 'What is the Pomodoro effect?',
+    explanation: [
+      'The Pomodoro effect is the sense of focus and progress people seek from working in short intervals with planned breaks. Choosing one small task and a clear stopping point can make getting started feel more manageable.',
+      'Pick a task, focus for 25 minutes, then take five minutes off. After four rounds, take a longer break. Adjust the rhythm to your work: the timer provides structure, not a guarantee of better results.',
+    ],
+    stepsHeading: '',
+    steps: [],
+    benefits: [],
+    audienceHeading: '',
+    audience: [],
+    advantageHeading: '',
+    advantage: '',
+    faq: [
+      { question: 'Do I have to use 25 minutes?', answer: 'No. It is a starting point, not a universal attention limit. Adjust the focus and break durations in timer settings to suit your task.' },
+      { question: 'What should I do during a break?', answer: 'Step away, stretch, or get water. Leave a quick note about your next action so it is easy to return.' },
+      { question: 'How do I know if it helps?', answer: 'Look at what you finished or learned, not just how many timers you completed. Try a longer block if frequent breaks interrupt your flow.' },
+    ],
+    related: ['25-5-pomodoro', '50-10-pomodoro', 'deep-work-timer'],
+    finalHeading: '',
+    finalCopy: '',
+  },
   ...practiceSeoPages,
   ...additionalSeoPages,
   ...examSeoPages,
@@ -142,7 +181,7 @@ export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
       { question: 'Do I have to stop at exactly 25 minutes?', answer: 'The interval is a boundary you choose, not a measure of how well you work. If your task consistently needs longer uninterrupted blocks, adjust the duration before starting. Leave a short note when the timer ends so your next session can begin without reconstructing what you were doing.' },
       { question: 'Can I use a Pomodoro timer with other people?', answer: 'Yes. The live list shows people who have active sessions in the current workspace. You can work alongside them on an unrelated task, or use rooms to meet a particular group. For a coordinated cycle with friends, agree on the duration and start time together.' },
     ],
-    related: ['25-minute-timer', 'online-pomodoro-timer', 'focus-timer', 'study-timer', 'pomodoro-with-friends'],
+    related: ['pomodoro-effect', '25-minute-timer', 'online-pomodoro-timer', 'focus-timer', 'study-timer', 'pomodoro-with-friends'],
     finalHeading: 'One task. One Pomodoro.',
     finalCopy: 'Choose your next small piece of work and give it a focused interval.',
   },
