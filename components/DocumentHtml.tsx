@@ -1,5 +1,6 @@
 'use client'
 
+import { isJapaneseSeoPath } from '@/lib/japaneseSeoRoutes'
 import { usePathname } from 'next/navigation'
 import type { ReactNode } from 'react'
 
@@ -7,5 +8,5 @@ import type { ReactNode } from 'react'
 // dynamic through request headers. Server-rendered children stay server components.
 export default function DocumentHtml({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  return <html lang={pathname === '/es' || pathname.startsWith('/es/') ? 'es' : 'en'} suppressHydrationWarning>{children}</html>
+  return <html lang={isJapaneseSeoPath(pathname) ? 'ja' : pathname === '/es' || pathname.startsWith('/es/') ? 'es' : 'en'} suppressHydrationWarning>{children}</html>
 }

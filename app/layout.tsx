@@ -1,5 +1,6 @@
 import 'react-kofi/dist/kofi.css'
 import './globals.css'
+import StandalonePageBoundary from '@/components/StandalonePageBoundary'
 import DocumentHtml from '@/components/DocumentHtml'
 import './appearance.css'
 import './feedback.css'
@@ -114,30 +115,36 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.className} ${orbitron.variable} ${spaceGrotesk.variable} ${cormorant.variable} ${bebas.variable} ${terminal.variable}`}>
-        <ThemeProvider>
-          <I18nProvider>
-            <AppearanceProvider>
-              <AuthProvider>
-                <GtmClient />
-                <RankUpToast />
-                <AchievementNotifications />
-                <PremiumGrantModal />
-                <ProductUpdateProvider />
-              <JournalToast />
-                <PersistentTimerProvider>
-                  <WrappedProvider>{children}</WrappedProvider>
-                </PersistentTimerProvider>
-                <WalkingCompanion />
-                <KofiWidget />
-                <div className="hidden sm:block">
-                  <FeedbackWidget />
-                </div>
-                <ConnectionDebug />
-                <OfflineToast />
-              </AuthProvider>
-            </AppearanceProvider>
-          </I18nProvider>
-        </ThemeProvider>
+        <GtmClient />
+        <StandalonePageBoundary
+          application={
+            <ThemeProvider>
+              <I18nProvider>
+                <AppearanceProvider>
+                  <AuthProvider>
+                    <RankUpToast />
+                    <AchievementNotifications />
+                    <PremiumGrantModal />
+                    <ProductUpdateProvider />
+                  <JournalToast />
+                    <PersistentTimerProvider>
+                      <WrappedProvider>{children}</WrappedProvider>
+                    </PersistentTimerProvider>
+                    <WalkingCompanion />
+                    <KofiWidget />
+                    <div className="hidden sm:block">
+                      <FeedbackWidget />
+                    </div>
+                    <ConnectionDebug />
+                    <OfflineToast />
+                  </AuthProvider>
+                </AppearanceProvider>
+              </I18nProvider>
+            </ThemeProvider>
+          }
+        >
+          {children}
+        </StandalonePageBoundary>
       </body>
     </DocumentHtml>
   )

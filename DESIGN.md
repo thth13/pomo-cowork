@@ -1956,3 +1956,37 @@ Spanish tools shell, tools.css and theme tokens own presentation.
 `localizedSeoPaths` owns both translated tool routes, reciprocal hreflang,
 sitemap entries and language-switch destinations. The Spanish homepage links
 to the group study page; WorkspaceInvite and shared section labels are localized.
+
+## Standalone Japanese acquisition tools
+
+The user requested three independent Japanese SEO tools, not a Japanese application
+locale: `/ja/pomodoro-timer`, `/ja/focus-timer`, `/ja/25-minute-timer`.
+Audience: Japanese-reading students and individual workers, on desktop and mobile,
+globally including Japan. Domain is low-risk study/productivity; no Japan-specific
+identity, commerce, legal, billing or regulated workflow is introduced. Evidence is
+the explicit request and the existing standalone countdown contract.
+
+`japaneseSeoRoutes.ts` owns discovery and sitemap membership; `japaneseSeoPages.ts`
+owns distinct Japanese intent content, FAQs and metadata. Each route has an exact
+Japanese h1, self-canonical, Japanese Open Graph metadata and JSON-LD. These pages
+are independently authored, so they are not registered as translations of the app.
+
+`JapaneseTimer` reuses `useLocalStudyTimer` and `useWakeLock`. Pomodoro supports
+manual focus/break transitions, 25/5 intervals and 15-minute breaks after four
+completed focus sessions. Focus offers 15/25/45/50-minute presets. The 25-minute
+page is a fixed single countdown. All support pause/resume/reset, visible completion,
+no audio, no history, and reset on reload or navigation away. No user text input,
+IME shortcuts, dates, payments, account actions or locale selection is introduced.
+
+`StandalonePageBoundary` renders Japanese route content outside the account,
+translation, persistent coworking timer and widget providers. Analytics stays at
+root level. DocumentHtml sets `lang=ja` initially. Existing English/Spanish language
+preferences are not modified. The app's locale union and switcher remain unchanged.
+
+Visual ownership: existing pixel page/paper/ink/line tokens; tools.css shell geometry;
+`japanese-tools.css` provides Japanese-capable system fonts, 16px prose with 1.9 line
+height, normal tracking, strict line breaks, responsive large tabular timer numerals,
+44px controls and keyboard focus. No new palette or cultural decorative motif.
+
+Verification is static per the user's instruction. Native Japanese editorial review
+and rendered browser/mobile/zoom checks have not been performed.

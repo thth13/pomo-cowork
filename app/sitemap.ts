@@ -1,6 +1,7 @@
 import type { MetadataRoute } from 'next'
 import { getBlogPosts, postUrl, SITE_URL } from '@/lib/blog'
 import { journalSitemap } from '@/lib/journal/sitemap'
+import { japaneseSeoSlugs } from '@/lib/japaneseSeoRoutes'
 import { HOME_LANGUAGES } from '@/lib/homeSeo'
 import { localizedSeoPaths, seoSlugs } from '@/lib/seoRoutes'
 import { plannerSlugs } from '@/lib/plannerPages'
@@ -15,6 +16,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [posts, journalEntries] = await Promise.all([getBlogPosts(), journalSitemap(SITE_URL)])
   return [
     ...journalEntries,
+    ...japaneseSeoSlugs.map(slug => ({ url: `${SITE_URL}/ja/${slug}` })),
     ...['/', '/es'].map((path) => ({
       url: `${SITE_URL}${path === '/' ? '' : path}`,
       alternates: { languages: Object.fromEntries(Object.entries(HOME_LANGUAGES).map(([language, href]) => [language, `${SITE_URL}${href === '/' ? '' : href}`])) },
