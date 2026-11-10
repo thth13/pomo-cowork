@@ -1,6 +1,6 @@
 export const leaderboardCopy = {
   en: {
-    roomRanking: 'Room leaderboard', roomRankingHint: 'Top 10 · All time in this room',
+    roomRanking: 'Room leaderboard', roomRankingHint: 'Top 10 · Selected period in this room',
     backToTimer: 'Back to timer', leaders: 'Leading the way', community: 'Together this period',
     rank: 'Place', participant: 'Coworker', timeUnit: 'h:mm',
     previousPeriod: 'Previous period', nextPeriod: 'Next period', currentPeriod: 'Current period',
@@ -16,7 +16,7 @@ export const leaderboardCopy = {
     sessions: 'work sessions', viewProfile: 'View profile',
   },
   es: {
-    roomRanking: 'Clasificación de la sala', roomRankingHint: 'Top 10 · Todo el tiempo en esta sala',
+    roomRanking: 'Clasificación de la sala', roomRankingHint: 'Top 10 · Período seleccionado en esta sala',
     backToTimer: 'Volver al temporizador', leaders: 'A la cabeza', community: 'Juntos en este período',
     rank: 'Puesto', participant: 'Compañero', timeUnit: 'h:mm',
     previousPeriod: 'Período anterior', nextPeriod: 'Período siguiente', currentPeriod: 'Período actual',

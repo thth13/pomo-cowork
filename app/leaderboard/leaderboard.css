@@ -235,3 +235,7 @@
 .room-leaderboard .lb-podium { margin-bottom: 24px; }
 .room-leaderboard .lb-table-wrap { border: 1px solid var(--pixel-line); }
 .room-leaderboard a:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -2px; }
+
+.lb-controls button:disabled { cursor: not-allowed; opacity: .4; }
+.lb-controls button:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -2px; }
+.room-leaderboard .lb-toolbar { flex-wrap: wrap; }

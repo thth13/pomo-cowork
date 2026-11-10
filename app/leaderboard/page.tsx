@@ -4,20 +4,18 @@ import { userProfileHref } from '@/lib/userProfile'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import HomeLink from '@/components/HomeLink'
-import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
-import { DayPicker, type DateRange } from 'react-day-picker'
-import { es } from 'react-day-picker/locale'
+import { ArrowUpRight, ChevronLeft, ChevronRight, Clock3, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
+import LeaderboardDateFilter from '@/components/LeaderboardDateFilter'
+import type { LeaderboardPeriod } from '@/lib/leaderboardPeriod'
 import Navbar from '@/components/Navbar'
 import PersonalNavigation from '@/components/PersonalNavigation'
 import PersonalPageSkeleton from '@/components/PersonalPageSkeleton'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
 import { leaderboardCopy } from '@/lib/i18n/leaderboard'
-import 'react-day-picker/dist/style.css'
 import { Avatar, PremiumBadge, LeaderboardPodium, LeaderboardTable, formatLeaderboardTime, type LeaderboardUser } from '@/components/LeaderboardStandings'
 import './leaderboard.css'
 
-type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year' | 'custom'
 interface LeaderboardResponse {
   periodLabel: string
   leaderboard: LeaderboardUser[]
@@ -63,14 +61,11 @@ export default function LeaderboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
   const [retry, setRetry] = useState(0)
-  const [showCalendar, setShowCalendar] = useState(false)
-  const [draftRange, setDraftRange] = useState<DateRange>()
-  const calendarTrigger = useRef<HTMLButtonElement>(null)
   const searchInput = useRef<HTMLInputElement>(null)
   const rankingHeading = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
-    const restore = () => { setView(readView()); setReady(true); setShowCalendar(false) }
+    const restore = () => { setView(readView()); setReady(true) }
     restore()
     window.addEventListener('popstate', restore)
     return () => window.removeEventListener('popstate', restore)
@@ -124,13 +119,8 @@ export default function LeaderboardPage() {
   const myRank = data?.currentUser?.totalMinutes ? data.currentUser : null
   const maxMinutes = leaderboard[0]?.totalMinutes || 1
   const progress = myRank ? Math.min(100, Math.round(myRank.totalMinutes / maxMinutes * 100)) : 0
-  const periods = [{ value: 'day', label: t.leaderboard.today }, { value: 'week', label: t.leaderboard.week }, { value: 'month', label: t.leaderboard.month }, { value: 'year', label: t.leaderboard.year }] as const
-  const closeCalendar = () => { setShowCalendar(false); calendarTrigger.current?.focus() }
   const clearSearch = () => { updateView({ search: '', page: 1 }); searchInput.current?.focus() }
   const changePage = (next: number) => { updateView({ page: next }); rankingHeading.current?.focus() }
-  const draftLabel = draftRange?.from
-    ? `${draftRange.from.toLocaleDateString(locale)} — ${draftRange.to ? draftRange.to.toLocaleDateString(locale) : copy.rangeEnd}`
-    : copy.rangeEmpty
 
   return (
     <>
@@ -138,41 +128,7 @@ export default function LeaderboardPage() {
         <Navbar compact />
         <main className="lb-layout personal-page-frame">
           <PersonalNavigation />
-          <section className="pixel-panel lb-controls" aria-label={t.leaderboard.customRange}>
-            <div className="lb-toolbar">
-              <div className="lb-periods" role="group" aria-label={copy.currentPeriod}>
-                {periods.map(period => <button key={period.value} type="button" aria-pressed={view.period === period.value} onClick={() => { updateView({ period: period.value, offset: 0, page: 1 }); setShowCalendar(false) }}>{period.label}</button>)}
-              </div>
-              <div className="lb-date-nav">
-                <button className="lb-icon-button" type="button" aria-label={copy.previousPeriod} title={copy.previousPeriod} disabled={view.period === 'custom' || view.offset >= 1000} onClick={() => updateView({ offset: view.offset + 1, page: 1 })}><ChevronLeft size={18} /></button>
-                <button className="lb-date-trigger" ref={calendarTrigger} type="button" aria-expanded={showCalendar} aria-controls="leaderboard-calendar" onClick={() => {
-                  if (!showCalendar) setDraftRange(view.start && view.end ? { from: new Date(view.start), to: new Date(view.end) } : undefined)
-                  setShowCalendar(value => !value)
-                }}>
-                  <CalendarDays size={16} aria-hidden="true" />
-                  <span>{loading ? t.leaderboard.customRange : data?.periodLabel || t.leaderboard.customRange}</span>
-                </button>
-                <button className="lb-icon-button" type="button" aria-label={copy.nextPeriod} title={copy.nextPeriod} disabled={view.offset === 0 || view.period === 'custom'} onClick={() => updateView({ offset: Math.max(0, view.offset - 1), page: 1 })}><ChevronRight size={18} /></button>
-              </div>
-            </div>
-            {showCalendar && <div id="leaderboard-calendar" className="lb-calendar" onKeyDown={event => { if (event.key === 'Escape') { event.stopPropagation(); closeCalendar() } }}>
-              <div className="lb-calendar-copy">
-                <span className="lb-eyebrow"><CalendarDays size={16} aria-hidden="true" />{t.leaderboard.customRange}</span>
-                <h2>{t.leaderboard.customRange}</h2>
-                <p>{copy.rangeHint}</p>
-                <p className="lb-range-selection" aria-live="polite">{draftLabel}</p>
-                <div className="lb-calendar-actions">
-                  <button type="button" className="btn btn-primary" disabled={!draftRange?.from || !draftRange?.to} onClick={() => {
-                    if (!draftRange?.from || !draftRange?.to) return
-                    updateView({ period: 'custom', offset: 0, start: draftRange.from.toISOString(), end: draftRange.to.toISOString(), page: 1 })
-                    closeCalendar()
-                  }}>{t.leaderboard.apply}</button>
-                  <button type="button" className="lb-button" onClick={closeCalendar}>{t.leaderboard.cancel}</button>
-                </div>
-              </div>
-              <DayPicker mode="range" selected={draftRange} onSelect={setDraftRange} defaultMonth={draftRange?.from} locale={language === 'es' ? es : undefined} />
-            </div>}
-          </section>
+          <LeaderboardDateFilter view={view} onChange={patch => updateView({ ...patch, page: 1 })} periodLabel={data?.periodLabel} loading={loading} />
 
           <section className="lb-totals" aria-label={copy.community}>
             {[{ icon: Users, label: t.leaderboard.activeUsers, value: number(leaderboard.length), note: copy.community }, { icon: Clock3, label: t.leaderboard.focusTime, value: formatTime(data?.periodTotals.totalMinutes ?? 0), note: copy.timeUnit }, { icon: Flame, label: t.leaderboard.pomodoros, value: number(data?.periodTotals.totalPomodoros ?? 0), note: copy.sessions }].map(stat => <div className="lb-total" key={stat.label}>

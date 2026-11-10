@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 import { endOfDay, format, startOfDay, subDays } from 'date-fns'
+import { getPeriodWindow, isLeaderboardPeriod } from '@/lib/leaderboardPeriod'
 import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionStats'
 
 export const dynamic = 'force-dynamic'
@@ -40,6 +41,16 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
+    const searchParams = request.nextUrl.searchParams
+    const requestedPeriod = searchParams.get('period')
+    const period = isLeaderboardPeriod(requestedPeriod) ? requestedPeriod : null
+    const customStart = searchParams.get('startDate') || undefined
+    const customEnd = searchParams.get('endDate') || undefined
+    if (period === 'custom' && (!customStart || !customEnd || !Number.isFinite(Date.parse(customStart)) || !Number.isFinite(Date.parse(customEnd)) || Date.parse(customStart) > Date.parse(customEnd))) {
+      return NextResponse.json({ error: 'Invalid date range' }, { status: 400 })
+    }
+    const offset = Math.max(0, Math.min(1000, parseInt(searchParams.get('offset') || '0', 10) || 0))
+    const periodWindow = period ? getPeriodWindow(period, offset, searchParams.get('locale') === 'es' ? 'es-ES' : 'en-US', customStart, customEnd) : null
     const now = new Date()
 
     const focusSessions = await prisma.pomodoroSession.findMany({
@@ -111,7 +122,13 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       { id: string; username: string; avatarUrl: string | null; minutes: number; totalPomodoros: number; experience: number; isPro: boolean }
     >()
 
-    focusSessions.forEach((session) => {
+    const rankingSessions = periodWindow ? focusSessions.filter(session => {
+      const date = getSessionAttributionDate(session)
+      return date >= periodWindow.start && date < periodWindow.end
+    }) : focusSessions
+    const rankingMinutes = rankingSessions.reduce((sum, session) => sum + getEffectiveMinutes(session), 0)
+
+    rankingSessions.forEach((session) => {
       if (!session.user) return
       const existing = minutesByUser.get(session.user.id)
       const addMinutes = getEffectiveMinutes(session)
@@ -146,7 +163,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
         avatarUrl: u.avatarUrl ?? undefined,
         hours: Math.round((u.minutes / 60) * 10) / 10,
         contributionPercent:
-          totalFocusMinutes > 0 ? Math.round((u.minutes / totalFocusMinutes) * 1000) / 10 : 0,
+          rankingMinutes > 0 ? Math.round((u.minutes / rankingMinutes) * 1000) / 10 : 0,
       }))
 
     return NextResponse.json({
@@ -156,6 +173,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       avgDailyFocusMinutes,
       weeklyActivity,
       topUsers,
+      periodLabel: periodWindow?.label ?? null,
     })
   } catch (error) {
     console.error('Room stats error:', error)

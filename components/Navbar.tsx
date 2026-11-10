@@ -72,7 +72,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
   const { user, isAuthenticated, logout, token } = useAuthStore()
   const notificationsOwnerRef = useRef(token)
   notificationsOwnerRef.current = token
-  const { setCurrentRoom, currentRoomId } = useRoomStore()
+  const { setCurrentRoom } = useRoomStore()
   const { totalOnlineCount, isConnected, isChecking } = useConnectionStore()
   const { t, language } = useI18n()
   const pathname = usePathname()
@@ -481,7 +481,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               <BookOpen size={16} className="mr-2" aria-hidden="true" />{language === 'es' ? 'Proyectos' : 'Projects'}
             </Link>}
             <Link prefetch={false}
-              href={currentRoomId ? `/rooms/${currentRoomId}` : '/rooms'}
+              href="/rooms"
               className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 pathname.startsWith('/rooms') 
                   ? 'bg-rose-600 text-white'
@@ -749,7 +749,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 { href: language === 'es' ? '/es' : '/', label: t.nav.timer, icon: Timer, active: (pathname === '/' || pathname === '/es') },
                 ...(isAuthenticated && user ? [{ href: '/projects', label: language === 'es' ? 'Proyectos' : 'Projects', icon: BookOpen, active: pathname.startsWith('/projects') && !pathname.startsWith('/projects/public') }] : []),
                 { href: '/projects/public', label: 'Blogs', icon: Sprout, active: pathname.startsWith('/projects/public') },
-                { href: currentRoomId ? `/rooms/${currentRoomId}` : '/rooms', label: t.nav.rooms, icon: Users, active: pathname.startsWith('/rooms') },
+                { href: '/rooms', label: t.nav.rooms, icon: Users, active: pathname.startsWith('/rooms') },
                 { href: '/leaderboard', label: t.nav.leaderboard, icon: Trophy, active: pathname === '/leaderboard' },
                 { href: '/statistics', label: statisticsCopy[language].navigation, icon: BarChart3, active: pathname === '/statistics' },
                 { href: '/habits', label: habitsCopy[language].title, icon: ListChecks, active: pathname === '/habits' },

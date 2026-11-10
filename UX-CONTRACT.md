@@ -46,7 +46,7 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Study planner local drafts | lib/plannerStorage.ts, StudyPlanner | Per-mode browser-only draft/plan/checkmarks; validated restore; visible storage failure and retry; other-tab conflict pauses saving and offers explicit version choice. No account sync or automatic upload |
 | Study planner local timer | useLocalStudyTimer, StudyPlanner | Prepare session then Start focus; pause/resume/reset; complete countdown marks one session; manually prepare/start a break. Existing account timer is untouched. Leaving resets the local clock |
 | Study planner departure guard | UnsavedChangesGuard English copy/style variant, beforeunload | Existing native dialog owner intercepts navigation while a timer is prepared or persistence is unresolved; Stay here retains state. Browser unload warning is limited to those conditions |
-| Homepage room switch | RoomSwitch, useRoomStore, useTimerStore | Compact native button outside and above the Active Sessions panel when a current/last room exists; toggles Global/last room and preserves the existing running-session lock. Other routes retain the timer control |
+| Homepage room switch | RoomSwitch, useRoomStore, useTimerStore | Compact native button outside and above the Active Sessions panel; cycles Global → every owned/joined room from /api/rooms/mine → Global. SWR scopes data by token and refreshes on focus; loading disables the button, and failures offer retry through the same button. Preserves the running-session lock. Other routes retain the timer control |
 | Daily room challenge | RoomDailyChallenge, /api/rooms/[id]/challenge, sessionStats | Public/member read access follows room permissions; only the owner can save the name and 5–480-minute daily target. No challenge is assigned by default; the owner uses Set daily goal in the room header to create one. Unconfigured rooms hide the card; opening the dialog does not create a record. Current members and owner share a UTC day; finished/stopped focus sessions in this room count. Ten rows initially, Show more in batches of ten. SWR refreshes progress every 30 seconds, on focus, membership changes, saves and midnight. CommunityDialog’s daily-goal variant shares the Premium dialog shell; 25/50/100/150-minute shortcut buttons sit directly below the Daily target input, without a separate heading, and update that input’s draft. CommunityDialog owns editing, field errors focus invalid input, failed saves preserve drafts, duplicate submits are blocked, and the room status toast acknowledges confirmed saves |
 | Daily Flow | DailyFlow, useDailyFlowStore, lib/dailyFlow.ts | User Daily Flow request: project task selection with inline creation inside each expanded project; reorder/edit/reversible remove; current-task-only focus; explicit task completion independent of session completion; skip to queue end; existing timer stop on last completion; daily summary and Finish My Day; adding work reopens planning. History browses one local calendar day at a time and leaves the shared timer mounted |
 | Daily Flow persistence and time | DailyFlowPersistence, useDailyFlowStore, useSessionRestore | Versioned browser-only storage per account/guest, no cloud sync; draft/queue/completions survive reload. Cursor high-water mark accumulates shared timer work/time-tracking seconds across sessions; pauses/breaks excluded; local midnight splits daily totals. Server snapshots reconcile account timers before closed-tab time is counted; guest snapshots restore active/paused timer. Unfinished work survives day rollover and returns to planning. Storage errors retain memory and offer retry; unreadable data is kept intact; other-tab conflicts suspend writes until explicit reload |
@@ -253,6 +253,14 @@ The existing API returns the complete dataset, so search and 100-row pagination 
 local. Period, offset, applied dates, query and page persist in URL parameters using
 replaceState; popstate restores the view. Period/search changes reset to page one;
 out-of-range pages display the last available page. No server paging is implied.
+
+`LeaderboardDateFilter` shares period navigation and the inline range picker between
+the global and room leaderboards. `lib/leaderboardPeriod.ts` shares their server
+calendar boundaries and labels. Room rankings default to the current month and
+persist filters in roomPeriod/roomOffset/roomStartDate/roomEndDate URL parameters.
+`app/api/rooms/[id]/stats/route.ts` retains room authorization and applies optional
+period filters only to topUsers; overview totals and weekly activity keep their
+existing scope. Requests without a period retain lifetime room rankings.
 
 The existing DayPicker owns calendar navigation and range selection. Its expanded
 inline region is non-modal: the page remains available and Tab follows document order.
@@ -1261,3 +1269,25 @@ and stop through the existing timer actions. Its link returns to the originating
 route and query. Pages with a full timer omit the corner duplicate. Direct entry
 to other routes restores account sessions through the existing useSessionRestore.
 The floating runtime leaves those pages' document titles to their route metadata.
+
+
+## Room directory and multiple memberships
+
+Source: user request dated 2026-11-10; `/api/rooms`, `/api/rooms/[id]/join` and
+RoomMember's roomId/userId composite uniqueness in `prisma/schema.prisma`.
+Navbar Rooms links and `/rooms` open the directory without redirecting to a current
+or joined room. My rooms precedes the discovery grid; ownership or API isMember
+places a card there, with a Joined badge and Open room action. Discovery excludes
+these cards. Open room navigates without selecting a workspace; Set as workspace
+selects the workspace in place through useRoomStore without joining or navigating.
+Global remains a wide workspace banner above discovery, using the same
+Set as workspace / Selected labels and selected state.
+The running-session
+guard remains authoritative; blocked activation buttons are disabled and reference
+a visible localized explanation. Membership in other rooms is retained
+when creating or joining rooms; no count limit exists in the API. Existing creation
+Pro gating, authentication and private-room invitation permissions remain in force.
+
+The selected room and Global banner show a green Active workspace badge at the
+top and a stronger growth-color outline. Room descriptions remain independent of
+selection. Workspace buttons read Set as workspace / Selected.

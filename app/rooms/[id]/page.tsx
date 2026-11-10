@@ -678,7 +678,7 @@ export default function RoomPage() {
             {isOwner && <button type="button" onClick={() => { setError(null); setRoomSettings({ name: room.name, privacy: room.privacy }); setIsRoomSettingsOpen(true) }} className="community-icon-button room-settings-button" title={copy.settings} aria-label={copy.settings}><Settings size={18} aria-hidden="true" /></button>}
             <div className="community-intro">
               <div><p className="community-eyebrow"><DoorOpen size={15} aria-hidden="true" />{copy.room}</p><h1>{room.name}</h1>
-                <div className="community-actions mt-3"><span className="community-badge">{room.privacy === RoomPrivacy.PRIVATE ? <Lock size={12} aria-hidden="true" /> : <Globe2 size={12} aria-hidden="true" />}{room.privacy === RoomPrivacy.PRIVATE ? copy.private : copy.public}</span><span className="community-badge"><Users size={12} aria-hidden="true" />{members.length} {copy.participantPlural}</span><RoomOnlineCount members={members} />{isOwner && <span className="community-badge">{copy.owner}</span>}</div>
+                <div className="community-actions mt-3"><span className="community-badge">{room.privacy === RoomPrivacy.PRIVATE ? <Lock size={12} aria-hidden="true" /> : <Globe2 size={12} aria-hidden="true" />}{room.privacy === RoomPrivacy.PRIVATE ? copy.private : copy.public}</span><span className="community-badge"><Users size={12} aria-hidden="true" />{members.length} {copy.participantPlural}</span>{isOwner && <span className="community-badge">{copy.owner}</span>}<RoomOnlineCount members={members} /></div>
               </div>
               <div className="community-actions">
                 {canJoinRoom && <button type="button" onClick={onJoinRoom} disabled={joining} aria-busy={joining} className="community-button community-button-primary"><UserPlus size={16} aria-hidden="true" />{copy.join}</button>}
@@ -720,7 +720,7 @@ export default function RoomPage() {
               </div>
             </div>
           </div>
-          {activeTab === 'leaderboard' && <RoomLeaderboard stats={stats} currentUserId={user?.id} />}
+          {activeTab === 'leaderboard' && <RoomLeaderboard roomId={roomId} currentUserId={user?.id} />}
         </>}
       </main>
       {inviteToast && !isInviteOpen && <div className="community-toast" role="status">{inviteToast}</div>}

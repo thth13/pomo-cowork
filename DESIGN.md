@@ -600,8 +600,12 @@ tokens. `lib/i18n/leaderboard.ts` owns new English/Spanish copy through I18nProv
 table for the global board and room detail. `RoomLeaderboard` occupies a dedicated
 full-width room tab at the global board’s normal scale: three leading coworkers, ranks, exact focus minutes in
 h:mm, Pomodoro counts, relative time bars and the current-user highlight. Room data
-retains the all-time, room-only top-ten scope; places sort by exact minutes before
-display rounding. The heading states this scope explicitly. The Overview and Leaderboard navigation links preserve the selected view in the
+retains the room-only top-ten scope; places sort by exact minutes before
+display rounding. `LeaderboardDateFilter` owns the shared day/week/month/year buttons,
+period navigation and inline DayPicker for both boards. Both default to the current
+month; `lib/leaderboardPeriod.ts` owns server calendar boundaries and labels. Room
+filters persist in roomPeriod/roomOffset/roomStartDate/roomEndDate URL parameters.
+The room overview totals retain their lifetime scope. The Overview and Leaderboard navigation links preserve the selected view in the
 `tab` query parameter. Overview keeps members, daily goal and weekly activity; the
 room header and totals stay visible in both views. Shared responsive geometry lives
 in `app/leaderboard/leaderboard.css` and confines table overflow to its own wrapper. Existing room access checks and
@@ -2106,3 +2110,27 @@ Closing it leaves the preview and both authentication actions available. The URL
 the invitation until authenticated membership is confirmed. The invite-preview endpoint
 verifies the signed invitation and current inviter membership before returning only name,
 privacy and participant count; normal room-data permissions remain unchanged.
+
+
+## Room directory memberships
+
+`/rooms` always opens the directory, including Navbar links. My rooms appears above
+the discovery grid, with the existing room cards, explicit Joined badges and Open
+room actions. Joined cards also have a separate Set as workspace button that selects
+the timer workspace without navigation or membership changes. Global remains a wide workspace banner above the discovery grid, with its globe,
+original title and description, and the shared Set as workspace / Selected action. A running session disables switching to a
+different room, with a visible localized explanation. Membership comes from `/api/rooms` isMember or ownership; currentRoomId
+only marks the active timer workspace. Joined rooms are excluded from discovery.
+Creating or joining another room retains all existing memberships; the schema and
+APIs already support multiple rooms. Creation keeps its existing Pro gate and private
+rooms retain invitation-based access. Loading requests cancel on account changes.
+
+The selected room and Global banner show a green Active workspace badge at the
+top and a stronger growth-color outline. Room descriptions remain independent of
+selection. Workspace buttons read Set as workspace / Selected.
+
+Homepage RoomSwitch keeps its compact arrow button above the coworker panel.
+Each click cycles through Global and all owned/joined rooms from /api/rooms/mine.
+It retains existing workspace styling and the running-session lock; SWR scopes
+room lists by auth token and refreshes on focus. Loading disables the button;
+a failed request makes the same button offer retry.
