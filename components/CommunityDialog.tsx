@@ -9,7 +9,7 @@ export default function CommunityDialog({ open, title, description, busy = false
   title: string
   description?: string
   busy?: boolean
-  variant?: 'task-tree' | 'default' | 'timer-settings' | 'monthly-wrapped' | 'achievement' | 'kofi-support' | 'project-action' | 'upgrade-pro' | 'premium-grant' | 'daily-goal' | 'room-invite' | 'room-settings' | 'auth' | 'product-update'
+  variant?: 'task-tree' | 'default' | 'timer-settings' | 'monthly-wrapped' | 'achievement' | 'kofi-support' | 'project-action' | 'upgrade-pro' | 'premium-grant' | 'daily-goal' | 'room-invite' | 'room-settings' | 'room-leave' | 'auth' | 'product-update'
   dismissOnBackdrop?: boolean
   onClose: () => void
   children: ReactNode
@@ -33,7 +33,7 @@ export default function CommunityDialog({ open, title, description, busy = false
       if (trigger?.isConnected) trigger.focus({ preventScroll: true })
     }
   }, [open, variant])
-  return <dialog ref={ref} className={`community-dialog${variant === 'product-update' ? ' paywall-dialog product-update-dialog' : variant === 'task-tree' ? ' task-tree-dialog' : variant === 'timer-settings' ? ' timer-settings-dialog' : variant === 'monthly-wrapped' ? ' wrapped-dialog' : variant === 'achievement' ? ' achievement-dialog' : variant === 'kofi-support' ? ' kofi-support-dialog' : variant === 'project-action' ? ' project-action-dialog' : variant === 'upgrade-pro' ? ' paywall-dialog' : variant === 'room-settings' ? ' paywall-dialog room-settings-dialog' : variant === 'room-invite' ? ' paywall-dialog room-invite-dialog' : variant === 'daily-goal' ? ' paywall-dialog daily-goal-dialog' : variant === 'premium-grant' ? ' paywall-dialog premium-grant-dialog' : variant === 'auth' ? ' auth-dialog' : ''}`} aria-labelledby={headingId} aria-describedby={description ? descriptionId : undefined} lang={language} data-no-translate
+  return <dialog ref={ref} className={`community-dialog${variant === 'product-update' ? ' paywall-dialog product-update-dialog' : variant === 'task-tree' ? ' task-tree-dialog' : variant === 'timer-settings' ? ' timer-settings-dialog' : variant === 'monthly-wrapped' ? ' wrapped-dialog' : variant === 'achievement' ? ' achievement-dialog' : variant === 'kofi-support' ? ' kofi-support-dialog' : variant === 'project-action' ? ' project-action-dialog' : variant === 'upgrade-pro' ? ' paywall-dialog' : variant === 'room-leave' ? ' paywall-dialog room-leave-dialog' : variant === 'room-settings' ? ' paywall-dialog room-settings-dialog' : variant === 'room-invite' ? ' paywall-dialog room-invite-dialog' : variant === 'daily-goal' ? ' paywall-dialog daily-goal-dialog' : variant === 'premium-grant' ? ' paywall-dialog premium-grant-dialog' : variant === 'auth' ? ' auth-dialog' : ''}`} aria-labelledby={headingId} aria-describedby={description ? descriptionId : undefined} lang={language} data-no-translate
     onMouseDown={event => { backdropPress.current = event.target === event.currentTarget }}
     onClick={event => {
       if (dismissOnBackdrop && !busy && backdropPress.current && event.target === event.currentTarget) onClose()
@@ -41,9 +41,9 @@ export default function CommunityDialog({ open, title, description, busy = false
     }}
     onCancel={event => { event.preventDefault(); if (!busy) onClose() }}>
     <header className="community-dialog-heading">
-      <div>{variant === 'auth' && <p className="auth-brand">Pomo Cowork</p>}<h2 id={headingId}>{title}</h2>{description && variant !== 'project-action' && <p id={descriptionId}>{description}</p>}</div>
+      <div>{variant === 'auth' && <p className="auth-brand">Pomo Cowork</p>}<h2 id={headingId}>{title}</h2>{description && variant !== 'project-action' && variant !== 'room-leave' && <p id={descriptionId}>{description}</p>}</div>
       <button type="button" className="community-icon-button" onClick={onClose} disabled={busy} aria-label={t.common.close}><X size={variant === 'project-action' ? 15 : 18} aria-hidden="true" /></button>
     </header>
-    <div className="community-dialog-body">{open && <>{description && variant === 'project-action' && <p id={descriptionId} className="project-action-description">{description}</p>}{children}</>}</div>
+    <div className="community-dialog-body">{open && <>{description && (variant === 'project-action' || variant === 'room-leave') && <p id={descriptionId} className={variant === 'room-leave' ? 'community-muted' : 'project-action-description'}>{description}</p>}{children}</>}</div>
   </dialog>
 }

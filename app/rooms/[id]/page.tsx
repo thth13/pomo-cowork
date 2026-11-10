@@ -151,6 +151,13 @@ export default function RoomPage() {
   const inviteSendingRef = useRef(false)
   const [userDropdownSuppressed, setUserDropdownSuppressed] = useState(false)
   const [leaving, setLeaving] = useState(false)
+  const leavingRef = useRef(false)
+  const [isLeaveOpen, setIsLeaveOpen] = useState(false)
+  const [leaveMembers, setLeaveMembers] = useState<RoomMember[] | null>(null)
+  const [leaveMembersLoading, setLeaveMembersLoading] = useState(false)
+  const [leaveError, setLeaveError] = useState<string | null>(null)
+  const [nextOwnerId, setNextOwnerId] = useState('')
+  const leaveCandidates = leaveMembers?.filter(member => member.user.id !== user?.id) ?? []
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null)
   const [inviteToast, setInviteToast] = useState<string | null>(null)
   const inviteToastTimeoutRef = useRef<number | null>(null)
@@ -462,15 +469,53 @@ export default function RoomPage() {
     [getToken, roomId, canInvite, showInviteToast, copy.inviteSent, copy.inviteError]
   )
 
-  const onLeaveRoom = useCallback(async () => {
-    if (!roomId) return
+  const loadLeaveMembers = useCallback(async () => {
+    setLeaveMembersLoading(true)
+    setLeaveMembers(null)
+    setNextOwnerId('')
+    try {
+      const [roomRes, membersRes] = await Promise.all([
+        fetch(`/api/rooms/${roomId}`, { headers, cache: 'no-store' }),
+        fetch(`/api/rooms/${roomId}/members`, { headers, cache: 'no-store' }),
+      ])
+      if (!roomRes.ok || !membersRes.ok) throw new Error('Room unavailable')
+      const roomData = await roomRes.json() as Room
+      const membersData = await membersRes.json() as MembersResponse
+      if (!Array.isArray(membersData.members)) throw new Error('Participants unavailable')
+      setRoom(roomData)
+      if (roomData.ownerId !== user?.id) {
+        setIsLeaveOpen(false)
+        setError(copy.leaveMembersChanged)
+        return
+      }
+      setMembers(membersData.members)
+      setLeaveMembers(membersData.members)
+    } catch {
+      setLeaveError(copy.leaveMembersError)
+    } finally {
+      setLeaveMembersLoading(false)
+    }
+  }, [roomId, headers, user?.id, copy.leaveMembersError, copy.leaveMembersChanged])
+
+  const onLeaveRoom = useCallback(async (confirmed = false) => {
+    if (!roomId || leavingRef.current || leaveMembersLoading) return
     const token = getToken()
     if (!token) {
-      setError(copy.loginRequired)
+      if (isLeaveOpen) setLeaveError(copy.loginRequired)
+      else setError(copy.loginRequired)
       return
     }
+    if (isOwner && !confirmed) {
+      setLeaveError(null)
+      setIsLeaveOpen(true)
+      await loadLeaveMembers()
+      return
+    }
+    if (isOwner && (!leaveMembers || leaveMembersLoading || (leaveCandidates.length > 0 && !nextOwnerId))) return
 
+    leavingRef.current = true
     setLeaving(true)
+    setLeaveError(null)
     try {
       const res = await fetch(`/api/rooms/${roomId}/leave`, {
         method: 'POST',
@@ -478,21 +523,31 @@ export default function RoomPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify(isOwner
+          ? leaveCandidates.length > 0 ? { nextOwnerId } : { confirmDelete: true }
+          : {}),
       })
-
       if (!res.ok) {
-        setError(copy.leaveError)
+        const data = await res.json().catch(() => null)
+        if (data?.code === 'ROOM_MEMBERS_CHANGED') {
+          setIsLeaveOpen(true)
+          setLeaveError(copy.leaveMembersChanged)
+          await loadLeaveMembers()
+        } else if (isLeaveOpen) setLeaveError(copy.leaveError)
+        else setError(copy.leaveError)
         return
       }
-
+      setIsLeaveOpen(false)
       setCurrentRoom(null)
       router.push('/rooms')
     } catch {
-      setError(copy.leaveError)
+      if (isLeaveOpen) setLeaveError(copy.leaveError)
+      else setError(copy.leaveError)
     } finally {
+      leavingRef.current = false
       setLeaving(false)
     }
-  }, [getToken, roomId, router, setCurrentRoom, copy.loginRequired, copy.leaveError])
+  }, [getToken, roomId, router, setCurrentRoom, copy.loginRequired, copy.leaveError, copy.leaveMembersChanged, isOwner, isLeaveOpen, leaveMembers, leaveMembersLoading, leaveCandidates.length, nextOwnerId, loadLeaveMembers])
 
   const onRemoveMember = useCallback(
     async (memberId: string) => {
@@ -684,7 +739,7 @@ export default function RoomPage() {
                 {canJoinRoom && <button type="button" onClick={onJoinRoom} disabled={joining} aria-busy={joining} className="community-button community-button-primary"><UserPlus size={16} aria-hidden="true" />{copy.join}</button>}
                 {canInvite && <button type="button" onClick={() => { setError(null); setUserDropdownSuppressed(false); setIsInviteOpen(true) }} className="community-button"><UserPlus size={16} aria-hidden="true" />{copy.inviteFriends}</button>}
                 {isOwner && <button type="button" onClick={() => { if (activeTab !== 'overview') router.replace(roomTabHref('overview'), { scroll: false }); setIsChallengeOpen(true) }} className="community-button"><Target size={16} aria-hidden="true" />{copy.challenge.setGoal}</button>}
-                {canLeaveRoom && <button type="button" onClick={onLeaveRoom} disabled={leaving} aria-busy={leaving} className="community-button"><LogOut size={16} aria-hidden="true" />{copy.leave}</button>}
+                {canLeaveRoom && <button type="button" onClick={() => void onLeaveRoom()} disabled={leaving || leaveMembersLoading} aria-busy={leaving || leaveMembersLoading} className="community-button"><LogOut size={16} aria-hidden="true" />{copy.leave}</button>}
               </div>
             </div>
           </header>
@@ -755,6 +810,27 @@ export default function RoomPage() {
         </div>
         {inviteToast && <p className="community-muted" role="status">{inviteToast}</p>}
         {error && <p className="community-error" role="alert">{error}</p>}
+      </CommunityDialog>
+      <CommunityDialog open={isLeaveOpen} variant="room-leave" title={copy.leaveOwnerTitle}
+        description={leaveMembers ? (leaveCandidates.length > 0 ? copy.leaveOwnerHint : copy.leaveLastHint) : undefined}
+        busy={leaving} onClose={() => setIsLeaveOpen(false)}>
+        {leaveMembersLoading && <p className="community-muted" role="status">{copy.loading}</p>}
+        {leaveMembers && leaveCandidates.length > 0 && <fieldset className="community-privacy room-leave-candidates" disabled={leaving}>
+          <legend>{copy.nextOwner}</legend>
+          <div>{leaveCandidates.map(member => <label key={member.id}>
+            <input type="radio" name="room-next-owner" value={member.user.id} checked={nextOwnerId === member.user.id} onChange={() => setNextOwnerId(member.user.id)} />
+            <UserAvatar avatarUrl={member.user.avatarUrl} username={member.user.username} size={32} />
+            <span>{member.user.username}</span>
+          </label>)}</div>
+        </fieldset>}
+        {leaveError && <p className="community-error" role="alert">{leaveError}</p>}
+        {!leaveMembers && !leaveMembersLoading && <button type="button" className="community-button" onClick={() => { setLeaveError(null); void loadLeaveMembers() }}>{copy.retry}</button>}
+        <div className="community-dialog-actions">
+          <button type="button" className="community-button" autoFocus disabled={leaving} onClick={() => setIsLeaveOpen(false)}>{copy.cancel}</button>
+          <button type="button" className={`community-button ${leaveMembers && leaveCandidates.length === 0 ? 'community-button-danger' : 'community-button-primary'}`}
+            disabled={leaving || leaveMembersLoading || !leaveMembers || (leaveCandidates.length > 0 && !nextOwnerId)} aria-busy={leaving}
+            onClick={() => void onLeaveRoom(true)}>{leaveMembers && leaveCandidates.length === 0 ? copy.deleteAndLeave : copy.transferAndLeave}</button>
+        </div>
       </CommunityDialog>
       <CommunityDialog open={Boolean(confirmRemoveMemberId)} title={copy.removeTitle} description={copy.removeHint} busy={Boolean(removingMemberId)} onClose={() => setConfirmRemoveMemberId(null)}>
         <p className="community-muted">{members.find(member => member.id === confirmRemoveMemberId)?.user.username}</p>

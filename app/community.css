@@ -186,8 +186,9 @@ body:has(.paywall-dialog[open]) { overflow: hidden; }
 .community-dialog.paywall-dialog.premium-grant-dialog { width: min(520px, calc(100vw - 24px)); }
 .premium-grant-dialog .community-dialog-body { padding-top: 24px; }
 .community-dialog.paywall-dialog.room-invite-dialog,
-.community-dialog.paywall-dialog.room-settings-dialog { width: min(520px, calc(100vw - 24px)); }
-:is(.room-invite-dialog, .room-settings-dialog) .community-dialog-body { padding-top: 24px; }
+.community-dialog.paywall-dialog.room-settings-dialog,
+.community-dialog.paywall-dialog.room-leave-dialog { width: min(520px, calc(100vw - 24px)); }
+:is(.room-invite-dialog, .room-settings-dialog, .room-leave-dialog) .community-dialog-body { padding-top: 24px; }
 .community-dialog.paywall-dialog.daily-goal-dialog { width: min(520px, calc(100vw - 24px)); }
 .daily-goal-form { padding-top: 24px; }
 .daily-goal-targets { min-width: 0; margin: 0 0 18px; padding: 0; border: 0; }
@@ -248,7 +249,7 @@ body:has(.paywall-dialog[open]) { overflow: hidden; }
   .paywall-dialog .community-icon-button { top: 5px; right: 6px; }
   .paywall-dialog .community-dialog-body { padding: 0 18px 18px; }
   .premium-grant-dialog .community-dialog-body { padding-top: 18px; }
-  :is(.room-invite-dialog, .room-settings-dialog) .community-dialog-body { padding-top: 18px; }
+  :is(.room-invite-dialog, .room-settings-dialog, .room-leave-dialog) .community-dialog-body { padding-top: 18px; }
   .paywall-columns { grid-template-columns: minmax(0, 1fr); }
   .paywall-features { padding: 18px 0; }
   .paywall-features ul { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; }
@@ -279,6 +280,12 @@ body:has(.paywall-dialog[open]) { overflow: hidden; }
 .kofi-dialog-link:hover { background: var(--pixel-screen); }
 .kofi-dialog-link:active { background: var(--pixel-shadow); }
 .kofi-dialog-link:focus-visible { outline: 2px solid var(--pixel-ink); outline-offset: -4px; }
+.room-leave-candidates { margin-top: 16px; }
+.room-leave-candidates > div { grid-template-columns: 1fr; max-height: 280px; overflow-y: auto; }
+.room-leave-candidates label { align-items: center; min-width: 0; }
+.room-leave-candidates input { flex-shrink: 0; margin-top: 0; }
+.room-leave-candidates label > span:last-child { min-width: 0; overflow-wrap: anywhere; }
+.room-leave-candidates:disabled label { cursor: default; opacity: .65; }
 .community-dialog-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
 .community-dialog-actions .community-button-danger:first-child { margin-right: auto; }
 .project-action-dialog { width: min(400px, calc(100vw - 24px)); border-width: 1px; box-shadow: 0 8px 28px rgb(0 0 0 / 16%); }

@@ -2134,3 +2134,18 @@ Each click cycles through Global and all owned/joined rooms from /api/rooms/mine
 It retains existing workspace styling and the running-session lock; SWR scopes
 room lists by auth token and refreshes on focus. Loading disables the button;
 a failed request makes the same button offer retry.
+
+
+## Room administrator exit
+
+The room leave action uses the `CommunityDialog` room-leave variant with the
+compact paywall shell, unframed close control and existing community buttons,
+radio rows, avatars and theme tokens. The header contains only its title; explanatory
+copy sits in the body and the room name is omitted. Administrators explicitly select a current
+participant (including offline participants) before transferring ownership and
+leaving. The last participant sees a permanent room/data deletion warning and
+an explicit Delete room and leave action. Cancel receives initial focus.
+English/Spanish copy lives in `lib/i18n/community.ts`. Participant loading errors
+block confirmation and offer retry; membership conflicts refresh the choices and
+require confirmation again. The leave API validates the choice and performs the
+ownership change/removal or confirmed deletion in one serializable transaction.
