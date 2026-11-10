@@ -50,7 +50,7 @@ export default function SpanishHomePage() {
         </ol>
         <p>El método Pomodoro te ayuda a dividir el trabajo en pasos manejables. Puedes adaptar la duración de cada sesión y de las pausas a tu ritmo.</p>
 
-        <p><Link href="/es/efecto-pomodoro">Descubre qué es el efecto Pomodoro y cómo aplicarlo al estudio.</Link></p>
+        <p><Link href="/es/efecto-pomodoro">Aprende el método Pomodoro paso a paso y descubre qué es el efecto Pomodoro.</Link></p>
 
         <h2>Un temporizador de estudio para preparar exámenes</h2>
         <p>Organiza el repaso por temas y asigna una tarea a cada sesión: resolver ejercicios, practicar vocabulario o recordar lo aprendido sin mirar los apuntes. Alternar tiempo de estudio y descansos te permite planificar una tarde de repaso con un principio y un final claros.</p>
@@ -62,6 +62,10 @@ export default function SpanishHomePage() {
 
         <h2>Personaliza tu temporizador Pomodoro</h2>
         <p>Ajusta los minutos de trabajo, los descansos cortos y las pausas largas. Elige sonidos de ambiente y configura las notificaciones para acompañar tus sesiones de lectura, escritura, programación o estudio. No tienes que mantener el ciclo de 25 y 5 si necesitas otro ritmo.</p>
+
+        <p><Link href="/es/temporizador-aesthetic">Prueba el temporizador aesthetic para estudiar con un fondo tranquilo y sonidos ambientales.</Link></p>
+
+        <p><Link href="/es/temporizador-de-trabajo-profundo">Concentrarte durante más tiempo con el temporizador de trabajo profundo.</Link></p>
 
         <h2>Lleva un registro de tu tiempo de concentración</h2>
         <p>Inicia sesión para guardar tus sesiones y consultar tu historial. Revisa cuánto tiempo has dedicado a estudiar o trabajar y utiliza ese registro para organizar tus próximas tareas.</p>

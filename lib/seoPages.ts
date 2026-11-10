@@ -24,6 +24,7 @@ export interface SeoPage {
   defaults: { workDuration: number; shortBreak: number; longBreak: number; longBreakAfter: number }
   timerNote: string
   minimalGuide?: boolean
+  showSteps?: boolean
   compactWorkspace?: boolean
   workspaceTasks?: boolean
   socialHeading: string

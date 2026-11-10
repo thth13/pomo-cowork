@@ -173,6 +173,8 @@ type SeoLanguagePaths = { en: string; es: string; 'x-default': string }
 export const localizedSeoPaths: Partial<Record<SeoSlug, SeoLanguagePaths>> = {
   'pomodoro-effect': POMODORO_EFFECT_PATHS,
   'group-study-timer': GROUP_STUDY_PATHS,
+  'deep-work-timer': { en: '/deep-work-timer', es: '/es/temporizador-de-trabajo-profundo', 'x-default': '/deep-work-timer' },
+  'aesthetic-timer': { en: '/aesthetic-timer', es: '/es/temporizador-aesthetic', 'x-default': '/aesthetic-timer' },
 }
 
 export function findSeoLanguagePaths(pathname: string) {
@@ -183,6 +185,12 @@ export function findSeoLanguagePaths(pathname: string) {
 export function isPomodoroEffectPath(pathname: string) {
   const path = pathname.replace(/\/$/, '')
   return path === POMODORO_EFFECT_PATHS.en || path === POMODORO_EFFECT_PATHS.es
+}
+
+export function isMinimalSeoPath(pathname: string) {
+  const path = pathname.replace(/\/$/, '')
+  const deepWork = localizedSeoPaths['deep-work-timer']
+  return isPomodoroEffectPath(path) || path === deepWork?.en || path === deepWork?.es
 }
 
 export function isSeoPath(pathname: string) {

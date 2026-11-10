@@ -1990,3 +1990,30 @@ height, normal tracking, strict line breaks, responsive large tabular timer nume
 
 Verification is static per the user's instruction. Native Japanese editorial review
 and rendered browser/mobile/zoom checks have not been performed.
+
+## Spanish aesthetic timer and Pomodoro method guide
+
+`/es/temporizador-aesthetic` reuses the aesthetic timer's static landscape,
+minimal countdown, theme toggle, fullscreen boundary and ambient mixer. Existing
+tools.css tokens remain the visual owner. `spanishSeoPages` owns the complete
+Spanish editorial translation; `localizedSeoPaths` automatically supplies the new
+route's sitemap, canonical/hreflang links and locale-switch destinations.
+
+`/es/efecto-pomodoro` now targets método Pomodoro in its title, h1, intro and FAQs,
+while retaining its effect explanation and URL. `SeoPage.showSteps` allows this
+minimal guide to show a real ordered method without adding unrelated marketing
+sections. Both pages link from the Spanish homepage and to related Spanish tools.
+Verification remains static; no project start, builds or tsc per user instructions.
+
+## Minimal deep work landing pages
+
+`/deep-work-timer` and `/es/temporizador-de-trabajo-profundo` use the existing
+minimal-guide shell and minimal PomodoroTimer presentation, with 50/10, 60/10 and
+90/20 presets. Task/room pickers, presence, ambient mixer, account invite and long
+marketing sections are omitted. The timer retains pause/reset, break controls,
+settings and fullscreen; active/paused sessions cannot be overwritten by presets.
+Existing tools.css and pixel tokens own all visual roles. Both routes suppress
+scenery and support chrome through isMinimalSeoPath. Each has a short intro,
+two explanatory paragraphs, two FAQs and related links; all SEO prose is visible.
+The locale registry owns reciprocal language links, canonicals and sitemap entries.
+Spanish homepage discovery links to the new route. Verification is static only.

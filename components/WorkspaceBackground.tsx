@@ -1,6 +1,6 @@
 'use client'
 
-import { isPomodoroEffectPath } from '@/lib/seoRoutes'
+import { isMinimalSeoPath } from '@/lib/seoRoutes'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
@@ -153,6 +153,6 @@ export default function WorkspaceBackground() {
   const backgroundId = useAppearanceStore(state => state.backgroundId)
   const revision = useAppearanceStore(state => state.mediaRevision)
   const scene = BACKGROUNDS.find(background => background.id === backgroundId)
-  if (isPomodoroEffectPath(pathname) || !scene || scene.kind === 'default') return null
+  if (isMinimalSeoPath(pathname) || !scene || scene.kind === 'default') return null
   return <BackgroundMedia key={`${scene.id}:${revision}`} scene={scene} />
 }

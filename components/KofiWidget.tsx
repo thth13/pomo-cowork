@@ -1,6 +1,6 @@
 'use client'
 
-import { isPomodoroEffectPath } from '@/lib/seoRoutes'
+import { isMinimalSeoPath } from '@/lib/seoRoutes'
 
 import { Suspense, useEffect, useState } from 'react'
 import { KoFiPanel } from 'react-kofi'
@@ -33,7 +33,7 @@ function KofiWidgetContent() {
     setMounted(true)
   }, [])
 
-  if (!mounted || isLoading || isPomodoroEffectPath(pathname) || isProjectBlogRoute(pathname) || isBlogProfile) return null
+  if (!mounted || isLoading || isMinimalSeoPath(pathname) || isProjectBlogRoute(pathname) || isBlogProfile) return null
 
   return (
     <>

@@ -77,12 +77,12 @@ export default function SeoLandingPage({ slug, language = 'en' }: { slug: SeoSlu
           {' · '}
           <Link href={languagePaths.es} hrefLang="es" lang="es" aria-current={language === 'es' ? 'page' : undefined}>Español</Link>
         </nav>}
-        {!page.compactWorkspace && <p className="seo-eyebrow">Pomo Cowork · {page.social ? 'Time together' : 'Make time for one thing'}</p>}
+        {!page.compactWorkspace && <p className="seo-eyebrow">Pomo Cowork · {language === 'es' ? page.social ? 'Tiempo en compañía' : 'Una tarea a la vez' : page.social ? 'Time together' : 'Make time for one thing'}</p>}
         <h1>{page.heading}</h1>
         <p className="seo-intro">{page.intro}</p>
         {!page.compactWorkspace && <div className="seo-hero-actions">
           <a className="seo-button" href="#focus-timer">{page.cta} <span aria-hidden="true">↓</span></a>
-          {page.social && !page.compactWorkspace && <Link className="seo-text-link" href="/rooms">Find a room for your group</Link>}
+          {page.social && !page.compactWorkspace && <Link className="seo-text-link" href="/rooms">{language === 'es' ? 'Encuentra una sala para tu grupo' : 'Find a room for your group'}</Link>}
         </div>}
       </header>
       {page.localTimer ? <LocalStudyTimer key={slug} variant={page.localTimer} /> : <SeoWorkspace key={slug} title={page.title} defaults={page.defaults} timerNote={page.timerNote} minimalGuide={page.minimalGuide} compactWorkspace={page.compactWorkspace} workspaceTasks={page.workspaceTasks} social={page.social} socialHeading={page.socialHeading} socialCopy={page.socialCopy} appearance={page.appearance} experience={page.experience} />}
@@ -93,14 +93,14 @@ export default function SeoLandingPage({ slug, language = 'en' }: { slug: SeoSlu
           {page.explanation.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
           {page.resources && (
             <div>
-              <h3>{page.resourcesHeading ?? 'Practice materials and exam instructions'}</h3>
+              <h3>{page.resourcesHeading ?? (language === 'es' ? 'Materiales de práctica e instrucciones' : 'Practice materials and exam instructions')}</h3>
               {page.resources.map(({ label, url }) => (
                 <p key={url}><a className="seo-text-link" href={url}>{label} <span aria-hidden="true">↗</span></a></p>
               ))}
             </div>
           )}
         </section>
-        {!page.minimalGuide && <section className="seo-steps" aria-labelledby="steps-heading">
+        {(!page.minimalGuide || page.showSteps) && <section className="seo-steps" aria-labelledby="steps-heading">
           <h2 id="steps-heading">{page.stepsHeading}</h2>
           <ol>{page.steps.map((step) => <li key={step}>{step}</li>)}</ol>
         </section>}

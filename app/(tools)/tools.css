@@ -183,6 +183,7 @@ html body .seo-shell .seo-content-minimal-guide :is(.seo-workspace, .seo-timer) 
 .seo-content-minimal-guide .seo-stage-toolbar .seo-button { background: transparent; color: var(--pixel-muted); border-color: transparent; font-size: 12px; padding-inline: 12px; }
 .seo-content-minimal-guide .seo-stage-toolbar .seo-button:hover { color: var(--pixel-ink); background: var(--pixel-screen); }
 .seo-content-minimal-guide .seo-guide { display: block; max-width: 640px; margin-inline: auto; padding-block: 32px; border-top: 1px solid var(--pixel-line); }
+.seo-content-minimal-guide .seo-guide .seo-steps { margin-top: 28px; }
 .seo-content-minimal-guide .seo-guide h2,
 .seo-content-minimal-guide .seo-section > h2 { font-size: 22px; }
 .seo-content-minimal-guide .seo-section { max-width: 640px; margin-inline: auto; padding-block: 28px; }
