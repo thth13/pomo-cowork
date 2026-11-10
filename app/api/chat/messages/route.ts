@@ -13,6 +13,7 @@ export async function GET(request: Request) {
   const cursor = searchParams.get('cursor')
   const take = Number(searchParams.get('take') || PAGE_SIZE)
   const roomIdParam = searchParams.get('roomId')
+  const mode = searchParams.get('mode')
 
   const normalizedRoomId = (() => {
     if (typeof roomIdParam !== 'string') return null
@@ -35,7 +36,10 @@ export async function GET(request: Request) {
       const token = getTokenFromHeader(authHeader)
       const payload = token ? verifyToken(token) : null
 
-      if (!payload || payload.userId !== room.ownerId) {
+      const member = payload && payload.userId !== room.ownerId
+        ? await prisma.roomMember.findUnique({ where: { roomId_userId: { roomId: normalizedRoomId, userId: payload.userId } }, select: { id: true } })
+        : null
+      if (!payload || (payload.userId !== room.ownerId && !member)) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }
@@ -45,6 +49,7 @@ export async function GET(request: Request) {
   const messages = await prisma.chatMessage.findMany({
     where: {
       roomId: normalizedRoomId,
+      ...(mode === 'messages' ? { type: 'message' } : mode === 'activities' ? { type: 'system', actionType: { in: ['work_start', 'time_tracking_start'] } } : {}),
     },
     take: take + 1, // Берем на 1 больше чтобы узнать есть ли еще сообщения
     ...(cursor ? { 
@@ -163,7 +168,10 @@ export async function POST(request: Request) {
       const allowedByOwnerToken = Boolean(payload && payload.userId === room.ownerId)
       const allowedSystemOwnerId = Boolean(isSystem && userId && userId === room.ownerId)
 
-      if (!allowedByOwnerToken && !allowedSystemOwnerId) {
+      const member = payload && !allowedByOwnerToken
+        ? await prisma.roomMember.findUnique({ where: { roomId_userId: { roomId: normalizedRoomId, userId: payload.userId } }, select: { id: true } })
+        : null
+      if (!allowedByOwnerToken && !allowedSystemOwnerId && !member) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
       }
     }

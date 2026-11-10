@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { SendHorizonal, Loader2 } from 'lucide-react'
+import { Activity, Clock3, Play, Timer, SendHorizonal, Loader2 } from 'lucide-react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faPaperPlane } from '@fortawesome/free-solid-svg-icons'
 import { useRouter } from 'next/navigation'
@@ -10,6 +10,8 @@ import { useRoomStore } from '@/store/useRoomStore'
 import { useSocket } from '@/hooks/useSocket'
 import type { ChatMessage } from '@/types'
 import Image from 'next/image'
+import Link from 'next/link'
+import { userProfileHref } from '@/lib/userProfile'
 import AuthModal from '@/components/AuthModal'
 import { ChatMessagesSkeleton } from '@/components/ChatSkeleton'
 import GuestAvatar from '@/components/GuestAvatar'
@@ -24,22 +26,32 @@ interface TypingState {
 interface ChatProps {
   matchHeightSelector?: string
   isVisible?: boolean
+  roomId?: string | null
+  title?: string
+  className?: string
+  mode?: 'all' | 'messages' | 'activities'
 }
 
-export default function Chat({ matchHeightSelector, isVisible = true }: ChatProps) {
+export default function Chat({ matchHeightSelector, isVisible = true, roomId, title, className = '', mode = 'all' }: ChatProps) {
   const router = useRouter()
-  const { t } = useI18n()
+  const { t, language } = useI18n()
+  const copy = language === 'es'
+    ? { title: 'Chat general', empty: 'Aún no hay mensajes. ¡Sé el primero!', placeholder: 'Escribe un mensaje…', send: 'Enviar mensaje', error: 'No se pudieron cargar los mensajes.', retry: 'Reintentar' }
+    : { title: 'General Chat', empty: 'No messages. Be the first!', placeholder: 'Write a message…', send: 'Send message', error: 'Could not load messages.', retry: 'Try again' }
+  const activityEmpty = language === 'es' ? 'Todavía no hay actividad.' : 'No activity yet.'
+  const matchesMode = (message: ChatMessage) => {
+    if (message.type !== 'system') return mode !== 'activities'
+    return mode !== 'messages' && (message.action?.type === 'work_start' || message.action?.type === 'time_tracking_start')
+  }
   const { user, token, isAuthenticated } = useAuthStore()
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
   const canWrite = isAuthenticated && Boolean(user && !user.isAnonymous) && Boolean(token)
-  const { currentRoomId } = useRoomStore()
+  const selectedRoomId = useRoomStore(state => state.currentRoomId)
+  const currentRoomId = roomId === undefined ? selectedRoomId : roomId
   const {
     sendChatMessage,
-    requestChatHistory,
     onChatMessage,
     offChatMessage,
-    onChatHistory,
-    offChatHistory,
     onChatRemove,
     offChatRemove,
     emitChatTyping,
@@ -50,6 +62,8 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(true)
+  const [historyError, setHistoryError] = useState(false)
+  const [historyRetry, setHistoryRetry] = useState(0)
   const [loadingMore, setLoadingMore] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [typing, setTyping] = useState<TypingState | null>(null)
@@ -116,16 +130,9 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
 
   useEffect(() => {
     if (!isVisible) return
-    const handleHistory = (history: ChatMessage[]) => {
-      const roomId = currentRoomIdRef.current
-      setMessages(history.filter((m) => (m.roomId ?? null) === roomId))
-      setLoading(false)
-      scrollToBottom()
-    }
-
     const handleNew = (msg: ChatMessage) => {
       const roomId = currentRoomIdRef.current
-      if ((msg.roomId ?? null) !== roomId) return
+      if ((msg.roomId ?? null) !== roomId || !matchesMode(msg)) return
       setMessages((prev) => [...prev.slice(-99), msg])
       scrollToBottomSmooth()
 
@@ -137,7 +144,7 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
 
     const handleTyping = (payload: { username: string; isTyping: boolean; roomId?: string | null }) => {
       const roomId = currentRoomIdRef.current
-      if ((payload.roomId ?? null) !== roomId) return
+      if (mode === 'activities' || (payload.roomId ?? null) !== roomId) return
       if (!payload.isTyping) {
         setTyping(null)
         return
@@ -147,31 +154,32 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
       typingTimeoutRef.current = setTimeout(() => setTyping(null), 2500)
     }
 
-    onChatHistory(handleHistory)
     onChatMessage(handleNew)
     onChatRemove(handleRemove)
     onChatTyping(handleTyping)
 
     return () => {
-      offChatHistory(handleHistory)
       offChatMessage(handleNew)
       offChatRemove(handleRemove)
       offChatTyping(handleTyping)
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isVisible])
+  }, [isVisible, mode])
 
   useEffect(() => {
     if (!isVisible) return
     const controller = new AbortController()
     // On opening or room change: reset and reload history
     setLoading(true)
+    setHistoryError(false)
+    setTyping(null)
     setMessages([])
     setHasMore(true)
     setOldestMessageId(null)
 
     const roomQuery = currentRoomId ? `&roomId=${encodeURIComponent(currentRoomId)}` : ''
-    fetch(`/api/chat/messages?take=20${roomQuery}`, { signal: controller.signal })
+    fetch(`/api/chat/messages?take=20&mode=${mode}${roomQuery}`, { signal: controller.signal, headers: token ? { Authorization: `Bearer ${token}` } : {} })
       .then((r) => r.ok ? r.json() : null)
       .then((data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } | null) => {
         if (controller.signal.aborted) return
@@ -182,13 +190,14 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
           setLoading(false)
           scrollToBottom()
         } else {
-          requestChatHistory({ roomId: currentRoomId ?? null })
+          setHistoryError(true)
+          setLoading(false)
         }
       })
-      .catch(() => { if (!controller.signal.aborted) requestChatHistory({ roomId: currentRoomId ?? null }) })
+      .catch(() => { if (!controller.signal.aborted) { setHistoryError(true); setLoading(false) } })
     return () => controller.abort()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentRoomId, isVisible])
+  }, [currentRoomId, isVisible, token, historyRetry, mode])
 
   const scrollToBottom = () => {
     requestAnimationFrame(() => {
@@ -213,11 +222,13 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
     
     try {
       const roomQuery = currentRoomId ? `&roomId=${encodeURIComponent(currentRoomId)}` : ''
-      const response = await fetch(`/api/chat/messages?take=20&cursor=${oldestMessageId}${roomQuery}`)
+      const response = await fetch(`/api/chat/messages?take=20&mode=${mode}&cursor=${oldestMessageId}${roomQuery}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
       if (!response.ok) throw new Error('Failed to load messages')
       
       const data: { items: ChatMessage[]; hasMore: boolean; nextCursor: string | null } = await response.json()
       
+      if (currentRoomIdRef.current !== currentRoomId) return
+
       // Сохраняем текущую высоту скролла
       const scrollContainer = listRef.current
       if (!scrollContainer) return
@@ -242,7 +253,7 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
     } finally {
       setLoadingMore(false)
     }
-  }, [hasMore, loadingMore, oldestMessageId, currentRoomId])
+  }, [hasMore, loadingMore, oldestMessageId, currentRoomId, token, mode])
 
   // Обработчик скролла для определения когда загружать старые сообщения
   useEffect(() => {
@@ -346,8 +357,8 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
     const result: Array<ChatMessage | { type: 'date'; date: string }> = []
     let lastDate: string | null = null
 
-    messages.forEach((msg) => {
-      const msgDate = new Date(msg.timestamp).toLocaleDateString('en-US', {
+    messages.filter(matchesMode).forEach((msg) => {
+      const msgDate = new Date(msg.timestamp).toLocaleDateString(language === 'es' ? 'es-ES' : 'en-US', {
         day: 'numeric',
         month: 'short'
       })
@@ -361,23 +372,25 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
     })
 
     return result
-  }, [messages])
+  }, [messages, mode, language])
 
   return (
-    <div ref={containerRef} className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 h-[600px] flex flex-col">
+    <div ref={containerRef} className={`bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 h-[600px] flex flex-col ${className}`}>
       {/* Header */}
-      <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-slate-700">
+      {mode === 'activities' ? <header className="community-panel-heading room-activities-heading">
+        <h2><Activity size={18} aria-hidden="true" />{title ?? (language === 'es' ? 'Actividad' : 'Activities')}</h2>
+      </header> : <div className="p-4 sm:p-6 border-b border-gray-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
-          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">General Chat</h3>
+          <h3 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white">{title ?? copy.title}</h3>
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-green-400 rounded-full pulse-dot"></div>
             {/* <span className="text-sm text-gray-600 dark:text-slate-300">online participants</span> */}
           </div>
         </div>
-      </div>
+      </div>}
 
       {/* Messages */}
-      <div ref={listRef} className="chat-messages flex-1 p-4 space-y-4">
+      <div ref={listRef} className={`chat-messages flex-1 ${mode === 'activities' ? 'room-activities-list' : 'p-4 space-y-4'}`}>
         {loadingMore && (
           <div className="flex justify-center py-2">
             <Loader2 className="w-5 h-5 animate-spin text-gray-400 dark:text-slate-500" />
@@ -385,15 +398,17 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
         )}
         {loading ? (
           <ChatMessagesSkeleton />
-        ) : messages.length === 0 ? (
-          <div className="text-center text-gray-500 dark:text-slate-400 py-6">No messages. Be the first!</div>
+        ) : historyError ? (
+          <div className="text-center py-6" role="alert"><p>{copy.error}</p><button type="button" className="community-button mt-3" onClick={() => setHistoryRetry(value => value + 1)}>{copy.retry}</button></div>
+        ) : messagesWithDates.length === 0 ? (
+          <div className="text-center text-gray-500 dark:text-slate-400 py-6">{mode === 'activities' ? activityEmpty : copy.empty}</div>
         ) : (
           messagesWithDates.map((item, idx) => {
             // Date separator
             if ('type' in item && item.type === 'date') {
               return (
-                <div key={`date-${idx}`} className="flex justify-center my-4">
-                  <div className="px-3 py-1 bg-gray-100 dark:bg-slate-700 rounded-full text-xs font-medium text-gray-600 dark:text-slate-300">
+                <div key={`date-${idx}`} className={mode === 'activities' ? 'room-activities-date' : 'flex justify-center my-4'}>
+                  <div className={mode === 'activities' ? undefined : 'px-3 py-1 bg-gray-100 dark:bg-slate-700 rounded-full text-xs font-medium text-gray-600 dark:text-slate-300'}>
                     {item.date}
                   </div>
                 </div>
@@ -413,6 +428,24 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
             })
             const taskLabel = m.action?.task?.trim()
             const { isGuest, displayName } = getParticipantIdentity(m.username, t.activeSessions.guest)
+
+            if (mode === 'activities') {
+              const tracking = m.action?.type === 'time_tracking_start'
+              const label = language === 'es'
+                ? (tracking ? 'Cronómetro iniciado' : 'Enfoque iniciado')
+                : (tracking ? 'Tracking started' : 'Focus started')
+              return <article key={m.id} className={`room-activity${tracking ? ' room-activity-tracking' : ''}`}>
+                <div className="room-activity-top">
+                  <strong className="room-activity-name" title={displayName}>{m.userId ? <Link href={userProfileHref({ id: m.userId, username: m.username })}><ParticipantName username={m.username} guestLabel={t.activeSessions.guest} /></Link> : displayName}</strong>
+                  <span className="room-activity-badge">{tracking ? <Timer size={12} aria-hidden="true" /> : <Play size={12} aria-hidden="true" />}{label}</span>
+                  <time dateTime={new Date(m.timestamp).toISOString()}>{new Date(m.timestamp).toLocaleTimeString(language === 'es' ? 'es-ES' : 'en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}</time>
+                </div>
+                {(taskLabel || (!tracking && Boolean(m.action?.duration))) && <div className="room-activity-detail">
+                  {taskLabel && <span className="room-activity-task" title={taskLabel}>{taskLabel}</span>}
+                  {!tracking && Boolean(m.action?.duration) && <span className="room-activity-duration"><Clock3 size={12} aria-hidden="true" />{m.action?.duration} min</span>}
+                </div>}
+              </article>
+            }
 
             return (
               <div key={m.id}>
@@ -505,13 +538,13 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
           })
         )}
 
-        {typing && (
+        {mode !== 'activities' && typing && (
           <div className="text-xs text-gray-500 dark:text-slate-400">{typing.username} is typing...</div>
         )}
       </div>
 
       {/* Input */}
-      <form noValidate onSubmit={onSubmit} className="p-4 border-t border-gray-200 dark:border-slate-700">
+      {mode !== 'activities' && <form noValidate onSubmit={onSubmit} className="p-4 border-t border-gray-200 dark:border-slate-700">
         <div className="flex items-center space-x-3">
           {user?.avatarUrl ? (
             <Image 
@@ -530,18 +563,21 @@ export default function Chat({ matchHeightSelector, isVisible = true }: ChatProp
             <input 
               value={input}
               onChange={(e) => onInputChange(e.target.value)}
-              placeholder="Write a message..." 
+              placeholder={copy.placeholder}
+              aria-label={copy.placeholder}
+              maxLength={1000}
               className="w-full bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent pr-10"
             />
             <button 
               type="submit"
+              aria-label={copy.send}
               className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
             >
               <FontAwesomeIcon icon={faPaperPlane} />
             </button>
           </div>
         </div>
-      </form>
+      </form>}
       <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} initialMode="register" />
     </div>
   )

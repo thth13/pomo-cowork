@@ -2028,3 +2028,32 @@ scenery and support chrome through isMinimalSeoPath. Each has a short intro,
 two explanatory paragraphs, two FAQs and related links; all SEO prose is visible.
 The locale registry owns reciprocal language links, canonicals and sitemap entries.
 Spanish homepage discovery links to the new route. Verification is static only.
+
+
+Room overview includes a compact 400px chat panel below the participants, reusing
+the homepage `Chat` component. There is no separate chat tab.
+An explicit room ID scopes history, sending and live events to the viewed room
+without changing the timer's selected room. The room variant owns a bounded message
+scroller inside the overview column and pauses subscriptions while Overview is hidden.
+Both surfaces share stored history, paging and
+socket updates. History requests include authentication; private room history and
+posting admit the owner or authenticated members, matching room-detail access.
+History failures retain a retry action instead of falling back to socket history.
+
+Room Overview separates the shared chat into messages-only and Activities panels.
+Activities shows work/timetracking starts without a composer or typing indicator.
+The Chat mode filters both paginated server history and live events, before date
+grouping; the homepage keeps its existing combined view. Both windows are 400px tall.
+
+Room Activities uses the profile activity list's `profile-session` rows and the
+community panel heading: action icon, participant link, start action, optional task
+and duration, and a semantic timestamp. Quiet date separators replace chat pills;
+there is no chat presence dot. History and live-event behavior stay shared with Chat.
+
+Room Overview places Weekly activity first, at full content width above the
+two-column participants, chat, Activities and daily-goal panels, with a 24px gap.
+
+Room activity entries use compact two-line cards: participant, tinted start-type
+badge and 24-hour time on the first line; truncated task and duration on the second.
+Focus uses tomato tokens and tracking uses sage tokens, with matching left borders.
+Long names/tasks truncate with full text in title attributes to preserve row density.

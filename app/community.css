@@ -580,3 +580,32 @@ button.profile-heatmap-cell:hover, button.profile-heatmap-cell:active { outline:
 @media (max-width: 600px) {
   .blog-profile-page.profile-page .community-layout { padding-top: 20px; }
 }
+
+/* The room chat owns its scroller; the surrounding page keeps natural height. */
+.room-chat { min-width: 0; height: 400px; min-height: 0; border-radius: 3px; background: var(--pixel-paper); border-color: var(--pixel-line); box-shadow: 3px 3px 0 var(--pixel-shadow); }
+.room-chat .chat-messages { min-height: 0; height: auto; overflow-y: auto; overflow-wrap: anywhere; }
+.room-chat .flex-1 { min-width: 0; }
+.room-chat > div:first-child, .room-chat > form { flex-shrink: 0; border-color: var(--pixel-line); }
+
+.room-chat > div:first-child { padding: 14px 16px; }
+.room-chat > form { padding: 12px 16px; }
+
+.room-activities-heading { flex-shrink: 0; margin: 0; padding: 16px 20px; border-bottom: 1px solid var(--pixel-line); }
+.room-activities-list { padding: 0 20px 12px; }
+.room-activities-date { padding: 14px 0 6px; color: var(--pixel-muted); font-size: 10px; font-weight: 600; }
+.room-activity { padding: 9px 10px; margin-block: 5px; border: 1px solid var(--pixel-line); border-left: 3px solid var(--pixel-tomato); border-radius: 3px; background: color-mix(in srgb, var(--pixel-tomato-soft) 35%, var(--pixel-paper)); }
+.room-activity-tracking { border-left-color: var(--pixel-growth); background: color-mix(in srgb, var(--pixel-screen) 45%, var(--pixel-paper)); }
+.room-activity-top { display: flex; align-items: center; gap: 7px; min-width: 0; }
+.room-activity-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 650; color: var(--pixel-ink); }
+.room-activity-badge { display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0; padding: 2px 5px; border-radius: 3px; background: var(--pixel-tomato-soft); color: var(--pixel-tomato-ink); font-size: 10px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
+.room-activity-tracking .room-activity-badge { background: var(--pixel-screen); color: var(--pixel-ink); }
+.room-activity-top time { flex-shrink: 0; margin-left: auto; color: var(--pixel-muted); font-size: 10px; font-variant-numeric: tabular-nums; }
+.room-activity-detail { display: flex; align-items: center; gap: 8px; margin-top: 4px; min-width: 0; }
+.room-activity a { cursor: pointer; text-underline-offset: 3px; }
+.room-activity a:hover { color: var(--pixel-tomato-ink); text-decoration: underline; }
+.room-activity a:active { color: var(--pixel-ink); }
+.room-activity a:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 3px; }
+.room-activity-task { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: var(--pixel-ink); }
+.room-activity-duration { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: auto; font-size: 10px; color: var(--pixel-muted); font-variant-numeric: tabular-nums; }
+
+.room-weekly-activity { margin-bottom: 24px; }
