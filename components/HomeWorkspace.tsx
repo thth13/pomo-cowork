@@ -21,7 +21,7 @@ import { dailyGoalCopy } from '@/lib/i18n/dailyGoal'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { MessageCircle, History, ListTodo, Medal, HelpCircle, ListChecks, ChevronRight, Headphones, Target } from 'lucide-react'
+import { MessageCircle, History, ListTodo, Medal, HelpCircle, CalendarCheck, ChevronRight, Headphones, Target } from 'lucide-react'
 import Habits from '@/components/Habits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
@@ -65,7 +65,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     { id: 'chat', title: copy.chat, icon: MessageCircle },
     { id: 'history', title: copy.history, icon: History },
     { id: 'tasks', title: copy.tasks, icon: ListTodo },
-    { id: 'habits', title: habitsCopy[language].title, icon: ListChecks },
+    { id: 'habits', title: habitsCopy[language].title, icon: CalendarCheck },
     { id: 'goal', title: dailyGoalCopy[language].title, icon: Target },
     { id: 'progress', title: t.todayContribution.yourProgress, icon: Medal },
     { id: 'sounds', title: ambientSoundsCopy[language].title, icon: Headphones },
@@ -241,7 +241,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
 
   const workspaceLoading = !mounted || isLoading
 
-  const renderPanelButtons = (closeMenu?: () => void) => panels.filter(({ id }) => id !== 'about' || !isAuthenticated).map(({ id, title, icon: Icon }) => (
+  const renderPanelButtons = (closeMenu?: () => void) => panels.filter(({ id }) => id !== 'history' && (id !== 'about' || !isAuthenticated)).map(({ id, title, icon: Icon }) => (
     <button
       key={id}
       type="button"

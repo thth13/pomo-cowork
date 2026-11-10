@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useCompanionStore } from '@/store/useCompanionStore'
+import { SHOW_MR_BEEP } from '@/lib/uiFeatures'
 import { UserSettings } from '@/types'
 import Navbar from '@/components/Navbar'
 import PersonalNavigation from '@/components/PersonalNavigation'
@@ -36,7 +37,9 @@ export default function SettingsPage() {
   const beepSyncStatus = useCompanionStore(state => state.syncStatus)
   const beepHydrated = useCompanionStore(state => state.hydrated)
   const setBeepVisible = useCompanionStore(state => state.setVisible)
-  useEffect(() => { useCompanionStore.getState().hydrate() }, [])
+  useEffect(() => {
+    if (SHOW_MR_BEEP) useCompanionStore.getState().hydrate()
+  }, [])
   const beepCopy = language === 'es'
     ? { title: 'Mr. Beep', label: 'Mostrar Mr. Beep', description: 'Tu compañero de concentración en pantallas de escritorio.', hint: 'Se aplica al instante y se guarda en este navegador.' }
     : { title: 'Mr. Beep', label: 'Show Mr. Beep', description: 'Your focus companion on desktop screens.', hint: 'Applies immediately and is saved in this browser.' }
@@ -562,7 +565,7 @@ export default function SettingsPage() {
             </div>
           </section>
 
-          <section className="settings-panel" aria-labelledby="settings-beep-title" data-i18n-ignore>
+          {SHOW_MR_BEEP && <section className="settings-panel" aria-labelledby="settings-beep-title" data-i18n-ignore>
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
                 <span className="settings-section-icon"><Bot className="h-6 w-6" aria-hidden="true" /></span>
@@ -584,7 +587,7 @@ export default function SettingsPage() {
                   disabled={!beepHydrated} aria-describedby="settings-beep-help" onChange={event => setBeepVisible(event.currentTarget.checked)} />
               </div>
             </div>
-          </section>
+          </section>}
 
           <section className="settings-panel">
             <div className="relative grid gap-6 md:grid-cols-2">

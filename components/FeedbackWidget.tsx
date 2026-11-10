@@ -10,6 +10,14 @@ const SEEN_KEY = 'feedback_widget_seen'
 const PROMPT_ANIM_MS = 300
 
 export default function FeedbackWidget() {
+  const { user, isAuthenticated, isLoading } = useAuthStore()
+
+  if (isLoading || !isAuthenticated || !user || user.isAnonymous) return null
+
+  return <FeedbackWidgetContent />
+}
+
+function FeedbackWidgetContent() {
   const { user, isAuthenticated, token } = useAuthStore()
   const { language } = useI18n()
   const copy = feedbackCopy[language]

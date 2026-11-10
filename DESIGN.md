@@ -2136,6 +2136,25 @@ room lists by auth token and refreshes on focus. Loading disables the button;
 a failed request makes the same button offer retry.
 
 
+## Temporarily hidden features
+
+Projects retain their original icons: Lucide `ListTodo` in the workspace dock
+and `BookOpen` in navigation. Habits use `CalendarCheck` (calendar with a check)
+across the workspace dock, desktop navigation and mobile menus.
+
+The bottom-right feedback widget mounts only after auth loading finishes for an
+authenticated, non-anonymous account. Guests do not see the button or its prompt;
+signing out unmounts the widget and clears its local form state.
+
+Work History is hidden from the workspace dock and its mobile menu. The panel
+implementation and saved window state remain intact.
+
+`lib/uiFeatures.ts` controls temporary visibility. `SHOW_MR_BEEP` is false:
+the global companion and its Settings panel are not mounted. Saved preferences,
+conversation history and the implementation remain available for restoring it.
+`SHOW_SUPPORT_POMO` is false: the global Support Pomo Cowork widget is not mounted.
+Set the respective switch to true to restore the UI.
+
 ## Room administrator exit
 
 The room leave action uses the `CommunityDialog` room-leave variant with the

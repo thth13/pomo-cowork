@@ -36,6 +36,7 @@ import AchievementNotifications from '@/components/achievements/AchievementNotif
 import JournalToast from '@/components/journal/JournalToast'
 import PremiumGrantModal from '@/components/PremiumGrantModal'
 import WalkingCompanion from '@/components/companion/WalkingCompanion'
+import { SHOW_MR_BEEP, SHOW_SUPPORT_POMO } from '@/lib/uiFeatures'
 import PersistentTimerProvider from '@/components/PersistentTimerProvider'
 
 config.autoAddCss = false
@@ -131,8 +132,8 @@ export default function RootLayout({
                     <PersistentTimerProvider>
                       <WrappedProvider>{children}</WrappedProvider>
                     </PersistentTimerProvider>
-                    <WalkingCompanion />
-                    <KofiWidget />
+                    {SHOW_MR_BEEP && <WalkingCompanion />}
+                    {SHOW_SUPPORT_POMO && <KofiWidget />}
                     <div className="hidden sm:block">
                       <FeedbackWidget />
                     </div>

@@ -10,7 +10,7 @@ import { useAuthStore } from '@/store/useAuthStore'
 import AuthModal from './AuthModal'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import ThemeToggle from './ThemeToggle'
-import { Crown, User, Menu, X, ListChecks, Timer, Users, Trophy, BarChart3, BookOpen, Settings, LogOut, ChevronRight, Sprout } from 'lucide-react'
+import { Crown, User, Menu, X, CalendarCheck, Timer, Users, Trophy, BarChart3, BookOpen, Settings, LogOut, ChevronRight, Sprout } from 'lucide-react'
 import { useSocket } from '@/hooks/useSocket'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import Image from 'next/image'
@@ -505,7 +505,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
               <FontAwesomeIcon icon={faChartLine} className="mr-2" />{statisticsCopy[language].navigation}
             </Link>
             <Link prefetch={false} href="/habits" aria-current={pathname === '/habits' ? 'page' : undefined} className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-all ${pathname === '/habits' ? 'bg-rose-600 text-white' : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-slate-300'}`}>
-              <ListChecks size={16} className="mr-2" aria-hidden="true" />{habitsCopy[language].title}
+              <CalendarCheck size={16} className="mr-2" aria-hidden="true" />{habitsCopy[language].title}
             </Link>
           </nav>
           
@@ -752,7 +752,7 @@ export default function Navbar({ compact = false, workspaceActions }: { compact?
                 { href: '/rooms', label: t.nav.rooms, icon: Users, active: pathname.startsWith('/rooms') },
                 { href: '/leaderboard', label: t.nav.leaderboard, icon: Trophy, active: pathname === '/leaderboard' },
                 { href: '/statistics', label: statisticsCopy[language].navigation, icon: BarChart3, active: pathname === '/statistics' },
-                { href: '/habits', label: habitsCopy[language].title, icon: ListChecks, active: pathname === '/habits' },
+                { href: '/habits', label: habitsCopy[language].title, icon: CalendarCheck, active: pathname === '/habits' },
               ].map(({ href, label, icon: Icon, active }) => (
                 <Link prefetch={false} key={href} href={href} onClick={handleMobileLinkClick}
                   aria-current={active ? 'page' : undefined} className="workspace-menu-item">
