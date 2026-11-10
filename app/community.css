@@ -306,6 +306,31 @@ body:has(.paywall-dialog[open]) { overflow: hidden; }
 .community-person-copy { flex: 1; min-width: 0; }
 .community-person-copy strong { display: block; font-size: 13px; line-height: 1.6; overflow-wrap: anywhere; }
 .community-person-copy small { display: block; font-size: 11px; color: var(--pixel-muted); line-height: 1.6; }
+/* Room status shares presence and timer data with the workspace. */
+.room-presence-status { display: inline-flex; align-items: center; gap: 6px; min-width: 0; color: var(--pixel-muted); font-size: 11px; line-height: 1.6; }
+.room-presence-dot { width: 7px; height: 7px; flex-shrink: 0; background: currentColor; border: 1px solid currentColor; border-radius: 50%; }
+.room-presence-status[data-tone="online"] { color: var(--pixel-growth); }
+.room-participant { margin-top: 10px; padding: 12px; border: 1px solid var(--pixel-line); border-radius: 3px; }
+.room-participant:last-child { border-bottom: 1px solid var(--pixel-line); }
+.room-participant[data-working="true"] { background: var(--pixel-screen); background: color-mix(in srgb, var(--pixel-growth) 12%, var(--pixel-paper)); border-color: var(--pixel-growth); }
+.room-participant-link { gap: 10px; flex-wrap: wrap; }
+.room-participant-link .community-person-copy { flex-basis: 100px; }
+.community-person-copy .room-participant-name { display: flex; align-items: center; gap: 7px; }
+.room-participant-name > span:first-child { min-width: 0; }
+.room-participant-online { width: 7px; height: 7px; flex-shrink: 0; background: var(--pixel-muted); border-radius: 50%; }
+.room-participant-online[data-online="true"] { background: var(--pixel-growth); }
+.room-participant[data-working="true"] .room-participant-activity { color: var(--pixel-growth); }
+.room-participant-timer { display: flex; flex-direction: column; gap: 2px; margin-left: auto; padding-left: 12px; border-left: 1px solid var(--pixel-line); text-align: right; flex-shrink: 0; }
+.room-participant-timer-label { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 10px; color: var(--pixel-muted); line-height: 1.5; }
+.room-participant-time { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; color: var(--pixel-ink); }
+@media (forced-colors: active) {
+  .room-presence-status { color: CanvasText; }
+  .room-presence-status[data-tone="online"] { color: LinkText; }
+  .room-participant[data-working="true"] { background: Canvas; border-color: Highlight; }
+  .room-participant-online { background: GrayText; }
+  .room-participant-online[data-online="true"] { background: LinkText; }
+  .room-participant[data-working="true"] .room-participant-activity { color: CanvasText; }
+}
 .community-person-value { flex-shrink: 0; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .community-chart { min-height: 260px; }
 .community-search { position: relative; margin-bottom: 16px; }
@@ -315,6 +340,9 @@ body:has(.paywall-dialog[open]) { overflow: hidden; }
 .community-search-clear:hover { background: var(--pixel-screen); }
 .community-search-clear:active { background: var(--pixel-shadow); }
 .community-search-results { position: absolute; z-index: 10; top: 100%; left: 0; right: 0; margin-top: 6px; max-height: 280px; overflow: auto; background: var(--pixel-paper); border: 1px solid var(--pixel-line); box-shadow: 3px 3px 0 var(--pixel-shadow); }
+.room-invite-link { display: grid; gap: 12px; padding-bottom: 24px; margin-bottom: 24px; border-bottom: 1px solid var(--pixel-line); }
+.room-invite-link .community-field { margin-bottom: 0; min-width: 0; }
+.room-invite-link > .community-button { justify-self: start; min-width: 130px; }
 .room-invite-search { margin-bottom: 0; }
 .room-invite-search .community-search-results { position: static; box-shadow: none; }
 .community-search-results > p { padding: 16px; font-size: 12px; color: var(--pixel-muted); }

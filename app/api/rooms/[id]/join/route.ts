@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 import { Prisma } from '@prisma/client'
+import { verifyRoomInviteLink } from '@/lib/roomInviteLink'
 
 export const dynamic = 'force-dynamic'
 
-// POST /api/rooms/[id]/join - Join a public room (auth required)
+// POST /api/rooms/[id]/join - Join a public room or use an invitation link
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -34,7 +35,16 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
     }
 
     if (room.privacy !== 'PUBLIC') {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+      const membership = await prisma.roomMember.findUnique({
+        where: { roomId_userId: { roomId: room.id, userId: payload.userId } },
+        select: { id: true },
+      })
+      if (!membership && room.ownerId !== payload.userId) {
+        const body = await request.json().catch(() => null)
+        if (typeof body?.invite !== 'string' || !await verifyRoomInviteLink(body.invite, room.id)) {
+          return NextResponse.json({ error: 'Invitation link is invalid or expired' }, { status: 403 })
+        }
+      }
     }
 
     try {

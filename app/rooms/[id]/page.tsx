@@ -1,18 +1,19 @@
 'use client'
 
-import { userProfileHref } from '@/lib/userProfile'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import Link from 'next/link'
-import { Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Target, Trash2, TrendingUp, Trophy, UserPlus, Users, X } from 'lucide-react'
+import { Check, Copy, Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Target, Trash2, TrendingUp, Trophy, UserPlus, Users, X } from 'lucide-react'
+import AuthModal from '@/components/AuthModal'
 import CommunityDialog from '@/components/CommunityDialog'
 import RoomDailyChallenge from '@/components/RoomDailyChallenge'
 import RoomLeaderboard from '@/components/RoomLeaderboard'
 import Chat from '@/components/Chat'
 import RoomPageSkeleton from '@/components/RoomPageSkeleton'
+import { RoomParticipant, RoomParticipants, RoomOnlineCount } from '@/components/RoomPresence'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
 import Navbar from '@/components/Navbar'
@@ -67,11 +68,13 @@ export default function RoomPage() {
 
   const roomId = params?.id
   const shouldJoinOnOpen = searchParams.get('join') === '1'
+  const inviteToken = searchParams.get('invite')
   const requestedTab = searchParams.get('tab')
   const activeTab = requestedTab === 'leaderboard' ? 'leaderboard' : 'overview'
   const roomTabHref = (tab: 'overview' | 'leaderboard') => {
     const next = new URLSearchParams(searchParams.toString())
     next.delete('join')
+    next.delete('invite')
     if (tab !== 'overview') next.set('tab', tab)
     else next.delete('tab')
     const query = next.toString()
@@ -91,6 +94,13 @@ export default function RoomPage() {
   const [roomSaving, setRoomSaving] = useState(false)
   const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false)
   const [isInviteOpen, setIsInviteOpen] = useState(false)
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [inviteLink, setInviteLink] = useState('')
+  const [inviteLinkLoading, setInviteLinkLoading] = useState(false)
+  const [inviteLinkError, setInviteLinkError] = useState(false)
+  const [inviteLinkAttempt, setInviteLinkAttempt] = useState(0)
+  const [linkCopied, setLinkCopied] = useState(false)
+  const [copyLinkError, setCopyLinkError] = useState(false)
   const [isChallengeOpen, setIsChallengeOpen] = useState(false)
   const [joining, setJoining] = useState(false)
   const [confirmRemoveMemberId, setConfirmRemoveMemberId] = useState<string | null>(null)
@@ -105,6 +115,7 @@ export default function RoomPage() {
   const [userResults, setUserResults] = useState<UserSearchItem[]>([])
   const [userLoading, setUserLoading] = useState(false)
   const [addingUserId, setAddingUserId] = useState<string | null>(null)
+  const inviteSendingRef = useRef(false)
   const [userDropdownSuppressed, setUserDropdownSuppressed] = useState(false)
   const [leaving, setLeaving] = useState(false)
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null)
@@ -134,6 +145,7 @@ export default function RoomPage() {
 
   const isOwner = Boolean(user?.id && room?.ownerId && room.ownerId === user.id)
   const isMember = Boolean(user?.id && members.some((m) => m.user.id === user.id))
+  const canInvite = Boolean(user?.id && room && (isOwner || isMember))
   const canLeaveRoom = Boolean(user?.id && room && (isOwner || isMember))
   const canJoinRoom = Boolean(user?.id && room?.privacy === RoomPrivacy.PUBLIC && !isOwner && !isMember)
 
@@ -155,6 +167,10 @@ export default function RoomPage() {
     setError(null)
 
     try {
+      if (shouldJoinOnOpen && inviteToken && !getToken()) {
+        setRoom(null)
+        return
+      }
       if (shouldJoinOnOpen) {
         const token = getToken()
         if (token) {
@@ -162,13 +178,16 @@ export default function RoomPage() {
             method: 'POST',
             headers: {
               Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
             },
+            body: JSON.stringify({ invite: inviteToken }),
             cache: 'no-store',
           })
 
           if (!joinRes.ok) {
             const data = (await joinRes.json().catch(() => null)) as { error?: string } | null
-            setError(data?.error ?? copy.joinError)
+            setError(inviteToken && joinRes.status === 403 ? copy.invalidInviteLink : data?.error ?? copy.joinError)
+            if (inviteToken) { setRoom(null); return }
           }
         }
       }
@@ -207,7 +226,7 @@ export default function RoomPage() {
         setCurrentRoom({ id: roomData.id, name: roomData.name, backgroundGradientKey: roomData.backgroundGradientKey ?? null })
       }
 
-      if (shouldJoinOnOpen) {
+      if (shouldJoinOnOpen && userIsMember) {
         router.replace(`/rooms/${roomId}`)
       }
 
@@ -223,7 +242,7 @@ export default function RoomPage() {
     } finally {
       setLoading(false)
     }
-  }, [getToken, headers, roomId, router, shouldJoinOnOpen, user?.id, setCurrentRoom, copy.joinError, copy.roomLoadError])
+  }, [getToken, headers, roomId, router, shouldJoinOnOpen, inviteToken, user?.id, setCurrentRoom, copy.joinError, copy.roomLoadError, copy.invalidInviteLink])
 
   useEffect(() => {
     loadAll()
@@ -281,7 +300,7 @@ export default function RoomPage() {
     const q = userQuery.trim()
     setUserResults([])
     setSearchError(false)
-    if (q.length < 2 || isComposing || !isOwner || !isInviteOpen) { setUserLoading(false); return }
+    if (q.length < 2 || isComposing || !canInvite || !isInviteOpen) { setUserLoading(false); return }
     const controller = new AbortController()
     let active = true
     setUserLoading(true)
@@ -303,7 +322,7 @@ export default function RoomPage() {
       }
     }, 300)
     return () => { active = false; controller.abort(); window.clearTimeout(debounce); window.clearTimeout(timeout) }
-  }, [userQuery, isComposing, isOwner, isInviteOpen])
+  }, [userQuery, isComposing, canInvite, isInviteOpen])
 
   const filteredUserResults = useMemo(() => {
     const existingUserIds = new Set<string>()
@@ -315,7 +334,7 @@ export default function RoomPage() {
   }, [members, room?.ownerId, userResults])
 
   const isUserDropdownOpen =
-    isOwner && isInviteOpen && !isComposing && !userDropdownSuppressed && userQuery.trim().length >= 2
+    canInvite && isInviteOpen && !isComposing && !userDropdownSuppressed && userQuery.trim().length >= 2
 
   useEffect(() => {
     if (!isUserDropdownOpen) return
@@ -335,10 +354,53 @@ export default function RoomPage() {
     }
   }, [isUserDropdownOpen])
 
+  useEffect(() => {
+    if (!canInvite || !isInviteOpen || !roomId) return
+    const controller = new AbortController()
+    let active = true
+    setInviteLink('')
+    setInviteLinkLoading(true)
+    setInviteLinkError(false)
+    setLinkCopied(false)
+    setCopyLinkError(false)
+    const timeout = window.setTimeout(() => {
+      controller.abort()
+      if (active) { setInviteLinkLoading(false); setInviteLinkError(true) }
+    }, 20000)
+    const token = getToken()
+    void fetch(`/api/rooms/${roomId}/invite-link`, {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      signal: controller.signal,
+    }).then(async response => {
+      if (!response.ok) throw new Error('Could not create invitation link')
+      const data = await response.json() as { path: string }
+      if (active) setInviteLink(new URL(data.path, window.location.origin).href)
+    }).catch(() => {
+      if (active) setInviteLinkError(true)
+    }).finally(() => {
+      window.clearTimeout(timeout)
+      if (active) setInviteLinkLoading(false)
+    })
+    return () => { active = false; controller.abort(); window.clearTimeout(timeout) }
+  }, [canInvite, isInviteOpen, roomId, getToken, inviteLinkAttempt])
+
+  const onCopyInviteLink = async () => {
+    if (!inviteLink) return
+    setCopyLinkError(false)
+    try {
+      await navigator.clipboard.writeText(inviteLink)
+      setLinkCopied(true)
+    } catch {
+      setCopyLinkError(true)
+    }
+  }
+
   const onAddUser = useCallback(
     async (username: string, userId: string) => {
-      if (!roomId || addingUserId) return
+      if (!roomId || !canInvite || inviteSendingRef.current) return
 
+      inviteSendingRef.current = true
       setAddingUserId(userId)
       setError(null)
       try {
@@ -362,12 +424,13 @@ export default function RoomPage() {
         setUserResults([])
         showInviteToast(copy.inviteSent)
       } catch {
-        setError(copy.searchError)
+        setError(copy.inviteError)
       } finally {
+        inviteSendingRef.current = false
         setAddingUserId(null)
       }
     },
-    [getToken, roomId, showInviteToast, addingUserId, copy.inviteSent, copy.searchError, copy.inviteError]
+    [getToken, roomId, canInvite, showInviteToast, copy.inviteSent, copy.inviteError]
   )
 
   const onLeaveRoom = useCallback(async () => {
@@ -577,18 +640,20 @@ export default function RoomPage() {
       <main className="community-layout personal-page-frame">
         <PersonalNavigation />
         {error && !isInviteOpen && !isRoomSettingsOpen && !isConfirmDeleteOpen && !confirmRemoveMemberId && <div className="community-error" role="alert">{error}</div>}
-        {loading ? <RoomPageSkeleton /> : !room ? (
+        {shouldJoinOnOpen && inviteToken && !user?.id && !loading ? (
+          <div className="community-panel community-state"><UserPlus aria-hidden="true" /><h1>{copy.inviteFriends}</h1><p>{copy.loginRequired}</p><button type="button" className="community-button community-button-primary" onClick={() => setIsAuthModalOpen(true)}>{copy.signIn}</button></div>
+        ) : loading ? <RoomPageSkeleton /> : !room ? (
           <div className="community-panel community-state"><DoorOpen aria-hidden="true" /><h1>{copy.roomLoadError}</h1><button type="button" className="community-button" onClick={() => void loadAll()}>{copy.retry}</button></div>
         ) : <>
           <header className="room-detail-header">
             {isOwner && <button type="button" onClick={() => { setError(null); setRoomSettings({ name: room.name, privacy: room.privacy }); setIsRoomSettingsOpen(true) }} className="community-icon-button room-settings-button" title={copy.settings} aria-label={copy.settings}><Settings size={18} aria-hidden="true" /></button>}
             <div className="community-intro">
               <div><p className="community-eyebrow"><DoorOpen size={15} aria-hidden="true" />{copy.room}</p><h1>{room.name}</h1>
-                <div className="community-actions mt-3"><span className="community-badge">{room.privacy === RoomPrivacy.PRIVATE ? <Lock size={12} aria-hidden="true" /> : <Globe2 size={12} aria-hidden="true" />}{room.privacy === RoomPrivacy.PRIVATE ? copy.private : copy.public}</span><span className="community-badge"><Users size={12} aria-hidden="true" />{members.length} {copy.participantPlural}</span>{isOwner && <span className="community-badge">{copy.owner}</span>}</div>
+                <div className="community-actions mt-3"><span className="community-badge">{room.privacy === RoomPrivacy.PRIVATE ? <Lock size={12} aria-hidden="true" /> : <Globe2 size={12} aria-hidden="true" />}{room.privacy === RoomPrivacy.PRIVATE ? copy.private : copy.public}</span><span className="community-badge"><Users size={12} aria-hidden="true" />{members.length} {copy.participantPlural}</span><RoomOnlineCount members={members} />{isOwner && <span className="community-badge">{copy.owner}</span>}</div>
               </div>
               <div className="community-actions">
                 {canJoinRoom && <button type="button" onClick={onJoinRoom} disabled={joining} aria-busy={joining} className="community-button community-button-primary"><UserPlus size={16} aria-hidden="true" />{copy.join}</button>}
-                {isOwner && <button type="button" onClick={() => { setError(null); setUserDropdownSuppressed(false); setIsInviteOpen(true) }} className="community-button"><UserPlus size={16} aria-hidden="true" />{copy.inviteFriends}</button>}
+                {canInvite && <button type="button" onClick={() => { setError(null); setUserDropdownSuppressed(false); setIsInviteOpen(true) }} className="community-button"><UserPlus size={16} aria-hidden="true" />{copy.inviteFriends}</button>}
                 {isOwner && <button type="button" onClick={() => { if (activeTab !== 'overview') router.replace(roomTabHref('overview'), { scroll: false }); setIsChallengeOpen(true) }} className="community-button"><Target size={16} aria-hidden="true" />{copy.challenge.setGoal}</button>}
                 {canLeaveRoom && <button type="button" onClick={onLeaveRoom} disabled={leaving} aria-busy={leaving} className="community-button"><LogOut size={16} aria-hidden="true" />{copy.leave}</button>}
               </div>
@@ -611,12 +676,12 @@ export default function RoomPage() {
             <div className="community-columns">
               <div className="community-stack">
                 <section className="community-panel">
-                  <header className="community-panel-heading"><h2><Users size={18} aria-hidden="true" />{copy.participants}</h2><span className="community-badge">{members.length}</span></header>
+                  <header className="community-panel-heading"><h2><Users size={18} aria-hidden="true" />{copy.participants}</h2><div className="community-actions"><span className="community-badge">{members.length}</span><RoomOnlineCount members={members} /></div></header>
 
-                  {members.length === 0 ? <p className="community-muted">{copy.noParticipants}</p> : members.map(member => <div className="community-person" key={member.id}>
-                    <Link href={userProfileHref(member.user)} className="community-person-link"><UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} /><span className="community-person-copy"><strong>{member.user.username}</strong><small>{member.role === 'OWNER' ? copy.owner : copy.member}</small></span></Link>
-                    {isOwner && member.user.id !== user?.id && member.role !== 'OWNER' && <button type="button" className="community-icon-button" disabled={Boolean(removingMemberId)} title={copy.remove} aria-label={`${copy.remove}: ${member.user.username}`} onClick={() => { setError(null); setConfirmRemoveMemberId(member.id) }}><X size={16} aria-hidden="true" /></button>}
-                  </div>)}
+                  {members.length === 0 ? <p className="community-muted">{copy.noParticipants}</p> : <RoomParticipants members={members}>{member => <RoomParticipant key={member.id} member={member}
+                    avatar={<UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} />}
+                    actions={isOwner && member.user.id !== user?.id && member.role !== 'OWNER' ? <button type="button" className="community-icon-button" disabled={Boolean(removingMemberId)} title={copy.remove} aria-label={`${copy.remove}: ${member.user.username}`} onClick={() => { setError(null); setConfirmRemoveMemberId(member.id) }}><X size={16} aria-hidden="true" /></button> : undefined}
+                  />}</RoomParticipants>}
                 </section>
                 <Chat key={room.id} roomId={room.id} title={copy.chatTab} mode="messages" className="room-chat" isVisible={activeTab === 'overview'} />
               </div>
@@ -630,10 +695,30 @@ export default function RoomPage() {
         </>}
       </main>
       {inviteToast && !isInviteOpen && <div className="community-toast" role="status">{inviteToast}</div>}
-      <CommunityDialog open={isOwner && isInviteOpen} variant="room-invite" title={copy.inviteFriends} busy={Boolean(addingUserId)} onClose={() => setIsInviteOpen(false)}>
-        <div ref={userSearchRef} className="community-search room-invite-search" onKeyDown={event => { if (event.key === 'Escape' && isUserDropdownOpen) { event.preventDefault(); event.stopPropagation(); setUserDropdownSuppressed(true); inviteInputRef.current?.focus() } }}>
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <CommunityDialog open={canInvite && isInviteOpen} variant="room-invite" title={copy.inviteFriends} busy={Boolean(addingUserId)} onClose={() => setIsInviteOpen(false)}>
+        <div className="room-invite-link">
+          <label className="community-field" htmlFor="room-invite-link"><span>{copy.inviteLink}</span><input id="room-invite-link" readOnly value={inviteLink} aria-busy={inviteLinkLoading} placeholder={inviteLinkLoading ? copy.linkLoading : ''} onFocus={event => event.currentTarget.select()} /></label>
+          <button type="button" className="community-button" disabled={!inviteLink || inviteLinkLoading} onClick={() => void onCopyInviteLink()}>{linkCopied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}{linkCopied ? copy.linkCopied : copy.copyLink}</button>
+          <p className="community-muted">{copy.inviteLinkHint}</p>
+          {inviteLinkError && <div className="community-error" role="alert">{copy.linkError} <button type="button" className="community-button" onClick={() => setInviteLinkAttempt(value => value + 1)}>{copy.retry}</button></div>}
+          {copyLinkError && <p className="community-error" role="alert">{copy.copyLinkError}</p>}
+          <span className="sr-only" role="status">{linkCopied ? copy.linkCopied : ''}</span>
+        </div>
+        <div ref={userSearchRef} className="community-search room-invite-search" onKeyDown={event => {
+          if (isComposing || event.nativeEvent.isComposing || !isUserDropdownOpen) return
+          if (event.key === 'Escape') { event.preventDefault(); event.stopPropagation(); setUserDropdownSuppressed(true); inviteInputRef.current?.focus(); return }
+          if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return
+          const options = Array.from(userSearchRef.current?.querySelectorAll<HTMLButtonElement>('.community-search-results button:not(:disabled)') ?? [])
+          if (!options.length) return
+          const current = options.indexOf(document.activeElement as HTMLButtonElement)
+          const next = current === -1 ? (event.key === 'ArrowDown' ? 0 : options.length - 1) : current + (event.key === 'ArrowDown' ? 1 : -1)
+          event.preventDefault()
+          if (next < 0 || next >= options.length) inviteInputRef.current?.focus()
+          else options[next].focus()
+        }}>
           <label htmlFor="room-invite-search">{copy.invite}</label>
-          <input id="room-invite-search" ref={inviteInputRef} autoFocus value={userQuery} onChange={event => { setUserDropdownSuppressed(false); setUserQuery(event.target.value) }} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={() => setIsComposing(false)} placeholder={copy.inviteHint} autoComplete="off" />
+          <input id="room-invite-search" ref={inviteInputRef} autoFocus disabled={Boolean(addingUserId)} value={userQuery} onChange={event => { setUserDropdownSuppressed(false); setUserQuery(event.target.value) }} onCompositionStart={() => setIsComposing(true)} onCompositionEnd={() => setIsComposing(false)} placeholder={copy.inviteHint} autoComplete="off" />
           {userQuery && <button type="button" className="community-search-clear" aria-label={copy.clear} onClick={() => { setUserQuery(''); setUserResults([]); setUserDropdownSuppressed(false); inviteInputRef.current?.focus() }}><X size={16} aria-hidden="true" /></button>}
           {isUserDropdownOpen && <div className="community-search-results" aria-label={copy.invite}>
             {userLoading ? <p role="status">{copy.searching}</p> : searchError ? <p role="status">{copy.searchError}</p> : filteredUserResults.length === 0 ? <p role="status">{copy.noUsers}</p> : filteredUserResults.map(person => <button key={person.id} type="button" disabled={Boolean(addingUserId)} aria-busy={addingUserId === person.id} onClick={() => void onAddUser(person.username, person.id)}><UserAvatar avatarUrl={person.avatarUrl} username={person.username} size={32} /><span>{person.username}</span><UserPlus size={15} aria-hidden="true" /></button>)}

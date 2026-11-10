@@ -954,6 +954,26 @@ Room detail uses the shared PersonalNavigation header and personal-page-frame sp
 matching Statistics and the own-profile page, including loading and error states.
 Rooms is the active navigation item; there is no separate All rooms breadcrumb.
 
+Room headers and participant panels show the unique count of room members online
+on the site. A green/gray online dot sits beside each username with an accessible
+label and tooltip. Participants appear in compact bordered rows; an active worker's
+entire row receives a pale green surface and green border derived from growth/paper
+tokens. A readable right-aligned timer counts down focus/break time, counts up time
+tracking, and freezes on pause. Activity labels show working, idle, pause or break;
+role captions are omitted. Timer digits use tabular Inter and a reserved clock column.
+Rows wrap on narrow screens, and timer updates stay inside each row rather than
+rerendering the room charts. Participants sort into online with a visible timer,
+other online, then offline, preserving original order within each group. Paused
+and break timers remain in the timer group. Timer expiration, presence and session
+updates automatically refresh the order.
+`RoomPresence`/`RoomParticipant` reuse `useConnectionStore` and `useTimerStore` socket snapshots;
+working means an unpaused, unexpired WORK or TIME_TRACKING session on the site.
+Expired sessions stop displaying as working even without another socket event.
+Disconnects show Status unavailable instead of marking everyone offline. Existing
+pixel growth/tomato-ink/muted tokens own the colors; indicators wrap on mobile and
+English/Spanish labels live in `communityCopy`. No extra connections or API polling.
+
+
 Room detail starts its activity column with `RoomDailyChallenge`: a trophy heading
 labelled “Daily goal” in English, without a Daily badge or explanatory paragraph,
 with the custom goal name directly below the heading and settings on the right.
@@ -1408,12 +1428,22 @@ short screens; phone inputs use 16px text. Forced colors retains system surfaces
 
 ## Premium grant dialog
 
-The room's Invite friends and Room settings dialogs use CommunityDialog's
+The room's Invite to room and Room settings dialogs use CommunityDialog's
 `room-invite` and `room-settings` variants, sharing the paywall title bar, pixel
 heading, close control and scene-glass treatment. Both keep a compact 520px width
-with a padded, scrollable body and matching mobile spacing. Invite friends keeps
-inline search results; Room settings reuses the existing name and privacy fields
+with a padded, scrollable body and matching mobile spacing. Invite to room appears
+in the room header for owners and participants. It offers a selectable invitation
+link with Copy link, followed by the existing debounced username search and inline
+results. Search supports Tab, arrow keys and Escape; current participants are excluded.
+Link loading, retry, clipboard fallback and sent feedback reuse community primitives
+and English/Spanish copy. Room settings reuses the existing name and privacy fields
 and save, cancel and delete actions.
+
+The member invitation API admits owners and participants. Signed share links use a
+separate key from login tokens, last seven days, and require their creator to still
+belong to the room. The join API checks them before admitting a non-member to a
+private room. Visitors sign in through AuthModal with the link retained; successful
+joining removes the token from the URL. No schema changes or new tokens are needed.
 
 CommunityDialog's `premium-grant` variant shares the `paywall-dialog` header,
 pixel title typography, close control and scene-glass treatment with the Premium

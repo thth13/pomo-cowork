@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
+import { canInviteToRoom } from '@/lib/roomInviteLink'
 
 export const dynamic = 'force-dynamic'
 
@@ -68,7 +69,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
   }
 }
 
-// POST /api/rooms/[id]/members - Add participant by username (owner only)
+// POST /api/rooms/[id]/members - Invite by username (owner or participant)
 export async function POST(request: NextRequest, { params }: { params: { id: string } }) {
   try {
     const authHeader = request.headers.get('authorization')
@@ -92,7 +93,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       return NextResponse.json({ error: 'Not found' }, { status: 404 })
     }
 
-    if (room.ownerId !== payload.userId) {
+    if (!await canInviteToRoom(params.id, payload.userId)) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
@@ -127,6 +128,7 @@ export async function POST(request: NextRequest, { params }: { params: { id: str
       where: { roomId_inviteeId: { roomId: params.id, inviteeId: user.id } },
       update: {
         status: 'PENDING',
+        inviterId: payload.userId,
       },
       create: {
         roomId: params.id,
