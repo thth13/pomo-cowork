@@ -41,6 +41,12 @@
 .community-metric > strong { display: block; margin-top: 12px; font-size: clamp(23px, 3vw, 34px); line-height: 1.25; font-weight: 600; letter-spacing: -.045em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .community-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; }
 .community-stack { display: grid; gap: 24px; min-width: 0; }
+.room-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; border-bottom: 1px solid var(--pixel-line); }
+.room-tabs a { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border-bottom: 2px solid transparent; color: var(--pixel-muted); font-size: 13px; font-weight: 600; cursor: pointer; }
+.room-tabs a:hover { background: var(--pixel-screen); color: var(--pixel-ink); }
+.room-tabs a:active { background: var(--pixel-shadow); }
+.room-tabs a[aria-current='page'] { border-bottom-color: var(--pixel-accent); color: var(--pixel-tomato-ink); }
+.room-tabs a:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -2px; }
 .room-challenge { min-height: 0; }
 .room-challenge-heading-copy { flex: 1; min-width: 0; }
 .room-challenge .room-challenge-name { margin-top: 4px; font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }

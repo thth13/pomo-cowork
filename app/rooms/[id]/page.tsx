@@ -7,9 +7,10 @@ import Image from 'next/image'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import Link from 'next/link'
-import { Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Sprout, Target, Trash2, TrendingUp, UserPlus, Users, X } from 'lucide-react'
+import { Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Target, Trash2, TrendingUp, Trophy, UserPlus, Users, X } from 'lucide-react'
 import CommunityDialog from '@/components/CommunityDialog'
 import RoomDailyChallenge from '@/components/RoomDailyChallenge'
+import RoomLeaderboard from '@/components/RoomLeaderboard'
 import RoomPageSkeleton from '@/components/RoomPageSkeleton'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
@@ -65,6 +66,15 @@ export default function RoomPage() {
 
   const roomId = params?.id
   const shouldJoinOnOpen = searchParams.get('join') === '1'
+  const activeTab = searchParams.get('tab') === 'leaderboard' ? 'leaderboard' : 'overview'
+  const roomTabHref = (tab: 'overview' | 'leaderboard') => {
+    const next = new URLSearchParams(searchParams.toString())
+    next.delete('join')
+    if (tab === 'leaderboard') next.set('tab', tab)
+    else next.delete('tab')
+    const query = next.toString()
+    return `/rooms/${roomId}${query ? `?${query}` : ''}`
+  }
 
   const [room, setRoom] = useState<Room | null>(null)
   const [members, setMembers] = useState<RoomMember[]>([])
@@ -577,7 +587,7 @@ export default function RoomPage() {
               <div className="community-actions">
                 {canJoinRoom && <button type="button" onClick={onJoinRoom} disabled={joining} aria-busy={joining} className="community-button community-button-primary"><UserPlus size={16} aria-hidden="true" />{copy.join}</button>}
                 {isOwner && <button type="button" onClick={() => { setError(null); setUserDropdownSuppressed(false); setIsInviteOpen(true) }} className="community-button"><UserPlus size={16} aria-hidden="true" />{copy.inviteFriends}</button>}
-                {isOwner && <button type="button" onClick={() => setIsChallengeOpen(true)} className="community-button"><Target size={16} aria-hidden="true" />{copy.challenge.setGoal}</button>}
+                {isOwner && <button type="button" onClick={() => { if (activeTab !== 'overview') router.replace(roomTabHref('overview'), { scroll: false }); setIsChallengeOpen(true) }} className="community-button"><Target size={16} aria-hidden="true" />{copy.challenge.setGoal}</button>}
                 {canLeaveRoom && <button type="button" onClick={onLeaveRoom} disabled={leaving} aria-busy={leaving} className="community-button"><LogOut size={16} aria-hidden="true" />{copy.leave}</button>}
               </div>
             </div>
@@ -587,29 +597,30 @@ export default function RoomPage() {
             <div className="community-metric"><span><Flame size={15} aria-hidden="true" />{copy.pomodoros}</span><strong>{stats.totalPomodoros.toLocaleString(locale)}</strong></div>
             <div className="community-metric"><span><TrendingUp size={15} aria-hidden="true" />{copy.average}</span><strong>{formatMinutes(stats.avgDailyFocusMinutes ?? 0)}</strong></div>
           </section> : <p className="community-error" role="status">{copy.statsUnavailable}</p>}
-          <div className="community-columns">
-            <section className="community-panel">
-              <header className="community-panel-heading"><h2><Users size={18} aria-hidden="true" />{copy.participants}</h2><span className="community-badge">{members.length}</span></header>
+          <nav className="room-tabs" aria-label={copy.room}>
+            <Link href={roomTabHref('overview')} scroll={false} aria-current={activeTab === 'overview' ? 'page' : undefined}><Users size={16} aria-hidden="true" />{copy.overviewTab}</Link>
+            <Link href={roomTabHref('leaderboard')} scroll={false} aria-current={activeTab === 'leaderboard' ? 'page' : undefined}><Trophy size={16} aria-hidden="true" />{copy.leaderboardTab}</Link>
+          </nav>
+          <div hidden={activeTab !== 'overview'}>
+            <div className="community-columns">
+              <section className="community-panel">
+                <header className="community-panel-heading"><h2><Users size={18} aria-hidden="true" />{copy.participants}</h2><span className="community-badge">{members.length}</span></header>
 
-              {members.length === 0 ? <p className="community-muted">{copy.noParticipants}</p> : members.map(member => <div className="community-person" key={member.id}>
-                <Link href={userProfileHref(member.user)} className="community-person-link"><UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} /><span className="community-person-copy"><strong>{member.user.username}</strong><small>{member.role === 'OWNER' ? copy.owner : copy.member}</small></span></Link>
-                {isOwner && member.user.id !== user?.id && member.role !== 'OWNER' && <button type="button" className="community-icon-button" disabled={Boolean(removingMemberId)} title={copy.remove} aria-label={`${copy.remove}: ${member.user.username}`} onClick={() => { setError(null); setConfirmRemoveMemberId(member.id) }}><X size={16} aria-hidden="true" /></button>}
-              </div>)}
-            </section>
-            <div className="community-stack">
-              <RoomDailyChallenge key={room.id} roomId={room.id} token={getToken()} isOwner={isOwner} userId={user?.id} membershipKey={members.map(member => member.user.id).sort().join(',')} onSaved={showInviteToast} open={isOwner && isChallengeOpen} onOpen={() => setIsChallengeOpen(true)} onClose={() => setIsChallengeOpen(false)} />
-              <section className="community-panel">
-                <header className="community-panel-heading"><div><h2><Sprout size={18} aria-hidden="true" />{copy.topUsers}</h2><p>{copy.topHint}</p></div></header>
-                {stats?.topUsers?.length ? stats.topUsers.map(person => <div className="community-person" key={person.id}>
-                  <Link href={userProfileHref(person)} className="community-person-link"><UserAvatar avatarUrl={person.avatarUrl} username={person.username} size={40} /><span className="community-person-copy"><strong>{person.username}</strong><small>{copy.contribution}: {person.contributionPercent}%</small><span className="room-contribution" aria-hidden="true"><span style={{ width: `${Math.max(0, Math.min(100, person.contributionPercent))}%` }} /></span></span></Link><span className="community-person-value">{formatMinutes(person.hours * 60)}</span>
-                </div>) : <p className="community-muted">{stats ? copy.noData : copy.statsUnavailable}</p>}
+                {members.length === 0 ? <p className="community-muted">{copy.noParticipants}</p> : members.map(member => <div className="community-person" key={member.id}>
+                  <Link href={userProfileHref(member.user)} className="community-person-link"><UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} /><span className="community-person-copy"><strong>{member.user.username}</strong><small>{member.role === 'OWNER' ? copy.owner : copy.member}</small></span></Link>
+                  {isOwner && member.user.id !== user?.id && member.role !== 'OWNER' && <button type="button" className="community-icon-button" disabled={Boolean(removingMemberId)} title={copy.remove} aria-label={`${copy.remove}: ${member.user.username}`} onClick={() => { setError(null); setConfirmRemoveMemberId(member.id) }}><X size={16} aria-hidden="true" /></button>}
+                </div>)}
               </section>
-              <section className="community-panel">
-                <header className="community-panel-heading"><div><h2>{copy.weekly}</h2><p>{copy.weekHint}</p></div></header>
-                {stats ? <div className="community-chart"><HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} /></div> : <p className="community-muted">{copy.statsUnavailable}</p>}
-              </section>
+              <div className="community-stack">
+                <RoomDailyChallenge key={room.id} roomId={room.id} token={getToken()} isOwner={isOwner} userId={user?.id} membershipKey={members.map(member => member.user.id).sort().join(',')} onSaved={showInviteToast} open={isOwner && isChallengeOpen} onOpen={() => setIsChallengeOpen(true)} onClose={() => setIsChallengeOpen(false)} />
+                <section className="community-panel">
+                  <header className="community-panel-heading"><div><h2>{copy.weekly}</h2><p>{copy.weekHint}</p></div></header>
+                  {stats ? <div className="community-chart"><HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} /></div> : <p className="community-muted">{copy.statsUnavailable}</p>}
+                </section>
+              </div>
             </div>
           </div>
+          {activeTab === 'leaderboard' && <RoomLeaderboard stats={stats} currentUserId={user?.id} />}
         </>}
       </main>
       {inviteToast && !isInviteOpen && <div className="community-toast" role="status">{inviteToast}</div>}

@@ -65,6 +65,9 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
             id: true,
             username: true,
             avatarUrl: true,
+            experience: true,
+            isPro: true,
+            proExpiresAt: true,
           },
         },
       },
@@ -105,7 +108,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
     const minutesByUser = new Map<
       string,
-      { id: string; username: string; avatarUrl: string | null; minutes: number }
+      { id: string; username: string; avatarUrl: string | null; minutes: number; totalPomodoros: number; experience: number; isPro: boolean }
     >()
 
     focusSessions.forEach((session) => {
@@ -114,27 +117,37 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       const addMinutes = getEffectiveMinutes(session)
       if (existing) {
         existing.minutes += addMinutes
+        if (session.type === 'WORK') existing.totalPomodoros += 1
       } else {
         minutesByUser.set(session.user.id, {
           id: session.user.id,
           username: session.user.username,
           avatarUrl: session.user.avatarUrl,
           minutes: addMinutes,
+          totalPomodoros: session.type === 'WORK' ? 1 : 0,
+          experience: session.user.experience,
+          isPro: session.user.isPro && (!session.user.proExpiresAt || session.user.proExpiresAt > now),
         })
       }
     })
 
     const topUsers = Array.from(minutesByUser.values())
-      .map((u) => ({
+      .filter((u) => u.minutes > 0)
+      .sort((a, b) => b.minutes - a.minutes || a.id.localeCompare(b.id))
+      .slice(0, 10)
+      .map((u, index) => ({
         id: u.id,
         username: u.username,
+        totalMinutes: u.minutes,
+        totalPomodoros: u.totalPomodoros,
+        experience: u.experience,
+        isPro: u.isPro,
+        rank: index + 1,
         avatarUrl: u.avatarUrl ?? undefined,
         hours: Math.round((u.minutes / 60) * 10) / 10,
         contributionPercent:
           totalFocusMinutes > 0 ? Math.round((u.minutes / totalFocusMinutes) * 1000) / 10 : 0,
       }))
-      .sort((a, b) => b.hours - a.hours)
-      .slice(0, 10)
 
     return NextResponse.json({
       totalPomodoros,

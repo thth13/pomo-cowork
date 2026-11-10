@@ -596,6 +596,17 @@ with token-derived colors and square selection geometry. `app/leaderboard/leader
 owns route-specific composition; all colors and typography derive from existing global
 tokens. `lib/i18n/leaderboard.ts` owns new English/Spanish copy through I18nProvider.
 
+`LeaderboardStandings` owns the shared podium, avatar fallback, Pro badge and ranking
+table for the global board and room detail. `RoomLeaderboard` occupies a dedicated
+full-width room tab at the global board’s normal scale: three leading coworkers, ranks, exact focus minutes in
+h:mm, Pomodoro counts, relative time bars and the current-user highlight. Room data
+retains the all-time, room-only top-ten scope; places sort by exact minutes before
+display rounding. The heading states this scope explicitly. The Overview and Leaderboard navigation links preserve the selected view in the
+`tab` query parameter. Overview keeps members, daily goal and weekly activity; the
+room header and totals stay visible in both views. Shared responsive geometry lives
+in `app/leaderboard/leaderboard.css` and confines table overflow to its own wrapper. Existing room access checks and
+loading/empty/unavailable states remain the owners of data visibility.
+
 ## Personal statistics
 
 `/statistics` uses `StatisticsSkeleton` while the initial data loads. Its placeholders

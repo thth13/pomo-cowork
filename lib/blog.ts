@@ -6,8 +6,9 @@ import { cache } from 'react'
 import matter from 'gray-matter'
 import { remark } from 'remark'
 import html from 'remark-html'
+import { SITE_URL } from '@/lib/site'
 
-export const SITE_URL = 'https://pomo-co.work'
+export { SITE_URL } from '@/lib/site'
 export const BLOG_DESCRIPTION = 'Practical guides to the Pomodoro technique, focused work, and online coworking.'
 const contentDirectory = path.join(process.cwd(), 'content/blog')
 

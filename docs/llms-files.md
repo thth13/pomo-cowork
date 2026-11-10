@@ -8,7 +8,7 @@ with `<link rel="describedby" href="/llms.txt" type="text/plain">`.
 `llms.txt` follows the proposed format: site name, short summary, context, and
 grouped annotated links. `llms-full.txt` is an optional expanded product summary,
 not a complete mirror or an export of user data. English matches the public tool
-pages. Canonical links use `https://pomo-co.work`, as defined in `lib/blog.ts`.
+pages. Canonical links use `https://www.pomo-co.work`, as defined in `lib/site.ts`.
 
 ## Maintenance
 

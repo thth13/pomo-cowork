@@ -124,6 +124,11 @@ export interface RoomStats {
     username: string
     avatarUrl?: string
     hours: number
+    totalMinutes: number
+    totalPomodoros: number
+    experience: number
+    isPro: boolean
+    rank: number
     contributionPercent: number
   }>
 }

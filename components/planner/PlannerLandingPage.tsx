@@ -5,8 +5,7 @@ import StudyPlanner from './StudyPlanner'
 import ExamStudyPlanner from './ExamStudyPlanner'
 import { plannerLabels, plannerPages, plannerSlugs, type PlannerSlug } from '@/lib/plannerPages'
 import { seoToolLabels } from '@/lib/seoRoutes'
-
-const siteUrl = 'https://pomo-co.work'
+import { SITE_URL as siteUrl } from '@/lib/site'
 
 export function getPlannerMetadata(slug: PlannerSlug): Metadata {
   const page = plannerPages[slug]

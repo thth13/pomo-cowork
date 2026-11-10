@@ -1,5 +1,6 @@
+import { SITE_URL } from '@/lib/site'
 import type { MetadataRoute } from 'next'
-import { getBlogPosts, postUrl, SITE_URL } from '@/lib/blog'
+import { getBlogPosts, postUrl } from '@/lib/blog'
 import { journalSitemap } from '@/lib/journal/sitemap'
 import { japaneseSeoSlugs } from '@/lib/japaneseSeoRoutes'
 import { HOME_LANGUAGES } from '@/lib/homeSeo'

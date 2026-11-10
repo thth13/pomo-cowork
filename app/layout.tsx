@@ -1,3 +1,4 @@
+import { SITE_URL } from '@/lib/site'
 import 'react-kofi/dist/kofi.css'
 import './globals.css'
 import StandalonePageBoundary from '@/components/StandalonePageBoundary'
@@ -47,7 +48,7 @@ const bebas = Bebas_Neue({ subsets: ['latin'], weight: '400', variable: '--font-
 const terminal = VT323({ subsets: ['latin'], weight: '400', variable: '--font-timer-terminal', preload: false })
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://pomo-co.work'),
+  metadataBase: new URL(SITE_URL),
   title: 'Pomo Cowork',
   description: 'Pomodoro Timer is a collaborative pomodoro coworking app that keeps your focus and team in sync.',
   icons: {
@@ -64,7 +65,7 @@ export const metadata: Metadata = {
     description: 'Collaborative pomodoro coworking timer with live activity from your squad.',
     type: 'website',
     locale: 'en_US',
-    url: 'https://pomo-co.work',
+    url: SITE_URL,
     images: [
       {
         url: '/assets/meta/og-main.png',

@@ -4,8 +4,7 @@ import { userProfileHref } from '@/lib/userProfile'
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import HomeLink from '@/components/HomeLink'
-import Image from 'next/image'
-import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Crown, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
+import { ArrowUpRight, CalendarDays, ChevronLeft, ChevronRight, Clock3, Flame, Search, Sprout, Trophy, Users, X } from 'lucide-react'
 import { DayPicker, type DateRange } from 'react-day-picker'
 import { es } from 'react-day-picker/locale'
 import Navbar from '@/components/Navbar'
@@ -14,22 +13,11 @@ import PersonalPageSkeleton from '@/components/PersonalPageSkeleton'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useI18n } from '@/components/I18nProvider'
 import { leaderboardCopy } from '@/lib/i18n/leaderboard'
-import { getRank } from '@/lib/ranks'
-import { ranksCopy } from '@/lib/i18n/ranks'
 import 'react-day-picker/dist/style.css'
+import { Avatar, PremiumBadge, LeaderboardPodium, LeaderboardTable, formatLeaderboardTime, type LeaderboardUser } from '@/components/LeaderboardStandings'
 import './leaderboard.css'
 
 type LeaderboardPeriod = 'day' | 'week' | 'month' | 'year' | 'custom'
-interface LeaderboardUser {
-  id: string
-  username: string
-  avatarUrl?: string
-  experience: number
-  isPro: boolean
-  totalPomodoros: number
-  totalMinutes: number
-  rank: number
-}
 interface LeaderboardResponse {
   periodLabel: string
   leaderboard: LeaderboardUser[]
@@ -46,7 +34,7 @@ interface BoardView {
 }
 const PAGE_SIZE = 100
 const initialView: BoardView = { period: 'month', offset: 0, start: '', end: '', search: '', page: 1 }
-const formatTime = (minutes: number) => `${Math.floor(minutes / 60)}:${String(Math.floor(minutes % 60)).padStart(2, '0')}`
+const formatTime = formatLeaderboardTime
 
 function readView(): BoardView {
   const params = new URLSearchParams(window.location.search)
@@ -61,23 +49,6 @@ function readView(): BoardView {
     start: validRange ? start : '', end: validRange ? end : '',
     search: params.get('q') || '', page: Math.max(1, Number.parseInt(params.get('page') || '1', 10) || 1),
   }
-}
-
-function Avatar({ user, large = false }: { user: LeaderboardUser; large?: boolean }) {
-  const [failed, setFailed] = useState(false)
-  useEffect(() => setFailed(false), [user.avatarUrl])
-  return (
-    <span className={`lb-avatar${large ? ' lb-avatar-large' : ''}`} aria-hidden="true">
-      {user.avatarUrl && !failed
-        ? <Image src={user.avatarUrl} alt="" width={80} height={80} onError={() => setFailed(true)} />
-        : user.username.charAt(0).toUpperCase()}
-    </span>
-  )
-}
-
-function PremiumBadge() {
-  const { t } = useI18n()
-  return <span className="workspace-account-pro lb-premium" aria-label={t.leaderboard.premiumUser}><Crown size={12} aria-hidden="true" />Pro</span>
 }
 
 export default function LeaderboardPage() {
@@ -212,16 +183,7 @@ export default function LeaderboardPage() {
 
           {(loading || (!error && leaderboard.length > 0)) && <section className="lb-leaders" aria-labelledby="lb-leaders-title" aria-busy={loading}>
             <div className="lb-section-label"><h2 id="lb-leaders-title"><Trophy size={16} aria-hidden="true" />{copy.leaders}</h2><span>{data?.periodLabel}</span></div>
-            {loading ? <PersonalPageSkeleton variant="leaderboard" /> : <ol className="lb-podium">
-              {leaderboard.slice(0, 3).map(person => <li key={person.id} className={`lb-leader lb-leader-${person.rank}`}>
-                <Link href={userProfileHref(person)} className="lb-leader-link">
-                  <span className="lb-leader-rank">{String(person.rank).padStart(2, '0')}</span>
-                  <Avatar user={person} large />
-                  <div className="lb-leader-info"><span className="lb-leader-label">{person.rank === 1 ? <Trophy size={14} aria-hidden="true" /> : null}{copy.rank} {person.rank}{person.id === currentUser?.id && <span className="lb-you">{t.leaderboard.you}</span>}</span><h3>{person.username}{person.isPro && <PremiumBadge />}</h3><p><strong>{formatTime(person.totalMinutes)}</strong><span>{copy.timeUnit}</span></p></div>
-                  <ArrowUpRight className="lb-leader-arrow" size={18} aria-hidden="true" />
-                </Link>
-              </li>)}
-            </ol>}
+            {loading ? <PersonalPageSkeleton variant="leaderboard" /> : <LeaderboardPodium users={leaderboard} currentUserId={currentUser?.id} />}
           </section>}
 
           <div className="lb-content">
@@ -239,21 +201,7 @@ export default function LeaderboardPage() {
                 : leaderboard.length === 0 ? <div className="lb-state"><Sprout size={36} aria-hidden="true" /><h3>{t.leaderboard.emptyTitle}</h3><p>{t.leaderboard.emptyDescriptionPrefix} {data?.periodLabel}.</p><HomeLink className="btn btn-primary">{copy.startFocus}</HomeLink></div>
                 : filtered.length === 0 ? <div className="lb-state" role="status"><Search size={32} aria-hidden="true" /><h3>{t.leaderboard.noMatchesTitle}</h3><p>{t.leaderboard.noMatchesDescription} “{view.search}”</p><button type="button" className="lb-button" onClick={clearSearch}>{copy.clearSearch}</button></div>
                 : <>
-                  <div className="lb-table-wrap">
-                    <table className="lb-table">
-                      <caption className="sr-only">{t.leaderboard.fullRanking} — {data?.periodLabel}</caption>
-                      <thead><tr><th scope="col">{copy.rank}</th><th scope="col">{copy.participant}</th><th scope="col">{ranksCopy[language].rank}</th><th scope="col">{t.leaderboard.focus} <span>({copy.timeUnit})</span></th><th scope="col">{t.leaderboard.pomos}</th></tr></thead>
-                      <tbody>{pageRows.map(person => {
-                        const userRank = getRank(person.experience)
-                        return <tr key={person.id} className={person.id === currentUser?.id ? 'lb-row-self' : undefined}>
-                        <td><span className={`lb-position${person.rank <= 3 ? ' lb-position-top' : ''}`}>{String(person.rank).padStart(2, '0')}</span></td>
-                        <th scope="row"><Link href={userProfileHref(person)} className="lb-person"><Avatar user={person} /><span className="lb-person-name">{person.username}{person.isPro && <PremiumBadge />}{person.id === currentUser?.id && <span className="lb-you">{t.leaderboard.you}</span>}</span></Link></th>
-                        <td><span className="lb-user-rank"><span className="lb-rank-mark" style={{ background: userRank.ring }} aria-hidden="true" />{t.todayContribution.ranks[userRank.id]}</span></td>
-                        <td><strong className="lb-time">{formatTime(person.totalMinutes)}</strong><span className="lb-time-track" aria-hidden="true"><span style={{ width: `${Math.max(1, person.totalMinutes / maxMinutes * 100)}%` }} /></span></td>
-                        <td className="lb-pomos">{number(person.totalPomodoros)}</td>
-                      </tr>})}</tbody>
-                    </table>
-                  </div>
+                  <LeaderboardTable users={pageRows} currentUserId={currentUser?.id} maxMinutes={maxMinutes} caption={`${t.leaderboard.fullRanking} — ${data?.periodLabel ?? ''}`} />
                   <nav className="lb-pagination" aria-label={t.leaderboard.fullRanking}>
                     <span role="status">{number((page - 1) * PAGE_SIZE + 1)}–{number(Math.min(page * PAGE_SIZE, filtered.length))} {copy.of} {number(filtered.length)}</span>
                     <div><button type="button" className="lb-icon-button" disabled={page <= 1} aria-label={copy.previousPage} title={copy.previousPage} onClick={() => changePage(page - 1)}><ChevronLeft size={18} /></button><span>{copy.page} {number(page)} {copy.of} {number(pageCount)}</span><button type="button" className="lb-icon-button" disabled={page >= pageCount} aria-label={copy.nextPage} title={copy.nextPage} onClick={() => changePage(page + 1)}><ChevronRight size={18} /></button></div>

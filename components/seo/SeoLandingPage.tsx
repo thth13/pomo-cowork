@@ -10,8 +10,7 @@ import localStyles from './LocalStudyTimer.module.css'
 import { spanishSeoPages } from '@/lib/seoSpanishPages'
 import { seoPages } from '@/lib/seoPages'
 import { localizedSeoPaths, seoToolLabels, type SeoSlug } from '@/lib/seoRoutes'
-
-const siteUrl = 'https://pomo-co.work'
+import { SITE_URL as siteUrl } from '@/lib/site'
 
 export function getSeoMetadata(slug: SeoSlug, language: 'en' | 'es' = 'en'): Metadata {
   const page = language === 'es' ? spanishSeoPages[slug] ?? seoPages[slug] : seoPages[slug]

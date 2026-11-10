@@ -2,50 +2,50 @@
 
 > Pomo Cowork is a browser-based Pomodoro timer and online coworking workspace for focused work and study. It combines configurable focus sessions and breaks with tasks, live coworker presence, rooms, and progress tracking.
 
-Canonical website: https://pomo-co.work. The main timer can be started as a guest. Account and Pro features depend on the options shown in the app; consult the pricing page for current plans. Specialized tools include study timers, fixed-duration timers, and study planners.
+Canonical website: https://www.pomo-co.work. The main timer can be started as a guest. Account and Pro features depend on the options shown in the app; consult the pricing page for current plans. Specialized tools include study timers, fixed-duration timers, and study planners.
 
 The expanded Markdown overview below explains the product without requiring JavaScript. Other links lead to public web pages. This is a curated guide; the sitemap provides broader URL coverage. Personal workspace data and private rooms are not part of this guide.
 
 ## Product overview
 
-- [Expanded product guide](https://pomo-co.work/llms-full.txt): Markdown overview of capabilities, workflows, tools, and common questions.
-- [Pomo Cowork workspace](https://pomo-co.work/): Main timer, tasks, background sounds, and live coworker presence.
-- [Coworking rooms](https://pomo-co.work/rooms): Find or create a shared workspace.
-- [Pricing](https://pomo-co.work/pricing): Current free and Pro features and subscription terms.
+- [Expanded product guide](https://www.pomo-co.work/llms-full.txt): Markdown overview of capabilities, workflows, tools, and common questions.
+- [Pomo Cowork workspace](https://www.pomo-co.work/): Main timer, tasks, background sounds, and live coworker presence.
+- [Coworking rooms](https://www.pomo-co.work/rooms): Find or create a shared workspace.
+- [Pricing](https://www.pomo-co.work/pricing): Current free and Pro features and subscription terms.
 
 ## Focus and study tools
 
-- [Pomodoro timer](https://pomo-co.work/pomodoro-timer): Classic focus and break cycles, with an explanation of the technique.
-- [Study timer](https://pomo-co.work/study-timer): Timed study sessions and planned breaks.
-- [Deep work timer](https://pomo-co.work/deep-work-timer): Focus blocks for sustained work.
-- [Aesthetic Pomodoro timer](https://pomo-co.work/aesthetic-pomodoro-timer): Pomodoro sessions with a customizable visual environment.
-- [25/5 Pomodoro](https://pomo-co.work/25-5-pomodoro): A 25-minute focus and five-minute break pattern.
-- [50/10 Pomodoro](https://pomo-co.work/50-10-pomodoro): A 50-minute focus and ten-minute break pattern.
-- [Active recall timer](https://pomo-co.work/active-recall-timer): Timed practice for retrieving information from memory.
+- [Pomodoro timer](https://www.pomo-co.work/pomodoro-timer): Classic focus and break cycles, with an explanation of the technique.
+- [Study timer](https://www.pomo-co.work/study-timer): Timed study sessions and planned breaks.
+- [Deep work timer](https://www.pomo-co.work/deep-work-timer): Focus blocks for sustained work.
+- [Aesthetic Pomodoro timer](https://www.pomo-co.work/aesthetic-pomodoro-timer): Pomodoro sessions with a customizable visual environment.
+- [25/5 Pomodoro](https://www.pomo-co.work/25-5-pomodoro): A 25-minute focus and five-minute break pattern.
+- [50/10 Pomodoro](https://www.pomo-co.work/50-10-pomodoro): A 50-minute focus and ten-minute break pattern.
+- [Active recall timer](https://www.pomo-co.work/active-recall-timer): Timed practice for retrieving information from memory.
 
 ## Working together
 
-- [Pomodoro with friends](https://pomo-co.work/pomodoro-with-friends): Shared company while working through focus sessions.
-- [Online study room](https://pomo-co.work/online-study-room): A starting point for studying alongside others online.
-- [Virtual coworking room](https://pomo-co.work/virtual-coworking-room): Online coworking for independent tasks.
+- [Pomodoro with friends](https://www.pomo-co.work/pomodoro-with-friends): Shared company while working through focus sessions.
+- [Online study room](https://www.pomo-co.work/online-study-room): A starting point for studying alongside others online.
+- [Virtual coworking room](https://www.pomo-co.work/virtual-coworking-room): Online coworking for independent tasks.
 
 ## Planning
 
-- [Weekly study planner](https://pomo-co.work/weekly-study-planner): Plan study time around subjects, available days, and session lengths.
-- [Exam study planner](https://pomo-co.work/exam-study-planner): Organize preparation around an exam and available study time.
-- [Pomodoro calculator](https://pomo-co.work/pomodoro-calculator): Estimate a schedule of focus sessions and breaks.
+- [Weekly study planner](https://www.pomo-co.work/weekly-study-planner): Plan study time around subjects, available days, and session lengths.
+- [Exam study planner](https://www.pomo-co.work/exam-study-planner): Organize preparation around an exam and available study time.
+- [Pomodoro calculator](https://www.pomo-co.work/pomodoro-calculator): Estimate a schedule of focus sessions and breaks.
 
 ## Practical guides
 
-- [Blog](https://pomo-co.work/blog): Guides to focused work, Pomodoro sessions, study planning, and online coworking.
-- [Using the Pomodoro technique](https://pomo-co.work/blog/pomodoro-technique-guide): Choose a task, manage interruptions, and take breaks.
-- [Running an online coworking session](https://pomo-co.work/blog/how-to-run-online-coworking-session): Set an agenda, work independently, and use check-ins.
-- [Making a weekly study plan](https://pomo-co.work/blog/how-to-make-weekly-study-plan): Plan realistic availability, practice, and recovery after missed work.
+- [Blog](https://www.pomo-co.work/blog): Guides to focused work, Pomodoro sessions, study planning, and online coworking.
+- [Using the Pomodoro technique](https://www.pomo-co.work/blog/pomodoro-technique-guide): Choose a task, manage interruptions, and take breaks.
+- [Running an online coworking session](https://www.pomo-co.work/blog/how-to-run-online-coworking-session): Set an agenda, work independently, and use check-ins.
+- [Making a weekly study plan](https://www.pomo-co.work/blog/how-to-make-weekly-study-plan): Plan realistic availability, practice, and recovery after missed work.
 
 ## Optional
 
-- [Sitemap](https://pomo-co.work/sitemap.xml): Public URL discovery, including tools and published articles.
-- [Crawler rules](https://pomo-co.work/robots.txt): Crawl permissions and exclusions.
-- [Privacy policy](https://pomo-co.work/privacy): Information about data handling.
-- [Terms of service](https://pomo-co.work/terms): Conditions for using the service.
-- [Refund policy](https://pomo-co.work/refund): Subscription refund information.
+- [Sitemap](https://www.pomo-co.work/sitemap.xml): Public URL discovery, including tools and published articles.
+- [Crawler rules](https://www.pomo-co.work/robots.txt): Crawl permissions and exclusions.
+- [Privacy policy](https://www.pomo-co.work/privacy): Information about data handling.
+- [Terms of service](https://www.pomo-co.work/terms): Conditions for using the service.
+- [Refund policy](https://www.pomo-co.work/refund): Subscription refund information.

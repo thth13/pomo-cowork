@@ -230,3 +230,8 @@
 .lb-table th:nth-child(3) { width: 120px; }
 .lb-user-rank { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
 .lb-rank-mark { width: 10px; height: 10px; flex-shrink: 0; border-radius: 2px; }
+
+/* Room standings use the full board's scale in their own full-width tab. */
+.room-leaderboard .lb-podium { margin-bottom: 24px; }
+.room-leaderboard .lb-table-wrap { border: 1px solid var(--pixel-line); }
+.room-leaderboard a:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: -2px; }

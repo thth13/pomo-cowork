@@ -1,3 +1,4 @@
+import { SITE_URL } from '@/lib/site'
 import Link from 'next/link'
 import HomeLink from '@/components/HomeLink'
 import JsonLd from '@/components/blog/JsonLd'
@@ -24,7 +25,7 @@ function PracticeMotif({ variant }: { variant: PracticeVariant }) {
 }
 
 export default function PracticeLandingPage({ slug, page }: { slug: SeoSlug; page: PracticeSeoPage }) {
-  const url = `https://pomo-co.work/${slug}`
+  const url = `${SITE_URL}/${slug}`
   return <main id="seo-content" className={`seo-content ${styles.page} ${styles[page.practice]}`} data-local-timer={page.practice} data-practice-timer={page.practice}>
     <JsonLd data={{
       '@context': 'https://schema.org',
@@ -32,7 +33,7 @@ export default function PracticeLandingPage({ slug, page }: { slug: SeoSlug; pag
         { '@type': 'WebPage', '@id': `${url}#page`, url, name: page.title, description: page.description, inLanguage: 'en', about: { '@id': `${url}#application` } },
         { '@type': 'WebApplication', '@id': `${url}#application`, url, name: seoToolLabels[slug], description: page.description, applicationCategory: 'ProductivityApplication', operatingSystem: 'Web browser', isAccessibleForFree: true },
         { '@type': 'FAQPage', '@id': `${url}#faq`, isPartOf: { '@id': `${url}#page` }, mainEntity: page.faq.map(({ question, answer }) => ({ '@type': 'Question', name: question, acceptedAnswer: { '@type': 'Answer', text: answer } })) },
-        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Pomo Cowork', item: 'https://pomo-co.work/' }, { '@type': 'ListItem', position: 2, name: seoToolLabels[slug], item: url }] },
+        { '@type': 'BreadcrumbList', itemListElement: [{ '@type': 'ListItem', position: 1, name: 'Pomo Cowork', item: `${SITE_URL}/` }, { '@type': 'ListItem', position: 2, name: seoToolLabels[slug], item: url }] },
       ],
     }} />
     <header className={styles.hero}>

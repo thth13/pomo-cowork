@@ -4,8 +4,7 @@ import JsonLd from '@/components/blog/JsonLd'
 import JapaneseTimer from './JapaneseTimer'
 import { japaneseSeoPages } from '@/lib/japaneseSeoPages'
 import { japaneseSeoSlugs, type JapaneseSeoSlug } from '@/lib/japaneseSeoRoutes'
-
-const siteUrl = 'https://pomo-co.work'
+import { SITE_URL as siteUrl } from '@/lib/site'
 
 export function getJapaneseSeoMetadata(slug: JapaneseSeoSlug): Metadata {
   const page = japaneseSeoPages[slug]

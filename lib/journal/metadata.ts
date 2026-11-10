@@ -1,6 +1,7 @@
+import { SITE_URL } from '@/lib/site'
 import type { Metadata } from 'next'
 export function journalMetadata(title: string, description: string, path: string, type: 'profile' | 'article' | 'website' = 'profile'): Metadata {
-  const url = `https://pomo-co.work${path}`
+  const url = `${SITE_URL}${path}`
   return {
     title,
     description,
