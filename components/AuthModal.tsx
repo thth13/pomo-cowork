@@ -13,9 +13,10 @@ interface AuthModalProps {
   isOpen: boolean
   onClose: () => void
   initialMode?: 'login' | 'register'
+  invitation?: { roomName: string; description: string }
 }
 
-export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: AuthModalProps) {
+export default function AuthModal({ isOpen, onClose, initialMode = 'login', invitation }: AuthModalProps) {
   const [isLogin, setIsLogin] = useState(initialMode === 'login')
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
@@ -203,11 +204,12 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
       open={isOpen}
       variant="auth"
       title={isLogin ? t.auth.signIn : t.auth.createAccount}
-      description={t.auth.subtitle}
+      description={invitation?.description ?? t.auth.subtitle}
       busy={isBusy}
       dismissOnBackdrop
       onClose={onClose}
     >
+      {invitation && <div className="auth-room-invitation"><User size={20} aria-hidden="true" /><strong>{invitation.roomName}</strong></div>}
       {/* Google Auth */}
       <div className="auth-methods">
         <button

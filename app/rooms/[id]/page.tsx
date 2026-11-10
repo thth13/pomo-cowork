@@ -12,6 +12,7 @@ import CommunityDialog from '@/components/CommunityDialog'
 import RoomDailyChallenge from '@/components/RoomDailyChallenge'
 import RoomLeaderboard from '@/components/RoomLeaderboard'
 import Chat from '@/components/Chat'
+import RoomInvitePreview, { type InvitePreview } from '@/components/RoomInvitePreview'
 import RoomPageSkeleton from '@/components/RoomPageSkeleton'
 import { RoomParticipant, RoomParticipants, RoomOnlineCount } from '@/components/RoomPresence'
 import { useI18n } from '@/components/I18nProvider'
@@ -63,7 +64,7 @@ export default function RoomPage() {
   const locale = language === 'es' ? 'es-ES' : 'en-US'
   const searchParams = useSearchParams()
 
-  const { token: storeToken, user } = useAuthStore()
+  const { token: storeToken, user, isLoading: authLoading } = useAuthStore()
   const { setCurrentRoom } = useRoomStore()
 
   const roomId = params?.id
@@ -95,6 +96,38 @@ export default function RoomPage() {
   const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false)
   const [isInviteOpen, setIsInviteOpen] = useState(false)
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false)
+  const [previewAttempt, setPreviewAttempt] = useState(0)
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
+  const [invitePreview, setInvitePreview] = useState<InvitePreview | null>(null)
+  const guestInvite = Boolean(shouldJoinOnOpen && inviteToken && !user?.id)
+
+  useEffect(() => {
+    if (!guestInvite || authLoading) return
+    const controller = new AbortController()
+    setLoading(true)
+    setInvitePreview(null)
+    setRoom(null)
+    setIsAuthModalOpen(false)
+    setError(null)
+    void (async () => {
+      try {
+        const response = await fetch(`/api/rooms/${roomId}/invite-preview`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ invite: inviteToken }), cache: 'no-store', signal: controller.signal,
+        })
+        if (!response.ok) throw new Error(response.status === 403 || response.status === 404 ? copy.invalidInviteLink : copy.roomLoadError)
+        const preview = await response.json() as InvitePreview
+        if (controller.signal.aborted) return
+        setInvitePreview(preview)
+        setIsAuthModalOpen(true)
+      } catch (error) {
+        if (!controller.signal.aborted) setError(error instanceof Error ? error.message : copy.roomLoadError)
+      } finally {
+        if (!controller.signal.aborted) setLoading(false)
+      }
+    })()
+    return () => controller.abort()
+  }, [guestInvite, authLoading, roomId, inviteToken, previewAttempt, copy.invalidInviteLink, copy.roomLoadError])
   const [inviteLink, setInviteLink] = useState('')
   const [inviteLinkLoading, setInviteLinkLoading] = useState(false)
   const [inviteLinkError, setInviteLinkError] = useState(false)
@@ -161,16 +194,12 @@ export default function RoomPage() {
   }, [getToken])
 
   const loadAll = useCallback(async () => {
-    if (!roomId) return
+    if (!roomId || authLoading || guestInvite) return
 
     setLoading(true)
     setError(null)
 
     try {
-      if (shouldJoinOnOpen && inviteToken && !getToken()) {
-        setRoom(null)
-        return
-      }
       if (shouldJoinOnOpen) {
         const token = getToken()
         if (token) {
@@ -242,7 +271,7 @@ export default function RoomPage() {
     } finally {
       setLoading(false)
     }
-  }, [getToken, headers, roomId, router, shouldJoinOnOpen, inviteToken, user?.id, setCurrentRoom, copy.joinError, copy.roomLoadError, copy.invalidInviteLink])
+  }, [authLoading, guestInvite, getToken, headers, roomId, router, shouldJoinOnOpen, inviteToken, user?.id, setCurrentRoom, copy.joinError, copy.roomLoadError, copy.invalidInviteLink])
 
   useEffect(() => {
     loadAll()
@@ -640,10 +669,10 @@ export default function RoomPage() {
       <main className="community-layout personal-page-frame">
         <PersonalNavigation />
         {error && !isInviteOpen && !isRoomSettingsOpen && !isConfirmDeleteOpen && !confirmRemoveMemberId && <div className="community-error" role="alert">{error}</div>}
-        {shouldJoinOnOpen && inviteToken && !user?.id && !loading ? (
-          <div className="community-panel community-state"><UserPlus aria-hidden="true" /><h1>{copy.inviteFriends}</h1><p>{copy.loginRequired}</p><button type="button" className="community-button community-button-primary" onClick={() => setIsAuthModalOpen(true)}>{copy.signIn}</button></div>
+        {guestInvite && invitePreview && !loading ? (
+          <RoomInvitePreview room={invitePreview} onAuthenticate={mode => { setAuthMode(mode); setIsAuthModalOpen(true) }} />
         ) : loading ? <RoomPageSkeleton /> : !room ? (
-          <div className="community-panel community-state"><DoorOpen aria-hidden="true" /><h1>{copy.roomLoadError}</h1><button type="button" className="community-button" onClick={() => void loadAll()}>{copy.retry}</button></div>
+          <div className="community-panel community-state"><DoorOpen aria-hidden="true" /><h1>{copy.roomLoadError}</h1><button type="button" className="community-button" onClick={() => guestInvite ? setPreviewAttempt(value => value + 1) : void loadAll()}>{copy.retry}</button></div>
         ) : <>
           <header className="room-detail-header">
             {isOwner && <button type="button" onClick={() => { setError(null); setRoomSettings({ name: room.name, privacy: room.privacy }); setIsRoomSettingsOpen(true) }} className="community-icon-button room-settings-button" title={copy.settings} aria-label={copy.settings}><Settings size={18} aria-hidden="true" /></button>}
@@ -678,7 +707,7 @@ export default function RoomPage() {
                 <section className="community-panel">
                   <header className="community-panel-heading"><h2><Users size={18} aria-hidden="true" />{copy.participants}</h2><div className="community-actions"><span className="community-badge">{members.length}</span><RoomOnlineCount members={members} /></div></header>
 
-                  {members.length === 0 ? <p className="community-muted">{copy.noParticipants}</p> : <RoomParticipants members={members}>{member => <RoomParticipant key={member.id} member={member}
+                  {members.length === 0 ? <p className="community-muted">{copy.noParticipants}</p> : <RoomParticipants members={members} roomId={room.id}>{member => <RoomParticipant key={member.id} member={member} roomId={room.id}
                     avatar={<UserAvatar avatarUrl={member.user.avatarUrl ?? undefined} username={member.user.username} size={40} />}
                     actions={isOwner && member.user.id !== user?.id && member.role !== 'OWNER' ? <button type="button" className="community-icon-button" disabled={Boolean(removingMemberId)} title={copy.remove} aria-label={`${copy.remove}: ${member.user.username}`} onClick={() => { setError(null); setConfirmRemoveMemberId(member.id) }}><X size={16} aria-hidden="true" /></button> : undefined}
                   />}</RoomParticipants>}
@@ -695,7 +724,7 @@ export default function RoomPage() {
         </>}
       </main>
       {inviteToast && !isInviteOpen && <div className="community-toast" role="status">{inviteToast}</div>}
-      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
+      <AuthModal isOpen={isAuthModalOpen && !user?.id} initialMode={authMode} invitation={guestInvite && invitePreview ? { roomName: invitePreview.name, description: copy.roomInvitation.hint } : undefined} onClose={() => setIsAuthModalOpen(false)} />
       <CommunityDialog open={canInvite && isInviteOpen} variant="room-invite" title={copy.inviteFriends} busy={Boolean(addingUserId)} onClose={() => setIsInviteOpen(false)}>
         <div className="room-invite-link">
           <label className="community-field" htmlFor="room-invite-link"><span>{copy.inviteLink}</span><input id="room-invite-link" readOnly value={inviteLink} aria-busy={inviteLinkLoading} placeholder={inviteLinkLoading ? copy.linkLoading : ''} onFocus={event => event.currentTarget.select()} /></label>

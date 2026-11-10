@@ -320,6 +320,8 @@ body:has(.paywall-dialog[open]) { overflow: hidden; }
 .room-participant-online { width: 7px; height: 7px; flex-shrink: 0; background: var(--pixel-muted); border-radius: 50%; }
 .room-participant-online[data-online="true"] { background: var(--pixel-growth); }
 .room-participant[data-working="true"] .room-participant-activity { color: var(--pixel-growth); }
+.room-participant-activity[data-working-elsewhere="true"] { display: flex; align-items: center; gap: 6px; }
+.room-participant-away-dot { width: 6px; height: 6px; flex-shrink: 0; border-radius: 50%; background: var(--pixel-growth); }
 .room-participant-timer { display: flex; flex-direction: column; gap: 2px; margin-left: auto; padding-left: 12px; border-left: 1px solid var(--pixel-line); text-align: right; flex-shrink: 0; }
 .room-participant-timer-label { display: inline-flex; align-items: center; justify-content: flex-end; gap: 4px; font-size: 10px; color: var(--pixel-muted); line-height: 1.5; }
 .room-participant-time { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.3; color: var(--pixel-ink); }
@@ -327,6 +329,7 @@ body:has(.paywall-dialog[open]) { overflow: hidden; }
   .room-presence-status { color: CanvasText; }
   .room-presence-status[data-tone="online"] { color: LinkText; }
   .room-participant[data-working="true"] { background: Canvas; border-color: Highlight; }
+  .room-participant-away-dot { background: LinkText; }
   .room-participant-online { background: GrayText; }
   .room-participant-online[data-online="true"] { background: LinkText; }
   .room-participant[data-working="true"] .room-participant-activity { color: CanvasText; }
@@ -637,3 +640,34 @@ button.profile-heatmap-cell:hover, button.profile-heatmap-cell:active { outline:
 .room-activity-duration { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: auto; font-size: 10px; color: var(--pixel-muted); font-variant-numeric: tabular-nums; }
 
 .room-weekly-activity { margin-bottom: 24px; }
+
+/* Invitation preview uses the room shell without exposing member-only content. */
+.room-invitation-preview .community-intro h1 { overflow-wrap: anywhere; }
+.room-invitation-welcome { display: flex; align-items: center; gap: 24px; padding: clamp(24px, 4vw, 40px); margin-bottom: 28px; border-top: 3px solid var(--pixel-growth); }
+.room-invitation-emblem { display: grid; place-items: center; flex: 0 0 76px; height: 76px; color: var(--pixel-growth); background: var(--pixel-screen); border: 1px solid var(--pixel-line); box-shadow: 4px 4px 0 var(--pixel-shadow); }
+.room-invitation-copy { flex: 1; min-width: 0; }
+.room-invitation-copy h2 { margin: 10px 0; font-size: clamp(20px, 2.5vw, 28px); line-height: 1.35; font-weight: 600; letter-spacing: -.035em; color: var(--pixel-ink); }
+.room-invitation-copy > p:last-child { max-width: 48ch; color: var(--pixel-muted); font-size: 14px; line-height: 1.7; }
+.room-invitation-actions { display: grid; gap: 10px; flex: 0 0 auto; }
+.room-invitation-actions .community-button { justify-content: center; min-height: 44px; }
+.room-invitation-panels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.room-invitation-panel { min-width: 0; }
+.room-invitation-locked { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 200px; padding: 24px 8px; text-align: center; color: var(--pixel-muted); }
+.room-invitation-locked > svg { margin-bottom: 18px; color: var(--pixel-growth); }
+.room-invitation-locked strong { color: var(--pixel-ink); font-size: 14px; font-weight: 500; }
+.room-invitation-locked p { margin: 10px 0 0; max-width: 26ch; font-size: 13px; line-height: 1.7; }
+.auth-room-invitation { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; padding: 14px 16px; border: 1px solid var(--pixel-line); background: var(--pixel-screen); color: var(--pixel-ink); }
+.auth-room-invitation svg { flex-shrink: 0; color: var(--pixel-growth); }
+.auth-room-invitation strong { min-width: 0; overflow-wrap: anywhere; font-size: 15px; font-weight: 600; }
+@media (max-width: 760px) {
+  .room-invitation-welcome { flex-wrap: wrap; gap: 20px; }
+  .room-invitation-copy { flex-basis: calc(100% - 100px); }
+  .room-invitation-actions { width: 100%; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .room-invitation-panels { grid-template-columns: 1fr; gap: 16px; }
+  .room-invitation-locked { min-height: 150px; }
+}
+@media (max-width: 400px) {
+  .room-invitation-emblem { flex-basis: 56px; height: 56px; }
+  .room-invitation-copy { flex-basis: 100%; }
+  .room-invitation-actions { grid-template-columns: 1fr; }
+}

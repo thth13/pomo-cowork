@@ -1,5 +1,6 @@
 export const communityCopy = {
   en: {
+    roomInvitation: { label: 'You’re invited', title: 'Your next focus session, together.', hint: 'Log in or create an account to join this room. Your invitation will be waiting.', register: 'Create account', preview: 'Room preview', locked: 'Available after you join', people: 'Meet your coworkers and see who’s focusing.', chat: 'Share a hello, a plan, or a little encouragement.', activity: 'Follow your room’s progress, one focus session at a time.' },
     challenge: {
       heading: 'Daily goal', dailyTarget: 'Target', ofTarget: 'of {minutes} min', setGoal: 'Set daily goal', customTarget: 'Custom target (minutes)',
       goal: 'Focus for {minutes} minutes today', minutes: 'min', team: 'Team completion',
@@ -40,6 +41,7 @@ export const communityCopy = {
     createError: 'Could not create the room.', joinError: 'Could not join the room.', loginRequired: 'Log in to continue.',
     profile: 'Coworker profile', edit: 'Edit profile', logout: 'Log out', joined: 'Joined', views: 'views',
     rank: 'Rank',
+    workingOutsideRoom: 'Working in another room', pausedOutsideRoom: 'Paused in another room', breakOutsideRoom: 'On a break in another room', longBreakOutsideRoom: 'On a long break in another room',
     focusRemaining: 'Remaining',
     presenceChecking: 'Checking online status…', presenceUnavailable: 'Status unavailable',
     online: 'Online', offline: 'Offline', working: 'Currently working', notWorking: 'Between focus sessions',
@@ -61,6 +63,7 @@ export const communityCopy = {
     wallLoadError: 'Could not load messages.', wallSendError: 'Could not post your message.', wallDeleteError: 'Could not delete the message.', messageRequired: 'Write a message first.',
   },
   es: {
+    roomInvitation: { label: 'Te han invitado', title: 'Tu próxima sesión, en compañía.', hint: 'Inicia sesión o crea una cuenta para unirte a esta sala. Tu invitación seguirá aquí.', register: 'Crear cuenta', preview: 'Vista previa de la sala', locked: 'Disponible al unirte', people: 'Conoce a tus compañeros y descubre quién está concentrándose.', chat: 'Saluda, comparte tus planes o anima a los demás.', activity: 'Sigue el progreso de la sala, una sesión a la vez.' },
     challenge: {
       heading: 'Objetivo diario', dailyTarget: 'Meta', ofTarget: 'de {minutes} min', setGoal: 'Establecer objetivo diario', customTarget: 'Objetivo personalizado (minutos)',
       goal: 'Concéntrate durante {minutes} minutos hoy', minutes: 'min', team: 'Objetivos completados',
@@ -101,6 +104,7 @@ export const communityCopy = {
     createError: 'No se pudo crear la sala.', joinError: 'No se pudo entrar en la sala.', loginRequired: 'Inicia sesión para continuar.',
     profile: 'Perfil de coworker', edit: 'Editar perfil', logout: 'Cerrar sesión', joined: 'Se unió', views: 'visitas',
     rank: 'Rango',
+    workingOutsideRoom: 'Trabajando fuera de esta sala', pausedOutsideRoom: 'En pausa fuera de esta sala', breakOutsideRoom: 'Descansando en otra sala', longBreakOutsideRoom: 'En un descanso largo en otra sala',
     focusRemaining: 'Restante',
     presenceChecking: 'Comprobando conexión…', presenceUnavailable: 'Estado no disponible',
     online: 'En línea', offline: 'Sin conexión', working: 'Trabajando ahora', notWorking: 'Entre sesiones de concentración',

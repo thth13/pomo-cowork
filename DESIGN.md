@@ -962,12 +962,17 @@ tokens. A readable right-aligned timer counts down focus/break time, counts up t
 tracking, and freezes on pause. Activity labels show working, idle, pause or break;
 role captions are omitted. Timer digits use tabular Inter and a reserved clock column.
 Rows wrap on narrow screens, and timer updates stay inside each row rather than
-rerendering the room charts. Participants sort into online with a visible timer,
+rerendering the room charts. Participants sort into online with a visible timer in this room,
 other online, then offline, preserving original order within each group. Paused
 and break timers remain in the timer group. Timer expiration, presence and session
 updates automatically refresh the order.
 `RoomPresence`/`RoomParticipant` reuse `useConnectionStore` and `useTimerStore` socket snapshots;
-working means an unpaused, unexpired WORK or TIME_TRACKING session on the site.
+The viewed room ID scopes green working cards and visible timers. Active sessions
+in another room (including the global workspace) show Working in another room with a green status dot,
+or the corresponding outside-room pause/break label, without a timer or green card.
+These users sort with other online participants. Outside-room sessions use only an
+expiry timeout, not a ticking interval. Working means an unpaused, unexpired WORK
+or TIME_TRACKING session.
 Expired sessions stop displaying as working even without another socket event.
 Disconnects show Status unavailable instead of marking everyone offline. Existing
 pixel growth/tomato-ink/muted tokens own the colors; indicators wrap on mobile and
@@ -2087,3 +2092,17 @@ Room activity entries use compact two-line cards: participant, tinted start-type
 badge and 24-hour time on the first line; truncated task and duration on the second.
 Focus uses tomato tokens and tracking uses sage tokens, with matching left borders.
 Long names/tasks truncate with full text in title attributes to preserve row density.
+
+## Room invitation preview
+
+Guests following a room invitation see the room identity and actual participant count
+in the existing room shell. A paper/sage welcome panel with a door emblem and tomato
+registration action precedes locked participant, chat and activity panels. No invented
+activity or member details appear. `RoomInvitePreview` and `app/community.css` own
+responsive geometry; existing runtime tokens own colors and type. The shared AuthModal
+opens automatically after invitation validation, includes the room name and localized
+join guidance, and retains its login/register/Google flows and native dialog behavior.
+Closing it leaves the preview and both authentication actions available. The URL retains
+the invitation until authenticated membership is confirmed. The invite-preview endpoint
+verifies the signed invitation and current inviter membership before returning only name,
+privacy and participant count; normal room-data permissions remain unchanged.
