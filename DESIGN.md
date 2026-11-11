@@ -983,19 +983,25 @@ pixel growth/tomato-ink/muted tokens own the colors; indicators wrap on mobile a
 English/Spanish labels live in `communityCopy`. No extra connections or API polling.
 
 
-Room detail starts its activity column with `RoomDailyChallenge`: a trophy heading
-labelled “Daily goal” in English, without a Daily badge or explanatory paragraph,
-with the custom goal name directly below the heading and settings on the right.
-There is no separate Target block; participant rows follow the header directly.
-Participant rows align avatars and names to the left and worked minutes with the
-target on one line in a right column, with a full-width meter below the row content.
-The header wraps its actions on narrow phones. The card uses
-participant focus meters in the existing growth color, completion
-checkmarks and a team-completion meter. Ten participants appear initially; Show more
-reveals the next ten. Names wrap on narrow screens. Shared CommunityDialog, community
-form/button styles and the room's existing status toast own challenge editing and
-feedback. English/Spanish copy lives in `communityCopy.challenge`.
-The existing RoomChallenge table stores an owner-editable name and 5–480-minute goal.
+Room detail places `RoomDailyChallenge` immediately after the room header, before
+statistics and tabs, visible in both Overview and Leaderboard. Its full-width panel
+uses a growth-colored top edge and trophy emblem. The left summary pairs the large
+custom goal name with the daily minutes target and team-completion meter; participant
+cards occupy the right side, separated by a fine rule. The current user's row comes
+first with a growth-tinted background and border; other rows retain server order.
+The roster scrolls at 290px so large rooms do not push other tools far down the page.
+Below 720px the summary and roster stack. Existing pixel tokens, Inter, native progress
+meters and completion checkmarks own the visual language in all themes.
+Ten participants appear initially; Show more reveals the next ten. Names wrap on
+narrow screens. Shared CommunityDialog, community form/button styles and the room's
+existing status toast own editing and feedback. English/Spanish copy lives in
+`communityCopy.challenge`. `app/community.css` owns the layout and component styles.
+The existing RoomChallenge table stores an owner-editable name and a whole-minute
+goal of at least 5 minutes. The editor uses separate hours and minutes (0–59)
+fields and 1/4/8/12-hour presets. Existing targets split into hours and minutes on
+open; cards format both worked time and targets in those units. There is no 8-hour
+product cap; shared validation only enforces the underlying Prisma Int boundary.
+Storage remains in minutes and requires no migration.
 Rooms without configuration have no challenge card or automatic goal. An owner-only
 Set daily goal button in the room header opens the shared dialog with empty fields; saving
 creates the challenge, and the same button can edit an existing goal. Progress is

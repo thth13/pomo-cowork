@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 import { getEffectiveMinutes } from '@/lib/sessionStats'
-import { MIN_ROOM_CHALLENGE_MINUTES, MAX_ROOM_CHALLENGE_MINUTES, type RoomDailyChallenge } from '@/lib/roomChallenge'
+import { isValidRoomChallengeMinutes, type RoomDailyChallenge } from '@/lib/roomChallenge'
 
 export const dynamic = 'force-dynamic'
 
@@ -78,8 +78,8 @@ export async function PATCH(request: NextRequest, { params }: { params: { id: st
     const body = await request.json().catch(() => null)
     const title = typeof body?.title === 'string' ? body.title.trim() : ''
     const targetMinutes = body?.targetMinutes
-    if (!title || title.length > 80 || !Number.isInteger(targetMinutes) || targetMinutes < MIN_ROOM_CHALLENGE_MINUTES || targetMinutes > MAX_ROOM_CHALLENGE_MINUTES) {
-      return NextResponse.json({ error: 'Enter a title (1–80 characters) and a whole-minute target between 5 and 480.' }, { status: 400 })
+    if (!title || title.length > 80 || !isValidRoomChallengeMinutes(targetMinutes)) {
+      return NextResponse.json({ error: 'Enter a title (1–80 characters) and a valid whole-minute target of at least 5 minutes.' }, { status: 400 })
     }
     const challenge = await prisma.roomChallenge.upsert({
       where: { roomId: params.id },

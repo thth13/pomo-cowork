@@ -696,11 +696,12 @@ export default function RoomPage() {
               <div className="community-actions room-header-actions">
                 {canJoinRoom && <button type="button" onClick={onJoinRoom} disabled={joining} aria-busy={joining} className="community-button community-button-primary"><UserPlus size={16} aria-hidden="true" />{copy.join}</button>}
                 {canInvite && <button type="button" onClick={() => { setError(null); setUserDropdownSuppressed(false); setIsInviteOpen(true) }} className="community-button"><UserPlus size={16} aria-hidden="true" />{copy.inviteFriends}</button>}
-                {isOwner && <button type="button" onClick={() => { if (activeTab !== 'overview') router.replace(roomTabHref('overview'), { scroll: false }); setIsChallengeOpen(true) }} className="community-button"><Target size={16} aria-hidden="true" />{copy.challenge.setGoal}</button>}
+                {isOwner && <button type="button" onClick={() => { setIsChallengeOpen(true) }} className="community-button"><Target size={16} aria-hidden="true" />{copy.challenge.setGoal}</button>}
                 {canLeaveRoom && <button type="button" onClick={() => void onLeaveRoom()} disabled={leaving || leaveMembersLoading} aria-busy={leaving || leaveMembersLoading} className="community-button"><LogOut size={16} aria-hidden="true" />{copy.leave}</button>}
               </div>
             </div>
           </header>
+          <RoomDailyChallenge key={room.id} roomId={room.id} token={getToken()} isOwner={isOwner} userId={user?.id} membershipKey={members.map(member => member.user.id).sort().join(',')} onSaved={showInviteToast} open={isOwner && isChallengeOpen} onOpen={() => setIsChallengeOpen(true)} onClose={() => setIsChallengeOpen(false)} />
           {stats ? <section className="community-metrics" aria-label={copy.focusTime}>
             <div className="community-metric"><span><Clock size={15} aria-hidden="true" />{copy.focusTime}</span><strong>{formatMinutes(stats.totalFocusMinutes)}</strong></div>
             <div className="community-metric"><span><Flame size={15} aria-hidden="true" />{copy.pomodoros}</span><strong>{stats.totalPomodoros.toLocaleString(locale)}</strong></div>
@@ -726,7 +727,6 @@ export default function RoomPage() {
               </div>
               <div className="community-stack">
                 <Chat key={`activities-${room.id}`} roomId={room.id} title={copy.activities} mode="activities" className="room-chat room-activities" isVisible={activeTab === 'overview'} />
-                <RoomDailyChallenge key={room.id} roomId={room.id} token={getToken()} isOwner={isOwner} userId={user?.id} membershipKey={members.map(member => member.user.id).sort().join(',')} onSaved={showInviteToast} open={isOwner && isChallengeOpen} onOpen={() => setIsChallengeOpen(true)} onClose={() => setIsChallengeOpen(false)} />
               </div>
             </div>
           </div>

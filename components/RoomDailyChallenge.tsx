@@ -4,12 +4,12 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import useSWR from 'swr'
 import Link from 'next/link'
 import Image from 'next/image'
-import { CheckCircle2, Settings, Trophy } from 'lucide-react'
+import { CheckCircle2, Settings, Target, Trophy } from 'lucide-react'
 import CommunityDialog from '@/components/CommunityDialog'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
 import { userProfileHref } from '@/lib/userProfile'
-import { MIN_ROOM_CHALLENGE_MINUTES, MAX_ROOM_CHALLENGE_MINUTES, type RoomDailyChallenge as ChallengeData } from '@/lib/roomChallenge'
+import { isValidRoomChallengeMinutes, type RoomDailyChallenge as ChallengeData } from '@/lib/roomChallenge'
 
 export default function RoomDailyChallenge({ roomId, token, isOwner, userId, membershipKey, onSaved, open, onOpen, onClose }: {
   roomId: string
@@ -36,13 +36,15 @@ export default function RoomDailyChallenge({ roomId, token, isOwner, userId, mem
     { refreshInterval: 30_000, revalidateOnFocus: true, shouldRetryOnError: false }
   )
   const [title, setTitle] = useState('')
-  const [target, setTarget] = useState('')
+  const [hours, setHours] = useState('')
+  const [minutesPart, setMinutesPart] = useState('')
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
-  const [invalidField, setInvalidField] = useState<'title' | 'target' | null>(null)
+  const [invalidField, setInvalidField] = useState<'title' | 'hours' | 'minutes' | null>(null)
   const [visibleCount, setVisibleCount] = useState(10)
   const titleRef = useRef<HTMLInputElement>(null)
-  const targetRef = useRef<HTMLInputElement>(null)
+  const hoursRef = useRef<HTMLInputElement>(null)
+  const minutesRef = useRef<HTMLInputElement>(null)
   const savingRef = useRef(false)
   const draftInitialized = useRef(false)
   const [now, setNow] = useState(() => Date.now())
@@ -52,7 +54,8 @@ export default function RoomDailyChallenge({ roomId, token, isOwner, userId, mem
     if (data === undefined || draftInitialized.current) return
     draftInitialized.current = true
     setTitle(data?.title ?? '')
-    setTarget(data ? String(data.targetMinutes) : '')
+    setHours(data ? String(Math.floor(data.targetMinutes / 60)) : '')
+    setMinutesPart(data ? String(data.targetMinutes % 60) : '')
     setSaveError(null)
     setInvalidField(null)
   }, [open, data])
@@ -70,17 +73,36 @@ export default function RoomDailyChallenge({ roomId, token, isOwner, userId, mem
   const completed = current?.participants.filter(person => person.minutes >= current.targetMinutes).length ?? 0
   const total = current?.participants.length ?? 0
 
+  const participants = current ? [...current.participants].sort((a, b) =>
+    Number(b.id === userId) - Number(a.id === userId)
+  ) : []
+
+  const targetMinutes = Number(hours) * 60 + Number(minutesPart)
+  const validHours = /^\d*$/.test(hours)
+  const validMinutes = /^\d*$/.test(minutesPart) && Number(minutesPart) < 60
+  const formatDuration = (minutes: number) => {
+    const h = Math.floor(minutes / 60)
+    const m = minutes % 60
+    return [h > 0 ? `${number.format(h)} ${copy.hoursShort}` : '',
+      m > 0 || h === 0 ? `${number.format(m)} ${copy.minutes}` : ''].filter(Boolean).join(' ')
+  }
+
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (savingRef.current || !isOwner || !token || data === undefined) return
     setSaveError(null)
     setInvalidField(null)
-    const minutes = Number(target)
+    const minutes = targetMinutes
     if (!title.trim() || title.trim().length > 80) {
       setSaveError(copy.invalidTitle); setInvalidField('title'); titleRef.current?.focus(); return
     }
-    if (!Number.isInteger(minutes) || minutes < MIN_ROOM_CHALLENGE_MINUTES || minutes > MAX_ROOM_CHALLENGE_MINUTES) {
-      setSaveError(copy.invalidTarget); setInvalidField('target'); targetRef.current?.focus(); return
+    if (!validHours || !validMinutes || !isValidRoomChallengeMinutes(minutes)) {
+      const field = !validHours ? 'hours' : !validMinutes ? 'minutes' : 'hours'
+      setSaveError(copy.invalidTarget)
+      setInvalidField(field)
+      const fieldRef = field === 'hours' ? hoursRef : minutesRef
+      fieldRef.current?.focus()
+      return
     }
     savingRef.current = true
     setSaving(true)
@@ -105,55 +127,71 @@ export default function RoomDailyChallenge({ roomId, token, isOwner, userId, mem
 
   return <>
     {(data != null || error) && <section className="community-panel room-challenge" aria-labelledby="room-challenge-heading">
-      <header className="community-panel-heading">
-        <div className="room-challenge-heading-copy">
-          <h2 id="room-challenge-heading"><Trophy size={18} aria-hidden="true" />{copy.heading}</h2>
-          {current && <p className="room-challenge-name">{current.title}</p>}
-        </div>
-        <div className="community-actions">
-          {isOwner && current && <button type="button" className="community-icon-button" aria-label={copy.settings} title={copy.settings} onClick={onOpen}><Settings size={16} aria-hidden="true" /></button>}
-        </div>
-      </header>
-      {error && <div className="community-error" role="status">{copy.loadError} <button className="community-button" type="button" onClick={() => void mutate().catch(() => undefined)}>{common.retry}</button></div>}
-      {!current ? <div className="room-challenge-pending" role="status">{!error && <><span className="community-spinner" aria-hidden="true" />{copy.loading}</>}</div> : <>
-        {total === 0 ? <p className="community-muted">{copy.empty}</p> : <ul className="room-challenge-list">
-          {current.participants.slice(0, visibleCount).map(person => {
-            const done = person.minutes >= current.targetMinutes
-            return <li key={person.id} className="room-challenge-person">
-              <Link href={userProfileHref(person)} className="room-challenge-avatar" aria-label={person.username}>
-                {person.avatarUrl ? <Image src={person.avatarUrl} alt="" width={32} height={32} className="community-avatar" /> : <span className="community-avatar" aria-hidden="true">{person.username.charAt(0).toUpperCase()}</span>}
-              </Link>
-              <div className="room-challenge-progress">
-                <div className="room-challenge-participant-heading">
-                  <Link href={userProfileHref(person)}>{person.username}{person.id === userId && <small>{copy.you}</small>}</Link>
-                  <div className="room-challenge-time">
-                    <strong>{number.format(person.minutes)} <small>{copy.minutes}</small>{done && <CheckCircle2 size={15} aria-label={copy.complete} />}</strong>
-                    <span>{copy.ofTarget.replace('{minutes}', number.format(current.targetMinutes))}</span>
+      <div className="room-challenge-summary">
+        <header className="community-panel-heading">
+          <div className="room-challenge-heading-copy">
+            <h2 id="room-challenge-heading"><span className="room-challenge-emblem"><Trophy size={20} aria-hidden="true" /></span>{copy.heading}</h2>
+          </div>
+          <div className="community-actions">
+            {isOwner && current && <button type="button" className="community-icon-button" aria-label={copy.settings} title={copy.settings} onClick={onOpen}><Settings size={16} aria-hidden="true" /></button>}
+          </div>
+        </header>
+        {current && <>
+          <p className="room-challenge-name">{current.title}</p>
+          <p className="room-challenge-target"><Target size={16} aria-hidden="true" />{copy.goal.replace('{duration}', formatDuration(current.targetMinutes))}</p>
+          <div className="room-challenge-team">
+            <div className="room-challenge-label"><span>{copy.team}</span><strong>{number.format(completed)} <span>/ {number.format(total)}</span></strong></div>
+            <progress className="room-challenge-meter" max={Math.max(1, total)} value={completed} aria-label={copy.team} />
+          </div>
+        </>}
+      </div>
+      <div className="room-challenge-roster">
+        {error && <div className="community-error" role="status">{copy.loadError} <button className="community-button" type="button" onClick={() => void mutate().catch(() => undefined)}>{common.retry}</button></div>}
+        {!current ? <div className="room-challenge-pending" role="status">{!error && <><span className="community-spinner" aria-hidden="true" />{copy.loading}</>}</div> : <>
+          {total === 0 ? <p className="community-muted">{copy.empty}</p> : <ul className="room-challenge-list">
+            {participants.slice(0, visibleCount).map(person => {
+              const done = person.minutes >= current.targetMinutes
+              return <li key={person.id} className="room-challenge-person" data-self={person.id === userId || undefined}>
+                <Link href={userProfileHref(person)} className="room-challenge-avatar" aria-label={person.username}>
+                  {person.avatarUrl ? <Image src={person.avatarUrl} alt="" width={32} height={32} className="community-avatar" /> : <span className="community-avatar" aria-hidden="true">{person.username.charAt(0).toUpperCase()}</span>}
+                </Link>
+                <div className="room-challenge-progress">
+                  <div className="room-challenge-participant-heading">
+                    <Link href={userProfileHref(person)}>{person.username}{person.id === userId && <small>{copy.you}</small>}</Link>
+                    <div className="room-challenge-time">
+                      <strong>{formatDuration(person.minutes)}{done && <CheckCircle2 size={15} aria-label={copy.complete} />}</strong>
+                      <span>{copy.ofTarget.replace('{duration}', formatDuration(current.targetMinutes))}</span>
+                    </div>
                   </div>
+                  <progress className="room-challenge-meter" max={current.targetMinutes} value={Math.min(person.minutes, current.targetMinutes)} aria-label={`${person.username}: ${copy.goal.replace('{duration}', formatDuration(current.targetMinutes))}`} />
                 </div>
-                <progress className="room-challenge-meter" max={current.targetMinutes} value={Math.min(person.minutes, current.targetMinutes)} aria-label={`${person.username}: ${copy.goal.replace('{minutes}', number.format(current.targetMinutes))}`} />
-              </div>
-            </li>
-          })}
-        </ul>}
-        {total > visibleCount && <button type="button" className="community-button" onClick={() => setVisibleCount(count => count + 10)}>{copy.more}</button>}
-        <div className="room-challenge-team">
-          <div className="room-challenge-label"><span>{copy.team}</span><span>{number.format(completed)} / {number.format(total)}</span></div>
-          <progress className="room-challenge-meter" max={Math.max(1, total)} value={completed} aria-label={copy.team} />
-        </div>
-      </>}
+              </li>
+            })}
+          </ul>}
+          {total > visibleCount && <button type="button" className="community-button" onClick={() => setVisibleCount(count => count + 10)}>{copy.more}</button>}
+        </>}
+      </div>
     </section>}
     <CommunityDialog open={open} title={data ? copy.settings : copy.setGoal} variant="daily-goal" busy={saving} onClose={onClose}>
       {data === undefined ? <div role="status">{error ? <>{copy.loadError} <button type="button" className="community-button" onClick={() => void mutate().catch(() => undefined)}>{common.retry}</button></> : copy.loading}</div> :
       <form className="daily-goal-form" noValidate onSubmit={save} aria-busy={saving}>
         <label className="community-field" htmlFor="challenge-title">{copy.title}<input id="challenge-title" ref={titleRef} value={title} maxLength={80} disabled={saving} onChange={event => setTitle(event.target.value)} aria-invalid={invalidField === 'title'} aria-describedby={invalidField === 'title' ? 'challenge-save-error' : undefined} /></label>
         <fieldset className="daily-goal-targets" disabled={saving}>
-          <label className="community-field" htmlFor="challenge-target">{copy.target}<input id="challenge-target" ref={targetRef} type="number" min={MIN_ROOM_CHALLENGE_MINUTES} max={MAX_ROOM_CHALLENGE_MINUTES} step={1} value={target} disabled={saving} onChange={event => setTarget(event.target.value)} aria-invalid={invalidField === 'target'} aria-describedby={invalidField === 'target' ? 'challenge-save-error' : undefined} /></label>
+          <legend>{copy.target}</legend>
+          <div className="room-goal-duration-fields">
+            <label className="community-field" htmlFor="challenge-hours">{copy.hours}
+              <input id="challenge-hours" ref={hoursRef} type="number" inputMode="numeric" min={0} step={1} placeholder="0" value={hours} onChange={event => setHours(event.target.value)} aria-invalid={invalidField === 'hours'} aria-describedby={invalidField === 'hours' ? 'challenge-save-error' : undefined} />
+            </label>
+            <label className="community-field" htmlFor="challenge-minutes">{copy.minutesLabel}
+              <input id="challenge-minutes" ref={minutesRef} type="number" inputMode="numeric" min={0} max={59} step={1} placeholder="0" value={minutesPart} onChange={event => setMinutesPart(event.target.value)} aria-invalid={invalidField === 'minutes'} aria-describedby={invalidField === 'minutes' ? 'challenge-save-error' : undefined} />
+            </label>
+          </div>
           <div className="daily-goal-presets">
-            {[25, 50, 100, 150].map(minutes => <button key={minutes} type="button" className="community-button daily-goal-preset" aria-pressed={Number(target) === minutes} onClick={() => {
-              setTarget(String(minutes))
-              if (invalidField === 'target') { setInvalidField(null); setSaveError(null) }
-            }}>{number.format(minutes)} <span>{copy.minutes}</span></button>)}
+            {[60, 240, 480, 720].map(minutes => <button key={minutes} type="button" className="community-button daily-goal-preset" aria-pressed={validHours && validMinutes && targetMinutes === minutes} onClick={() => {
+              setHours(String(Math.floor(minutes / 60)))
+              setMinutesPart(String(minutes % 60))
+              if (invalidField === 'hours' || invalidField === 'minutes') { setInvalidField(null); setSaveError(null) }
+            }}>{formatDuration(minutes)}</button>)}
           </div>
         </fieldset>
         {saveError && <p id="challenge-save-error" className="community-error" role="alert">{saveError}</p>}

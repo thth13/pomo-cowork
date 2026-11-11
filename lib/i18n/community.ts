@@ -2,12 +2,12 @@ export const communityCopy = {
   en: {
     roomInvitation: { label: 'You’re invited', title: 'Your next focus session, together.', hint: 'Log in or create an account to join this room. Your invitation will be waiting.', register: 'Create account', preview: 'Room preview', locked: 'Available after you join', people: 'Meet your coworkers and see who’s focusing.', chat: 'Share a hello, a plan, or a little encouragement.', activity: 'Follow your room’s progress, one focus session at a time.' },
     challenge: {
-      heading: 'Daily goal', dailyTarget: 'Target', ofTarget: 'of {minutes} min', setGoal: 'Set daily goal', customTarget: 'Custom target (minutes)',
-      goal: 'Focus for {minutes} minutes today', minutes: 'min', team: 'Team completion',
+      heading: 'Daily goal', dailyTarget: 'Target', ofTarget: 'of {duration}', setGoal: 'Set daily goal', customTarget: 'Custom target (minutes)',
+      goal: 'Focus for {duration} today', minutes: 'min', team: 'Team completion',
       empty: 'Join this room and finish a focus session to start your daily progress.',
       loading: 'Loading today’s challenge…', loadError: 'Could not refresh the challenge. Try again.',
-      settings: 'Edit daily challenge', title: 'Challenge name', target: 'Daily target (minutes)',
-      invalidTitle: 'Enter a name with 1–80 characters.', invalidTarget: 'Enter a whole number from 5 to 480.',
+      settings: 'Edit daily challenge', title: 'Challenge name', target: 'Daily focus time', hours: 'Hours', hoursShort: 'h', minutesLabel: 'Minutes',
+      invalidTitle: 'Enter a name with 1–80 characters.', invalidTarget: 'Enter valid whole hours and 0–59 minutes, totaling at least 5 minutes.',
       saveError: 'Could not save the challenge. Your changes are still here.', saved: 'Daily challenge saved.',
       complete: 'Daily goal completed', you: 'You', more: 'Show more participants',
     },
@@ -73,12 +73,12 @@ export const communityCopy = {
   es: {
     roomInvitation: { label: 'Te han invitado', title: 'Tu próxima sesión, en compañía.', hint: 'Inicia sesión o crea una cuenta para unirte a esta sala. Tu invitación seguirá aquí.', register: 'Crear cuenta', preview: 'Vista previa de la sala', locked: 'Disponible al unirte', people: 'Conoce a tus compañeros y descubre quién está concentrándose.', chat: 'Saluda, comparte tus planes o anima a los demás.', activity: 'Sigue el progreso de la sala, una sesión a la vez.' },
     challenge: {
-      heading: 'Objetivo diario', dailyTarget: 'Meta', ofTarget: 'de {minutes} min', setGoal: 'Establecer objetivo diario', customTarget: 'Objetivo personalizado (minutos)',
-      goal: 'Concéntrate durante {minutes} minutos hoy', minutes: 'min', team: 'Objetivos completados',
+      heading: 'Objetivo diario', dailyTarget: 'Meta', ofTarget: 'de {duration}', setGoal: 'Establecer objetivo diario', customTarget: 'Objetivo personalizado (minutos)',
+      goal: 'Concéntrate durante {duration} hoy', minutes: 'min', team: 'Objetivos completados',
       empty: 'Únete a esta sala y termina una sesión para empezar tu progreso diario.',
       loading: 'Cargando el reto de hoy…', loadError: 'No se pudo actualizar el reto. Reinténtalo.',
-      settings: 'Editar reto diario', title: 'Nombre del reto', target: 'Objetivo diario (minutos)',
-      invalidTitle: 'Escribe un nombre de entre 1 y 80 caracteres.', invalidTarget: 'Introduce un número entero entre 5 y 480.',
+      settings: 'Editar reto diario', title: 'Nombre del reto', target: 'Tiempo de concentración diario', hours: 'Horas', hoursShort: 'h', minutesLabel: 'Minutos',
+      invalidTitle: 'Escribe un nombre de entre 1 y 80 caracteres.', invalidTarget: 'Introduce horas enteras válidas y entre 0 y 59 minutos, con un total mínimo de 5 minutos.',
       saveError: 'No se pudo guardar el reto. Tus cambios se conservan.', saved: 'Reto diario guardado.',
       complete: 'Objetivo diario completado', you: 'Tú', more: 'Mostrar más participantes',
     },
