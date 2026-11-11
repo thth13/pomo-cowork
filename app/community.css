@@ -409,6 +409,11 @@ body:has(.paywall-dialog[open]) { overflow: hidden; }
 .room-card h3 { font-size: 19px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; margin-bottom: 6px; }
 .room-card h3 a:hover { color: var(--pixel-tomato-ink); text-decoration: underline; text-underline-offset: 4px; }
 .room-card h3 a:active { color: var(--pixel-accent); }
+.room-card-link::after { content: ''; position: absolute; inset: 0; z-index: 1; cursor: pointer; }
+.room-card-link:hover::after { background: color-mix(in srgb, var(--pixel-growth) 5%, transparent); }
+.room-card-link:focus-visible::after { outline: 2px solid var(--pixel-accent); outline-offset: 3px; }
+.room-card-link:active::after { background: color-mix(in srgb, var(--pixel-growth) 8%, transparent); }
+.room-card-footer .community-actions { position: relative; z-index: 2; }
 .room-card-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-top: auto; border-top: 1px solid var(--pixel-line); padding-top: 16px; }
 .room-detail-header { position: relative; padding: 28px; margin-bottom: 24px; border: 1px solid var(--pixel-line); background-color: var(--pixel-screen); }
 .room-detail-header .community-intro { margin: 0; }

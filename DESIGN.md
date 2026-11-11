@@ -2105,6 +2105,12 @@ Long names/tasks truncate with full text in title attributes to preserve row den
 
 ## Room invitation preview
 
+Room directory cards reuse the public project directory's stretched native title-link
+pattern: the full card opens room details with a card-wide focus outline. Footer
+buttons sit above the link; Open is available for joined and discovery rooms, while
+Join and workspace selection remain separate actions. Existing community tokens
+own hover, focus and pressed colors; card geometry stays unchanged.
+
 Guests following a room invitation see the room identity and actual participant count
 in the existing room shell. A paper/sage welcome panel with a door emblem and tomato
 registration action precedes locked participant, chat and activity panels. No invented

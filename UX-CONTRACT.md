@@ -1280,6 +1280,10 @@ or joined room. My rooms precedes the discovery grid; ownership or API isMember
 places a card there, with a Joined badge and Open room action. Discovery excludes
 these cards. Open room navigates without selecting a workspace; Set as workspace
 selects the workspace in place through useRoomStore without joining or navigating.
+Every room card stretches its native title link over the card to open the room
+without joining or selecting a workspace. Open room is available in both grids;
+footer actions remain independently interactive above the link. Joining requires
+the separate Join action.
 Global remains a wide workspace banner above discovery, using the same
 Set as workspace / Selected labels and selected state.
 The running-session

@@ -190,16 +190,16 @@ export default function RoomsPage() {
             {isOwner && <span className="community-badge"><Crown size={11} aria-hidden="true" />{copy.owner}</span>}
           </div>
         </div>
-        <div><h3><Link href={`/rooms/${room.id}`}>{room.name}</Link></h3><p className="community-muted room-description room-description-summary">{room.description || copy.room}</p></div>
+        <div><h3><Link href={`/rooms/${room.id}`} className="room-card-link">{room.name}</Link></h3><p className="community-muted room-description room-description-summary">{room.description || copy.room}</p></div>
         <footer className="room-card-footer">
           <span className="community-muted"><Users size={14} className="inline mr-1" aria-hidden="true" />{room.memberCount ?? 0} {room.memberCount === 1 ? copy.participant : copy.participantPlural}</span>
           <div className="community-actions">
-            {isJoined ? <>
-              <Link href={`/rooms/${room.id}`} className="community-button">{copy.open}<ArrowUpRight size={14} aria-hidden="true" /></Link>
+            <Link href={`/rooms/${room.id}`} className="community-button">{copy.open}<ArrowUpRight size={14} aria-hidden="true" /></Link>
+            {isJoined ?
               <button type="button" className={`community-button ${isSelected ? '' : 'community-button-primary'}`} aria-pressed={isSelected} disabled={isWorkRoomLocked(room.id)} aria-describedby={isWorkRoomLocked(room.id) ? 'room-work-locked-hint' : undefined} onClick={() => setCurrentRoom({ id: room.id, name: room.name, backgroundGradientKey: room.backgroundGradientKey ?? null })}>
                 {isSelected && <Check size={14} aria-hidden="true" />}{isSelected ? copy.workspaceSelected : copy.setWorkspace}
               </button>
-            </> : <button type="button" className="community-button community-button-primary" onClick={() => onJoinRoom(room)}>
+            : <button type="button" className="community-button community-button-primary" onClick={() => onJoinRoom(room)}>
               {copy.join}<ArrowUpRight size={14} aria-hidden="true" />
             </button>}
           </div>
