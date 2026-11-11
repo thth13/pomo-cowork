@@ -5,6 +5,9 @@ import { useRouter } from 'next/navigation'
 import { ArrowUpRight, Check, Crown, DoorOpen, Globe2, Lock, Plus, Users } from 'lucide-react'
 import Link from 'next/link'
 import CommunityDialog from '@/components/CommunityDialog'
+import RoomProfileFields, { RoomProfilePreview } from '@/components/RoomProfileFields'
+import RoomImage from '@/components/RoomImage'
+import { roomProfileDraft, roomFormData } from '@/lib/roomProfile'
 import { useI18n } from '@/components/I18nProvider'
 import { communityCopy } from '@/lib/i18n/community'
 import Navbar from '@/components/Navbar'
@@ -42,6 +45,7 @@ export default function RoomsPage() {
 
   const [rooms, setRooms] = useState<Room[]>([])
   const [loading, setLoading] = useState(true)
+  const [profile, setProfile] = useState(() => roomProfileDraft())
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -139,13 +143,9 @@ export default function RoomsPage() {
       const response = await fetch('/api/rooms', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name,
-          privacy: createForm.privacy,
-        }),
+        body: roomFormData(name, createForm.privacy, profile),
       })
 
       if (!response.ok) {
@@ -157,6 +157,7 @@ export default function RoomsPage() {
       const created = (await response.json()) as Room
       setRooms((prev) => [created, ...prev])
       setCreateForm({ name: '', privacy: RoomPrivacy.PUBLIC })
+      setProfile(roomProfileDraft())
 
       setIsCreateModalOpen(false)
 
@@ -179,8 +180,9 @@ export default function RoomsPage() {
       const isJoined = Boolean(user && (room.isMember || isOwner))
       const isSelected = currentRoomId === room.id
       return <article key={room.id} className="room-card" data-current={isSelected}>
+        <RoomImage src={room.backgroundImageUrl} background />
         <div className="room-card-top">
-          <span className="room-card-symbol"><DoorOpen size={22} aria-hidden="true" /></span>
+          <RoomImage src={room.avatarUrl} />
           <div className="community-actions">
             {isSelected && <span className="room-active-workspace"><Check size={12} aria-hidden="true" />{copy.activeWorkspace}</span>}
             {isJoined && !isSelected && <span className="community-badge"><Check size={11} aria-hidden="true" />{copy.roomJoined}</span>}
@@ -188,7 +190,7 @@ export default function RoomsPage() {
             {isOwner && <span className="community-badge"><Crown size={11} aria-hidden="true" />{copy.owner}</span>}
           </div>
         </div>
-        <div><h3><Link href={`/rooms/${room.id}`}>{room.name}</Link></h3><p className="community-muted">{copy.room}</p></div>
+        <div><h3><Link href={`/rooms/${room.id}`}>{room.name}</Link></h3><p className="community-muted room-description room-description-summary">{room.description || copy.room}</p></div>
         <footer className="room-card-footer">
           <span className="community-muted"><Users size={14} className="inline mr-1" aria-hidden="true" />{room.memberCount ?? 0} {room.memberCount === 1 ? copy.participant : copy.participantPlural}</span>
           <div className="community-actions">
@@ -251,17 +253,23 @@ export default function RoomsPage() {
           ) : renderRooms(otherRooms)}
         </section>
       </main>
-      <CommunityDialog open={isCreateModalOpen} title={copy.createRoom} description={copy.createHint} busy={creating} onClose={() => setIsCreateModalOpen(false)}>
-        <form noValidate onSubmit={onCreateRoom}>
-          <label className="community-field"><span>{copy.name}</span>
-            <input ref={nameInputRef} value={createForm.name} onChange={event => setCreateForm(s => ({ ...s, name: event.target.value }))} placeholder={copy.roomName} disabled={creating} aria-invalid={error === copy.nameRequired} aria-describedby={error ? 'create-room-error' : undefined} />
-          </label>
-          <fieldset className="community-privacy" disabled={creating}><legend>{copy.privacy}</legend><div>
-            {[RoomPrivacy.PUBLIC, RoomPrivacy.PRIVATE].map(privacy => <label key={privacy}>
-              <input type="radio" name="create-room-privacy" value={privacy} checked={createForm.privacy === privacy} onChange={() => setCreateForm(s => ({ ...s, privacy }))} />
-              <span>{privacy === RoomPrivacy.PUBLIC ? copy.public : copy.private}<small>{privacy === RoomPrivacy.PUBLIC ? copy.publicHint : copy.privateHint}</small></span>
-            </label>)}
-          </div></fieldset>
+      <CommunityDialog open={isCreateModalOpen} variant="room-settings" title={copy.createRoom} description={copy.createHint} busy={creating} onClose={() => setIsCreateModalOpen(false)}>
+        <form className="room-profile-form" noValidate onSubmit={onCreateRoom}>
+          <div className="room-profile-columns">
+            <div className="room-profile-controls">
+              <label className="community-field"><span>{copy.name}</span>
+                <input ref={nameInputRef} value={createForm.name} onChange={event => setCreateForm(s => ({ ...s, name: event.target.value }))} placeholder={copy.roomName} disabled={creating} aria-invalid={error === copy.nameRequired} aria-describedby={error ? 'create-room-error' : undefined} />
+              </label>
+              <RoomProfileFields value={profile} onChange={setProfile} disabled={creating} />
+              <fieldset className="community-privacy" disabled={creating}><legend>{copy.privacy}</legend><div>
+                {[RoomPrivacy.PUBLIC, RoomPrivacy.PRIVATE].map(privacy => <label key={privacy}>
+                  <input type="radio" name="create-room-privacy" value={privacy} checked={createForm.privacy === privacy} onChange={() => setCreateForm(s => ({ ...s, privacy }))} />
+                  <span>{privacy === RoomPrivacy.PUBLIC ? copy.public : copy.private}<small>{privacy === RoomPrivacy.PUBLIC ? copy.publicHint : copy.privateHint}</small></span>
+                </label>)}
+              </div></fieldset>
+            </div>
+            <RoomProfilePreview value={profile} onChange={setProfile} disabled={creating} />
+          </div>
           {error && <p id="create-room-error" className="community-error" role="alert">{error}</p>}
           <div className="community-dialog-actions">
             <button type="button" className="community-button" onClick={() => setIsCreateModalOpen(false)} disabled={creating}>{copy.cancel}</button>

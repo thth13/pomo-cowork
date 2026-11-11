@@ -1,15 +1,11 @@
+import { readRoomBody, saveRoomProfile, RoomProfileError } from '@/lib/roomProfileServer'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
+import { deleteAvatarFromBlob } from '@/lib/vercelBlob'
 import { isRoomGradientKey } from '@/lib/roomGradient'
 
 export const dynamic = 'force-dynamic'
-
-interface UpdateRoomBody {
-  name?: string
-  privacy?: 'PUBLIC' | 'PRIVATE'
-  backgroundGradientKey?: string | null
-}
 
 const normalizeName = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
@@ -59,6 +55,9 @@ export async function GET(
         name: true,
         privacy: true,
         ownerId: true,
+        description: true,
+        avatarUrl: true,
+        backgroundImageUrl: true,
         backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
@@ -96,7 +95,7 @@ export async function PATCH(
 
     const existing = await prisma.room.findUnique({
       where: { id: params.id },
-      select: { id: true, ownerId: true },
+      select: { id: true, ownerId: true, avatarUrl: true, backgroundImageUrl: true },
     })
 
     if (!existing) {
@@ -107,7 +106,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const body = (await request.json().catch(() => null)) as UpdateRoomBody | null
+    const body = await readRoomBody(request)
 
     const nextName = body?.name !== undefined ? normalizeName(body.name) : null
     if (body?.name !== undefined && !nextName) {
@@ -124,9 +123,10 @@ export async function PATCH(
       return NextResponse.json({ error: 'Invalid background gradient' }, { status: 400 })
     }
 
-    const updated = await prisma.room.update({
+    const updated = await saveRoomProfile(body, payload.userId, profile => prisma.room.update({
       where: { id: params.id },
       data: {
+        ...profile,
         ...(nextName ? { name: nextName } : {}),
         ...(nextPrivacy ? { privacy: nextPrivacy } : {}),
         ...(nextBackgroundGradientKey !== undefined
@@ -138,14 +138,22 @@ export async function PATCH(
         name: true,
         privacy: true,
         ownerId: true,
+        description: true,
+        avatarUrl: true,
+        backgroundImageUrl: true,
         backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
       },
-    })
+    }))
 
+    await Promise.allSettled([
+      existing.avatarUrl && existing.avatarUrl !== updated.avatarUrl ? deleteAvatarFromBlob(existing.avatarUrl) : Promise.resolve(),
+      existing.backgroundImageUrl && existing.backgroundImageUrl !== updated.backgroundImageUrl ? deleteAvatarFromBlob(existing.backgroundImageUrl) : Promise.resolve(),
+    ])
     return NextResponse.json(updated)
   } catch (error) {
+    if (error instanceof RoomProfileError) return NextResponse.json({ error: error.message }, { status: 400 })
     console.error('Update room error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }
@@ -171,7 +179,7 @@ export async function DELETE(
 
     const existing = await prisma.room.findUnique({
       where: { id: params.id },
-      select: { id: true, ownerId: true },
+      select: { id: true, ownerId: true, avatarUrl: true, backgroundImageUrl: true },
     })
 
     if (!existing) {
@@ -186,6 +194,10 @@ export async function DELETE(
       where: { id: params.id },
     })
 
+    await Promise.allSettled([
+      deleteAvatarFromBlob(existing.avatarUrl),
+      deleteAvatarFromBlob(existing.backgroundImageUrl),
+    ])
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete room error:', error)

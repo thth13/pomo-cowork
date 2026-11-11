@@ -63,6 +63,9 @@ export interface Room {
   name: string
   privacy: RoomPrivacy
   ownerId: string
+  description?: string
+  avatarUrl?: string | null
+  backgroundImageUrl?: string | null
   backgroundGradientKey?: string | null
   createdAt: string
   updatedAt: string

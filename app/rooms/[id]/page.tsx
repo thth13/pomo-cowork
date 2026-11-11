@@ -8,6 +8,9 @@ import Link from 'next/link'
 import { Check, Copy, Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Target, Trash2, TrendingUp, Trophy, UserPlus, Users, X } from 'lucide-react'
 import AuthModal from '@/components/AuthModal'
 import CommunityDialog from '@/components/CommunityDialog'
+import RoomProfileFields, { RoomProfilePreview } from '@/components/RoomProfileFields'
+import RoomImage from '@/components/RoomImage'
+import { roomProfileDraft, roomFormData } from '@/lib/roomProfile'
 import RoomDailyChallenge from '@/components/RoomDailyChallenge'
 import RoomLeaderboard from '@/components/RoomLeaderboard'
 import Chat from '@/components/Chat'
@@ -91,6 +94,7 @@ export default function RoomPage() {
     name: '',
     privacy: RoomPrivacy.PUBLIC,
   })
+  const [profile, setProfile] = useState(() => roomProfileDraft())
   const [roomSaving, setRoomSaving] = useState(false)
   const [isRoomSettingsOpen, setIsRoomSettingsOpen] = useState(false)
   const [isInviteOpen, setIsInviteOpen] = useState(false)
@@ -241,6 +245,7 @@ export default function RoomPage() {
 
       const roomData = (await roomRes.json()) as Room
       setRoom(roomData)
+      setProfile(roomProfileDraft(roomData))
       setRoomSettings({
         name: roomData.name,
         privacy: roomData.privacy,
@@ -604,13 +609,9 @@ export default function RoomPage() {
       const res = await fetch(`/api/rooms/${roomId}`, {
         method: 'PATCH',
         headers: {
-          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          name,
-          privacy: roomSettings.privacy,
-        }),
+        body: roomFormData(name, roomSettings.privacy, profile),
       })
 
       if (!res.ok) {
@@ -622,6 +623,7 @@ export default function RoomPage() {
       const updated = (await res.json()) as Room
       setRoom(updated)
       setCurrentRoom({ id: updated.id, name: updated.name, backgroundGradientKey: updated.backgroundGradientKey ?? null })
+      setProfile(roomProfileDraft(updated))
       setRoomSettings({
         name: updated.name,
         privacy: updated.privacy,
@@ -633,7 +635,7 @@ export default function RoomPage() {
     } finally {
       setRoomSaving(false)
     }
-  }, [getToken, roomId, roomSettings.name, roomSettings.privacy, setCurrentRoom, roomSaving, copy.loginRequired, copy.nameRequired, copy.saveError])
+  }, [getToken, roomId, profile, roomSettings.name, roomSettings.privacy, setCurrentRoom, roomSaving, copy.loginRequired, copy.nameRequired, copy.saveError])
 
   const onDeleteRoom = useCallback(async () => {
     if (!roomId) return
@@ -678,12 +680,20 @@ export default function RoomPage() {
           <div className="community-panel community-state"><DoorOpen aria-hidden="true" /><h1>{copy.roomLoadError}</h1><button type="button" className="community-button" onClick={() => guestInvite ? setPreviewAttempt(value => value + 1) : void loadAll()}>{copy.retry}</button></div>
         ) : <>
           <header className="room-detail-header">
-            {isOwner && <button type="button" onClick={() => { setError(null); setRoomSettings({ name: room.name, privacy: room.privacy }); setIsRoomSettingsOpen(true) }} className="community-icon-button room-settings-button" title={copy.settings} aria-label={copy.settings}><Settings size={18} aria-hidden="true" /></button>}
-            <div className="community-intro">
-              <div><p className="community-eyebrow"><DoorOpen size={15} aria-hidden="true" />{copy.room}</p><h1>{room.name}</h1>
+            <RoomImage src={room.backgroundImageUrl} background />
+            <div className="community-intro room-header-layout">
+              <div className="room-header-identity">
+                <div className="room-header-title">
+                  <RoomImage src={room.avatarUrl} />
+                  <div><p className="community-eyebrow"><DoorOpen size={15} aria-hidden="true" />{copy.room}</p><h1>{room.name}</h1></div>
+                </div>
+                {room.description && <p className="room-description">{room.description}</p>}
                 <div className="community-actions mt-3"><span className="community-badge">{room.privacy === RoomPrivacy.PRIVATE ? <Lock size={12} aria-hidden="true" /> : <Globe2 size={12} aria-hidden="true" />}{room.privacy === RoomPrivacy.PRIVATE ? copy.private : copy.public}</span><span className="community-badge"><Users size={12} aria-hidden="true" />{members.length} {copy.participantPlural}</span>{isOwner && <span className="community-badge">{copy.owner}</span>}<RoomOnlineCount members={members} /></div>
               </div>
-              <div className="community-actions">
+              <div className="room-header-tools">
+                {isOwner && <button type="button" onClick={() => { setError(null); setRoomSettings({ name: room.name, privacy: room.privacy }); setProfile(roomProfileDraft(room)); setIsRoomSettingsOpen(true) }} className="community-icon-button room-settings-button" title={copy.settings} aria-label={copy.settings}><Settings size={18} aria-hidden="true" /></button>}
+              </div>
+              <div className="community-actions room-header-actions">
                 {canJoinRoom && <button type="button" onClick={onJoinRoom} disabled={joining} aria-busy={joining} className="community-button community-button-primary"><UserPlus size={16} aria-hidden="true" />{copy.join}</button>}
                 {canInvite && <button type="button" onClick={() => { setError(null); setUserDropdownSuppressed(false); setIsInviteOpen(true) }} className="community-button"><UserPlus size={16} aria-hidden="true" />{copy.inviteFriends}</button>}
                 {isOwner && <button type="button" onClick={() => { if (activeTab !== 'overview') router.replace(roomTabHref('overview'), { scroll: false }); setIsChallengeOpen(true) }} className="community-button"><Target size={16} aria-hidden="true" />{copy.challenge.setGoal}</button>}
@@ -787,11 +797,17 @@ export default function RoomPage() {
         <div className="community-dialog-actions"><button type="button" className="community-button" disabled={deleting} onClick={() => setIsConfirmDeleteOpen(false)}>{copy.cancel}</button><button type="button" className="community-button community-button-danger" disabled={deleting} onClick={onDeleteRoom}>{deleting ? copy.deleting : copy.delete}</button></div>
       </CommunityDialog>
       <CommunityDialog open={isOwner && isRoomSettingsOpen} variant="room-settings" title={copy.settings} busy={roomSaving} onClose={() => setIsRoomSettingsOpen(false)}>
-        <form noValidate onSubmit={event => { event.preventDefault(); void onSaveRoomSettings() }}>
-          <label className="community-field"><span>{copy.name}</span><input ref={roomNameRef} value={roomSettings.name} aria-invalid={error === copy.nameRequired} aria-describedby={error ? "room-settings-error" : undefined} disabled={roomSaving} onChange={event => setRoomSettings(s => ({ ...s, name: event.target.value }))} /></label>
-          <fieldset className="community-privacy" disabled={roomSaving}><legend>{copy.privacy}</legend><div>{[RoomPrivacy.PUBLIC, RoomPrivacy.PRIVATE].map(privacy => <label key={privacy}><input type="radio" name="room-privacy" checked={roomSettings.privacy === privacy} onChange={() => setRoomSettings(s => ({ ...s, privacy }))} /><span>{privacy === RoomPrivacy.PUBLIC ? copy.public : copy.private}<small>{privacy === RoomPrivacy.PUBLIC ? copy.publicHint : copy.privateHint}</small></span></label>)}</div></fieldset>
+        <form className="room-profile-form" noValidate onSubmit={event => { event.preventDefault(); void onSaveRoomSettings() }}>
+          <div className="room-profile-columns">
+            <div className="room-profile-controls">
+              <label className="community-field"><span>{copy.name}</span><input ref={roomNameRef} value={roomSettings.name} aria-invalid={error === copy.nameRequired} aria-describedby={error ? "room-settings-error" : undefined} disabled={roomSaving} onChange={event => setRoomSettings(s => ({ ...s, name: event.target.value }))} /></label>
+              <RoomProfileFields value={profile} onChange={setProfile} disabled={roomSaving} />
+              <fieldset className="community-privacy" disabled={roomSaving}><legend>{copy.privacy}</legend><div>{[RoomPrivacy.PUBLIC, RoomPrivacy.PRIVATE].map(privacy => <label key={privacy}><input type="radio" name="room-privacy" checked={roomSettings.privacy === privacy} onChange={() => setRoomSettings(s => ({ ...s, privacy }))} /><span>{privacy === RoomPrivacy.PUBLIC ? copy.public : copy.private}<small>{privacy === RoomPrivacy.PUBLIC ? copy.publicHint : copy.privateHint}</small></span></label>)}</div></fieldset>
+            </div>
+            <RoomProfilePreview value={profile} onChange={setProfile} disabled={roomSaving} />
+          </div>
           {error && <p id="room-settings-error" className="community-error mt-4" role="alert">{error}</p>}
-          <div className="community-dialog-actions"><button type="button" className="community-button community-button-danger" disabled={roomSaving} onClick={() => { setError(null); setIsRoomSettingsOpen(false); setIsConfirmDeleteOpen(true) }}><Trash2 size={15} aria-hidden="true" />{copy.delete}</button><button type="button" className="community-button" disabled={roomSaving} onClick={() => setIsRoomSettingsOpen(false)}>{copy.cancel}</button><button type="submit" className="community-button community-button-primary" disabled={roomSaving}>{roomSaving ? copy.saving : copy.save}</button></div>
+          <div className="community-dialog-actions"><button type="button" className="community-button community-button-danger" disabled={roomSaving} onClick={() => { setError(null); setIsRoomSettingsOpen(false); setIsConfirmDeleteOpen(true) }}><Trash2 size={15} aria-hidden="true" />{copy.delete}</button><button type="button" className="community-button" disabled={roomSaving} onClick={() => setIsRoomSettingsOpen(false)}>{copy.cancel}</button><button type="submit" className="community-button community-button-primary" disabled={roomSaving} aria-busy={roomSaving}>{roomSaving ? copy.saving : copy.save}</button></div>
         </form>
       </CommunityDialog>
     </div>

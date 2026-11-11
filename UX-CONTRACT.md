@@ -1291,3 +1291,14 @@ Pro gating, authentication and private-room invitation permissions remain in for
 The selected room and Global banner show a green Active workspace badge at the
 top and a stronger growth-color outline. Room descriptions remain independent of
 selection. Workspace buttons read Set as workspace / Selected.
+
+## Room profile editing
+
+`RoomProfileFields` owns descriptions, avatar/background pickers, previews and removal
+in create and owner settings. `lib/roomProfileServer.ts` validates descriptions and
+raster files (JPG/PNG/WebP/GIF, 2 MB each); uploads happen on explicit save, and failed
+database writes clean up newly uploaded files. Existing room APIs own read access and
+owner-only edits. Multipart saves preserve existing images when omitted; empty image
+fields clear them. Failed saves preserve drafts; successful create opens the room,
+and successful edit updates the header and closes settings. Images use the existing
+public Vercel Blob store, like profile avatars; room metadata retains room access checks.

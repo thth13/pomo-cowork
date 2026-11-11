@@ -226,6 +226,9 @@ model Room {
   name    String
   privacy RoomPrivacy @default(PUBLIC)
 
+  description String @default("") @db.VarChar(500)
+  avatarUrl String?
+  backgroundImageUrl String?
   backgroundGradientKey String? @db.VarChar(32)
 
   ownerId String

@@ -1,13 +1,9 @@
+import { readRoomBody, saveRoomProfile, RoomProfileError } from '@/lib/roomProfileServer'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 
 export const dynamic = 'force-dynamic'
-
-interface CreateRoomBody {
-  name?: string
-  privacy?: 'PUBLIC' | 'PRIVATE'
-}
 
 const normalizeName = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
@@ -45,6 +41,9 @@ export async function GET(request: NextRequest) {
         name: true,
         privacy: true,
         ownerId: true,
+        description: true,
+        avatarUrl: true,
+        backgroundImageUrl: true,
         backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
@@ -68,6 +67,9 @@ export async function GET(request: NextRequest) {
       name: room.name,
       privacy: room.privacy,
       ownerId: room.ownerId,
+      description: room.description,
+      avatarUrl: room.avatarUrl,
+      backgroundImageUrl: room.backgroundImageUrl,
       backgroundGradientKey: room.backgroundGradientKey,
       createdAt: room.createdAt,
       updatedAt: room.updatedAt,
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    const body = (await request.json().catch(() => null)) as CreateRoomBody | null
+    const body = await readRoomBody(request)
     const name = normalizeName(body?.name)
     const privacy = normalizePrivacy(body?.privacy) ?? 'PUBLIC'
 
@@ -105,8 +107,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name is required' }, { status: 400 })
     }
 
-    const room = await prisma.room.create({
+    const room = await saveRoomProfile(body, payload.userId, profile => prisma.room.create({
       data: {
+        ...profile,
         name,
         privacy,
         ownerId: payload.userId,
@@ -122,14 +125,18 @@ export async function POST(request: NextRequest) {
         name: true,
         privacy: true,
         ownerId: true,
+        description: true,
+        avatarUrl: true,
+        backgroundImageUrl: true,
         backgroundGradientKey: true,
         createdAt: true,
         updatedAt: true,
       },
-    })
+    }))
 
     return NextResponse.json(room)
   } catch (error) {
+    if (error instanceof RoomProfileError) return NextResponse.json({ error: error.message }, { status: 400 })
     console.error('Create room error:', error)
     return NextResponse.json({ error: 'Server error' }, { status: 500 })
   }

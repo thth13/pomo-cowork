@@ -2188,3 +2188,26 @@ affordance; the dropdown uses the existing paper/line tokens and a subtle shadow
 Activity charts use a 240px plot and compact toolbar spacing. Periods with no
 positive focus time retain the chart with zero-value columns; no no-data message is shown.
 Room activity removes the inherited chart minimum height and reduces the heading gap.
+
+## Room profiles
+
+Room creation and owner settings reuse `RoomProfileFields`, `CommunityDialog`, and
+community field/button tokens. Descriptions are optional, capped at 500 characters;
+directory excerpts occupy at most three lines. Raster avatars reserve a square;
+backgrounds sit behind the directory card and room header at 16% opacity over the
+existing opaque surface, preserving readable ink. Broken images fall back to the
+room icon or plain surface. Forced colors hides decorative backgrounds.
+
+Room create/settings dialogs use a 620px single-column layout: editable fields
+first, then two image upload tiles side by side, with shared actions below.
+Empty previews reserve their avatar/landscape geometry. Below 380px the tiles
+stack vertically; the existing dialog owns vertical scrolling.
+
+Room image previews are interactive upload tiles: circular avatar and landscape
+cover, themed dashed borders, persistent choose/replace captions, drag highlight,
+and an explicit remove control. Both picker and drop use the same file validation;
+keyboard activation opens the picker. The fields above the tiles contain only text/privacy.
+
+The room detail header places an 80px avatar to the left of the name and eyebrow,
+with a themed border and pixel shadow. On mobile it shrinks to 56px. Settings stay
+on the right; actions span the header on narrow screens.
