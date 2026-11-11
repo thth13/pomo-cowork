@@ -2069,7 +2069,7 @@ The locale registry owns reciprocal language links, canonicals and sitemap entri
 Spanish homepage discovery links to the new route. Verification is static only.
 
 
-Room overview includes a compact 400px chat panel below the participants, reusing
+Room overview includes a compact 400px chat panel above the participants, reusing
 the homepage `Chat` component. There is no separate chat tab.
 An explicit room ID scopes history, sending and live events to the viewed room
 without changing the timer's selected room. The room variant owns a bounded message
@@ -2168,3 +2168,23 @@ English/Spanish copy lives in `lib/i18n/community.ts`. Participant loading error
 block confirmation and offer retry; membership conflicts refresh the choices and
 require confirmation again. The leave API validates the choice and performs the
 ownership change/removal or confirmed deletion in one serializable transaction.
+
+## Room activity periods
+
+Room Overview and `/stats` share `ActivityChart` for the calendar week/month/year
+picker, previous/next navigation, duration totals, active-day/month counts and
+column chart. Weeks run Monday–Sunday; years group activity by month. Both APIs
+use `getActivityStats` for identical date boundaries and session attribution.
+Room activity requests use independent `activityPeriod`/`activityOffset` parameters,
+leaving leaderboard filters and lifetime metrics independent. Period selection is
+transient local state, matching `/stats`. Room requests cancel on changes and show
+loading/error/retry states. Existing pixel tokens and stats control styles own the
+presentation; English/Spanish labels come from the shared translations.
+
+The shared activity period control uses unframed chevrons and a compact date label
+with a disclosure chevron. Quiet hover fills and visible keyboard focus retain
+affordance; the dropdown uses the existing paper/line tokens and a subtle shadow.
+
+Activity charts use a 240px plot and compact toolbar spacing. Periods with no
+positive focus time retain the chart with zero-value columns; no no-data message is shown.
+Room activity removes the inherited chart minimum height and reduces the heading gap.

@@ -3,8 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import Highcharts from 'highcharts'
-import HighchartsReact from 'highcharts-react-official'
+import RoomActivityChart from '@/components/RoomActivityChart'
 import Link from 'next/link'
 import { Check, Copy, Clock, DoorOpen, Flame, Globe2, Lock, LogOut, Settings, Target, Trash2, TrendingUp, Trophy, UserPlus, Users, X } from 'lucide-react'
 import AuthModal from '@/components/AuthModal'
@@ -667,57 +666,6 @@ export default function RoomPage() {
     }
   }, [getToken, roomId, router, setCurrentRoom, copy.loginRequired, copy.deleteError])
 
-  const weeklyChartOptions: Highcharts.Options = useMemo(
-    () => ({
-      chart: { type: 'column', backgroundColor: 'transparent', height: 270, animation: false, style: { fontFamily: 'inherit' } },
-      title: { text: '' },
-      credits: { enabled: false },
-      xAxis: {
-        categories:
-          stats?.weeklyActivity?.map((item) => {
-            return new Date(item.date.slice(0, 10) + 'T00:00:00').toLocaleDateString(locale, { weekday: 'short' })
-          }) ?? [],
-        lineColor: 'var(--pixel-line)',
-        tickColor: 'var(--pixel-line)',
-        labels: {
-          rotation: 0,
-          step: 1,
-          style: { color: 'var(--pixel-muted)' },
-        },
-      },
-      yAxis: {
-        title: {
-          text: copy.hours,
-          style: { color: 'var(--pixel-muted)' },
-        },
-        gridLineColor: 'var(--pixel-line)',
-        labels: {
-          style: { color: 'var(--pixel-muted)' },
-        },
-      },
-      legend: { enabled: false },
-      tooltip: { backgroundColor: 'var(--pixel-paper)', borderColor: 'var(--pixel-line)', borderRadius: 2, style: { color: 'var(--pixel-ink)' } },
-      plotOptions: {
-        series: { animation: false },
-        column: {
-          borderRadius: 0,
-          borderWidth: 0,
-          pointPadding: 0.1,
-          groupPadding: 0.1,
-        },
-      },
-      series: [
-        {
-          type: 'column',
-          name: copy.hours,
-          data: stats?.weeklyActivity?.map((s) => s.hours) ?? [],
-          color: 'var(--pixel-growth)',
-        },
-      ],
-    }),
-    [stats?.weeklyActivity, copy.hours, locale]
-  )
-
   return (
     <div className="community-page garden-page" lang={language} data-no-translate>
       <Navbar compact />
@@ -753,12 +701,10 @@ export default function RoomPage() {
             <Link href={roomTabHref('leaderboard')} scroll={false} aria-current={activeTab === 'leaderboard' ? 'page' : undefined}><Trophy size={16} aria-hidden="true" />{copy.leaderboardTab}</Link>
           </nav>
           <div hidden={activeTab !== 'overview'}>
-            <section className="community-panel room-weekly-activity">
-              <header className="community-panel-heading"><div><h2>{copy.weekly}</h2><p>{copy.weekHint}</p></div></header>
-              {stats ? <div className="community-chart"><HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} /></div> : <p className="community-muted">{copy.statsUnavailable}</p>}
-            </section>
+            <RoomActivityChart key={room.id} roomId={room.id} token={storeToken} initialStats={stats} />
             <div className="community-columns">
               <div className="community-stack">
+                <Chat key={room.id} roomId={room.id} title={copy.chatTab} mode="messages" className="room-chat" isVisible={activeTab === 'overview'} />
                 <section className="community-panel">
                   <header className="community-panel-heading"><h2><Users size={18} aria-hidden="true" />{copy.participants}</h2><div className="community-actions"><span className="community-badge">{members.length}</span><RoomOnlineCount members={members} /></div></header>
 
@@ -767,7 +713,6 @@ export default function RoomPage() {
                     actions={isOwner && member.user.id !== user?.id && member.role !== 'OWNER' ? <button type="button" className="community-icon-button" disabled={Boolean(removingMemberId)} title={copy.remove} aria-label={`${copy.remove}: ${member.user.username}`} onClick={() => { setError(null); setConfirmRemoveMemberId(member.id) }}><X size={16} aria-hidden="true" /></button> : undefined}
                   />}</RoomParticipants>}
                 </section>
-                <Chat key={room.id} roomId={room.id} title={copy.chatTab} mode="messages" className="room-chat" isVisible={activeTab === 'overview'} />
               </div>
               <div className="community-stack">
                 <Chat key={`activities-${room.id}`} roomId={room.id} title={copy.activities} mode="activities" className="room-chat room-activities" isVisible={activeTab === 'overview'} />

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
-import { endOfDay, format, startOfDay, subDays } from 'date-fns'
+import { format } from 'date-fns'
+import { getActivityStats } from '@/lib/activityStats'
 import { getPeriodWindow, isLeaderboardPeriod } from '@/lib/leaderboardPeriod'
 import { getEffectiveMinutes, getSessionAttributionDate } from '@/lib/sessionStats'
 
@@ -99,23 +100,10 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
     const activeDaysCount = dailyMinutesMap.size
     const avgDailyFocusMinutes = activeDaysCount > 0 ? Math.round(totalFocusMinutes / activeDaysCount) : 0
 
-    const weeklyActivity: Array<{ date: string; hours: number }> = []
-    for (let i = 6; i >= 0; i--) {
-      const date = subDays(now, i)
-      const dayStart = startOfDay(date)
-      const dayEnd = endOfDay(date)
-
-      const dayMinutes = focusSessions.reduce((sum, session) => {
-        const sessionDate = getSessionAttributionDate(session)
-        if (sessionDate < dayStart || sessionDate > dayEnd) return sum
-        return sum + getEffectiveMinutes(session)
-      }, 0)
-
-      weeklyActivity.push({
-        date: format(date, 'yyyy-MM-dd'),
-        hours: Math.round((dayMinutes / 60) * 10) / 10,
-      })
-    }
+    const activityPeriod = searchParams.get('activityPeriod') || '7'
+    const activityOffset = Math.max(0, Math.min(1000, parseInt(searchParams.get('activityOffset') || '0', 10) || 0))
+    const activity = getActivityStats(focusSessions, activityPeriod, activityOffset, now)
+    const weeklyActivity = activity.weeklyActivity.map(item => ({ ...item, hours: item.minutes / 60 }))
 
     const minutesByUser = new Map<
       string,
@@ -172,6 +160,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       totalFocusHours: Math.round((totalFocusMinutes / 60) * 10) / 10,
       avgDailyFocusMinutes,
       weeklyActivity,
+      activityRange: activity.activityRange,
       topUsers,
       periodLabel: periodWindow?.label ?? null,
     })

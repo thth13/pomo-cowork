@@ -3,6 +3,7 @@
 import { createClassicStatisticsPreview, type Stats, type HeatmapDay } from '@/lib/classicStatisticsPreview'
 
 import { useCallback, useEffect, useMemo, useRef, useState, type FocusEvent as ReactFocusEvent, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react'
+import ActivityChart from '@/components/ActivityChart'
 import Navbar from '@/components/Navbar'
 import { useAuthStore } from '@/store/useAuthStore'
 import HomeLink from '@/components/HomeLink'
@@ -57,7 +58,6 @@ export default function StatsPage() {
   const chartReady = true
   const [activityPeriod, setActivityPeriod] = useState<'7' | '30' | '365'>('7')
   const [activityOffset, setActivityOffset] = useState(0)
-  const [activityDropdownOpen, setActivityDropdownOpen] = useState(false)
   const [heatmapRange, setHeatmapRange] = useState('rolling')
   const [timelineOffset, setTimelineOffset] = useState(0)
   const [showPaywall, setShowPaywall] = useState(false)
@@ -73,7 +73,6 @@ export default function StatsPage() {
   const activityOffsetRef = useRef(activityOffset)
   const heatmapRangeRef = useRef(heatmapRange)
   const timelineOffsetRef = useRef(timelineOffset)
-  const activityDropdownRef = useRef<HTMLDivElement>(null)
 
   const isPro = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
   const preview = useMemo(() => createClassicStatisticsPreview(language), [language])
@@ -104,16 +103,6 @@ export default function StatsPage() {
   useEffect(() => {
     heatmapRangeRef.current = heatmapRange
   }, [heatmapRange])
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (activityDropdownRef.current && !activityDropdownRef.current.contains(e.target as Node)) {
-        setActivityDropdownOpen(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   useEffect(() => {
     timelineOffsetRef.current = timelineOffset
@@ -202,74 +191,6 @@ export default function StatsPage() {
     }
 
     return `${hours.toFixed(1).replace(/\.0$/, '')}h`
-  }
-
-  const weeklyChartOptions: Highcharts.Options = {
-    chart: { type: 'column', backgroundColor: 'transparent', style: { fontFamily: 'Inter, system-ui, sans-serif' }, animation: false },
-    title: { text: '' },
-    credits: { enabled: false },
-    xAxis: {
-      categories: stats?.weeklyActivity?.map(item => {
-        if (activityPeriod === '365') {
-          const [year, month] = item.date.split('-')
-          const date = new Date(parseInt(year), parseInt(month) - 1, 1)
-          return date.toLocaleDateString(locale, { month: 'short' })
-        } else {
-          const date = new Date(item.date + 'T00:00:00')
-          if (activityPeriod === '7') {
-            const days = language === 'es'
-              ? ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb']
-              : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-            return days[date.getDay()]
-          } else {
-            return date.getDate().toString()
-          }
-        }
-      }) || [],
-      lineColor: 'var(--pixel-line)',
-      tickColor: 'var(--pixel-line)',
-      labels: {
-        rotation: 0,
-        step: activityPeriod === '30' ? 2 : 1,
-        style: { color: 'var(--pixel-muted)' }
-      }
-    },
-    yAxis: {
-      title: {
-        text: t.stats.hours,
-        style: { color: 'var(--pixel-muted)' }
-      },
-      gridLineColor: 'var(--pixel-screen)',
-      labels: {
-        formatter: function() { return formatDuration((this.value as number) * 60) },
-        style: { color: 'var(--pixel-muted)' }
-      }
-    },
-    legend: { enabled: false },
-    tooltip: {
-      backgroundColor: 'var(--pixel-paper)',
-      borderColor: 'var(--pixel-line)',
-      borderRadius: 2,
-      shadow: false,
-      style: { color: 'var(--pixel-ink)' },
-      formatter: function() {
-        return '<b>' + formatDuration((this.y as number) * 60) + ` ${t.stats.hoursLowercase}</b>`
-      }
-    },
-    plotOptions: {
-      series: { animation: false },
-      column: {
-        borderRadius: 0,
-        pointPadding: 0.1,
-        groupPadding: 0.1
-      }
-    },
-    series: [{
-      type: 'column',
-      name: t.stats.hours,
-      data: stats?.weeklyActivity?.map(s => parseFloat((s.minutes / 60).toFixed(4))) || [],
-      color: 'var(--pixel-accent)'
-    }]
   }
 
   const monthlyChartOptions: Highcharts.Options = {
@@ -545,13 +466,6 @@ export default function StatsPage() {
     : {}
   const rawBestDayName = stats?.productivityTrends?.bestDay?.name
   const bestDayName = rawBestDayName ? translatedWeekdays[rawBestDayName] ?? rawBestDayName : t.stats.noData
-  const activityItems = stats?.weeklyActivity || []
-  const activityTotalMinutes = activityItems.reduce((sum, item) => sum + item.minutes, 0)
-  const activityActiveUnits = activityItems.filter((item) => item.minutes > 0).length
-  const activityActiveUnitsLabel = activityPeriod === '365'
-    ? `${activityActiveUnits} ${t.stats.activeMonths}`
-    : `${activityActiveUnits} ${t.stats.activeDays}`
-
   const getSessionColor = (type: string) => {
     switch (type) {
       case 'WORK':
@@ -597,8 +511,6 @@ export default function StatsPage() {
     activityPeriodRef.current = period
     setActivityOffset(0)
     activityOffsetRef.current = 0
-    setActivityDropdownOpen(false)
-    activityDropdownRef.current?.querySelector('button')?.focus()
     fetchStats({ mode: hasFetchedOnceRef.current ? 'activity' : 'full', period, activityOffset: 0 })
   }
 
@@ -607,46 +519,6 @@ export default function StatsPage() {
     setActivityOffset(newOffset)
     activityOffsetRef.current = newOffset
     fetchStats({ mode: hasFetchedOnceRef.current ? 'activity' : 'full', activityOffset: newOffset })
-  }
-
-  const getActivityRangeLabel = () => {
-    if (!stats?.activityRange) return ''
-    const start = new Date(stats.activityRange.start + 'T00:00:00')
-    const end = new Date(stats.activityRange.end + 'T00:00:00')
-    if (activityPeriod === '365') {
-      return start.getFullYear().toString()
-    }
-    if (activityPeriod === '30') {
-      return start.toLocaleDateString(locale, { month: 'long', year: 'numeric' })
-    }
-
-    const startDay = start.getDate()
-    const endDay = end.getDate()
-    const startMonth = start.toLocaleDateString(locale, { month: 'short' })
-    const endMonth = end.toLocaleDateString(locale, { month: 'short' })
-    const startYear = start.getFullYear()
-    const endYear = end.getFullYear()
-
-    if (startMonth === endMonth && startYear === endYear) {
-      return `${startDay}-${endDay} ${endMonth} ${endYear}`
-    }
-
-    if (startYear === endYear) {
-      return `${startDay} ${startMonth} - ${endDay} ${endMonth} ${endYear}`
-    }
-
-    return `${startDay} ${startMonth} ${startYear} - ${endDay} ${endMonth} ${endYear}`
-  }
-
-  const getActivityPeriodLabel = () => {
-    if (activityOffset === 0) {
-      if (activityPeriod === '7') return t.stats.thisWeek
-      if (activityPeriod === '30') return t.stats.thisMonth
-      return t.stats.thisYear
-    }
-    if (activityPeriod === '7') return t.stats.week
-    if (activityPeriod === '30') return t.stats.month
-    return t.stats.year
   }
 
   const handleHeatmapRangeChange = (nextRange: string) => {
@@ -1058,98 +930,8 @@ export default function StatsPage() {
               <div className="h-5 w-5 border-2 border-[var(--pixel-accent)] border-t-transparent rounded-full animate-spin" />
             </div>
           )}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
-            <div className="flex w-full sm:w-auto items-center gap-2 sm:gap-3">
-              <button
-                type="button"
-                onClick={() => handleActivityOffsetChange('prev')}
-                className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors"
-                aria-label={t.stats.previousPeriod}
-              >
-                &lt;
-              </button>
-
-              <div className="relative min-w-0 flex-1 sm:flex-none" ref={activityDropdownRef}
-                onKeyDown={(event) => {
-                  if (event.key === 'Escape') {
-                    setActivityDropdownOpen(false)
-                    activityDropdownRef.current?.querySelector('button')?.focus()
-                  }
-                }}>
-                <button
-                  type="button"
-                  onClick={() => setActivityDropdownOpen(prev => !prev)}
-                  aria-expanded={activityDropdownOpen}
-                  aria-controls="stats-activity-period"
-                  className="inline-flex min-h-10 w-full sm:min-w-[190px] items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 px-4 text-sm font-medium text-gray-900 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors text-center"
-                >
-                  {getActivityRangeLabel() || getActivityPeriodLabel()}
-                </button>
-
-                {activityDropdownOpen && (
-                  <div id="stats-activity-period" className="absolute top-full left-0 w-full mt-1 z-20 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-lg py-1 min-w-[160px]">
-                    <button
-                      type="button"
-                      onClick={() => handleActivityPeriodChange('7')}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        activityPeriod === '7' && activityOffset === 0
-                          ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
-                          : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {t.stats.thisWeek}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleActivityPeriodChange('30')}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        activityPeriod === '30' && activityOffset === 0
-                          ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
-                          : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {t.stats.thisMonth}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleActivityPeriodChange('365')}
-                      className={`w-full text-left px-4 py-2 text-sm transition-colors ${
-                        activityPeriod === '365' && activityOffset === 0
-                          ? 'bg-[var(--pixel-screen)] text-[var(--pixel-ink)] font-medium'
-                          : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700'
-                      }`}
-                    >
-                      {t.stats.thisYear}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <button
-                type="button"
-                onClick={() => handleActivityOffsetChange('next')}
-                disabled={activityOffset === 0}
-                className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-gray-200 dark:border-slate-700 transition-colors ${
-                  activityOffset === 0
-                    ? 'text-gray-400 dark:text-slate-500 cursor-not-allowed'
-                    : 'text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-slate-700'
-                }`}
-                aria-label={t.stats.nextPeriod}
-              >
-                &gt;
-              </button>
-            </div>
-
-            <div className="text-left sm:text-right">
-              <div className="text-sm font-medium text-gray-900 dark:text-white">
-                {formatDuration(activityTotalMinutes)} {t.stats.totalHours}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-slate-400">
-                {activityActiveUnitsLabel}
-              </div>
-            </div>
-          </div>
-          <HighchartsReact highcharts={Highcharts} options={weeklyChartOptions} />
+          <ActivityChart activityPeriod={activityPeriod} activityOffset={activityOffset}
+            stats={stats} onPeriodChange={handleActivityPeriodChange} onOffsetChange={handleActivityOffsetChange} />
         </div>
       </div>
 

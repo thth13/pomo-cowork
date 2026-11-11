@@ -655,6 +655,8 @@ button.profile-heatmap-cell:hover, button.profile-heatmap-cell:active { outline:
 .room-activity-duration { display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0; margin-left: auto; font-size: 10px; color: var(--pixel-muted); font-variant-numeric: tabular-nums; }
 
 .room-weekly-activity { margin-bottom: 24px; }
+.room-weekly-activity > .community-panel-heading { margin-bottom: 6px; }
+.room-weekly-activity .community-chart { min-height: 0; }
 
 /* Invitation preview uses the room shell without exposing member-only content. */
 .room-invitation-preview .community-intro h1 { overflow-wrap: anywhere; }

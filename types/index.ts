@@ -118,7 +118,8 @@ export interface RoomStats {
   totalFocusMinutes: number
   totalFocusHours?: number
   avgDailyFocusMinutes?: number
-  weeklyActivity: Array<{ date: string; hours: number }>
+  weeklyActivity: Array<{ date: string; hours: number; minutes: number }>
+  activityRange: { start: string; end: string }
   topUsers?: Array<{
     id: string
     username: string
