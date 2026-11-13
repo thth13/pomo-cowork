@@ -43,23 +43,10 @@
 }
 
 .arrow { color: var(--pixel-muted); }
-.actions { display: flex; border-left: 1px solid var(--pixel-line); padding-left: 4px; }
-.actions button {
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 2px;
-  background: transparent;
-  color: inherit;
-  cursor: pointer;
-}
 
-.display:hover, .actions button:hover:enabled { background: var(--pixel-screen); }
-.display:active, .actions button:active:enabled { background: var(--pixel-shadow); }
-.display:focus-visible, .actions button:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 2px; }
-.actions button:disabled { opacity: .45; cursor: not-allowed; }
+.display:hover { background: var(--pixel-screen); }
+.display:active { background: var(--pixel-shadow); }
+.display:focus-visible { outline: 2px solid var(--pixel-accent); outline-offset: 2px; }
 
 @media (max-width: 640px) {
   .timer { left: calc(12px + env(safe-area-inset-left)); bottom: calc(12px + env(safe-area-inset-bottom)); }

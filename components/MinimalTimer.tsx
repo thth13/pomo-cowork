@@ -52,14 +52,16 @@ export default function MinimalTimer({ open, onClose, onOpenSettings, actions, f
         </button>
       </>}>
       <div className={styles.content} data-no-translate="true">
-        <div className={styles.display}>
-          <div className={styles.time} data-timer-font={timerFont} data-long={formattedTime.length > 5}
-            role="timer" aria-label={sessionLabel} aria-live="off">{formattedTime}</div>
-          <span className={styles.status} role="status">{status}</span>
-        </div>
-        <div className={styles.controls}>
-          <TimerControls {...actions} compact sessionType={sessionType} onSessionTypeChange={onSessionTypeChange} />
-        </div>
+        <TimerControls {...actions} compact presentation="inline" sessionType={sessionType} onSessionTypeChange={onSessionTypeChange}>
+          <div className={styles.display}>
+            <div className={styles.caption}>
+              <span className={styles.label}>{sessionLabel}</span>
+              <span className={styles.status} role="status" data-running={actions.isRunning && !actions.isPaused}>{status}</span>
+            </div>
+            <div className={styles.time} data-timer-font={timerFont} data-long={formattedTime.length > 5}
+              role="timer" aria-label={sessionLabel} aria-live="off">{formattedTime}</div>
+          </div>
+        </TimerControls>
       </div>
     </WorkspaceWindow>, document.body
   )

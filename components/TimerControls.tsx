@@ -4,6 +4,7 @@ import { memo, type ReactNode } from 'react'
 import { Play, Square, Pause } from 'lucide-react'
 import { PomodoroSession, SessionType } from '@/types'
 import { useI18n } from '@/components/I18nProvider'
+import styles from './TimerActions.module.css'
 
 export interface TimerActionsProps {
   startLabel?: string
@@ -36,9 +37,28 @@ export const TimerActions = memo(function TimerActions({
   isRunning,
   isPaused,
   compact = false,
-}: TimerActionsProps & { compact?: boolean }) {
+  presentation = 'default',
+}: TimerActionsProps & { compact?: boolean; presentation?: 'default' | 'inline' }) {
   const { t } = useI18n()
   const isBusy = isStarting || isStopping || isPausing || isResuming
+  const pauseLabel = isPausing ? t.timer.pausing : isResuming ? t.timer.resuming : isPaused ? t.timer.resume : t.timer.pause
+
+  if (presentation === 'inline') {
+    const primaryLabel = currentSession ? pauseLabel : isStarting ? t.timer.starting : startLabel ?? t.timer.start
+    return (
+      <div className={styles.actions} aria-busy={isBusy}>
+        <button type="button" onClick={currentSession ? isPaused ? onResume : onPause : onStart}
+          disabled={isBusy || (!!currentSession && !isPaused && (!isRunning || currentSession.id.startsWith('temp_')))}
+          aria-label={primaryLabel} title={primaryLabel}>
+          {currentSession && !isPaused ? <Pause size={17} aria-hidden="true" /> : <Play size={17} aria-hidden="true" />}
+        </button>
+        {currentSession && <button type="button" onClick={onStop} disabled={isBusy}
+          aria-label={isStopping ? t.timer.stopping : stopLabel ?? t.timer.stop} title={stopLabel ?? t.timer.stop}>
+          <Square size={15} aria-hidden="true" />
+        </button>}
+      </div>
+    )
+  }
 
   return (
     <div className={`timer-actions flex flex-col items-center gap-3 sm:gap-4 px-4 sm:px-0 w-full sm:w-auto${compact ? ' timer-actions-compact' : ''}`} aria-busy={isBusy}>
@@ -88,6 +108,7 @@ export const TimerActions = memo(function TimerActions({
 
 interface TimerControlsProps extends TimerActionsProps {
   compact?: boolean
+  presentation?: 'default' | 'inline'
   children?: ReactNode
   sessionType: SessionType
   onSessionTypeChange: (type: SessionType) => void
@@ -98,6 +119,7 @@ export const TimerControls = memo(function TimerControls({
   sessionType,
   onSessionTypeChange,
   compact = false,
+  presentation = 'default',
   ...actions
 }: TimerControlsProps) {
   const { t } = useI18n()
@@ -107,7 +129,7 @@ export const TimerControls = memo(function TimerControls({
     <>
       {children}
 
-      <TimerActions {...actions} compact={compact} />
+      <TimerActions {...actions} compact={compact} presentation={presentation} />
 
       {sessionType !== SessionType.TIME_TRACKING && (
         <div className="timer-mode-tabs" role="group" aria-label={t.timer.focus}>

@@ -2031,9 +2031,13 @@ on a second click. Reduced motion disables the transition.
 The optional minimal timer is enabled by an immediate switch in the Timer section of the Settings page.
 MinimalTimer reuses WorkspaceWindow's non-modal shell, theme adapters, persisted
 position, pointer capture and keyboard movement, including mobile dragging.
-The 440px panel has a quiet grip-and-close header with a screen-reader title.
-Selected-font digits sit on the left; compact shared TimerControls sit on the right,
-with work/short-break/long-break choices immediately below the action buttons.
+The 320px panel follows the corner timer: a thin border, small offset shadow,
+quiet grip-and-close header and selected-font digits beside icon-only actions.
+Session type and ready/running/paused status sit above the digits; the three
+mode choices share a full-width bottom strip. TimerControls owns mode selection;
+TimerActions owns the shared inline icon presentation used by both timers,
+including pending locks, accessible names and 44px action targets.
+MinimalTimer.module.css owns the home layout; TimerActions.module.css owns inline actions.
 Active sessions retain the shared mode lock; time tracking omits break choices.
 Closing or Escape hides only the window and never changes the selected timer mode.
 The Settings page alone changes the account-persisted minimalTimer preference.
