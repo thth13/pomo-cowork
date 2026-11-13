@@ -2,6 +2,60 @@
    Glass keeps the established appearance.css treatment; opaque materials adapt
    its local scene roles instead of changing foreground colors or layouts. */
 @media (forced-colors: none) {
+  :root[data-window-design="white"], .appearance-window-preview[data-window-design="white"] {
+    --window-material-paper: #ffffff;
+    --window-material-screen: #f3f4f6;
+    --window-material-ink: #24272e;
+    --window-material-muted: #626773;
+    --window-material-line: #c8ccd3;
+    --window-material-accent: #983e32;
+    --window-material-scheme: light;
+    --window-material-texture: none;
+    --window-radius: 8px;
+    --window-shadow: 0 4px 18px rgb(24 32 48 / 7%);
+    --timer-focus-on-dark: #983e32;
+    --timer-short-break-on-dark: #49663a;
+    --timer-long-break-on-dark: #46627a;
+  }
+
+  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"]) body :is(.pomodoro-home, .seo-shell) [data-timer-panel] {
+    --timer-focus-color: var(--window-material-accent);
+    --timer-short-break-color: var(--timer-short-break-on-dark);
+    --timer-long-break-color: var(--timer-long-break-on-dark);
+  }
+
+  :root[data-window-design="dark-red"], .appearance-window-preview[data-window-design="dark-red"] {
+    --window-material-paper: #2c1319;
+    --window-material-screen: #421f28;
+    --window-material-ink: #f9ecee;
+    --window-material-muted: #cdaeb5;
+    --window-material-line: #8c5865;
+    --window-material-accent: #f0a1ad;
+    --window-material-scheme: dark;
+    --window-material-texture: none;
+    --window-radius: 10px;
+    --window-shadow: 0 4px 18px rgb(18 4 8 / 28%);
+    --timer-focus-on-dark: #f0a1ad;
+    --timer-short-break-on-dark: #b5cfaa;
+    --timer-long-break-on-dark: #aec7e8;
+  }
+
+  :root[data-window-design="ivory"], .appearance-window-preview[data-window-design="ivory"] {
+    --window-material-paper: #faf7ef;
+    --window-material-screen: #eee7db;
+    --window-material-ink: #403c35;
+    --window-material-muted: #6e665b;
+    --window-material-line: #c7bdac;
+    --window-material-accent: #795d46;
+    --window-material-scheme: light;
+    --window-material-texture: none;
+    --window-radius: 10px;
+    --window-shadow: 0 4px 18px rgb(65 49 28 / 7%);
+    --timer-focus-on-dark: #795d46;
+    --timer-short-break-on-dark: #49663a;
+    --timer-long-break-on-dark: #46627a;
+  }
+
   :root[data-window-design="paper"], .appearance-window-preview[data-window-design="paper"] {
     --window-material-paper: #f6efdc;
     --window-material-screen: #e8dfc7;
@@ -44,7 +98,7 @@
     --window-shadow: 0 0 0 1px rgb(142 123 232 / 35%), 0 0 20px rgb(142 123 232 / 22%), inset 0 0 18px rgb(142 123 232 / 7%);
   }
 
-  :root:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+  :root:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
     --window-scene-panel: var(--window-material-paper);
     --window-scene-task: var(--window-material-paper);
     --window-scene-task-hover: var(--window-material-screen);
@@ -58,7 +112,7 @@
 
   /* Material palettes stay local to app windows; page scenery and semantic
      action colors retain their existing owners. Previews reuse these tokens. */
-  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body :is(
+  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body :is(
     .workspace-window, .workspace-navigation-panel, .workspace-account-card,
     .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
     .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
@@ -85,24 +139,24 @@
     text-shadow: none;
   }
 
-  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window-content > div {
+  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window-content > div {
     color: var(--window-material-ink);
     background: transparent;
   }
 
-  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .dark\:bg-slate-700, .dark\:bg-slate-800) {
+  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .dark\:bg-slate-700, .dark\:bg-slate-800) {
     background-color: var(--window-material-paper);
   }
 
-  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white) {
+  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white) {
     color: var(--window-material-ink);
   }
 
-  html:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600) {
+  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600) {
     color: var(--window-material-muted);
   }
 
-  html[data-window-design="paper"] body :is(.pomodoro-home, .seo-shell) :is(.pixel-timer-settings, .pixel-timer-popout, .timer-appearance-trigger, .timer-mode-tab, .coworker-tile-profile, .coworker-tile-menu):hover {
+  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"]) body :is(.pomodoro-home, .seo-shell) :is(.pixel-timer-settings, .pixel-timer-popout, .timer-appearance-trigger, .timer-mode-tab, .coworker-tile-profile, .coworker-tile-menu):hover {
     color: var(--window-material-ink);
   }
 
@@ -428,7 +482,7 @@
 }
 
 @media (forced-colors: none) {
-  .appearance-window-preview:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample {
+  .appearance-window-preview:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample {
     background: var(--window-material-texture), var(--window-material-paper);
     border-color: var(--window-material-line);
     border-radius: min(10px, var(--window-radius));
@@ -437,16 +491,16 @@
     backdrop-filter: none;
   }
 
-  .appearance-window-preview:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-header {
+  .appearance-window-preview:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-header {
     background: var(--window-material-screen);
     border-color: var(--window-material-line);
   }
 
-  .appearance-window-preview:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample i {
+  .appearance-window-preview:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample i {
     background: var(--window-material-muted);
   }
 
-  .appearance-window-preview:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-body i:last-child {
+  .appearance-window-preview:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-body i:last-child {
     background: var(--window-material-accent);
   }
 

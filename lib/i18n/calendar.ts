@@ -1,0 +1,28 @@
+export const calendarCopy = {
+  en: {
+    title: 'Calendar', today: 'Today', previous: 'Previous day', next: 'Next day',
+    add: 'Add event', edit: 'Edit event', newEvent: 'New event', name: 'Event title',
+    placeholder: 'What are you planning?', date: 'Date', start: 'Starts', end: 'Ends',
+    allDay: 'All day', save: 'Save event', cancel: 'Cancel', remove: 'Delete event',
+    empty: 'A little room for your plans.', hint: 'Choose a time below or add an event.',
+    local: 'Saved in this browser', storageError: 'Could not save. Check browser storage and try again. Your changes are still here.',
+    invalidTitle: 'Give your event a title.', invalidDate: 'Choose a valid date.',
+    invalidTime: 'Choose an end time after the start time.', saved: 'Event saved.',
+    deleted: 'Event deleted.', undo: 'Undo', restored: 'Event restored.',
+    complete: 'Mark complete', incomplete: 'Mark incomplete', events: 'events',
+    pickDate: 'Choose a date', schedule: 'Daily schedule',
+  },
+  es: {
+    title: 'Calendario', today: 'Hoy', previous: 'Día anterior', next: 'Día siguiente',
+    add: 'Añadir evento', edit: 'Editar evento', newEvent: 'Nuevo evento', name: 'Título del evento',
+    placeholder: '¿Qué tienes planeado?', date: 'Fecha', start: 'Inicio', end: 'Fin',
+    allDay: 'Todo el día', save: 'Guardar evento', cancel: 'Cancelar', remove: 'Eliminar evento',
+    empty: 'Un espacio para tus planes.', hint: 'Elige una hora o añade un evento.',
+    local: 'Guardado en este navegador', storageError: 'No se pudo guardar. Revisa el almacenamiento del navegador e inténtalo de nuevo. Tus cambios siguen aquí.',
+    invalidTitle: 'Escribe un título para el evento.', invalidDate: 'Elige una fecha válida.',
+    invalidTime: 'Elige una hora de fin posterior al inicio.', saved: 'Evento guardado.',
+    deleted: 'Evento eliminado.', undo: 'Deshacer', restored: 'Evento restaurado.',
+    complete: 'Marcar como completado', incomplete: 'Marcar como pendiente', events: 'eventos',
+    pickDate: 'Elegir una fecha', schedule: 'Agenda del día',
+  },
+} as const

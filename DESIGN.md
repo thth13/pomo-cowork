@@ -828,8 +828,8 @@ an unavailable average and a timer link.
 
 The selected material now applies site-wide. `app/site-appearance.css` owns the
 root palette adapter, semantic card surfaces, neutral utility compatibility and
-admin palette bridge. Paper, Terminal and Neon set page, text, form and scrollbar
-roles globally; all nine materials style content cards on product, journal, blog,
+admin palette bridge. White, Dark red, Ivory, Paper, Terminal and Neon set page, text, form and scrollbar
+roles globally; all twelve materials style content cards on product, journal, blog,
 tool and admin pages. Surface transparency never makes inverse text or native
 control colors transparent. Existing layouts, table scrolling, semantic action
 colors and imagery remain component-owned. Admin no longer opts out of the selected
@@ -854,8 +854,8 @@ uses #18172d panels with a static violet glow and 16px corners. Each material ow
 a complete local foreground, muted, border and control palette, independent of
 scenery and the page theme. Dense content and semantic action colors stay shared.
 Their previews reuse the material tokens; no new assets or animation are required.
-The nine choices use three columns on desktop and two on narrow screens.
-Glass, Matte and Pixel are free; the remaining six styles require active Pro access.
+The twelve choices use three columns on desktop and two on narrow screens.
+Glass, Matte and Pixel appear first and are free; all remaining nine styles require active Pro access.
 Locked cards show the shared Pro badge and open the existing paywall. Style changes
 apply immediately, independently of scenery, timer font and light/dark theme.
 The store checks access when choosing, restoring and syncing preferences. Without
@@ -1526,6 +1526,14 @@ rendered; plain backgrounds and forced colors retain the shared opaque surfaces.
 
 
 ## Administration dashboard
+
+All users adds a Manage column in Unregistered with a Delete action per anonymous
+account. `AdminDeleteDialog` shares visitor deletion's CommunityDialog confirmation,
+admin button tokens, pending lock, timeout and inline retry errors. The confirmation
+names the account and permanent removal of related data, including owned rooms.
+Success announces deletion, clamps pagination, refreshes and focuses Refresh.
+Registered accounts have no deletion action and are protected by the server mutation.
+
 
 User counts (`/admin#user-counts`) reuses the admin toolbar, metric cards and
 scoped tokens for registered, anonymous and combined account totals. The current
@@ -2281,3 +2289,43 @@ keyboard activation opens the picker. The fields above the tiles contain only te
 The room detail header places an 80px avatar to the left of the name and eyebrow,
 with a themed border and pixel shadow. On mobile it shrinks to 56px. Settings stay
 on the right; actions span the header on narrow screens.
+
+## White site theme
+
+White is a premium Site theme, following the free Glass, Matte and Pixel choices. It uses opaque white
+surfaces, neutral gray secondary surfaces and borders, dark text and the existing
+tomato accent. `app/window-design.css` owns its material tokens and preview;
+`app/site-appearance.css` maps them to site tokens with a pure white page.
+The material stays light in either light/dark mode and with scenery enabled.
+It reuses the shared appearance registry, radio cards, persistence and bootstrap.
+
+Dark red and Ivory are premium materials after White in the theme registry.
+Dark red replaces Cream with deep burgundy surfaces, warm rose accents and light
+text, using a dark color scheme in either page mode. Ivory uses a softer neutral
+ivory surface with beige secondary surfaces and warm gray text. Both use smooth
+10px corners, restrained shadows and no paper texture. Their canonical material
+tokens and miniature previews live in `app/window-design.css`, with site-wide
+palette mapping in `app/site-appearance.css`. All choices after Glass, Matte and
+Pixel use the existing Pro gate, restoration rules and shared paywall.
+
+## Workspace calendar
+
+The Calendar tool reuses WorkspaceWindow and its persisted geometry, dock entry,
+mobile menu and non-modal focus behavior. The daily agenda has one compact 48px toolbar with a date/weekday trigger,
+Today, previous/next arrows and a neutral add button. There is no week strip,
+second date heading, event counter or empty-state banner. A floating month picker
+opens on demand without moving the schedule. A slim all-day lane, fine low-contrast
+hour rules, softly tinted event cards and a live current-time rule keep the agenda
+quiet and spacious; hour rows remain 64px. Local-storage guidance stays screen-reader
+accessible; errors and Undo remain visible while routine save notices are announced. This
+keeps the reference's readable schedule while using the product's existing pixel
+surface, line, ink and accent tokens, Inter text and small square corners. Overlapping
+events share columns. English/Spanish copy lives in lib/i18n/calendar.ts.
+
+Events are local to this browser and scoped by account (with a separate guest key);
+there are no calendar-provider connections. The event editor replaces the agenda,
+keeps drafts when the window closes and returns to the agenda after save/cancel.
+Deletion offers Undo while the tool remains mounted. The month chooser reuses
+react-day-picker, matching LeaderboardDateFilter. Editor date/time inputs accept
+platform-owned picker geometry and locale, as in StudyPlanner. The agenda owns
+scrolling; editor and month-picker content scroll independently when displayed.

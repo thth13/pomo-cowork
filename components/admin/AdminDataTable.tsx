@@ -9,6 +9,7 @@ import { userProfileHref } from '@/lib/userProfile'
 import { useAdminData } from './useAdminData'
 import AdminVisitorDetails from './AdminVisitorDetails'
 import AdminVisitorDeleteDialog from './AdminVisitorDeleteDialog'
+import AdminDeleteDialog from './AdminDeleteDialog'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { VisitorDetails } from '@/lib/visitorDetails'
 
@@ -55,6 +56,8 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
   const [userType, setUserType] = useState('registered')
   const token = useAuthStore(state => state.token)
   const [selectedVisit, setSelectedVisit] = useState<VisitorRow | null>(null)
+  const [selectedUser, setSelectedUser] = useState<UserRow | null>(null)
+  const [userDeleted, setUserDeleted] = useState(false)
   const [deleted, setDeleted] = useState(false)
   const refreshButton = useRef<HTMLButtonElement>(null)
   const focusAfterDelete = useRef(false)
@@ -65,10 +68,12 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
   useEffect(() => {
     if (data?.referrers) setReferrers(data.referrers)
   }, [data])
-  const headers = kind === 'visitors' ? ['IP address', 'Country', 'Browser / OS', 'Device', 'Landing page', 'Referrer', 'Visited · Kyiv', 'Details', 'Manage'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions']
+  const headers = kind === 'visitors' ? ['IP address', 'Country', 'Browser / OS', 'Device', 'Landing page', 'Referrer', 'Visited · Kyiv', 'Details', 'Manage'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions', ...(userType === 'anonymous' ? ['Manage'] : [])]
 
   useEffect(() => {
     setSelectedVisit(null)
+    setSelectedUser(null)
+    setUserDeleted(false)
     setDeleted(false)
     focusAfterDelete.current = false
   }, [token])
@@ -102,6 +107,7 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
     </div>}
     {error && <p role="alert" className="admin-data-error">{error}</p>}
     {kind === 'visitors' && <div role="status" className="admin-visit-feedback">{deleted ? 'Visit deleted.' : ''}</div>}
+    {kind === 'directory' && <div role="status" className="admin-visit-feedback">{userDeleted ? 'Anonymous user deleted.' : ''}</div>}
     <div className="admin-data-frame" aria-busy={loading}>
       {loading ? <p className="admin-data-state" role="status">Loading {titles[kind].toLowerCase()}…</p> : data ? <>
         <div className="admin-table-scroll" tabIndex={0} role="region" aria-label={`${titles[kind]} table`}>
@@ -117,13 +123,25 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
               </tr>
               if ('message' in row) return <tr key={row.id}><td><div className="admin-wall-participants"><Link href={userProfileHref(row.author)}>{row.author.username}</Link><span aria-hidden="true">→</span><span className="sr-only">to</span><Link href={userProfileHref(row.profileUser)}>{row.profileUser.username}</Link></div></td><td className="admin-message-cell">{row.message}</td><td>{date(row.createdAt)}</td></tr>
               if ('title' in row) return <tr key={row.id}><td className="admin-message-cell">{row.title}</td><td>{person(row.user)}</td><td><span className={`admin-status ${row.archived ? 'admin-status-archived' : 'admin-status-active'}`}>{row.archived ? 'Archived' : 'Active'}</span></td><td>{row.startDate}</td><td>{row._count.completions}</td><td>{date(row.createdAt)}</td></tr>
-              return <tr key={row.id}><td>{person(row)}{connected && onlineIds[row.id] && <span className="admin-online-status">Online</span>}</td><td>{countryFlag(row.countryCode)}</td><td>{date(row.createdAt)}</td><td>{date(row.lastSeenAt)}</td><td>{Math.floor(row.totalMinutes / 60)}h {row.totalMinutes % 60}m</td><td>{row.totalPomodoros}</td><td>{row.sessionsCount}</td></tr>
+              return <tr key={row.id}><td>{person(row)}{connected && onlineIds[row.id] && <span className="admin-online-status">Online</span>}</td><td>{countryFlag(row.countryCode)}</td><td>{date(row.createdAt)}</td><td>{date(row.lastSeenAt)}</td><td>{Math.floor(row.totalMinutes / 60)}h {row.totalMinutes % 60}m</td><td>{row.totalPomodoros}</td><td>{row.sessionsCount}</td>{userType === 'anonymous' && <td>{row.isAnonymous && <button type="button" className="community-button admin-visit-delete" aria-label={`Delete anonymous user ${row.username}`} onClick={() => { setUserDeleted(false); setSelectedUser(row) }}>Delete</button>}</td>}</tr>
             })}</tbody>
           </table>
         </div>
         <nav className="admin-data-pagination" aria-label={`${titles[kind]} pages`}><span>{data.total ? (data.page - 1) * data.pageSize + 1 : 0}–{Math.min(data.page * data.pageSize, data.total)} of {data.total} · Page {data.page} of {Math.max(1, Math.ceil(data.total / data.pageSize))}</span><div><button type="button" disabled={data.page <= 1} onClick={() => setPage(data.page - 1)}>Previous</button><button type="button" disabled={data.page * data.pageSize >= data.total} onClick={() => setPage(data.page + 1)}>Next</button></div></nav>
       </> : <p className="admin-data-state">Use Refresh to try loading this list again.</p>}
     </div>
+    {selectedUser && <AdminDeleteDialog key={`${token}:${selectedUser.id}`} token={token}
+      endpoint={`/api/admin/users?id=${encodeURIComponent(selectedUser.id)}`} subject="anonymous user" title="Delete anonymous user?"
+      description="This anonymous account and its related data, including sessions, tasks, habits and any owned rooms, will be permanently deleted. This cannot be undone."
+      onClose={() => setSelectedUser(null)} onDeleted={() => {
+        setSelectedUser(null)
+        setUserDeleted(true)
+        focusAfterDelete.current = true
+        if (data) setPage(Math.min(page, Math.max(1, Math.ceil((data.total - 1) / data.pageSize))))
+        refresh()
+      }}>
+      <p className="break-words text-sm text-[var(--admin-secondary)]">{selectedUser.username} · {selectedUser.id}</p>
+    </AdminDeleteDialog>}
     {selectedVisit && <AdminVisitorDeleteDialog key={`${token}:${selectedVisit.id}`} visit={selectedVisit} token={token}
       onClose={() => setSelectedVisit(null)} onDeleted={() => {
         setSelectedVisit(null)

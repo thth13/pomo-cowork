@@ -4,6 +4,9 @@ export const appearanceCopy = {
     description: 'Choose a theme for all pages, your scenery and timer font.',
     windowDesign: 'Site theme',
     windowDesigns: {
+      'dark-red': { name: 'Dark red', description: 'Deep burgundy surfaces with warm rose accents and light text.' },
+      ivory: { name: 'Ivory', description: 'Soft ivory surfaces, beige details and warm gray text.' },
+      white: { name: 'White', description: 'Bright white surfaces, soft gray borders and dark text.' },
       glass: { name: 'Glass', description: 'Translucent surfaces with a soft blur.' },
       matte: { name: 'Matte', description: 'Solid surfaces with soft edges.' },
       pixel: { name: 'Pixel', description: 'Square corners, crisp borders and shadows.' },
@@ -34,6 +37,9 @@ export const appearanceCopy = {
     description: 'Elige un tema para todas las páginas, el fondo y la tipografía del temporizador.',
     windowDesign: 'Tema del sitio',
     windowDesigns: {
+      'dark-red': { name: 'Rojo oscuro', description: 'Superficies burdeos con detalles rosa cálido y texto claro.' },
+      ivory: { name: 'Marfil', description: 'Superficies marfil suaves, detalles beige y texto gris cálido.' },
+      white: { name: 'Blanco', description: 'Superficies blancas, bordes gris suave y texto oscuro.' },
       glass: { name: 'Cristal', description: 'Superficies translúcidas con un suave desenfoque.' },
       matte: { name: 'Mate', description: 'Superficies opacas con bordes suaves.' },
       pixel: { name: 'Píxel', description: 'Esquinas cuadradas, bordes y sombras definidos.' },

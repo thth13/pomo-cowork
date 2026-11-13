@@ -76,7 +76,7 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Companion feedback | PocketGarden | Local, stable role=status region; no overlay or focus stealing |
 | Companion state | usePetStore | Local browser persistence; localStorage failures fall back to memory with visible notice |
 | Theme | useThemeStore / ThemeProvider | Existing light/dark selection |
-| Timer appearance | AppearanceSettings, AppearanceProvider, WorkspaceBackground, useAppearanceStore | Native modal and radio choices; Glass (default), Matte, Pixel, Clear glass, No background, Outline, Paper, Terminal and Neon site themes apply immediately across all routes, independently of background/font/light-dark mode, with Glass, Matte and Pixel free and the other six requiring active Pro. Site theme is the last settings group; locked choices use the shared paywall. Selection, restoration and access sync enforce the entitlement; inactive premium preferences fall back to Glass without erasing the saved choice. The early page bootstrap applies only free themes until auth is verified. Existing browser storage, cross-tab restoration, reset and unavailable-storage feedback cover style selection; old/invalid values fall back to Glass. Root data-window-design reaches portalled windows without remounting their content. Images apply and persist after loading; shared timer digit style and optional image/video scenery |
+| Timer appearance | AppearanceSettings, AppearanceProvider, WorkspaceBackground, useAppearanceStore | Native modal and radio choices; Glass (default), Matte, Pixel, White, Dark red, Ivory, Clear glass, No background, Outline, Paper, Terminal and Neon site themes apply immediately across all routes, independently of background/font/light-dark mode, with only the first three (Glass, Matte and Pixel) free and all other nine requiring active Pro. Site theme is the last settings group; locked choices use the shared paywall. Selection, restoration and access sync enforce the entitlement; inactive premium preferences fall back to Glass without erasing the saved choice. The early page bootstrap applies only free themes until auth is verified. Existing browser storage, cross-tab restoration, reset and unavailable-storage feedback cover style selection; old/invalid values fall back to Glass. Root data-window-design reaches portalled windows without remounting their content. Images apply and persist after loading; shared timer digit style and optional image/video scenery |
 | Statistics Select/Listbox | Native select in app/stats/page.tsx | OS-owned popup for the finite annual heatmap year range; browser geometry and keyboard behavior accepted |
 | Locale | I18nProvider | English and Spanish, including new companion copy |
 | Language Select/Listbox | Native select in LanguageSwitcher, settings variant | English/Spanish from I18nProvider; changes apply immediately and persist in this browser through the existing provider. Native OS popup geometry and keyboard behavior accepted; separate from Save settings |
@@ -832,7 +832,7 @@ details. AdminVisitorDetails reuses the native disclosure pattern from Beep mess
 and the shared admin definition-list styles, with keyboard focus and an explicit
 Not recorded state. No new permissions or external enrichment services are requested.
 
-Per the user's November 3 clarification, manual deletion is scoped to New visitors.
+The November 3 visitor deletion workflow remains available in New visitors.
 `DELETE /api/admin/visitors?id=…` authorizes via authorizeAdmin, validates the identity,
 and shares the tracking/conversion lock. It deletes the visit and all metadata while
 retaining the consumed identity marker, preventing recreation on reload or delayed
@@ -842,6 +842,17 @@ copy, Cancel initially focused, pending dismissal/repeats blocked, 15-second tim
 abort on unmount/account change, and inline retry errors. Success announces deletion,
 refreshes the existing server-clamped page and focuses Refresh. No migration is needed
 for manual deletion; runtime verification stays with the user.
+
+The November 13 request extends deletion to persisted anonymous accounts in
+All users → Unregistered. `DELETE /api/admin/users` reuses `authorizeAdmin` and
+atomically filters `user.deleteMany` by ID and `isAnonymous: true`, protecting an
+account converted to registered before the mutation. Registered targets return 409;
+missing accounts succeed for idempotent retries. Related data follows the cascade /
+set-null rules in `prisma/schema.prisma`, including deletion of owned rooms.
+`AdminDeleteDialog` is the shared confirmation and request owner for visits and
+anonymous users; it keeps the existing cancellation, focus and error contract.
+Success refreshes the directory and clamps its page after the removed row.
+No schema migration is needed. Runtime verification stays with the user.
 
 Primary overview metrics use `useConnectionStore.totalOnlineCount` only while
 connected, and `/api/admin/overview.todayAnonymous` counts currently anonymous
@@ -1306,3 +1317,23 @@ owner-only edits. Multipart saves preserve existing images when omitted; empty i
 fields clear them. Failed saves preserve drafts; successful create opens the room,
 and successful edit updates the header and closes settings. Images use the existing
 public Vercel Blob store, like profile avatars; room metadata retains room access checks.
+
+## Workspace calendar
+
+- Source: user request for an additional calendar tool, explicitly excluding Google
+  and Outlook connections. WorkspaceCalendar owns local events; lib/calendar.ts
+  owns validation of stored records, local date keys and overlap layout.
+- WorkspaceWindow remains the non-modal window owner. Closing retains the mounted
+  editor draft; explicit Cancel discards it. Save validates title, date and positive
+  same-day duration, focuses invalid fields and returns to the selected event day.
+- Local writes happen only after successful storage reads and preserve unrelated
+  events from other tabs. Storage failure retains the editor and reports an inline
+  error; no false saved state. Storage events refresh the agenda in other tabs.
+  Calendar data is browser-local and account-keyed, not server-synchronized.
+- Delete is reversible through an inline Undo action until another deletion or
+  unmount; it restores the saved record. Completion has a checkbox-style button.
+- Date ownership: existing react-day-picker for month navigation (localized and
+  keyboard accessible), native date/time editor inputs with platform popup behavior
+  accepted. Calendar arithmetic uses browser-local dates, not UTC date slicing.
+- Scrollbar and theme ownership remain app/globals.css and its window adapters.
+  app/workspace-calendar.css supplies only calendar geometry and token-based styles.

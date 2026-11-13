@@ -14,7 +14,7 @@
 
   :root.dark[data-window-design] { --site-scheme: dark; }
 
-  :root:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+  :root:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
     --pixel-page: color-mix(in srgb, var(--window-material-paper) 92%, var(--window-material-ink));
     --pixel-paper: var(--window-material-paper);
     --pixel-screen: var(--window-material-screen);
@@ -33,12 +33,13 @@
   }
 
   /* Dark-mode selectors have the same priority as their light counterpart. */
-  :root.dark:is([data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+  :root.dark:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
     --site-scheme: var(--window-material-scheme);
   }
 
+  :root:is([data-window-design="white"], [data-window-design="ivory"]) { --pixel-page: var(--window-material-paper); --pixel-growth: #49663a; }
   :root[data-window-design="paper"] { --pixel-growth: #647b5b; }
-  :root:is([data-window-design="terminal"], [data-window-design="neon"]) { --pixel-growth: #a7bc91; }
+  :root:is([data-window-design="dark-red"], [data-window-design="terminal"], [data-window-design="neon"]) { --pixel-growth: #a7bc91; }
 
   html[data-window-design] body {
     --site-surface: var(--pixel-paper);
