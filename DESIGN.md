@@ -32,11 +32,12 @@ spacing:
 ## First focus
 
 The left workspace dock shows a quiet 9px uppercase `TOOLS` heading, 22px icons and
-10.5px medium-weight single-line localized labels. Compact mode uses 20px icons and
-10px labels. The slim shell uses a 1px border, 6px corners and a 2px pixel shadow;
+10px medium-weight single-line localized labels. Compact mode uses 20px icons and
+the same 10px labels. Labels use 75% muted theme color mixed with black, or 45% scenery ink mixed with black on
+backgrounds, keeping icons visually primary. The slim shell uses a 1px border, 6px corners and a 2px pixel shadow;
 buttons measure 58 by 50px (56 by 48px in compact mode).
 Short tool names come from gardenCopy.toolLabels; the current rank
-remains in the accessible name. Buttons use even spacing without separators.
+remains in the accessible name. Buttons use even spacing with thin inset separators.
 Dock tooltips are removed. `HomeWorkspace` owns the labels;
 `app/globals.css` and `app/workspace-compact.css` own the stacked button geometry.
 The mobile tool menu retains its existing row layout.
@@ -425,7 +426,7 @@ from automatic DOM translation. The trigger and window controls follow the activ
 below Start/session actions and above the session-type controls.
 Chat, history, tasks and Your Progress open from a fixed vertical dock at the left.
 Its buttons have localized accessible names and short permanent labels below
-the icons, with a `TOOLS` heading above the group and no separators. The progress
+the icons, with a `TOOLS` heading above the group and thin inset separators. The progress
 accessible name includes the current experience rank. Above 719px the homepage has no document scrolling; mobile uses document scrolling through the timer and full session list. Only the first-focus variant adds a one-line invitation. The timer
 workspace occupies the viewport with safe-area clearance and compact timer spacing
 on small screens. Lists and floating panels scroll internally; exceptionally small

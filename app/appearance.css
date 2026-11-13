@@ -95,6 +95,10 @@
 .pomodoro-home:has(.workspace-background) .workspace-dock button:active { background: color-mix(in srgb, var(--scenery-ink) 24%, transparent); }
 .workspace-dock[data-scenery-text] button + button::before { background: color-mix(in srgb, var(--scenery-ink) 25%, transparent); }
 .workspace-dock[data-scenery-text] button:focus-visible { outline-color: var(--scenery-ink); }
+.workspace-dock[data-scenery-text] .workspace-dock-label {
+  color: color-mix(in srgb, var(--scenery-ink) 45%, #000);
+  text-shadow: none;
+}
 [data-scenery-text] :is(.coworker-tile-avatar, .pixel-mini-timer-message) { color: var(--pixel-ink); text-shadow: none; }
 .seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer):where(:not([data-local-timer])) {
   padding-inline: 24px;

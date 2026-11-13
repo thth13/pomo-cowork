@@ -81,7 +81,7 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Locale | I18nProvider | English and Spanish, including new companion copy |
 | Language Select/Listbox | Native select in LanguageSwitcher, settings variant | English/Spanish from I18nProvider; changes apply immediately and persist in this browser through the existing provider. Native OS popup geometry and keyboard behavior accepted; separate from Save settings |
 | Homepage navigation | Navbar compact variant | Shared navigation disclosure; outside click and Escape dismiss; Escape restores trigger focus; guests retain navigation and login |
-| Workspace dock labels | HomeWorkspace / app/globals.css / app/workspace-compact.css | Short single-line localized labels below 22px icons (20px in compact mode) replace tooltips; Progress keeps the rank in its accessible name. An uppercase TOOLS heading sits above evenly spaced buttons without separators; mobile menu keeps its existing visible labels |
+| Workspace dock labels | HomeWorkspace / app/globals.css / app/workspace-compact.css | Short single-line localized labels below 22px icons (20px in compact mode) replace tooltips; Progress keeps the rank in its accessible name. An uppercase TOOLS heading sits above evenly spaced buttons with thin inset separators; mobile menu keeps its existing visible labels |
 | Timer help | PomodoroOverview / WorkspaceWindow | Full heading and overview render in the initial server HTML independently of workspace loading/auth; one persistent copy in the window. Question-mark dock button opens it; close, Escape or dock toggles dismiss; always closed on page load and excluded from saved open panels |
 | Workspace overlays | WorkspaceWindow | Compact non-modal windows; default position beside the left dock, saved positions take precedence; pointer/touch dragging and resizing with keyboard arrows; viewport bounds; click/focus stacking; Escape/close/dock dismissal; mounted content preserves drafts; position and size persist per window in localStorage and fit the viewport on reopen |
 | CRUD / permissions | Existing task, room and auth services/API routes | No workflow or permission changes |
@@ -230,7 +230,7 @@ Tool selection dismisses the menu and focuses the window. Closing from inside a
 mobile window restores focus to the menu trigger. WorkspaceWindow uses full-width,
 bounded panels on mobile; saved desktop geometry does not constrain their layout.
 
-Homepage chat, history, tasks and progress open through WorkspaceWindow from a labeled left icon dock with even spacing. Multiple windows can remain open;
+Homepage chat, history, tasks and progress open through WorkspaceWindow from a labeled left icon dock with even spacing and thin separators. Multiple windows can remain open;
 the background stays interactive. Closing from inside restores focus to the opener.
 The shared footer and retired free-month promotion are no longer mounted in the shared layout.
 The homepage occupies one viewport without document scroll; lists and windows own
