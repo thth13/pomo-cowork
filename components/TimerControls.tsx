@@ -6,6 +6,7 @@ import { PomodoroSession, SessionType } from '@/types'
 import { useI18n } from '@/components/I18nProvider'
 
 export interface TimerActionsProps {
+  startLabel?: string
   stopLabel?: string
   currentSession: PomodoroSession | null
   onStart: () => void | Promise<void>
@@ -21,6 +22,7 @@ export interface TimerActionsProps {
 }
 
 export const TimerActions = memo(function TimerActions({
+  startLabel,
   stopLabel,
   currentSession,
   onStart,
@@ -51,7 +53,7 @@ export const TimerActions = memo(function TimerActions({
             }`}
           >
             <Play size={20} />
-            <span>{isStarting ? t.timer.starting : t.timer.start}</span>
+            <span>{isStarting ? t.timer.starting : startLabel ?? t.timer.start}</span>
           </button>
         ) : (
           <div className="flex w-full sm:w-auto gap-3">

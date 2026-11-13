@@ -5,12 +5,14 @@ import { PomodoroSession, SessionType, SessionStatus, ActiveSession } from '@/ty
 
 import { TaskOption } from '@/types/task'
 import { isTaskSelectionLocked } from '@/lib/taskSelection'
+import { recordTimerStarted } from '@/lib/timerOnboarding'
 
 export const TIME_TRACKER_DURATION_MINUTES = 24 * 60
 
 type TimerTaskOption = TaskOption
 
 interface TimerState {
+  hasStartedTimer: boolean
   // Timer state
   isRunning: boolean
   timeRemaining: number
@@ -60,6 +62,7 @@ interface TimerState {
 }
 
 export const useTimerStore = create<TimerState>((set, get) => ({
+  hasStartedTimer: false,
   // Initial state with default settings
   isRunning: false,
   timeRemaining: 25 * 60, // Default: 25 minutes in seconds
@@ -78,6 +81,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   longBreakAfter: 4,
 
   startSession: (task: string, duration: number, type: SessionType, sessionId?: string, roomId?: string | null, standaloneTask = false) => {
+    recordTimerStarted()
     const session: PomodoroSession = {
       id: sessionId || Date.now().toString(),
       userId: useAuthStore.getState().user?.id ?? getOrCreateAnonymousId(),
@@ -96,6 +100,7 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     }
     
     set({
+      hasStartedTimer: true,
       currentSession: session,
       timeRemaining: duration * 60,
       isRunning: true,
@@ -104,6 +109,8 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   },
 
   restoreSession: (session: PomodoroSession) => {
+    recordTimerStarted()
+    if (!get().hasStartedTimer) set({ hasStartedTimer: true })
     const isPaused = session.status === SessionStatus.PAUSED
     const storedRemaining =
       typeof session.remainingSeconds === 'number'

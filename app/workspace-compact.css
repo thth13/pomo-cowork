@@ -1,0 +1,70 @@
+/* Compact laptop workspace. Change real geometry so window dragging and resize
+   bounds keep matching the screen; retain mobile and touch target dimensions. */
+@media (min-width: 960px) and (max-width: 1535px) and (pointer: fine),
+       (min-width: 960px) and (max-height: 820px) and (pointer: fine) {
+  .workspace-page .focus-station:not(:has(.daily-flow-content)) {
+    max-width: 560px;
+  }
+
+  .workspace-page .workspace-dock {
+    left: max(10px, env(safe-area-inset-left));
+    padding: 4px;
+  }
+
+  .workspace-page .workspace-dock > button { width: 36px; height: 38px; }
+  .workspace-page .workspace-dock > button + button { margin-top: 6px; }
+  .workspace-page .workspace-dock > button + button::before { top: -4px; }
+  .workspace-page .workspace-dock > button > svg { width: 18px; height: 18px; }
+
+  .workspace-page .workspace-window:not([data-resized="true"]) {
+    width: 304px;
+    max-height: min(420px, calc(100dvh - 100px));
+  }
+  .workspace-page .workspace-window-heading { padding: 2px; }
+  .workspace-page .workspace-window-handle { min-height: 30px; padding: 4px 6px; gap: 6px; }
+  .workspace-page .workspace-window-close { width: 30px; height: 30px; }
+
+  .workspace-page .workspace-navigation { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+  .workspace-page .workspace-navigation-trigger { min-height: 36px; padding: 6px 10px; gap: 6px; }
+  .workspace-page .workspace-navigation-trigger > svg { width: 18px; height: 18px; }
+  .workspace-page .workspace-account-trigger { width: 38px; min-height: 36px; padding: 4px 6px; }
+  .workspace-page .workspace-account-guest { width: 26px; height: 26px; }
+  .workspace-page .workspace-account-guest > svg { width: 18px; height: 18px; }
+
+  .workspace-page .focus-station .pixel-timer-digits {
+    font-size: clamp(44px, 4.4vw, 60px);
+    padding-block: 20px;
+  }
+  .workspace-page .focus-station .pixel-timer-digits-long { font-size: clamp(36px, 3.7vw, 50px); }
+  .workspace-page .focus-station .pixel-timer-screen { margin-bottom: 14px; }
+  .workspace-page .focus-station .pixel-timer-track { max-width: 280px; height: 5px; }
+  .workspace-page .first-focus-intro { font-size: 13px; }
+  .workspace-page .first-focus-options { gap: 6px; margin-bottom: 12px; }
+  .workspace-page .first-focus-options button { min-width: 66px; min-height: 36px; padding: 6px 10px; }
+  .workspace-page [data-timer-panel] .timer-actions:not(.timer-actions-compact) button {
+    min-height: 38px;
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  .workspace-page .timer-mode-tabs { gap: 4px; margin-bottom: 12px; }
+  .workspace-page .timer-mode-tab { min-height: 36px; padding: 8px 10px; font-size: 12px; }
+  .workspace-page .current-task-picker { max-width: 280px; margin-bottom: 12px; }
+
+  .workspace-page .focus-sounds { padding: 12px 12px 0; }
+  .workspace-page .focus-sounds-grid { gap: 12px 6px; }
+  .workspace-page .focus-sounds-toggle { gap: 6px; }
+  .workspace-page .focus-sounds-key { width: 44px; height: 44px; }
+  .workspace-page .focus-sounds-key > svg { width: 20px; height: 20px; }
+  .workspace-page .focus-sounds-footer { min-height: 44px; margin-top: 4px; }
+  .workspace-page .focus-sounds-footer input { width: 120px; }
+
+  .workspace-page .working-onboarding { width: 240px; padding: 12px 36px 12px 12px; gap: 8px; }
+  .workspace-page .working-onboarding-copy h2 { font-size: 13px; margin-bottom: 4px; }
+  .workspace-page .working-onboarding-copy p { font-size: 12px; line-height: 1.5; }
+  .workspace-page .working-onboarding-close { width: 30px; height: 30px; }
+}
+
+@media (min-width: 960px) and (max-height: 760px) and (pointer: fine) {
+  .workspace-page .focus-station .pixel-timer-digits { font-size: clamp(40px, 4vw, 54px); padding-block: 12px; }
+  .workspace-page .focus-station .pixel-timer-digits-long { font-size: clamp(34px, 3.4vw, 46px); }
+}

@@ -3,6 +3,8 @@
 import { useEffect, useLayoutEffect, useState, useRef, type ReactNode } from 'react'
 import Link from 'next/link'
 import { useAuthStore } from '@/store/useAuthStore'
+import { useTimerStore } from '@/store/useTimerStore'
+import { hasStartedTimerBefore } from '@/lib/timerOnboarding'
 import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import DailyFlow from '@/components/DailyFlow'
@@ -21,7 +23,7 @@ import { dailyGoalCopy } from '@/lib/i18n/dailyGoal'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { MessageCircle, History, ListTodo, Medal, HelpCircle, CalendarCheck, ChevronRight, Headphones, Target } from 'lucide-react'
+import { MessageCircle, History, ListTodo, Medal, HelpCircle, CalendarCheck, ChevronRight, Headphones, Target, UsersRound, X } from 'lucide-react'
 import Habits from '@/components/Habits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
@@ -35,17 +37,29 @@ import ResetWrappedNotificationButton from '@/components/wrapped/ResetWrappedNot
 type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits' | 'sounds' | 'goal'
 const WORKING_COLLAPSED_STORAGE_KEY = 'pomo:working:collapsed:v1'
 const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v2'
+const WORKING_HINT_STORAGE_KEY = 'pomo:working:onboarding-dismissed:v1'
 const isPanelId = (value: unknown): value is PanelId =>
   value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits' || value === 'sounds' || value === 'goal'
 
 export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore()
+  const hasStartedTimer = useTimerStore(state => state.hasStartedTimer)
   const { t, language } = useI18n()
   const copy = gardenCopy[language]
   const { mode, setMode } = useWorkspaceModeStore()
   const ambientMixer = useAmbientSounds()
   const [mounted, setMounted] = useState(false)
   const [workingCollapsed, setWorkingCollapsed] = useState(false)
+  const [showWorkingHint, setShowWorkingHint] = useState(false)
+  const workingHintRef = useRef<HTMLDivElement>(null)
+  const workingToggleRef = useRef<HTMLButtonElement>(null)
+  const dismissWorkingHint = () => {
+    if (workingHintRef.current?.contains(document.activeElement)) {
+      workingToggleRef.current?.focus({ preventScroll: true })
+    }
+    setShowWorkingHint(false)
+    try { localStorage.setItem(WORKING_HINT_STORAGE_KEY, 'true') } catch { /* Dismiss for this visit. */ }
+  }
   const workingContentRef = useRef<HTMLDivElement>(null)
   const workingHeightRef = useRef<number | null>(null)
   const workingAnimationRef = useRef<Animation | null>(null)
@@ -81,7 +95,12 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     }
     try {
       const stored = localStorage.getItem(OPEN_PANELS_STORAGE_KEY)
-      const saved: unknown = JSON.parse(stored ?? localStorage.getItem('pomo:windows:open:v1') ?? '[]')
+      const previous = stored ?? localStorage.getItem('pomo:windows:open:v1')
+      // An explicitly empty saved workspace is a preference too.
+      // Opening this window never starts audio or moves keyboard focus.
+      const initialPanels: PanelId[] = previous === null &&
+        window.matchMedia('(min-width: 1280px)').matches ? ['sounds'] : []
+      const saved: unknown = previous === null ? initialPanels : JSON.parse(previous)
       if (Array.isArray(saved)) {
         const restored = Array.from(new Set(saved.filter(isPanelId)))
         setOpenPanels(restored)
@@ -94,6 +113,12 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       setWorkingCollapsed(localStorage.getItem(WORKING_COLLAPSED_STORAGE_KEY) === 'true')
     } catch {
       // The rail stays open when storage is unavailable.
+    }
+    try {
+      setShowWorkingHint(localStorage.getItem(WORKING_HINT_STORAGE_KEY) !== 'true' &&
+        !hasStartedTimerBefore(useAuthStore.getState().user?.id))
+    } catch {
+      setShowWorkingHint(true)
     }
     setMounted(true)
   }, [setMode])
@@ -307,12 +332,14 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
             <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
               {mode === 'daily-flow'
                 ? <DailyFlow onExit={() => setMode('timer')} onSessionComplete={handleSessionComplete} />
-                : <PomodoroTimer showRoomSwitch={false} idleTitle={language === 'es' ? ES_HOME_TITLE : HOME_TITLE} onSessionComplete={handleSessionComplete} />}
+                : <PomodoroTimer firstFocus showRoomSwitch={false} idleTitle={language === 'es' ? ES_HOME_TITLE : HOME_TITLE} onSessionComplete={handleSessionComplete} />}
             </section>
             <aside id="workspace-working" className="working-sidebar" data-collapsed={workingCollapsed} aria-label={t.activeSessions.title}>
               <RoomSwitch />
+
               <div className="working-sidebar-header">
                 <button
+                  ref={workingToggleRef}
                   type="button"
                   className="working-sidebar-toggle"
                   aria-expanded={!workingCollapsed}
@@ -328,9 +355,30 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
               <div ref={workingContentRef} id="workspace-working-content" className="working-sidebar-content">
                 <ActiveSessions variant="page" detailsVisible={!workingCollapsed} />
               </div>
+              {showWorkingHint && !isLoading && (!isAuthenticated || user?.isAnonymous) && !hasStartedTimer && <div
+                ref={workingHintRef}
+                className="working-onboarding"
+                role="region"
+                aria-labelledby="working-onboarding-title"
+                data-no-translate
+                onKeyDown={event => {
+                  if (event.key === 'Escape') {
+                    event.stopPropagation()
+                    dismissWorkingHint()
+                  }
+                }}
+              >
+                <UsersRound size={20} className="working-onboarding-icon" aria-hidden="true" />
+                <div className="working-onboarding-copy">
+                  <h2 id="working-onboarding-title">{copy.workingTogetherTitle}</h2>
+                  <p>{copy.workingTogetherHint}</p>
+                </div>
+                <button type="button" className="working-onboarding-close" onClick={dismissWorkingHint} aria-label={t.common.close} title={t.common.close}><X size={16} aria-hidden="true" /></button>
+              </div>}
             </aside>
             {/* <PocketGarden /> */}
           </div>
+
           <div className="workspace-dock" data-tooltip-open={tooltipPanel !== null} data-no-translate>
             {renderPanelButtons()}
           </div>
@@ -340,7 +388,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
           Mount data panels on their first opening.
           Retain visited bodies so closing a window preserves drafts. */}
       {panels.map(({ id, title }, index) => workspaceLoading && id !== 'about' ? null : (
-        <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id) && (id !== 'about' || !isAuthenticated)} offset={index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)} headerAction={id === 'tasks' ? <Link href="/projects" prefetch={false} className="workspace-window-header-link"><span>{language === 'es' ? 'Gestionar proyectos' : 'Manage projects'}</span><ChevronRight size={14} aria-hidden="true" /></Link> : undefined}>
+        <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id) && (id !== 'about' || !isAuthenticated)} offset={id === 'sounds' ? 0 : index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)} headerAction={id === 'tasks' ? <Link href="/projects" prefetch={false} className="workspace-window-header-link"><span>{language === 'es' ? 'Gestionar proyectos' : 'Manage projects'}</span><ChevronRight size={14} aria-hidden="true" /></Link> : undefined}>
           {(id === 'about' || openPanels.includes(id) || panelOrder.includes(id)) && (id === 'goal' ? <DailyGoal isVisible={openPanels.includes(id)} /> : id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact isVisible={openPanels.includes(id)} /> : id === 'tasks' ? <TaskList ref={taskListRef} isVisible={openPanels.includes(id)} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution isVisible={openPanels.includes(id)} /> : <WorkHistory isVisible={openPanels.includes(id)} />)}
         </WorkspaceWindow>
       ))}

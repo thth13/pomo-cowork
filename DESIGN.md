@@ -29,6 +29,54 @@ spacing:
 
 # Pomo Pocket Garden
 
+## First focus
+
+Small laptop workspaces (960–1535 CSS px wide, or desktop windows at most 820px
+high) use app/workspace-compact.css when the primary pointer is fine. It reduces
+timer digits, gaps, dock icons, navigation controls and default window width
+(304px), while preserving readable copy, actual drag geometry and explicit user
+window resizing. Sound keys remain 44px; touch and mobile layouts retain their
+existing sizes. The ordinary timer panel is capped at 560px wide in compact mode,
+centered within its existing grid column; Daily Flow keeps its planning width.
+The presence onboarding sits outside the bottom-left edge of the
+people panel, clear of the people list. These overrides reuse existing theme tokens and
+load after the base component styles; no page zoom or transform scaling is used.
+
+The homepage presence rail has a dismissible onboarding callout explaining that
+people with active timers appear here and starting a timer joins them. HomeWorkspace
+owns the callout independently of the session list: empty and collapsed lists also
+show it, but only for guests (including anonymous accounts) who have never started
+a timer. Registered accounts never see it. The timer store records starts and restored
+sessions in browser storage and immediately hides the callout on the first start;
+legacy first-focus and guest-completion markers also suppress it.
+It is anchored outside the rail at its bottom-left edge, with a pointer
+back to the people panel. On mobile it follows the list in normal flow, aligned left.
+It uses Inter and existing paper/ink/tomato tokens, has no backdrop
+or automatic focus, and closes with its labeled button or Escape while focused.
+Dismissal returns focus to the rail toggle when needed and persists in browser
+storage; unavailable storage retains dismissal for the visit. English/Spanish copy
+belongs to gardenCopy. The ordinary empty state remains intact underneath.
+
+The ordinary homepage timer offers new visitors one short invitation, 10/25/50-minute
+session presets, a Custom button opening the existing timer settings, and a
+duration-specific primary action. `firstFocus` is a homepage-only
+PomodoroTimer variant; Daily Flow and SEO tools retain their own entry experience.
+The empty task picker is hidden during this invitation; existing tasks remain selectable.
+Existing account history, XP, active sessions and saved browser timer settings suppress
+the invitation. A successfully created session records completion per
+account (or guest) in browser storage. Storage failure leaves the ordinary timer usable.
+Presets change the current preview, without saving over account duration preferences.
+Shared TimerControls owns the optional start label, I18nProvider owns English/Spanish,
+and app/globals.css maps the compact controls to existing pixel theme tokens.
+There is no modal, automatic start or forced registration. Returning users keep the
+ordinary timer. The invitation has no close button.
+On a first browser visit without saved window preferences, Focus Sounds opens at
+viewport widths of at least 1280px. It stays beside the left dock without the usual
+window stagger, does not move keyboard focus and never starts audio automatically.
+Saved window preferences (including an empty workspace) always take precedence;
+closing the window persists through the existing workspace storage. Narrower screens
+keep the existing empty initial workspace.
+
 ## Illustrated product updates
 
 `ProductUpdateProvider` opens an app-owned `CommunityDialog` only after a user
@@ -369,7 +417,7 @@ Chat, history, tasks and Your Progress open from a fixed vertical dock at the le
 Its five icon-only buttons have fine separators, localized accessible names and styled
 tooltips to the right on hover or keyboard focus, dismissed on Escape, blur, pointer exit
 or activation. Tooltips use existing pixel tokens and stay above workspace windows;
-the progress tooltip includes the current experience rank. Above 719px the homepage has no document scrolling; mobile uses document scrolling through the timer and full session list. There is no inline introductory text. The timer
+the progress tooltip includes the current experience rank. Above 719px the homepage has no document scrolling; mobile uses document scrolling through the timer and full session list. Only the first-focus variant adds a one-line invitation. The timer
 workspace occupies the viewport with safe-area clearance and compact timer spacing
 on small screens. Lists and floating panels scroll internally; exceptionally small
 viewports allow internal timer scrolling to keep controls reachable. Other routes keep

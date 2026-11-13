@@ -7,6 +7,7 @@ import { useDailyFlowStore } from '@/store/useDailyFlowStore'
 import { usePetStore } from '@/store/usePetStore'
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSSProperties } from 'react'
 import { Settings } from 'lucide-react'
+import { firstFocusCopy } from '@/lib/i18n/firstFocus'
 import { createPortal } from 'react-dom'
 import { TimerSlot } from '@/components/TimerMountContext'
 import FloatingTimer from '@/components/FloatingTimer'
@@ -45,6 +46,7 @@ import { useThrottle } from '@/hooks/useThrottle'
 import { useI18n } from '@/components/I18nProvider'
 
 export interface PomodoroTimerProps {
+  firstFocus?: boolean
   dailyFlow?: boolean
   idleTitle?: string
   onSessionComplete?: () => void
@@ -190,7 +192,7 @@ function timerReducer(state: TimerState, action: TimerAction): TimerState {
 }
 
 
-export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, showProject = false, showTaskPicker = true, showRoomSwitch = true, dailyFlow = false }: PomodoroTimerProps & { target?: HTMLElement; returnHref: string }) {
+export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, idleTitle = 'Pomo Cowork', initialSettings, resetLabel, presentation, focusPresets = false, firstFocus = false, showProject = false, showTaskPicker = true, showRoomSwitch = true, dailyFlow = false }: PomodoroTimerProps & { target?: HTMLElement; returnHref: string }) {
   const flowTaskTitle = useDailyFlowStore(state => {
     const taskId = state.data.queue[0]
     return dailyFlow ? state.data.tasks.find(task => task.id === taskId)?.title : undefined
@@ -226,6 +228,24 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
   } = useTimerStore()
 
   const { user, isAuthenticated } = useAuthStore()
+  const [firstFocusAvailable, setFirstFocusAvailable] = useState(false)
+  const firstFocusKey = `pomo:first-focus:v1:${user?.id ?? 'guest'}`
+  const firstFocusText = firstFocusCopy[language]
+  useEffect(() => {
+    try {
+      setFirstFocusAvailable(!localStorage.getItem(firstFocusKey) &&
+        !localStorage.getItem(TIMER_SETTINGS_STORAGE_KEY) &&
+        !(user?.experience ?? 0) && !useTimerStore.getState().currentSession &&
+        useTimerStore.getState().completedSessions === 0)
+    } catch {
+      // Storage is optional; the regular timer remains available.
+      setFirstFocusAvailable(false)
+    }
+  }, [firstFocusKey, user?.experience])
+  const dismissFirstFocus = () => {
+    setFirstFocusAvailable(false)
+    try { localStorage.setItem(firstFocusKey, 'done') } catch { /* Keep the choice in memory. */ }
+  }
   const isProMember = Boolean(user?.isPro && (!user?.proExpiresAt || new Date(user.proExpiresAt) > new Date()))
   const {
     currentRoomId,
@@ -347,7 +367,10 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
 
   const { mutateSessions, restoreError } = useSessionRestore({
     relatedSessionId: flowRestoreSessionId,
-    onSnapshot: (session, lastSession, relatedSession) => useDailyFlowStore.getState().reconcileTimer(session, lastSession, relatedSession),
+    onSnapshot: (session, lastSession, relatedSession) => {
+      useDailyFlowStore.getState().reconcileTimer(session, lastSession, relatedSession)
+      if (session || lastSession) setFirstFocusAvailable(false)
+    },
     user,
     currentSession,
     restoreSession,
@@ -885,6 +908,7 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
         }
         
         emitSessionStart(sessionData)
+        dismissFirstFocus()
       } catch (error) {
         console.error('Failed to create session:', error)
         if (error instanceof Error && error.message === 'TIMER_CONFLICT') {
@@ -1370,6 +1394,8 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
   }
 
   const isPaused = currentSession?.status === SessionStatus.PAUSED
+  const showFirstFocus = firstFocus && firstFocusAvailable && !currentSession &&
+    !dailyFlow && !isTimeTrackerMode && sessionType === SessionType.WORK
   const timerActions = {
     stopLabel: isTimeTrackingSession ? undefined : resetLabel,
     currentSession,
@@ -1454,6 +1480,9 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
   return <>
     {target ? createPortal(
     <div className="flex flex-col items-center" data-timer-panel data-timer-mode={activeSessionType}>
+      {showFirstFocus && <div className="first-focus-intro">
+        <p>{firstFocusText.title}</p>
+      </div>}
       {showRoomSwitch && (currentRoomId || lastRoomId) && (
         <button
           type="button"
@@ -1511,11 +1540,32 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
       </div>}
       <TimerControls
         {...timerActions}
+        startLabel={showFirstFocus ? firstFocusText.start(workDuration) : undefined}
         sessionType={activeSessionType}
         onSessionTypeChange={handleSessionTypeChange}
       >
+        {showFirstFocus && <div className="first-focus-options" role="group" aria-label={firstFocusText.duration}>
+          {[10, 25, 50].map(minutes => <button
+            key={minutes}
+            type="button"
+            aria-pressed={workDuration === minutes}
+            disabled={isStarting || isStopping}
+            onClick={() => {
+              if (useTimerStore.getState().currentSession || useTimerActionsStore.getState().busy) return
+              clearAutoStart()
+              initializeWithSettings({ workDuration: minutes, shortBreak, longBreak, longBreakAfter })
+            }}
+          >{firstFocusText.minutes(minutes)}</button>)}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            aria-pressed={![10, 25, 50].includes(workDuration)}
+            disabled={isStarting || isStopping}
+            onClick={openSettings}
+          >{firstFocusText.custom}</button>
+        </div>}
         {showProject && <ProjectPicker />}
-        {!dailyFlow && showTaskPicker && <TaskPicker
+        {!dailyFlow && showTaskPicker && (!showFirstFocus || taskOptions.length > 0) && <TaskPicker
           sessionType={activeSessionType}
           isDisabled={isTaskPickerDisabled}
           isOpen={isTaskMenuOpen}
