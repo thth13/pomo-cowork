@@ -77,6 +77,7 @@
 [data-scenery-text] .scenery-task-trigger,
 [data-scenery-text] .scenery-task-trigger > span,
 .workspace-dock[data-scenery-text] > button,
+.workspace-dock[data-scenery-text] > .workspace-dock-heading,
 .seo-header[data-scenery-text] :is(h1, p),
 .seo-content[data-scenery-text]:where(:not([data-local-timer])) :is(h2, h3, p, li),
 .seo-footer[data-scenery-text] :is(p, a) {
@@ -94,7 +95,6 @@
 .pomodoro-home:has(.workspace-background) .workspace-dock button:active { background: color-mix(in srgb, var(--scenery-ink) 24%, transparent); }
 .workspace-dock[data-scenery-text] button + button::before { background: color-mix(in srgb, var(--scenery-ink) 25%, transparent); }
 .workspace-dock[data-scenery-text] button:focus-visible { outline-color: var(--scenery-ink); }
-.workspace-dock[data-scenery-text] .workspace-dock-tooltip { text-shadow: none; }
 [data-scenery-text] :is(.coworker-tile-avatar, .pixel-mini-timer-message) { color: var(--pixel-ink); text-shadow: none; }
 .seo-shell:has(.workspace-background) > :is(.seo-header, .seo-content, .seo-footer):where(:not([data-local-timer])) {
   padding-inline: 24px;
@@ -429,7 +429,7 @@ body:has(:is(.product-scenery, .pomodoro-home .workspace-background, .seo-shell 
   color: var(--scene-primary);
 }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) .workspace-dock { border-width: 1px; }
-:is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.workspace-navigation-panel, .workspace-account-card, .workspace-dock-tooltip) { box-shadow: var(--scene-shadow); }
+:is(.pomodoro-home, .seo-shell):has(.workspace-background) :is(.workspace-navigation-panel, .workspace-account-card) { box-shadow: var(--scene-shadow); }
 :is(.pomodoro-home, .seo-shell):has(.workspace-background) [data-timer-panel] {
   color: var(--scene-primary);
   --timer-focus-color: var(--timer-focus-on-dark);

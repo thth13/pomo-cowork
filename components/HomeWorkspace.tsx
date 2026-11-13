@@ -67,7 +67,6 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const rank = getRank(user?.experience ?? 0)
   const [openPanels, setOpenPanels] = useState<PanelId[]>([])
   const [panelOrder, setPanelOrder] = useState<PanelId[]>([])
-  const [tooltipPanel, setTooltipPanel] = useState<PanelId | null>(null)
   const bringToFront = (id: PanelId) => setPanelOrder((current) => [...current.filter((panel) => panel !== id), id])
   const closePanel = (id: PanelId) => {
     if (window.matchMedia('(max-width: 719px)').matches && document.getElementById(`workspace-${id}`)?.contains(document.activeElement)) {
@@ -169,15 +168,6 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   }, [workingCollapsed])
 
   useEffect(() => {
-    if (!tooltipPanel) return
-    const dismissTooltip = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setTooltipPanel(null)
-    }
-    document.addEventListener('keydown', dismissTooltip)
-    return () => document.removeEventListener('keydown', dismissTooltip)
-  }, [tooltipPanel])
-
-  useEffect(() => {
     // Обработка OAuth callback токена
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search)
@@ -271,20 +261,10 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       key={id}
       type="button"
       aria-label={id === 'sounds' && ambientMixer.activeCount > 0 ? `${title}: ${ambientMixer.activeCount} ${ambientSoundsCopy[language].active}` : id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
-      aria-describedby={!closeMenu && tooltipPanel === id ? `workspace-${id}-tooltip` : undefined}
       aria-haspopup="dialog"
       aria-controls={`workspace-${id}`}
       aria-expanded={openPanels.includes(id)}
-      onPointerEnter={(event) => {
-        if (!closeMenu && event.pointerType !== 'touch') setTooltipPanel(id)
-      }}
-      onPointerLeave={() => setTooltipPanel(null)}
-      onFocus={(event) => {
-        if (!closeMenu && event.currentTarget.matches(':focus-visible')) setTooltipPanel(id)
-      }}
-      onBlur={() => setTooltipPanel(null)}
       onClick={() => {
-        setTooltipPanel(null)
         if (openPanels.includes(id)) closePanel(id)
         else {
           setOpenPanels((current) => [...current, id])
@@ -304,12 +284,9 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     >
       <Icon size={19} aria-hidden="true" />
       {id === 'sounds' && ambientMixer.activeCount > 0 && <span className="focus-sounds-badge" aria-hidden="true">{ambientMixer.activeCount}</span>}
-      {closeMenu && <span>{title}</span>}
-      {!closeMenu && tooltipPanel === id && (
-        <span id={`workspace-${id}-tooltip`} role="tooltip" className="workspace-dock-tooltip">
-          {id === 'progress' ? `${title}: ${t.todayContribution.ranks[rank.id]}` : title}
-        </span>
-      )}
+      <span className={closeMenu ? undefined : 'workspace-dock-label'}>
+        {closeMenu ? title : copy.toolLabels[id]}
+      </span>
     </button>
   ))
 
@@ -379,7 +356,8 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
             {/* <PocketGarden /> */}
           </div>
 
-          <div className="workspace-dock" data-tooltip-open={tooltipPanel !== null} data-no-translate>
+          <div className="workspace-dock" data-no-translate>
+            <div className="workspace-dock-heading">tools</div>
             {renderPanelButtons()}
           </div>
         </>

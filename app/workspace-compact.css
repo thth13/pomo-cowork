@@ -11,10 +11,9 @@
     padding: 4px;
   }
 
-  .workspace-page .workspace-dock > button { width: 36px; height: 38px; }
-  .workspace-page .workspace-dock > button + button { margin-top: 6px; }
-  .workspace-page .workspace-dock > button + button::before { top: -4px; }
-  .workspace-page .workspace-dock > button > svg { width: 18px; height: 18px; }
+  .workspace-page .workspace-dock > button { width: 56px; min-height: 48px; }
+  .workspace-page .workspace-dock > button > svg { width: 20px; height: 20px; }
+  .workspace-page .workspace-dock-label { font-size: 10px; }
 
   .workspace-page .workspace-window:not([data-resized="true"]) {
     width: 304px;
