@@ -1,5 +1,6 @@
 'use client'
 
+import { useFocusPreferencesStore } from '@/store/useFocusPreferencesStore'
 import { userProfileHref } from '@/lib/userProfile'
 import { useEffect, useLayoutEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { createPortal } from 'react-dom'
@@ -438,7 +439,12 @@ function SessionCard({
   )
 }
 
-export default function ActiveSessions({ variant = 'panel', detailsVisible = true }: { variant?: 'panel' | 'page'; detailsVisible?: boolean }) {
+export default function ActiveSessions(props: { variant?: 'panel' | 'page'; detailsVisible?: boolean }) {
+  const offline = useFocusPreferencesStore(state => state.offline)
+  return offline ? null : <VisibleActiveSessions {...props} />
+}
+
+function VisibleActiveSessions({ variant = 'panel', detailsVisible = true }: { variant?: 'panel' | 'page'; detailsVisible?: boolean }) {
   const surfaceClassName = variant === 'page'
     ? 'focus-page-community'
     : 'bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-slate-700 p-4 sm:p-6 lg:p-8'

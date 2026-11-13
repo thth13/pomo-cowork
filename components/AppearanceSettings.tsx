@@ -68,7 +68,7 @@ function AppearanceChoice({ premium, locked, name, value, checked, busy, label, 
   </label>
 }
 
-export default function AppearanceSettings() {
+export default function AppearanceSettings({ triggerClassName = 'timer-appearance-trigger' }: { triggerClassName?: string }) {
   const { language, t } = useI18n()
   const copy = appearanceCopy[language]
   const [open, setOpen] = useState(false)
@@ -113,7 +113,7 @@ export default function AppearanceSettings() {
 
   return (
     <>
-      <button ref={triggerRef} type="button" className="timer-appearance-trigger" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label={copy.trigger} title={copy.trigger} data-no-translate>
+      <button ref={triggerRef} type="button" className={triggerClassName} onClick={() => setOpen(true)} aria-haspopup="dialog" aria-label={copy.trigger} title={copy.trigger} data-no-translate>
         <Palette size={18} aria-hidden="true" />
       </button>
       {open && (
@@ -124,6 +124,7 @@ export default function AppearanceSettings() {
           aria-describedby={descriptionId}
           lang={language}
           data-no-translate
+          onKeyDown={event => { if (event.key === 'Escape') event.stopPropagation() }}
           onCancel={event => { event.preventDefault(); setOpen(false) }}
           onPointerDown={event => {
             const bounds = event.currentTarget.getBoundingClientRect()

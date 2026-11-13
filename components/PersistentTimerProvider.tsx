@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useFocusPreferencesStore } from '@/store/useFocusPreferencesStore'
 import { useAuthStore } from '@/store/useAuthStore'
 import { registerServiceWorker } from '@/lib/serviceWorker'
 import { PomodoroTimerRuntime } from './PomodoroTimer'
@@ -20,6 +21,7 @@ export default function PersistentTimerProvider({ children }: { children: ReactN
   const active = mount ?? lastMount
 
   useEffect(() => {
+    useFocusPreferencesStore.getState().hydrate()
     setReady(true)
     void registerServiceWorker()
   }, [])

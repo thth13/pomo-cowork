@@ -836,6 +836,48 @@ textarea {
   display: none;
 }
 
+.workspace-window[data-window-variant="timer"] {
+  width: min(440px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+}
+
+.workspace-window[data-window-variant="timer"] .workspace-window-handle {
+  min-height: 28px;
+  padding: 2px 8px;
+}
+
+.workspace-window[data-window-variant="timer"] .workspace-window-heading {
+  padding: 0 4px;
+  background: transparent;
+  border-bottom: 0;
+}
+
+.workspace-window[data-window-variant="timer"] .workspace-window-handle span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.workspace-window[data-window-variant="timer"] .workspace-window-handle:focus-visible {
+  outline: 2px solid var(--pixel-accent);
+  outline-offset: -2px;
+}
+
+.workspace-window[data-window-variant="timer"] .workspace-window-close {
+  width: 28px;
+  height: 28px;
+}
+
+@media print {
+  .workspace-window[data-window-variant="timer"] { display: none; }
+}
+
 .workspace-window-heading {
   display: flex;
   align-items: center;
@@ -2862,8 +2904,8 @@ body:has(.workspace-page) {
   }
 
   /* Mobile panels fill the available width, overriding saved desktop geometry. */
-  .workspace-window,
-  .workspace-window[data-resized="true"] {
+  .workspace-window:not([data-window-variant="timer"]),
+  .workspace-window[data-resized="true"]:not([data-window-variant="timer"]) {
     top: calc(72px + env(safe-area-inset-top)) !important;
     left: max(8px, env(safe-area-inset-left)) !important;
     width: calc(100vw - max(8px, env(safe-area-inset-left)) - max(8px, env(safe-area-inset-right))) !important;
@@ -2871,8 +2913,8 @@ body:has(.workspace-page) {
     max-height: calc(100dvh - 88px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
 
-  .workspace-window-handle,
-  .workspace-window-handle[data-dragging="true"] {
+  .workspace-window:not([data-window-variant="timer"]) .workspace-window-handle,
+  .workspace-window:not([data-window-variant="timer"]) .workspace-window-handle[data-dragging="true"] {
     min-height: 44px;
     cursor: default;
     touch-action: auto;
@@ -5614,3 +5656,13 @@ html[data-mini-timer] body {
 /* The two focus workflows share the existing homepage timer surface. */
 
 .mini-timer-flow-task { max-width: 100%; margin: 12px 0; padding-inline: 8px; text-align: center; overflow-wrap: anywhere; font-size: 14px; line-height: 1.6; color: var(--pixel-ink); }
+
+/* Private focus has no presence rail or reserved presence column. */
+.focus-page-layout[data-offline="true"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+.focus-page-layout[data-offline="true"] .focus-station {
+  grid-column: 1;
+  grid-row: 1;
+}

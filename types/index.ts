@@ -20,6 +20,9 @@ export interface User {
 }
 
 export interface UserSettings {
+  minimalTimer?: boolean
+  offline?: boolean
+  hideRoomSwitch?: boolean
   id: string
   userId: string
   workDuration: number

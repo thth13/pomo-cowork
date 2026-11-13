@@ -154,6 +154,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             soundEnabled: settings.soundEnabled ?? true,
             soundVolume: settings.soundVolume ?? 0.5,
             notificationsEnabled: settings.notificationsEnabled ?? true,
+            minimalTimer: settings.minimalTimer ?? false,
+            offline: settings.offline ?? false,
+            hideRoomSwitch: settings.hideRoomSwitch ?? false,
           }
 
       return {

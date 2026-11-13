@@ -9,8 +9,11 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type CSS
 import { Settings } from 'lucide-react'
 import { firstFocusCopy } from '@/lib/i18n/firstFocus'
 import { createPortal } from 'react-dom'
+import { usePathname } from 'next/navigation'
 import { TimerSlot } from '@/components/TimerMountContext'
 import FloatingTimer from '@/components/FloatingTimer'
+import MinimalTimer from '@/components/MinimalTimer'
+import { useFocusPreferencesStore } from '@/store/useFocusPreferencesStore'
 import { TIME_TRACKER_DURATION_MINUTES, useTimerStore } from '@/store/useTimerStore'
 import { useTimerActionsStore } from '@/store/useTimerActionsStore'
 import { useAuthStore } from '@/store/useAuthStore'
@@ -204,6 +207,12 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
   const timerFont = useAppearanceStore(state => state.timerFont)
   const { t, language } = useI18n()
   const pictureInPicture = useDocumentPictureInPicture()
+  const minimalTimerEnabled = useFocusPreferencesStore(state => state.minimalTimer)
+  const pathname = usePathname()
+  const isHomePage = pathname === '/' || pathname === '/es'
+  const hideRoomSwitch = useFocusPreferencesStore(state => state.hideRoomSwitch)
+  const minimalTimerVisible = useFocusPreferencesStore(state => state.minimalTimerVisible)
+  const setMinimalTimerVisible = useFocusPreferencesStore(state => state.setMinimalTimerVisible)
   const [pictureInPictureAnchor, setPictureInPictureAnchor] = useState<HTMLDivElement | null>(null)
   const {
     isRunning,
@@ -1418,6 +1427,11 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
     : 0
 
   const overlays = <>
+    <MinimalTimer open={isHomePage && minimalTimerEnabled && minimalTimerVisible} onClose={() => setMinimalTimerVisible(false)}
+      onOpenSettings={openSettings}
+      actions={timerActions} formattedTime={formatTime(timerDisplaySeconds)}
+      sessionLabel={getSessionTypeLabel(activeSessionType)}
+      sessionType={activeSessionType} onSessionTypeChange={handleSessionTypeChange} />
     <TimerPictureInPicture
       controller={pictureInPicture}
       triggerTarget={target && presentation !== 'minimal' ? pictureInPictureAnchor : null}
@@ -1479,11 +1493,12 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
 
   return <>
     {target ? createPortal(
-    <div className="flex flex-col items-center" data-timer-panel data-timer-mode={activeSessionType}>
+    <div className="flex flex-col items-center" data-timer-panel data-timer-mode={activeSessionType}
+      style={minimalTimerEnabled ? { display: 'none' } : undefined}>
       {showFirstFocus && <div className="first-focus-intro">
         <p>{firstFocusText.title}</p>
       </div>}
-      {showRoomSwitch && (currentRoomId || lastRoomId) && (
+      {showRoomSwitch && !hideRoomSwitch && (currentRoomId || lastRoomId) && (
         <button
           type="button"
           onClick={() => {
@@ -1583,7 +1598,8 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
       </TimerControls>
     </div>,
     target
-    ) : currentSession && <FloatingTimer actions={timerActions} formattedTime={formatTime(timerDisplaySeconds)}
+    ) : null}
+    {currentSession && (!target || minimalTimerEnabled) && (!isHomePage || !minimalTimerEnabled) && <FloatingTimer actions={timerActions} formattedTime={formatTime(timerDisplaySeconds)}
       sessionLabel={getSessionTypeLabel(activeSessionType)} href={returnHref} />}
     {overlays}
   </>

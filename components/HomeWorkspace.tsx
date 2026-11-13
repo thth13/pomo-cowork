@@ -11,6 +11,7 @@ import DailyFlow from '@/components/DailyFlow'
 import WorkspaceCalendar from '@/components/WorkspaceCalendar'
 import { calendarCopy } from '@/lib/i18n/calendar'
 import { useWorkspaceModeStore } from '@/store/useWorkspaceModeStore'
+import { useFocusPreferencesStore } from '@/store/useFocusPreferencesStore'
 import ActiveSessions from '@/components/ActiveSessions'
 import RoomSwitch from '@/components/RoomSwitch'
 import { registerServiceWorker } from '@/lib/serviceWorker'
@@ -25,7 +26,7 @@ import { dailyGoalCopy } from '@/lib/i18n/dailyGoal'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { MessageCircle, History, ListTodo, Medal, HelpCircle, CalendarDays, CalendarCheck, ChevronRight, Headphones, Target, UsersRound, X } from 'lucide-react'
+import { Timer, MessageCircle, History, ListTodo, Medal, HelpCircle, CalendarDays, CalendarCheck, ChevronRight, Headphones, Target, UsersRound, X } from 'lucide-react'
 import Habits from '@/components/Habits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
@@ -44,6 +45,10 @@ const isPanelId = (value: unknown): value is PanelId =>
   value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits' || value === 'sounds' || value === 'goal' || value === 'calendar'
 
 export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
+  const offline = useFocusPreferencesStore(state => state.offline)
+  const minimalTimerEnabled = useFocusPreferencesStore(state => state.minimalTimer)
+  const minimalTimerVisible = useFocusPreferencesStore(state => state.minimalTimerVisible)
+  const setMinimalTimerVisible = useFocusPreferencesStore(state => state.setMinimalTimerVisible)
   const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore()
   const hasStartedTimer = useTimerStore(state => state.hasStartedTimer)
   const { t, language } = useI18n()
@@ -260,7 +265,23 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const workspaceLoading = !mounted || isLoading
 
   // Calendar is temporarily hidden from the tools menu.
-  const renderPanelButtons = (closeMenu?: () => void) => panels.filter(({ id }) => id !== 'history' && id !== 'calendar' && (id !== 'about' || !isAuthenticated)).map(({ id, title, icon: Icon }) => (
+  const renderPanelButtons = (closeMenu?: () => void) => <>
+    {minimalTimerEnabled && <button type="button" aria-label={t.nav.timer}
+      aria-haspopup="dialog" aria-controls="workspace-minimal-timer" aria-expanded={minimalTimerVisible}
+      onClick={() => {
+        setMinimalTimerVisible(!minimalTimerVisible)
+        closeMenu?.()
+        requestAnimationFrame(() => {
+          const target = minimalTimerVisible
+            ? closeMenu ? document.querySelector<HTMLButtonElement>('[data-workspace-menu-trigger]') : null
+            : document.querySelector<HTMLButtonElement>('#workspace-minimal-timer .workspace-window-handle')
+          target?.focus({ preventScroll: true })
+        })
+      }}>
+      <Timer size={19} aria-hidden="true" />
+      <span className={closeMenu ? undefined : 'workspace-dock-label'}>{t.nav.timer}</span>
+    </button>}
+    {panels.filter(({ id }) => id !== 'history' && id !== 'calendar' && (id !== 'about' || !isAuthenticated)).map(({ id, title, icon: Icon }) => (
     <button
       key={id}
       type="button"
@@ -292,7 +313,8 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
         {closeMenu ? title : copy.toolLabels[id]}
       </span>
     </button>
-  ))
+  ))}
+  </>
 
   return (
     <div className="workspace-page garden-page" aria-busy={workspaceLoading}>
@@ -309,13 +331,13 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       ) : (
         <>
           <Navbar compact workspaceActions={renderPanelButtons} />
-          <div className="focus-page-layout">
+          <div className="focus-page-layout" data-offline={offline}>
             <section id="workspace-timer" className="focus-station" aria-label={t.nav.timer}>
               {mode === 'daily-flow'
                 ? <DailyFlow onExit={() => setMode('timer')} onSessionComplete={handleSessionComplete} />
                 : <PomodoroTimer firstFocus showRoomSwitch={false} idleTitle={language === 'es' ? ES_HOME_TITLE : HOME_TITLE} onSessionComplete={handleSessionComplete} />}
             </section>
-            <aside id="workspace-working" className="working-sidebar" data-collapsed={workingCollapsed} aria-label={t.activeSessions.title}>
+            {!offline && <aside id="workspace-working" className="working-sidebar" data-collapsed={workingCollapsed} aria-label={t.activeSessions.title}>
               <RoomSwitch />
 
               <div className="working-sidebar-header">
@@ -356,7 +378,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
                 </div>
                 <button type="button" className="working-onboarding-close" onClick={dismissWorkingHint} aria-label={t.common.close} title={t.common.close}><X size={16} aria-hidden="true" /></button>
               </div>}
-            </aside>
+            </aside>}
             {/* <PocketGarden /> */}
           </div>
 

@@ -8,8 +8,14 @@ import { useTimerStore } from '@/store/useTimerStore'
 import { communityCopy } from '@/lib/i18n/community'
 import type { Room } from '@/types'
 import { useI18n } from './I18nProvider'
+import { useFocusPreferencesStore } from '@/store/useFocusPreferencesStore'
 
 export default function RoomSwitch() {
+  const hidden = useFocusPreferencesStore(state => state.hideRoomSwitch)
+  return hidden ? null : <VisibleRoomSwitch />
+}
+
+function VisibleRoomSwitch() {
   const { t, language } = useI18n()
   const copy = communityCopy[language]
   const token = useAuthStore(state => state.token)

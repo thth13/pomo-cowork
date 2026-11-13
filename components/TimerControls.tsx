@@ -87,6 +87,7 @@ export const TimerActions = memo(function TimerActions({
 })
 
 interface TimerControlsProps extends TimerActionsProps {
+  compact?: boolean
   children?: ReactNode
   sessionType: SessionType
   onSessionTypeChange: (type: SessionType) => void
@@ -96,6 +97,7 @@ export const TimerControls = memo(function TimerControls({
   children,
   sessionType,
   onSessionTypeChange,
+  compact = false,
   ...actions
 }: TimerControlsProps) {
   const { t } = useI18n()
@@ -105,7 +107,7 @@ export const TimerControls = memo(function TimerControls({
     <>
       {children}
 
-      <TimerActions {...actions} />
+      <TimerActions {...actions} compact={compact} />
 
       {sessionType !== SessionType.TIME_TRACKING && (
         <div className="timer-mode-tabs" role="group" aria-label={t.timer.focus}>

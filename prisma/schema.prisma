@@ -65,6 +65,7 @@ model User {
   // Relations
   sessions PomodoroSession[]
   settings UserSettings?
+  settingsChanges SettingsChange[]
   tasks    Task[]
   habits   Habit[]
 
@@ -337,10 +338,28 @@ model UserSettings {
   // Notification settings
   notificationsEnabled Boolean @default(true)
 
+  minimalTimer Boolean @default(false)
+  offline Boolean @default(false)
+  hideRoomSwitch Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("user_settings")
+}
+
+model SettingsChange {
+  id String @id @default(cuid())
+  userId String
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  field String
+  previousValue Boolean
+  nextValue Boolean
+  createdAt DateTime @default(now())
+
+  @@index([createdAt, id])
+  @@index([userId, createdAt])
+  @@map("settings_changes")
 }
 
 model Task {

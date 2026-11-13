@@ -53,6 +53,7 @@ and clear on success or failure. Shared mutation locking still prevents duplicat
 | Timer / session transitions | PomodoroTimer, TimerControls, useTimerStore, sessionService | Preserve existing start/pause/resume/stop/complete operations |
 | Local practice timers | PracticeTimer, practiceTimerConfig, useLocalStudyTimer | Ten independent in-memory page instances; Start/Pause/Resume/Reset; manual stage preparation and start; 1–180 whole-minute overrides; Flowmodoro count-up prepares elapsed/5 rest, minimum one minute. No persistence, account timer, sessions, stats, audio or analytics calls. Finished status is announced without per-second live updates. Leaving/reloading clears state. See docs/seo-practice-pages.md for boundaries and manual checks |
 | Native mini timer | useDocumentPictureInPicture, TimerPictureInPicture, TimerActions | User-opened Document Picture-in-Picture window; portal shares timer state, locale, action handlers and pending flags; closing never stops the session |
+| Minimal floating timer | MinimalTimer, WorkspaceWindow timer variant, TimerActions | Settings page switch opens the in-page panel; account-backed preference persists and refreshes between tabs; shared TimerControls owns actions and mode selection with active-session locks; pointer/touch and arrow-key movement, saved position, viewport bounds, close/Escape without stopping. Mode and window visibility are separate: close/Escape only hides the window; left dock/mobile Timer toggles it. Only Settings switches modes. Large and corner timers stay hidden for the entire minimal mode. Appearance and timer settings reuse their existing dialogs. |
 | Chrome extension | chrome-extension/background.js, app/api/timer, useSessionRestore | Account-authenticated popup and background worker control the server session without an open site; Pro gating, server completion rewards and guarded transitions are shared |
 | Task selection | TaskPicker | Existing authored picker; reused |
 | Daily Flow import | TaskPicker daily-flow variant, DailyFlow | Select unfinished tasks inside projects for the local queue during planning or focus. Project headings only expand; root projects cannot be selected. Each expanded project offers an input and Add task button; useQuickTasks/taskService saves the new task with that parent, then the user selects it. Failed creation preserves the draft and shows an inline retryable error; pending writes prevent duplicates. Preserve source ID/project caption; disable duplicates queued or completed on the current Flow day. Completion/rename stays local to Flow; ordinary timer selection stays intact. Shared useQuickTasks owns loading, retry and account scoping |
@@ -1337,3 +1338,32 @@ public Vercel Blob store, like profile avatars; room metadata retains room acces
   accepted. Calendar arithmetic uses browser-local dates, not UTC date slicing.
 - Scrollbar and theme ownership remain app/globals.css and its window adapters.
   app/workspace-calendar.css supplies only calendar geometry and token-based styles.
+
+## Private focus
+
+User-requested Work offline preference is account-backed and immediate, owned by
+useFocusPreferencesStore and exposed on /settings. ActiveSessions is hidden and
+unmounted; HomeWorkspace removes the rail. useSocket removes the current socket's
+public session through the existing disconnect lifecycle, then reconnects for chat
+without publishing timer events. Pending timer events are discarded when enabling
+privacy. Turning it off syncs the current active/paused snapshot. Timer persistence,
+completion and statistics continue through existing account services; this is not
+network-offline support. Other browsers/devices restore the account preference on sign-in or window focus. Guests retain browser-local preferences.
+
+Minimal timer route behavior: / and /es own the movable window. Other routes use
+the persistent corner timer for active/paused sessions when there is no normal full
+timer display, including in minimal mode. Route changes do not change the saved
+mode or the movable window's visibility; manually hidden windows remain hidden
+when returning home.
+
+## Workspace settings audit
+
+Explicit user scope: only Minimal timer, Work offline and Hide room selector.
+UserSettings + /api/settings/workspace own persistent values; SettingsChange stores
+actual committed before/after boolean changes with user and timestamp, atomically
+under an account-row lock. Identical retries are no-ops and do not duplicate logs.
+AdminSettingsChanges and the authorizeAdmin-protected API expose newest-first
+50-row URL pagination, loading/error/retry/empty states and Kyiv timestamps.
+Failed client saves preserve the choice and offer Retry; account transitions discard
+old-account pending changes and ignore late responses. Guests remain local without
+fabricated audit records. Closing/reopening the mini window is not a preference edit.

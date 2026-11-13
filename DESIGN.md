@@ -2028,6 +2028,25 @@ on a second click. Reduced motion disables the transition.
 
 ## Persistent corner timer
 
+The optional minimal timer is enabled by an immediate switch in the Timer section of the Settings page.
+MinimalTimer reuses WorkspaceWindow's non-modal shell, theme adapters, persisted
+position, pointer capture and keyboard movement, including mobile dragging.
+The 440px panel has a quiet grip-and-close header with a screen-reader title.
+Selected-font digits sit on the left; compact shared TimerControls sit on the right,
+with work/short-break/long-break choices immediately below the action buttons.
+Active sessions retain the shared mode lock; time tracking omits break choices.
+Closing or Escape hides only the window and never changes the selected timer mode.
+The Settings page alone changes the account-persisted minimalTimer preference.
+Separate in-memory minimalTimerVisible state preserves a closed window across route
+changes; enabling the mode or reloading opens it. While the mode is enabled, both
+large and corner timers stay hidden even when the window is closed. A Timer entry
+in the left dock and mobile tools toggles visibility, with active state and focus
+restoration. The header adds compact appearance and timer-settings icons, reusing
+AppearanceSettings (including theme/font/background selection) and SettingsModal.
+Escape inside appearance settings closes that dialog without hiding the timer.
+English/Spanish copy belongs to gardenCopy. MinimalTimer.module.css
+owns content geometry; existing pixel tokens and window adapters own colors.
+
 `PersistentTimerProvider` owns one mounted Pomodoro runtime across route changes.
 Page timer slots receive its full display through a portal; leaving a slot shows
 a compact bottom-left timer, with safe-area gutters, tabular digits, pause/resume,
@@ -2329,3 +2348,69 @@ Deletion offers Undo while the tool remains mounted. The month chooser reuses
 react-day-picker, matching LeaderboardDateFilter. Editor date/time inputs accept
 platform-owned picker geometry and locale, as in StudyPlanner. The agenda owns
 scrolling; editor and month-picker content scroll independently when displayed.
+
+## Private focus preferences
+
+The Settings page owns a separate Your workspace section with immediate, account-backed
+Minimal timer, Work offline and Hide room selector switches through useFocusPreferencesStore. They reuse settings toggle geometry,
+English/Spanish gardenCopy and existing runtime tokens. Guests retain local storage. Account save/load failures preserve the current choice
+and show an inline Retry action; successful changes are stored in UserSettings. Timer Settings modal does
+not duplicate these preferences. Closing the minimal timer only hides its window; the dock reopens it without changing the Settings switch.
+Offline means no public active timer, not operation without an internet connection:
+account session/history APIs remain unchanged. ActiveSessions unmounts its contents
+and the homepage removes the entire presence rail and its reserved grid column.
+The socket briefly reconnects to invoke existing server presence cleanup, drops
+queued timer events and suppresses starts/sync/pause/ticks/ends while private.
+Chat reconnects normally. Re-enabling public mode synchronizes the current session
+without fabricating another start. Saved preferences load before socket publishing;
+storage events refresh committed preferences in other tabs of the same browser.
+Other devices refresh on sign-in or window focus; earlier chat activity is unchanged.
+
+### Workspace preferences previews
+
+FocusPreferencesSettings owns the separate Your workspace settings section before
+the Timer duration section. The minimal timer row pairs its label, helper and switch with a real screenshot
+and caption on the right; below 900px these stack. Work offline is a compact
+full-width row below a fine divider, without an image or caption. Existing
+settings panel, icon and pixel tokens own colors and typography; settings.css owns
+geometry and the native checkbox-based switch. The reserved 5:2 timer preview preserves image proportions without cropping. English/Spanish copy belongs to gardenCopy.
+public/settings contains localized browser screenshots of the actual minimal timer
+and homepage with offline focus enabled and the Active Sessions rail absent.
+They were captured from the already-running local app with an isolated guest browser,
+no active session, no personal data and no live socket connection. The requested
+screenshots and desktop/mobile preview inspection did not start the project, run a
+build or run tsc. Both preferences retain the existing persistence and behavior.
+
+Your workspace also offers Hide room selector as a compact row below Work offline.
+It shares immediate account persistence and cross-tab refresh. RoomSwitch
+unmounts its chooser (and room-list fetch) when hidden; the shared main timer also
+hides its inline room switch. The selected room and session remain unchanged.
+Localized help links to /rooms, where the existing Set as workspace action remains
+available with its normal running-session lock. Existing settings tokens own the row.
+
+The movable minimal timer is restricted to the home workspace (/ and /es).
+Navigating away hides its window without changing the mode or visibility preference;
+an active/paused session uses FloatingTimer in the corner instead, including when
+minimal mode is enabled. Returning home restores the movable window only if the
+user had left it open. Ordinary page-owned full timer slots retain their display
+when minimal mode is off. No second clock or session is created by navigation.
+
+## Workspace preference persistence and audit
+
+UserSettings stores minimalTimer, offline and hideRoomSwitch for authenticated
+accounts. /api/settings/workspace validates boolean patches, locks the account row,
+and commits the changed values and SettingsChange records in one transaction.
+Unchanged values and failed saves create no events. The server is authoritative;
+existing unsigned browser settings are not imported into an account. Guests keep
+browser-local preferences, outside the admin audit. Visibility of the movable
+window is transient and is not a settings change. Client mutations are serialized,
+ignore results from prior accounts, and retain failed choices for explicit retry.
+Auth restoration supplies the privacy setting before socket session publishing.
+
+The admin Settings changes section reuses useAdminData, shared table/error/loading
+styles and URL pagination (50 rows), newest first, with user, setting, before/after
+and Europe/Kyiv timestamps. /api/admin/settings-changes uses authorizeAdmin and
+private/no-store responses. Only these three switches are logged, as explicitly
+clarified by the user; timer durations, profile and appearance are outside this log.
+The new migration is additive. Prisma generation/migration are permitted; project
+launch, test builds and tsc remain prohibited by the user.

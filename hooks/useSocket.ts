@@ -5,6 +5,7 @@ import { io, Socket } from 'socket.io-client'
 import { useAuthStore } from '@/store/useAuthStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { SessionStatus, type ActiveSession, type ChatMessage, type User } from '@/types'
+import { useFocusPreferencesStore } from '@/store/useFocusPreferencesStore'
 import { useConnectionStore } from '@/store/useConnectionStore'
 import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUser'
 
@@ -31,7 +32,7 @@ const inFlightSessionEvents = new Set<SessionEvent>()
 const currentOwnerId = () => useAuthStore.getState().user?.id ?? getOrCreateAnonymousId()
 
 const flushSessionEvents = () => {
-  if (!sharedSocket?.connected) return
+  if (useFocusPreferencesStore.getState().offline || !sharedSocket?.connected) return
   const ownerId = currentOwnerId()
   for (const event of pendingSessionEvents) {
     if (event.ownerId !== ownerId || inFlightSessionEvents.has(event)) continue
@@ -75,7 +76,7 @@ const withSessionProfile = (session: ActiveSession): ActiveSession => {
 }
 
 const syncCurrentSession = () => {
-  if (!sharedSocket?.connected) return
+  if (useFocusPreferencesStore.getState().offline || !sharedSocket?.connected) return
   const { currentSession, timeRemaining, isRunning } = useTimerStore.getState()
   if (!currentSession || timeRemaining <= 0 || currentSession.id.startsWith('temp_')) return
   if (currentSession.userId !== currentOwnerId()) return
@@ -99,6 +100,7 @@ const syncCurrentSession = () => {
 const initSocketOnce = () => {
   if (initialized) return
   initialized = true
+  useFocusPreferencesStore.getState().hydrate()
 
   sharedSocket = io(getSocketUrl(), {
     path: '/socket',
@@ -122,12 +124,31 @@ const initSocketOnce = () => {
   const resetPresence = useConnectionStore.getState().resetPresence
   const setPresenceCounts = useConnectionStore.getState().setPresenceCounts
 
+  useFocusPreferencesStore.subscribe((state, previous) => {
+    if (state.offline === previous.offline) return
+    if (state.offline) {
+      pendingSessionEvents.length = 0
+      sessionSnapshots.clear()
+      // Remove snapshots queued while disconnected so reconnection cannot reveal them.
+      const sessionEvents = new Set(['session-start', 'session-end', 'session-sync', 'session-pause', 'timer-tick'])
+      socket.sendBuffer = socket.sendBuffer.filter(packet => !sessionEvents.has(packet.data?.[0]))
+      setActiveSessions([])
+      // The existing server disconnect lifecycle removes this socket's public session.
+      // Reconnect for chat, but the offline guards prevent republishing the timer.
+      socket.disconnect()
+      socket.connect()
+    } else {
+      syncCurrentSession()
+      if (socket.connected) socket.emit('get-active-sessions')
+    }
+  })
+
   // Socket.IO fires connect on both initial connection and every reconnect.
   socket.on('connect', () => {
     socket.emit('join-presence', buildPresencePayload(useAuthStore.getState().user))
     flushSessionEvents()
     syncCurrentSession()
-    socket.emit('get-active-sessions')
+    if (!useFocusPreferencesStore.getState().offline) socket.emit('get-active-sessions')
     socket.emit('get-online-users')
     setConnectionStatus(true)
   })
@@ -171,7 +192,7 @@ const initSocketOnce = () => {
   })
 
   socket.on('session-update', (sessions: ActiveSession[]) => {
-    setActiveSessions(sessions)
+    if (!useFocusPreferencesStore.getState().offline) setActiveSessions(sessions)
   })
 
   socket.on('user-online', (data: { userId: string, online: boolean }) => {
@@ -210,6 +231,7 @@ export function useSocket() {
   }, [])
 
   const emitSessionStart = (sessionData: ActiveSession) => {
+    if (useFocusPreferencesStore.getState().offline) return
     if (sessionData.userId !== currentOwnerId()) return
     const snapshot = withSessionProfile(sessionData)
     sessionSnapshots.set(snapshot.id, snapshot)
@@ -222,6 +244,7 @@ export function useSocket() {
   }
 
   const emitSessionSync = useCallback((sessionData: ActiveSession) => {
+    if (useFocusPreferencesStore.getState().offline) return
     if (sessionData.userId !== currentOwnerId()) return
     const snapshot = withSessionProfile(sessionData)
     sessionSnapshots.set(snapshot.id, snapshot)
@@ -229,6 +252,7 @@ export function useSocket() {
   }, [])
 
   const emitSessionPause = (sessionId: string) => {
+    if (useFocusPreferencesStore.getState().offline) return
     if (sharedSocket?.connected) sharedSocket.emit('session-pause', sessionId)
   }
 
@@ -237,6 +261,7 @@ export function useSocket() {
     reason: 'manual' | 'completed' | 'reset' = 'manual',
     options?: { removeActivity?: boolean }
   ) => {
+    if (useFocusPreferencesStore.getState().offline) return
     const session = sessionSnapshots.get(sessionId)
     if (!session || session.userId !== currentOwnerId()) return
     pendingSessionEvents.push({
@@ -247,6 +272,7 @@ export function useSocket() {
   }
 
   const emitTimerTick = (sessionId: string, timeRemaining: number) => {
+    if (useFocusPreferencesStore.getState().offline) return
     if (sharedSocket?.connected) sharedSocket.emit('timer-tick', { sessionId, timeRemaining })
   }
 

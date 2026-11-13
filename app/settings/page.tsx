@@ -15,6 +15,7 @@ import {
   Bot
 } from 'lucide-react'
 import { useAuthStore } from '@/store/useAuthStore'
+import FocusPreferencesSettings from '@/components/FocusPreferencesSettings'
 import { useTimerStore } from '@/store/useTimerStore'
 import { useCompanionStore } from '@/store/useCompanionStore'
 import { SHOW_MR_BEEP } from '@/lib/uiFeatures'
@@ -515,6 +516,8 @@ export default function SettingsPage() {
               </div>
             </div>
           </section>
+
+          <FocusPreferencesSettings />
 
           <section className="settings-panel">
             <div className="relative space-y-6">

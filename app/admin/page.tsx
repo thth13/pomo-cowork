@@ -13,6 +13,7 @@ import AdminOverview from '@/components/admin/AdminOverview'
 import AdminProductUpdates from '@/components/admin/AdminProductUpdates'
 import AdminBeepMessages from '@/components/admin/AdminBeepMessages'
 import AdminBeepEvents from '@/components/admin/AdminBeepEvents'
+import AdminSettingsChanges from '@/components/admin/AdminSettingsChanges'
 import AdminDataTable, { type AdminDataKind } from '@/components/admin/AdminDataTable'
 import type { AdminSection } from '@/components/AdminReferralManager'
 import './admin.css'
@@ -28,6 +29,7 @@ const AdminPaywallEvents = dynamic(() => import('@/components/AdminPaywallEvents
 
 const sections = [
   { id: 'overview', label: 'Overview', icon: LayoutDashboard, description: '' },
+  { id: 'settings-changes', label: 'Settings changes', icon: ListChecks, description: 'Saved workspace preference changes, with previous and new values.' },
   { id: 'updates', label: 'Product updates', icon: MessageSquare, description: 'Preview illustrated updates and send in-app notifications to registered accounts.' },
   { id: 'metrics', label: 'All metrics', icon: BarChart3, description: 'Community totals, current activity, and all-time records.' },
   { id: 'user-counts', label: 'User counts', icon: Users, description: 'Registered and anonymous account counts by creation month. Calendar months use Kyiv time.' },
@@ -96,6 +98,7 @@ export default function AdminPage() {
             {section === 'user-counts' && <AdminUserCounts />}
             {section === 'beep' && <AdminBeepMessages />}
             {section === 'beep-events' && <AdminBeepEvents />}
+            {section === 'settings-changes' && <AdminSettingsChanges />}
             <AdminReferralManager section={section} />
             {(['directory', 'wall', 'habits', 'visitors'] as string[]).includes(section) && <AdminDataTable key={section} kind={section as AdminDataKind} />}
             {eventsVisited && <div hidden={section !== 'events'}><AdminPaywallEvents /></div>}

@@ -26,9 +26,10 @@ interface WorkspaceWindowProps {
   onClose: () => void
   children: ReactNode
   headerAction?: ReactNode
+  variant?: 'default' | 'timer'
 }
 
-export default function WorkspaceWindow({ id, title, open, offset, layer, onActivate, onClose, children, headerAction }: WorkspaceWindowProps) {
+export default function WorkspaceWindow({ id, title, open, offset, layer, onActivate, onClose, children, headerAction, variant = 'default' }: WorkspaceWindowProps) {
   const windowRef = useRef<HTMLDivElement>(null)
   const handleRef = useRef<HTMLButtonElement>(null)
   const positionRef = useRef<{ x: number; y: number } | null>(null)
@@ -139,7 +140,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
       setDragging(false)
       if (panel.contains(document.activeElement)) trigger?.focus({ preventScroll: true })
     }
-  }, [open, offset, geometryLoaded, id])
+  }, [open, offset, geometryLoaded, id, variant])
 
   return (
     <div
@@ -149,6 +150,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
       aria-labelledby={`${id}-title`}
       hidden={!open}
       className="workspace-window"
+      data-window-variant={variant}
       data-resized={size ? "true" : undefined}
       style={{ left: position?.x, top: position?.y, width: size?.width, height: size?.height, zIndex: 40 + layer, visibility: position ? undefined : 'hidden' }}
       onPointerDownCapture={onActivate}
@@ -169,7 +171,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
           aria-label={`${title}. ${gardenCopy[language].moveWindow}`}
           title={gardenCopy[language].moveWindow}
           onPointerDown={(event) => {
-            if (window.matchMedia('(max-width: 719px)').matches) return
+            if (variant !== 'timer' && window.matchMedia('(max-width: 719px)').matches) return
             if (event.button !== 0) return
             const bounds = windowRef.current!.getBoundingClientRect()
             dragRef.current = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, left: bounds.left, top: bounds.top }
@@ -189,7 +191,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
           onPointerCancel={() => { dragRef.current = null; setDragging(false) }}
           onLostPointerCapture={() => { dragRef.current = null; setDragging(false) }}
           onKeyDown={(event) => {
-            if (window.matchMedia('(max-width: 719px)').matches) return
+            if (variant !== 'timer' && window.matchMedia('(max-width: 719px)').matches) return
             const current = positionRef.current
             if (!current || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return
             event.preventDefault()
@@ -206,7 +208,7 @@ export default function WorkspaceWindow({ id, title, open, offset, layer, onActi
         </button>
       </div>
       <div className="workspace-window-content">{children}</div>
-      {resizeEdges.map((edge) => (
+      {variant !== 'timer' && resizeEdges.map((edge) => (
         <button
           key={edge}
           tabIndex={edge === 'se' ? 0 : -1}
