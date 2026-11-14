@@ -507,8 +507,8 @@ export const seoPages: Record<SeoSlug, SeoPage | PracticeSeoPage> = {
   'group-study-timer': {
     keyword: 'Group study timer',
     secondaryKeywords: ['group Pomodoro timer', 'study group tasks', 'online group study timer'],
-    title: 'Group Study Timer with Tasks & Live Participants | Pomo Cowork',
-    description: 'Start a group study timer, see who else is focusing, and organize your own projects and tasks. Study in 25-minute blocks with five-minute breaks.',
+    title: 'Group Study Timer – Study Together Online | Pomo Cowork',
+    description: 'Study alongside others with a free online timer. See live study sessions, set your own focus length, and start the timer without an account.',
     heading: 'Group study timer',
     intro: 'One task at a time. Study alongside others, at your own pace.',
     cta: 'Start a study session',
