@@ -4,7 +4,7 @@
 .lb-intro { display: flex; align-items: center; justify-content: space-between; gap: 28px; margin-bottom: 30px; }
 .lb-eyebrow { display: flex; align-items: center; gap: 8px; color: var(--pixel-muted); font-size: 10px; font-weight: 600; letter-spacing: 1.7px; line-height: 1.7; }
 .lb-intro h1 { font-family: var(--font-pixel); font-size: clamp(20px, 3vw, 32px); line-height: 1.6; letter-spacing: -1px; margin: 12px 0 14px; overflow-wrap: anywhere; }
-.lb-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 15px; background: var(--pixel-paper); border: 1px solid var(--pixel-line); border-radius: 2px; font-size: 12px; font-weight: 600; text-align: center; line-height: 1.5; }
+.lb-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 15px; background: var(--pixel-paper); border: 1px solid var(--pixel-line); border-radius: var(--theme-control-radius, 2px); font-size: 12px; font-weight: 600; text-align: center; line-height: 1.5; }
 .lb-intro > .lb-button { flex-shrink: 0; }
 .lb-button:hover { background: var(--pixel-screen); }
 .lb-button:active { background: var(--pixel-shadow); }
@@ -16,7 +16,7 @@
 .lb-periods button:hover { background: var(--pixel-screen); color: var(--pixel-ink); }
 .lb-periods button[aria-pressed='true'] { background: var(--pixel-tomato-soft); color: var(--pixel-tomato-ink); border-color: var(--pixel-line); box-shadow: inset 0 -2px var(--pixel-accent); font-weight: 600; }
 .lb-date-nav { display: flex; align-items: center; gap: 3px; }
-.lb-icon-button { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid transparent; border-radius: 2px; }
+.lb-icon-button { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; width: 44px; height: 44px; border: 1px solid transparent; border-radius: var(--theme-control-radius, 2px); }
 .lb-icon-button:hover:not(:disabled) { background: var(--pixel-screen); border-color: var(--pixel-line); }
 .lb-icon-button:active:not(:disabled) { background: var(--pixel-shadow); }
 .lb-date-trigger { display: flex; align-items: center; justify-content: center; gap: 9px; width: 230px; max-width: 100%; min-height: 44px; padding: 8px; font-size: 12px; line-height: 1.5; font-weight: 600; border: 1px solid transparent; }
@@ -29,7 +29,7 @@
 .lb-calendar-copy .lb-range-selection { min-height: 50px; margin: 18px 0 8px; color: var(--pixel-ink); font-weight: 600; }
 .lb-calendar-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .lb-calendar-actions .btn { min-width: 100px; font-size: 13px; }
-.lb-calendar .rdp-root { --rdp-accent-color: var(--pixel-tomato-ink); --rdp-accent-background-color: var(--pixel-tomato-soft); --rdp-day-height: 40px; --rdp-day-width: 40px; --rdp-day_button-height: 38px; --rdp-day_button-width: 38px; --rdp-day_button-border-radius: 2px; --rdp-selected-border: 2px solid var(--pixel-accent); --rdp-range_middle-background-color: var(--pixel-screen); --rdp-range_middle-color: var(--pixel-ink); --rdp-range_start-color: var(--pixel-paper); --rdp-range_end-color: var(--pixel-paper); --rdp-range_start-date-background-color: var(--pixel-ink); --rdp-range_end-date-background-color: var(--pixel-ink); flex-shrink: 0; font-size: 13px; }
+.lb-calendar .rdp-root { --rdp-accent-color: var(--pixel-tomato-ink); --rdp-accent-background-color: var(--pixel-tomato-soft); --rdp-day-height: 40px; --rdp-day-width: 40px; --rdp-day_button-height: 38px; --rdp-day_button-width: 38px; --rdp-day_button-border-radius: var(--theme-control-radius, 2px); --rdp-selected-border: 2px solid var(--pixel-accent); --rdp-range_middle-background-color: var(--pixel-screen); --rdp-range_middle-color: var(--pixel-ink); --rdp-range_start-color: var(--pixel-paper); --rdp-range_end-color: var(--pixel-paper); --rdp-range_start-date-background-color: var(--pixel-ink); --rdp-range_end-date-background-color: var(--pixel-ink); flex-shrink: 0; font-size: 13px; }
 .lb-calendar .rdp-day_button:hover { background: var(--pixel-screen); color: var(--pixel-ink); }
 .lb-calendar .rdp-month_caption { font-size: 14px; }
 .lb-calendar .rdp-selected { font-size: inherit; }
@@ -57,7 +57,7 @@
 .lb-leader-info { min-width: 0; }
 .lb-leader-label { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; font-size: 10px; color: var(--pixel-muted); }
 .lb-leader-info h3 { font-size: 16px; line-height: 1.4; font-weight: 600; margin: 6px 0 12px; overflow-wrap: anywhere; }
-.lb-premium { margin-left: 7px; padding: 1px 5px; border: 1px solid color-mix(in srgb, var(--pixel-accent) 55%, var(--pixel-line)); border-radius: 2px; background: var(--pixel-tomato-soft); vertical-align: middle; }
+.lb-premium { margin-left: 7px; padding: 1px 5px; border: 1px solid color-mix(in srgb, var(--pixel-accent) 55%, var(--pixel-line)); border-radius: var(--theme-control-radius, 2px); background: var(--pixel-tomato-soft); vertical-align: middle; }
 .lb-leader-info p { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
 .lb-leader-info p strong { font-family: var(--font-pixel); font-weight: 400; font-size: 14px; line-height: 1.7; overflow-wrap: anywhere; }
 .lb-leader-info p > span { font-size: 10px; color: var(--pixel-muted); }
@@ -229,7 +229,7 @@
 
 .lb-table th:nth-child(3) { width: 120px; }
 .lb-user-rank { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; }
-.lb-rank-mark { width: 10px; height: 10px; flex-shrink: 0; border-radius: 2px; }
+.lb-rank-mark { width: 10px; height: 10px; flex-shrink: 0; border-radius: var(--theme-control-radius, 2px); }
 
 /* Room standings use the full board's scale in their own full-width tab. */
 .room-leaderboard .lb-podium { margin-bottom: 24px; }

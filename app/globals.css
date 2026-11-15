@@ -1798,6 +1798,12 @@ body:has(.workspace-page) {
   background: var(--pixel-screen);
 }
 
+.workspace-account-trigger > :first-child {
+  flex-shrink: 0;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
 .workspace-account-guest {
   width: 32px;
   height: 32px;

@@ -17,6 +17,12 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!hydrated) return
+    document.documentElement.dataset.background = backgroundId
+    return () => { delete document.documentElement.dataset.background }
+  }, [backgroundId, hydrated])
+
+  useEffect(() => {
+    if (!hydrated) return
     const root = document.documentElement
     root.dataset.windowDesign = windowDesign
     return () => { delete root.dataset.windowDesign }
@@ -51,7 +57,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     }
   }, [])
   return <>
-    {backgroundId !== 'default' && (sceneryRoutes.test(pathname) || Boolean(usernameFromHandle(pathname.split('/')[1] || ''))) &&
+    {backgroundId !== 'pocket-garden' && (sceneryRoutes.test(pathname) || Boolean(usernameFromHandle(pathname.split('/')[1] || ''))) &&
       <div className="product-scenery" aria-hidden="true"><WorkspaceBackground /></div>}
     {children}
   </>

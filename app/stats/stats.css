@@ -3,7 +3,7 @@
 .stats-layout { max-width: 1240px; margin: 0 auto; padding: calc(96px + env(safe-area-inset-top)) 32px 72px; }
 .stats-intro { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 36px; }
 .stats-intro h1 { font-family: var(--font-pixel); font-size: clamp(18px, 2.5vw, 28px); line-height: 1.7; letter-spacing: -1px; overflow-wrap: anywhere; }
-.stats-timer-link { display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex-shrink: 0; min-height: 44px; padding: 10px 14px; font-size: 12px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); }
+.stats-timer-link { display: inline-flex; align-items: center; justify-content: center; gap: 10px; flex-shrink: 0; min-height: 44px; padding: 10px 14px; font-size: 12px; border: 1px solid var(--pixel-line); border-radius: var(--theme-panel-radius, 3px); background: var(--pixel-paper); }
 .stats-timer-link:hover { background: var(--pixel-screen); }
 .stats-timer-link:active { background: var(--pixel-shadow); }
 .stats-overview { display: grid; grid-template-columns: 1.35fr repeat(4, 1fr); margin-bottom: 32px; border: 1px solid var(--pixel-line); background: var(--pixel-paper); box-shadow: 4px 4px 0 var(--pixel-shadow); }
@@ -13,13 +13,13 @@
 .stats-metric:first-child > svg { color: var(--pixel-accent); }
 .stats-metric-value { font-family: var(--font-pixel); font-size: clamp(13px, 1.4vw, 18px); line-height: 1.9; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .stats-metric-label { margin-top: 8px; font-size: 12px; line-height: 1.5; color: var(--pixel-muted); }
-.stats-page .stats-panel { min-width: 0; padding: 24px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); box-shadow: 3px 3px 0 var(--pixel-shadow); }
+.stats-page .stats-panel { min-width: 0; padding: 24px; border: 1px solid var(--pixel-line); border-radius: var(--theme-panel-radius, 3px); background: var(--pixel-paper); box-shadow: 3px 3px 0 var(--pixel-shadow); }
 .stats-panel h3 { font-size: 15px; font-weight: 600; color: var(--pixel-ink); }
 .stats-panel h3::before { content: ''; display: inline-block; width: 7px; height: 7px; margin-right: 10px; background: var(--pixel-growth); vertical-align: 2px; }
 .stats-panel button:not(.stats-heat-cell), .stats-panel select { min-height: 40px; }
 .stats-panel button:disabled { opacity: .45; }
 .stats-panel button:not(:disabled):active { transform: translateY(1px); }
-.stats-heat-summary { background: var(--pixel-screen); border: 1px solid var(--pixel-line); border-radius: 2px; }
+.stats-heat-summary { background: var(--pixel-screen); border: 1px solid var(--pixel-line); border-radius: var(--theme-control-radius, 2px); }
 .stats-small-value { font-family: var(--font-pixel); font-size: 18px; line-height: 1.8; color: var(--pixel-ink); }
 .stats-heat-cell { border: 1px solid color-mix(in srgb, var(--pixel-growth) 35%, var(--pixel-line)); border-radius: 1px; }
 .stats-heat-0 { background: var(--pixel-page); }
@@ -28,7 +28,7 @@
 .stats-heat-3 { background: color-mix(in srgb, var(--pixel-growth) 72%, var(--pixel-paper)); }
 .stats-heat-4 { background: var(--pixel-growth); }
 button.stats-heat-cell:hover { outline: 2px solid var(--pixel-ink); outline-offset: 1px; }
-.stats-tooltip { border: 1px solid var(--pixel-line); background: var(--pixel-paper); color: var(--pixel-ink); border-radius: 2px; box-shadow: 3px 3px 0 var(--pixel-shadow); }
+.stats-tooltip { border: 1px solid var(--pixel-line); background: var(--pixel-paper); color: var(--pixel-ink); border-radius: var(--theme-control-radius, 2px); box-shadow: 3px 3px 0 var(--pixel-shadow); }
 .stats-pro-badge { display: inline-block; padding: 6px 8px; margin-bottom: 20px; font-family: var(--font-pixel); font-size: 10px; background: var(--pixel-screen); color: var(--pixel-ink); border: 1px solid var(--pixel-line); }
 .stats-page .stats-pro-card { padding: 32px; border-top: 3px solid var(--pixel-growth); box-shadow: 5px 5px 0 var(--pixel-shadow); }
 .stats-locked-preview { overflow: hidden; }

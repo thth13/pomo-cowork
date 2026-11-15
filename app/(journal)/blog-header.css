@@ -22,7 +22,7 @@
 .blog-header-nav { display: flex; align-self: stretch; align-items: center; gap: 20px; }
 .blog-header-nav a { position: relative; display: flex; align-items: center; min-height: 44px; padding: 8px 0; font-size: 12px; font-weight: 450; white-space: nowrap; border-radius: 7px; }
 .blog-header-nav a[aria-current=page] { color: var(--pixel-ink); }
-.blog-header-nav a[aria-current=page]::after { content: ''; position: absolute; bottom: 5px; left: 0; right: 0; height: 1px; background: var(--pixel-growth); border-radius: 2px; }
+.blog-header-nav a[aria-current=page]::after { content: ''; position: absolute; bottom: 5px; left: 0; right: 0; height: 1px; background: var(--pixel-growth); border-radius: var(--theme-control-radius, 2px); }
 .blog-header-actions { display: flex; align-items: center; gap: 10px; }
 .blog-header-timer, .blog-header-publish { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 36px; padding: 6px 10px; border-radius: 5px; font-size: 12px; font-weight: 450; white-space: nowrap; }
 .blog-header a.blog-header-timer { color: var(--pixel-muted); }

@@ -15,6 +15,7 @@ import './window-design.css'
 import './site-appearance.css'
 import './product-updates.css'
 import './workspace-compact.css'
+import './default-neon.css'
 import ProductUpdateProvider from '@/components/ProductUpdateProvider'
 import WrappedProvider from '@/components/wrapped/WrappedProvider'
 import '@fortawesome/fontawesome-svg-core/styles.css'
@@ -24,7 +25,7 @@ import { Bebas_Neue, Cormorant_Garamond, Inter, Orbitron, Space_Grotesk, VT323 }
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AppearanceProvider } from '@/components/AppearanceProvider'
-import { FREE_WINDOW_DESIGNS } from '@/lib/appearance'
+import { BACKGROUNDS, FREE_WINDOW_DESIGNS } from '@/lib/appearance'
 import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
@@ -94,6 +95,7 @@ export default function RootLayout({
   return (
     <DocumentHtml>
       <head>
+        <style>{`:root { --default-background-image: url(${JSON.stringify(BACKGROUNDS[0].src)}); }`}</style>
         <link rel="describedby" href="/llms.txt" type="text/plain" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <script
@@ -108,6 +110,7 @@ export default function RootLayout({
               }
               try {
                 const appearance = JSON.parse(localStorage.getItem('pomo:appearance:v1') || 'null');
+                document.documentElement.dataset.background = appearance?.backgroundId === 'pocket-garden' ? 'pocket-garden' : 'default';
                 const design = appearance && appearance.windowDesign;
                 document.documentElement.dataset.windowDesign = ${JSON.stringify(FREE_WINDOW_DESIGNS)}.includes(design) ? design : 'glass';
               } catch (e) {

@@ -4,6 +4,13 @@
        (min-width: 960px) and (max-height: 820px) and (pointer: fine) {
   .workspace-page .focus-station:not(:has(.daily-flow-content)) {
     max-width: 560px;
+    --workspace-timer-font-size: clamp(44px, 4.4vw, 60px);
+    --workspace-timer-long-font-size: clamp(36px, 3.7vw, 50px);
+    --workspace-timer-padding: 12px 16px;
+    --workspace-timer-digits-padding: 10px 0 14px;
+    --workspace-timer-screen-gap: 14px;
+    --workspace-timer-action-height: 38px;
+    --workspace-timer-action-padding: 8px 14px;
   }
 
   .workspace-page .workspace-dock {
@@ -22,10 +29,44 @@
   .workspace-page .workspace-window-handle { min-height: 30px; padding: 4px 6px; gap: 6px; }
   .workspace-page .workspace-window-close { width: 30px; height: 30px; }
 
+  /* Home workspace typography follows the compact window geometry. */
+  .workspace-page .workspace-window-handle { font-size: 11px; }
+  .workspace-page .workspace-window-header-link { font-size: 11px; }
+  .workspace-page #workspace-chat .chat-messages { font-size: 12px; line-height: 1.5; }
+  .workspace-page #workspace-chat .chat-messages .text-sm { font-size: 12px; line-height: 1.5; }
+  .workspace-page #workspace-chat .chat-messages .text-xs { font-size: 10px; line-height: 1.4; }
+  .workspace-page #workspace-chat form :is(input, textarea) { font-size: 12px; }
+  .workspace-page #workspace-chat .chat-messages { padding: 10px 12px; }
+  .workspace-page #workspace-chat .chat-messages > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 10px;
+    margin-bottom: 0;
+  }
+  .workspace-page #workspace-chat .chat-messages > .my-4 { margin-block: 8px; }
+  .workspace-page #workspace-chat .chat-messages > .my-4 > div { padding: 3px 9px; }
+  .workspace-page #workspace-chat :is(.chat-messages, form) .space-x-3 > :not([hidden]) ~ :not([hidden]) { margin-left: 8px; }
+  .workspace-page #workspace-chat .chat-messages .space-x-2 > :not([hidden]) ~ :not([hidden]) { margin-left: 6px; }
+  .workspace-page #workspace-chat .chat-messages .mb-1 { margin-bottom: 2px; }
+  .workspace-page #workspace-chat :is(.chat-messages, form) .w-8.h-8 {
+    width: 26px;
+    height: 26px;
+    flex-shrink: 0;
+  }
+  .workspace-page #workspace-chat form { padding: 10px 12px; }
+  .workspace-page #workspace-chat form input { min-height: 36px; padding: 7px 34px 7px 10px; }
+  .workspace-page .focus-projects :is(.focus-project-disclosure, .focus-project-composer input, .focus-project-empty, .focus-project-confirm) { font-size: 12px; }
+  .workspace-page .focus-projects .focus-project-disclosure > span { font-size: 12px; }
+  .workspace-page .focus-projects :is(.focus-project-disclosure small, .focus-project-todos label, .focus-task-create input) { font-size: 11px; }
+  .workspace-page .workspace-navigation-trigger { font-size: 12px; }
+  .workspace-page .workspace-menu-item { font-size: 12px; }
+  .workspace-page .workspace-dock-label { font-size: 9px; }
+  .workspace-page .working-sidebar .coworker-strip-empty h3 { font-size: 12px; }
+  .workspace-page .working-sidebar .coworker-strip-empty p { font-size: 11px; line-height: 1.5; }
+
   .workspace-page .workspace-navigation { top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
   .workspace-page .workspace-navigation-trigger { min-height: 36px; padding: 6px 10px; gap: 6px; }
   .workspace-page .workspace-navigation-trigger > svg { width: 18px; height: 18px; }
   .workspace-page .workspace-account-trigger { width: 38px; min-height: 36px; padding: 4px 6px; }
+  .workspace-page .workspace-account-trigger > :first-child { width: 26px; height: 26px; }
   .workspace-page .workspace-account-guest { width: 26px; height: 26px; }
   .workspace-page .workspace-account-guest > svg { width: 18px; height: 18px; }
 
@@ -63,6 +104,11 @@
 }
 
 @media (min-width: 960px) and (max-height: 760px) and (pointer: fine) {
+  .workspace-page .focus-station:not(:has(.daily-flow-content)) {
+    --workspace-timer-font-size: clamp(40px, 4vw, 54px);
+    --workspace-timer-long-font-size: clamp(34px, 3.4vw, 46px);
+    --workspace-timer-digits-padding: 6px 0 10px;
+  }
   .workspace-page .focus-station .pixel-timer-digits { font-size: clamp(40px, 4vw, 54px); padding-block: 12px; }
   .workspace-page .focus-station .pixel-timer-digits-long { font-size: clamp(34px, 3.4vw, 46px); }
 }

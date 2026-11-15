@@ -29,6 +29,108 @@ spacing:
 
 # Pomo Pocket Garden
 
+## Graphite glass variant
+
+Glass and Graphite use tomato red (#b94e3e, hover #983e32) for primary
+buttons and navigation selection, with #f0a394 selected text and a translucent
+red selection fill. Dock selection uses the same red indicator as the right
+navigation menu; green remains reserved for status and growth indicators.
+
+Graphite (`graphite`) is the first free site theme; Glass is second. Existing saved
+choices and the Glass default remain unchanged. Graphite shares Glass geometry,
+blur, open home timer and background wash through `app/default-neon.css`, with a
+black palette: #080808 page, #101010 paper, #202020 screen, #f5f5f5 ink,
+#c4c6c8 muted and #dedfe1 accent. Black window gradient opacity is 55–62%, with soft
+neutral borders. Shared cards, panels and dialogs across routes use root-owned
+28px corners, 32px blur and a soft shadow through `app/site-appearance.css`.
+Window headers clip hover paint to their rounded top edge; drag and close
+buttons have rounded interaction surfaces. Graphite dock buttons use compact
+6px corners, including the selected state. Outer window overflow stays visible
+for popovers and resize handles. Shared glass palette variables own the variant;
+Route styles resolve their legacy 3px corners through `--theme-panel-radius`
+and 2px corners through `--theme-control-radius`. Graphite defines these as
+28px and 10px; other themes retain their original fallback values. This keeps
+route-specific selectors from restoring square corners after the shared adapter.
+its preview uses the same surface channels. English and Spanish labels live in
+`lib/i18n/appearance.ts`, and `lib/appearance.ts` owns ordering and persistence IDs.
+
+## Default aurora appearance
+
+Three free ready-made illustrated backgrounds are sourced from Unsplash:
+Painted sunrise by Deep, Pastel peaks by Akanksha Maurya, and Hudson valley from
+The New York Public Library's Spencer Collection. Storage-hosted WebP images and separate
+480px previews reuse the shared scenery renderer and appearance persistence.
+Source links and licensing are recorded in `public/backgrounds/CREDITS.md`.
+
+Three free gradient scenes extend the appearance catalog: Pearl flow (soft blue
+and pink), Sage mist (blurred greens) and Prism waves (blue, pink and orange
+gradient waves). They use storage-hosted WebP files with separate previews, the existing
+image renderer and scenery contrast adapter. Their IDs and localized labels live
+in the shared appearance catalog; source credits live beside the assets.
+
+Four additional free photo scenes follow the existing scenery renderer and contrast
+adapter: Emerald hills, Rose twilight, Forest dawn and Silent shore. Their 2560px
+WebP assets and separate 480px previews live in storage under `backgrounds/images/`; photographer
+credits and Unsplash source links are recorded in `public/backgrounds/CREDITS.md`.
+`lib/appearance.ts` owns their IDs and `lib/i18n/appearance.ts` their English/Spanish
+names. The default background and saved choices remain unchanged.
+
+The default background is the misty Montana lake by Katie Moum (Unsplash), served
+from `${BLOB_BASE_URL}/backgrounds/images/default-misty-lake.webp`. Credits remain
+in `public/backgrounds/CREDITS.md`; local wallpaper copies are removed. The root
+layout supplies `--default-background-image` from the shared catalog for CSS backgrounds.
+The shared scene renderer, dark overlay and open timer composition remain active.
+With Glass selected, side panels (dock, floating windows and presence rail) use a
+shared translucent violet material with light text and violet edges across photo
+backgrounds. Other window designs retain their own palette and surfaces from
+`app/window-design.css`; the violet side-panel override is scoped to Glass.
+Default Glass returns to its dark neon palette: translucent plum windows,
+subtle violet borders, soft shadows and 18px corners. The light window palette
+overrides are removed; window text and controls use the shared dark tokens again.
+The open white timer remains unchanged.
+The Glass preview matches the new material.
+Misty lake (`default`) is a regular image scene, rendered by WorkspaceBackground
+like every other photograph, including the product-route scenery wrapper and task
+picker scene adapter. It no longer bypasses the shared scenery material/contrast
+rules via a CSS-only background. Switching between photos therefore keeps the
+same timer and window treatment; saved appearance IDs remain compatible.
+Background labels omit the default suffix. The initial background preview shows
+two complete rows; expanded options continue on the next row, using the responsive
+column count so there is no gap at the reveal boundary.
+Background choices start with the new scenes: Misty lake, Emerald hills,
+Rose twilight, Forest dawn, Silent shore, Pearl flow, Sage mist, Prism waves,
+Painted sunrise, Pastel peaks and Hudson valley, followed by the existing scenes.
+Misty lake uses the stock photo as its thumbnail. The existing `default` ID continues to mean this default photo.
+Pocket garden has its own free `pocket-garden` ID at the bottom of the list; it
+restores the original garden background and base palette. AppearanceProvider and
+the startup script expose the background choice on the document so the photo and
+neon adapters do not override Pocket garden. Reset selects Misty lake.
+With Glass or Graphite selected, photo scenes use a neutral black gradient wash (37.5/36.25/34.375% opacity), without a blue or violet tint.
+The ordinary home timer adds a local neutral black radial scrim (25% at its
+center, fading completely at the edges), without a frame or a solid card fill.
+Neutral text shadows support digits and status labels; inactive mode labels use
+#e8e8ec for clearer contrast. The scrim changes no geometry or pointer behavior.
+The home timer's open composition applies across photo choices only for Glass,
+with no solid panel fill, border, box shadow or backdrop blur around the ordinary timer.
+Other window designs restore their own timer panel and control styling, and retain
+the original 20% page-color background wash from `app/appearance.css`. Their material tokens still govern opacity (including the
+intentionally transparent Minimal material). Daily Flow retains its panel, and
+Pocket garden keeps its original treatment.
+The home timer floats directly on the background without a card or inset screen.
+Large white numerals, quiet mode tabs, a fine segmented progress track and rounded
+translucent controls form its hierarchy. Existing actions and accessible names stay
+intact. Sans (Clean) is the default timer font and first choice; Pixel is second.
+Explicit saved font choices are retained.
+`app/default-neon.css` owns the runtime pixel/window tokens and shared material
+adapter, loaded after existing styles. `lib/appearance.ts` owns the default font.
+The frontmatter palette remains the legacy garden palette for other materials.
+Scenery keeps its existing contrast treatment; the timer overrides are homepage-only
+and the Daily Flow outer panel keeps its material. Appearance previews match the
+new background and Glass windows. No animation is introduced; the stock image is served from storage.
+Forced colors skips decoration. The existing appearance store owns persistence.
+Builds, tsc and runtime launch are omitted at the user's request; browser appearance
+and responsive interaction require user verification.
+
 ## First focus
 
 The left workspace dock shows a quiet 9px uppercase `TOOLS` heading, 22px icons and
@@ -43,10 +145,19 @@ Dock tooltips are removed. `HomeWorkspace` owns the labels;
 The mobile tool menu retains its existing row layout.
 
 Small laptop workspaces (960–1535 CSS px wide, or desktop windows at most 820px
-high) use app/workspace-compact.css when the primary pointer is fine. It reduces
-timer digits, gaps, dock icons, navigation controls and default window width
-(304px), while preserving readable copy, actual drag geometry and explicit user
-window resizing. Sound keys remain 44px; touch and mobile layouts retain their
+high) use app/workspace-compact.css when the primary pointer is fine.
+Glass and Graphite consume the same compact timer size, spacing and action tokens
+from the focus station, so their later-loaded material stylesheet cannot restore
+desktop dimensions. Screens up to 760px high use a further reduced digit size.
+The compact mode reduces timer digits, gaps, dock icons, navigation controls and
+default window width (304px), while preserving actual drag geometry and user resizing,
+and uses smaller home typography: 12px chat body and navigation, 11px window
+headers and secondary project text, 10px chat metadata, and 9px dock labels.
+These rules are scoped to the laptop workspace media query; other pages and
+touch layouts retain their type sizes.
+Compact chat uses 10px message spacing, 8px avatar gaps, 26px square avatars and
+10px by 12px list/composer padding, keeping spacing proportional to 12px text.
+Sound keys remain 44px; touch and mobile layouts retain their
 existing sizes. The ordinary timer panel is capped at 560px wide in compact mode,
 centered within its existing grid column; Daily Flow keeps its planning width.
 The presence onboarding sits outside the bottom-left edge of the
@@ -81,12 +192,10 @@ Shared TimerControls owns the optional start label, I18nProvider owns English/Sp
 and app/globals.css maps the compact controls to existing pixel theme tokens.
 There is no modal, automatic start or forced registration. Returning users keep the
 ordinary timer. The invitation has no close button.
-On a first browser visit without saved window preferences, Focus Sounds opens at
-viewport widths of at least 1280px. It stays beside the left dock without the usual
-window stagger, does not move keyboard focus and never starts audio automatically.
-Saved window preferences (including an empty workspace) always take precedence;
-closing the window persists through the existing workspace storage. Narrower screens
-keep the existing empty initial workspace.
+On a first browser visit without saved window preferences, all tool windows,
+including Focus Sounds, stay closed at every viewport width. Users open Focus Sounds
+from the dock or mobile tool menu. Saved window preferences (including an empty
+workspace) continue to restore through the existing workspace storage.
 
 ## Illustrated product updates
 

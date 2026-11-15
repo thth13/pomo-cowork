@@ -103,11 +103,8 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     try {
       const stored = localStorage.getItem(OPEN_PANELS_STORAGE_KEY)
       const previous = stored ?? localStorage.getItem('pomo:windows:open:v1')
-      // An explicitly empty saved workspace is a preference too.
-      // Opening this window never starts audio or moves keyboard focus.
-      const initialPanels: PanelId[] = previous === null &&
-        window.matchMedia('(min-width: 1280px)').matches ? ['sounds'] : []
-      const saved: unknown = previous === null ? initialPanels : JSON.parse(previous)
+      // First visits start with all tool windows closed; restore saved preferences.
+      const saved: unknown = previous === null ? [] : JSON.parse(previous)
       if (Array.isArray(saved)) {
         const restored = Array.from(new Set(saved.filter(isPanelId)))
         setOpenPanels(restored)

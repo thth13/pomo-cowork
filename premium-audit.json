@@ -3,7 +3,7 @@
     {
       "category": "unresolved",
       "file": "app/stats/page.tsx",
-      "line": 793,
+      "line": 665,
       "message": "Native select is used without an explicit ownership decision.",
       "remediation": "Record Select/Listbox as native or reuse the authored canonical owner.",
       "ruleId": "ownership.native-select-undecided",

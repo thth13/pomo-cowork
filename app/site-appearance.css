@@ -48,7 +48,7 @@
     color-scheme: var(--site-scheme);
   }
 
-  html[data-window-design="glass"] body {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]) body {
     --site-surface: color-mix(in srgb, var(--pixel-paper) 78%, transparent);
   }
 
@@ -58,6 +58,25 @@
   /* Match the existing scene palette where scenery actually renders. */
   html[data-window-design] body:has(.product-scenery) {
     --site-surface: var(--window-scene-panel, rgb(20 28 25 / 68%));
+  }
+
+  /* Graphite uses the same shared glass surface on routes without scenery. */
+  html[data-window-design="graphite"] body {
+    --site-surface: var(--window-scene-panel);
+  }
+
+  html[data-window-design="graphite"] body :is(
+    .workspace-navigation-panel, .workspace-account-card,
+    .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
+    .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
+    .feedback-panel, .feedback-prompt, [data-beep-surface], [data-floating-timer]
+  ) {
+    background: var(--site-surface);
+    border-color: var(--window-material-line);
+    border-radius: var(--window-radius);
+    box-shadow: var(--window-shadow);
+    -webkit-backdrop-filter: var(--window-backdrop);
+    backdrop-filter: var(--window-backdrop);
   }
 
   html[data-window-design] body :is(

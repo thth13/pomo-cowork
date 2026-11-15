@@ -9,7 +9,7 @@
 .notifications-history-heading h1 { font-family: var(--font-pixel); font-size: clamp(14px, 3vw, 20px); line-height: 1.8; overflow-wrap: anywhere; }
 .notifications-history-state { min-height: 240px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; text-align: center; border: 1px solid var(--pixel-line); background: var(--pixel-paper); }
 .notifications-history-state p { color: var(--pixel-muted); }
-.notifications-history-list { list-style: none; padding: 0; overflow: hidden; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); }
+.notifications-history-list { list-style: none; padding: 0; overflow: hidden; border: 1px solid var(--pixel-line); border-radius: var(--theme-panel-radius, 3px); background: var(--pixel-paper); }
 .notifications-history-list .notification-entry { --notification-accent: var(--pixel-growth); padding: 26px 28px; border: 0; border-radius: 0; background: transparent; }
 .notifications-history-list .notification-entry + .notification-entry { border-top: 1px solid var(--pixel-line); }
 .notifications-history-list .notification-entry--rank_up { --notification-accent: color-mix(in srgb, #b88632 65%, var(--pixel-ink)); }
@@ -20,7 +20,7 @@
 .notifications-history-list .notification-entry--unread::before { background: var(--notification-accent); }
 .notifications-history-meta { display: flex; align-items: flex-start; flex-wrap: wrap; gap: 10px 20px; color: var(--pixel-muted); font-size: 12px; }
 .notifications-history-title { display: flex; flex: 1 1 360px; min-width: 0; align-items: center; flex-wrap: wrap; gap: 8px 12px; }
-.notifications-history-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--notification-accent) 25%, transparent); border-radius: 3px; background: color-mix(in srgb, var(--notification-accent) 8%, transparent); color: var(--notification-accent); font-size: 11px; line-height: 1.5; font-weight: 600; }
+.notifications-history-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 7px; border: 1px solid color-mix(in srgb, var(--notification-accent) 25%, transparent); border-radius: var(--theme-panel-radius, 3px); background: color-mix(in srgb, var(--notification-accent) 8%, transparent); color: var(--notification-accent); font-size: 11px; line-height: 1.5; font-weight: 600; }
 .notifications-history-meta time { margin-left: auto; padding-top: 5px; font-variant-numeric: tabular-nums; }
 .notifications-history-list h2 { margin: 0; color: var(--pixel-ink); font-size: 18px; line-height: 1.5; font-weight: 700; overflow-wrap: anywhere; }
 .notifications-history-message { max-width: 68ch; margin-top: 10px; padding-left: 14px; border-left: 2px solid color-mix(in srgb, var(--notification-accent) 35%, transparent); color: var(--pixel-ink); white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.8; }

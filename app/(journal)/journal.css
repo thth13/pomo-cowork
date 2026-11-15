@@ -91,7 +91,7 @@
 .journal-card {
   padding: 28px;
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
   background: var(--pixel-paper);
   margin: 24px 0;
   min-width: 0;
@@ -114,7 +114,7 @@
 }
 .journal-badge {
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
   padding: 2px 9px;
   font-size: 11px;
   text-transform: capitalize;
@@ -151,7 +151,7 @@
   width: 80px;
   height: 80px;
   object-fit: cover;
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
 }
 .journal-profile-copy {
   flex: 1;
@@ -178,7 +178,7 @@
   min-height: 40px;
   padding: 8px 14px;
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
   font-size: 14px;
 }
 .journal-button {
@@ -240,7 +240,7 @@
   width: 100%;
   padding: 10px 12px;
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
   background: var(--pixel-page);
   color: var(--pixel-ink);
   margin-top: 6px;
@@ -261,7 +261,7 @@
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
   background: var(--pixel-paper);
 }
 .journal-main .focus-task-create:focus-within {
@@ -354,7 +354,7 @@
 }
 .my-projects-panel {
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
   background: var(--pixel-paper);
   overflow: hidden;
 }
@@ -574,7 +574,7 @@
   aspect-ratio: 16/9;
   background: var(--pixel-screen);
   margin: 16px 0;
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
 }
 .journal-image-placeholder {
   aspect-ratio: 16/9;
@@ -648,7 +648,7 @@
 .journal-heat-day,.journal-heat-legend i {
   background: var(--pixel-page);
   border: 1px solid var(--pixel-line);
-  border-radius: 2px;
+  border-radius: var(--theme-control-radius, 2px);
   position: relative;
 }
 .journal-heat-day[data-level="1"],.journal-heat-legend [data-level="1"] {
@@ -699,7 +699,7 @@
   height: 48px;
   background: var(--pixel-screen);
   margin: 20px 0;
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
   animation: journal-pulse 1.5s ease-in-out infinite;
 }
 .journal-skeleton div:last-child {
@@ -829,7 +829,7 @@
   background: var(--pixel-paper);
   color: var(--pixel-ink);
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
 }
 .journal-discard-dialog::backdrop {
   background: rgb(0 0 0 / .35);
@@ -1100,7 +1100,7 @@
   padding: 12px;
   margin: 0 0 16px;
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--theme-panel-radius, 3px);
   text-align: left;
   font-size: 13px;
 }

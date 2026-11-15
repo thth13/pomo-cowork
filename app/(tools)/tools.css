@@ -136,7 +136,7 @@
 .seo-tool-options button:disabled { cursor: not-allowed; opacity: .55; }
 .seo-tool-options button:active:not(:disabled) { transform: translateY(1px); }
 .seo-tool-field { display: flex; flex-direction: column; gap: 8px; width: min(100%, 420px); margin: 16px auto; text-align: left; font-size: 14px; }
-.seo-tool-field input { width: 100%; min-height: 44px; padding: 10px 12px; color: var(--pixel-ink); background: var(--pixel-paper); border: 1px solid var(--pixel-line); border-radius: 2px; }
+.seo-tool-field input { width: 100%; min-height: 44px; padding: 10px 12px; color: var(--pixel-ink); background: var(--pixel-paper); border: 1px solid var(--pixel-line); border-radius: var(--theme-control-radius, 2px); }
 .seo-tool-field input:focus-visible { outline: 2px solid var(--pixel-ink); outline-offset: 3px; }
 .seo-tool-field input:disabled { opacity: .6; }
 .seo-tool-field input[aria-invalid="true"] { border-color: var(--pixel-tomato-ink); }
@@ -151,7 +151,7 @@
 .seo-clock-date { min-height: 30px; margin-bottom: 24px; }
 .seo-flip-display { display: flex; justify-content: center; margin-block: 48px 28px; font-size: clamp(26px, 8vw, 110px); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.5; letter-spacing: -.04em; }
 .seo-flip-pair { display: flex; align-items: center; gap: .04em; }
-.seo-flip-card { position: relative; display: inline-flex; justify-content: center; width: .72em; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-screen); color: var(--pixel-ink); box-shadow: 0 4px 0 var(--pixel-shadow); perspective: 500px; overflow: hidden; }
+.seo-flip-card { position: relative; display: inline-flex; justify-content: center; width: .72em; border: 1px solid var(--pixel-line); border-radius: var(--theme-panel-radius, 3px); background: var(--pixel-screen); color: var(--pixel-ink); box-shadow: 0 4px 0 var(--pixel-shadow); perspective: 500px; overflow: hidden; }
 .seo-flip-card::after { content: ''; position: absolute; inset: 50% 0 auto; border-top: 1px solid var(--pixel-line); pointer-events: none; }
 .seo-flip-number { display: block; animation: seo-flip .35s ease-out; transform-origin: center; backface-visibility: hidden; }
 .seo-flip-colon { width: .3em; text-align: center; }

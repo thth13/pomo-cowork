@@ -21,7 +21,7 @@
 .calendar-date-arrows { display: flex; gap: 0; }
 .calendar-date-arrows button { width: 26px; padding: 4px; color: var(--pixel-muted); }
 .calendar-toolbar .calendar-add { width: 28px; background: color-mix(in srgb, var(--pixel-ink) 5%, transparent); }
-.calendar-editor-actions button { min-height: 32px; padding: 5px 9px; border: 1px solid var(--pixel-line); border-radius: 3px; }
+.calendar-editor-actions button { min-height: 32px; padding: 5px 9px; border: 1px solid var(--pixel-line); border-radius: var(--theme-panel-radius, 3px); }
 .workspace-calendar .calendar-primary { background: var(--pixel-accent); border-color: var(--pixel-accent); color: var(--pixel-paper); }
 .workspace-calendar .calendar-primary:hover:not(:disabled) { background: var(--pixel-tomato-hover); }
 .calendar-all-day { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 4px; padding: 0 12px 5px 6px; flex-shrink: 0; max-height: 108px; overflow-y: auto; border-bottom: 1px solid color-mix(in srgb, var(--pixel-line) 50%, transparent); }
@@ -29,7 +29,7 @@
 .calendar-all-day > div { display: grid; gap: 4px; }
 .calendar-event { min-width: 0; border-left: 2px solid color-mix(in srgb, var(--pixel-accent) 75%, var(--pixel-muted)); border-radius: 4px; background: color-mix(in srgb, var(--pixel-accent) 9%, var(--pixel-paper)); }
 .calendar-event-content { display: flex; align-items: flex-start; gap: 6px; height: 100%; overflow: hidden; padding: 6px; }
-.calendar-check { display: grid; place-items: center; flex: 0 0 15px; width: 15px; height: 15px; margin-top: 1px; border: 1px solid var(--pixel-muted); border-radius: 2px; }
+.calendar-check { display: grid; place-items: center; flex: 0 0 15px; width: 15px; height: 15px; margin-top: 1px; border: 1px solid var(--pixel-muted); border-radius: var(--theme-control-radius, 2px); }
 .calendar-event-edit { display: flex; flex: 1; min-width: 0; height: 100%; flex-direction: column; align-items: flex-start; gap: 3px; text-align: left; }
 .calendar-event-edit strong { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; font-weight: 500; }
 .calendar-event-edit small { color: var(--pixel-muted); font-size: 10px; white-space: nowrap; }
@@ -52,7 +52,7 @@
 .calendar-editor { overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 9px; }
 .calendar-editor h3 { font-size: 14px; font-weight: 600; margin-bottom: 5px; }
 .calendar-editor label { font-size: 11px; font-weight: 500; }
-.calendar-editor input:not([type="checkbox"]) { min-width: 0; width: 100%; min-height: 36px; padding: 7px 9px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); color: var(--pixel-ink); font-size: 12px; }
+.calendar-editor input:not([type="checkbox"]) { min-width: 0; width: 100%; min-height: 36px; padding: 7px 9px; border: 1px solid var(--pixel-line); border-radius: var(--theme-panel-radius, 3px); background: var(--pixel-paper); color: var(--pixel-ink); font-size: 12px; }
 .calendar-editor input[aria-invalid="true"] { border-color: var(--pixel-tomato); }
 .calendar-all-day-toggle { display: flex; align-items: center; gap: 8px; padding: 8px 0; cursor: pointer; }
 .calendar-all-day-toggle input { accent-color: var(--pixel-accent); }

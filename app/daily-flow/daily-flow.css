@@ -1,5 +1,5 @@
 .daily-flow-content { width: 100%; min-width: 0; color: var(--pixel-ink); padding: 4px; }
-.flow-surface { padding: 28px; border: 1px solid var(--pixel-line); border-radius: 3px; background: var(--pixel-paper); box-shadow: 0 12px 36px color-mix(in srgb, var(--pixel-shadow) 45%, transparent); }
+.flow-surface { padding: 28px; border: 1px solid var(--pixel-line); border-radius: var(--theme-panel-radius, 3px); background: var(--pixel-paper); box-shadow: 0 12px 36px color-mix(in srgb, var(--pixel-shadow) 45%, transparent); }
 @supports ((backdrop-filter: blur(18px)) or (-webkit-backdrop-filter: blur(18px))) {
   .flow-surface { background: color-mix(in srgb, var(--pixel-paper) 85%, transparent); -webkit-backdrop-filter: blur(18px) saturate(110%); backdrop-filter: blur(18px) saturate(110%); }
 }
@@ -33,9 +33,9 @@
 .task-popover .flow-project-disclosure { width: 100%; }
 .flow-project-task-form { padding: 8px 10px; }
 .flow-project-task-entry { display: flex; flex-wrap: wrap; gap: 6px; align-items: stretch; }
-.flow-project-task-entry input { flex: 1 1 140px; min-width: 0; min-height: 44px; padding: 8px; color: var(--pixel-ink); background: var(--pixel-screen); border: 1px solid var(--pixel-line); border-radius: 3px; font-size: 14px; }
+.flow-project-task-entry input { flex: 1 1 140px; min-width: 0; min-height: 44px; padding: 8px; color: var(--pixel-ink); background: var(--pixel-screen); border: 1px solid var(--pixel-line); border-radius: var(--theme-panel-radius, 3px); font-size: 14px; }
 .flow-project-task-entry input::placeholder { color: var(--pixel-muted); }
-.flow-project-task-entry button { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 4px; min-height: 44px; padding: 6px 8px; border: 1px solid var(--pixel-line); border-radius: 3px; }
+.flow-project-task-entry button { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; gap: 4px; min-height: 44px; padding: 6px 8px; border: 1px solid var(--pixel-line); border-radius: var(--theme-panel-radius, 3px); }
 .flow-project-task-entry button:hover:not(:disabled) { background: var(--pixel-screen); }
 .flow-project-task-entry button:disabled { cursor: not-allowed; opacity: .5; }
 .flow-project-task-form [role=alert] { margin-top: 6px; color: var(--pixel-tomato-ink); font-size: 12px; }

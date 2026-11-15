@@ -1,0 +1,438 @@
+/* Default Glass material: aurora light, luminous edges and quiet reading surfaces.
+   Existing appearance IDs and saved choices remain the source of truth. */
+@media (forced-colors: none) {
+  :root, :root.dark {
+    /* Katie Moum / Unsplash. See public/backgrounds/CREDITS.md. */
+    --aurora-background: var(--default-background-image);
+  }
+
+  :root:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]), :root.dark:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) {
+    --aurora-background:
+      linear-gradient(180deg, rgb(0 0 0 / 37.5%), rgb(0 0 0 / 36.25%) 50%, rgb(0 0 0 / 34.375%)),
+      var(--default-background-image);
+    --glass-accent: #f0a394;
+    --pixel-page: var(--glass-page, #171326);
+    --pixel-paper: var(--glass-paper, #241c36);
+    --pixel-screen: var(--glass-screen, #332543);
+    --pixel-ink: var(--glass-ink, #fbf7ff);
+    --pixel-muted: var(--glass-muted, #c9bbd8);
+    --pixel-line: var(--glass-line, #665275);
+    --pixel-accent: var(--glass-accent, #dfc5ff);
+    --pixel-growth: #a1dfc9;
+    --pixel-tomato: var(--glass-action, #b94e3e);
+    --pixel-tomato-hover: var(--glass-action-hover, #983e32);
+    --pixel-tomato-soft: var(--glass-soft, rgb(185 78 62 / 18%));
+    --pixel-tomato-ink: var(--glass-action-ink, #f0a394);
+    --pixel-shadow: var(--glass-shadow, #140d20);
+    --pixel-scroll-track: var(--pixel-paper);
+    --pixel-scroll-thumb: var(--pixel-line);
+    --pixel-scroll-hover: var(--glass-line, #9681ad);
+    --pixel-scroll-active: var(--pixel-accent);
+    --timer-focus-color: var(--glass-ink, #f5eaff);
+    --timer-short-break-color: #a1dfc9;
+    --timer-long-break-color: #b5d4ff;
+    --timer-focus-on-dark: var(--glass-ink, #f5eaff);
+    --timer-short-break-on-dark: #a1dfc9;
+    --timer-long-break-on-dark: #b5d4ff;
+    --site-scheme: dark;
+    --window-radius: 18px;
+    --window-backdrop: blur(24px) saturate(115%);
+    --window-material-texture: linear-gradient(135deg, rgb(var(--glass-highlight-rgb, 222 177 255) / 7%), transparent 70%);
+    --window-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 16px 48px rgb(9 5 22 / 20%);
+    --neon-shell: linear-gradient(135deg, rgb(var(--glass-surface-rgb, 43 27 63) / var(--glass-surface-opacity, 85%)), rgb(var(--glass-surface-deep-rgb, 27 20 43) / var(--glass-deep-opacity, 89%)));
+    --neon-heading: linear-gradient(105deg, rgb(var(--glass-highlight-rgb, 222 177 255) / 7%), transparent);
+  }
+
+  /* Only paint the ordinary background; photo/video scenery stays visible. */
+  html:not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) :is(.garden-page, .journal-shell:has(.my-projects)),
+  html:not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) {
+    background-image: var(--aurora-background);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-color: #17212c;
+    background-attachment: fixed;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) :is(
+    .workspace-window, .workspace-navigation-panel, .workspace-account-card,
+    .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
+    .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
+    .feedback-panel, .feedback-prompt, [data-beep-surface], [data-floating-timer],
+    .focus-station, .working-sidebar, .seo-timer, .seo-social,
+    .workspace-dock, .workspace-navigation-control
+  ) {
+    background: var(--neon-shell);
+    border-color: rgb(var(--glass-border-rgb, 231 211 255) / 19%);
+    -webkit-backdrop-filter: var(--window-backdrop);
+    backdrop-filter: var(--window-backdrop);
+    border-radius: var(--window-radius);
+    box-shadow: var(--window-shadow);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) :is(
+    .workspace-window-heading, .appearance-header, .appearance-footer,
+    .workspace-menu-heading
+  ) {
+    background: var(--neon-heading);
+    border-color: var(--pixel-line);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) .workspace-window-content > div {
+    background: transparent;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) :is(.workspace-window, .workspace-dock, .focus-station, .working-sidebar):focus-within {
+    box-shadow: var(--window-shadow), 0 0 0 1px var(--pixel-accent);
+  }
+
+  .appearance-default-preview.garden-page:not(.appearance-garden-preview) {
+    background: var(--aurora-background);
+    background-size: cover;
+    background-position: center;
+  }
+
+  .appearance-garden-preview.garden-page {
+    --pixel-page: #f1efe7;
+    --pixel-growth: #647b5b;
+    --pixel-accent: #b94e3e;
+    --pixel-line: #b0b5a6;
+    --pixel-ink: #303a32;
+  }
+
+  .appearance-default-preview:not(.appearance-garden-preview) > span { color: var(--glass-ink, #fbf7ff); }
+  .dark .appearance-default-preview:not(.appearance-garden-preview) > span { color: #f1edff; }
+
+  .appearance-window-preview[data-window-design="glass"] .appearance-window-sample {
+    background: linear-gradient(135deg, #462657, #261b39) padding-box,
+      linear-gradient(125deg, #c6a4e0, #a87594) border-box;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    box-shadow: 0 0 18px rgb(139 92 246 / 30%);
+  }
+
+  .appearance-window-preview[data-window-design="glass"] .appearance-window-sample-header {
+    background: rgb(167 139 250 / 15%);
+    border-color: rgb(196 181 253 / 25%);
+  }
+
+  /* Glass materials use a dark reading overlay behind the open timer. */
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .workspace-background-wash {
+    background: linear-gradient(180deg, rgb(0 0 0 / 37.5%), rgb(0 0 0 / 36.25%) 50%, rgb(0 0 0 / 34.375%));
+  }
+
+  /* A feathered local scrim keeps the timer open without a visible card edge. */
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home .focus-station:not(:has(.daily-flow-content)) {
+    background: radial-gradient(ellipse closest-side at center, rgb(0 0 0 / 25%) 0%, rgb(0 0 0 / 18%) 45%, transparent 100%);
+    border-color: transparent;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home .focus-station [data-timer-panel] {
+    padding: var(--workspace-timer-padding, 20px clamp(12px, 3vw, 32px));
+    color: var(--glass-ink, #fbf7ff);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-screen {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 8px 0 0;
+    margin-bottom: var(--workspace-timer-screen-gap, 24px);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-digits {
+    color: #fff;
+    font-size: var(--workspace-timer-font-size, clamp(44px, 6.7vw, 86px));
+    padding: var(--workspace-timer-digits-padding, 18px 0 22px);
+    letter-spacing: -.055em;
+    text-shadow: 0 2px 6px rgb(0 0 0 / 28%), 0 6px 24px rgb(0 0 0 / 16%);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-digits[data-timer-font="sans"] {
+    font-family: Inter, system-ui, sans-serif;
+    font-weight: 700;
+    --timer-optical-scale: 1.4;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-digits-long {
+    font-size: var(--workspace-timer-long-font-size, clamp(32px, 5vw, 64px));
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-status {
+    color: var(--glass-muted, #e4d8f0);
+    text-shadow: 0 1px 4px rgb(0 0 0 / 45%);
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .14em;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-led {
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgb(var(--glass-highlight-rgb, 226 195 255) / 35%);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track {
+    height: 3px;
+    max-width: 220px;
+    gap: 3px;
+    opacity: .8;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track span {
+    border: 0;
+    border-radius: 10px;
+    background: rgb(255 255 255 / 16%);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track .filled {
+    background: var(--timer-mode-color);
+    opacity: 1;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) button {
+    min-height: var(--workspace-timer-action-height, 48px);
+    padding: var(--workspace-timer-action-padding, 12px 22px);
+    border: 1px solid rgb(var(--glass-control-border-rgb, 238 219 255) / 16%);
+    border-radius: 14px;
+    background: rgb(var(--glass-button-rgb, 32 15 57) / 55%);
+    color: #fff;
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%);
+    font-weight: 500;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions button:hover:not(:disabled) {
+    background: rgb(var(--glass-button-hover-rgb, 103 57 142) / 75%);
+    border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 40%);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-mode-tabs {
+    gap: 4px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab {
+    border-radius: 10px;
+    color: #e8e8ec;
+    text-shadow: 0 1px 4px rgb(0 0 0 / 45%);
+    font-size: 12px;
+    letter-spacing: .015em;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab[aria-pressed="true"] {
+    color: #fff;
+    background: rgb(255 255 255 / 9%);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab[aria-pressed="true"]::after {
+    height: 2px;
+    border-radius: 2px;
+    background: var(--glass-accent, #e5caff);
+    left: 30%;
+    right: 30%;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] :is(.first-focus-options button, .current-task-trigger) {
+    border-radius: 12px;
+    border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 20%);
+    background: rgb(var(--glass-control-rgb, 35 21 53) / 55%);
+    color: var(--glass-ink, #eee4f8);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .first-focus-options button[aria-pressed="true"] {
+    background: rgb(var(--glass-selected-rgb, 222 185 255) / 18%);
+    border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 45%);
+    color: #fff;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] :is(.pixel-timer-settings, .timer-appearance-trigger) {
+    color: var(--glass-icon, #e1d3ee);
+    border-radius: 10px;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] button:focus-visible {
+    outline: 2px solid var(--glass-ink, #f4dfff);
+    outline-offset: 4px;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] button:disabled {
+    opacity: .5;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home .first-focus-intro {
+    font-size: clamp(14px, 1.4vw, 18px);
+    font-weight: 500;
+    color: var(--glass-ink, #f8efff);
+  }
+
+  /* Glass variants share their selected material across photo backgrounds.
+     Other designs keep their palette and surfaces from window-design.css. */
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home :is(
+    .workspace-dock, .workspace-window, .working-sidebar
+  ) {
+    --scene-panel: rgb(var(--glass-surface-rgb, 43 27 63) / var(--glass-surface-opacity, 85%));
+    --scene-task: rgb(var(--glass-surface-deep-rgb, 27 20 43) / var(--glass-deep-opacity, 89%));
+    --scene-popover: var(--glass-panel, #271a3c);
+    --scene-primary: var(--glass-ink, #fbf7ff);
+    --scene-secondary: var(--glass-panel-muted, #d1c3e0);
+    --scene-icon: var(--glass-icon, #eadbfa);
+    --scene-border: rgb(var(--glass-edge-rgb, 211 177 255) / 30%);
+    --scene-hover: rgb(var(--glass-hover-rgb, 192 148 241) / 14%);
+    --scene-selected: rgb(var(--glass-hover-rgb, 192 148 241) / 20%);
+    --scene-accent: var(--glass-accent, #dfc5ff);
+    --pixel-paper: var(--glass-panel, #271a3c);
+    --pixel-page: var(--glass-panel-page, #21172f);
+    --pixel-screen: var(--glass-panel-screen, #3b2850);
+    --pixel-ink: var(--glass-ink, #fbf7ff);
+    --pixel-muted: var(--glass-panel-muted, #d1c3e0);
+    --pixel-line: var(--glass-panel-line, #705284);
+    --pixel-accent: var(--glass-accent, #dfc5ff);
+    --pixel-tomato-ink: var(--glass-accent, #dfc5ff);
+    --pixel-tomato-soft: var(--glass-soft, rgb(185 78 62 / 18%));
+    color: var(--scene-primary);
+    color-scheme: dark;
+    background: linear-gradient(135deg, rgb(var(--glass-shell-top-rgb, 65 37 87) / var(--glass-shell-top-opacity, 88%)), rgb(var(--glass-shell-bottom-rgb, 37 22 57) / var(--glass-shell-bottom-opacity, 90%)));
+    border-color: var(--scene-border);
+    border-radius: 18px;
+    box-shadow: inset 0 1px 0 rgb(var(--glass-rim-rgb, 239 215 255) / 12%), 0 12px 36px rgb(19 7 33 / 22%);
+    -webkit-backdrop-filter: blur(24px);
+    backdrop-filter: blur(24px);
+  }
+
+  /* Graphite reuses Glass behavior with translucent black surfaces. */
+  :root[data-window-design="graphite"],
+  :root.dark[data-window-design="graphite"],
+  .appearance-window-preview[data-window-design="graphite"] {
+    --window-radius: 28px;
+    --theme-panel-radius: var(--window-radius);
+    --theme-control-radius: 10px;
+    --window-backdrop: blur(32px) saturate(110%);
+    --window-shadow: 0 14px 40px rgb(0 0 0 / 16%);
+    --window-material-texture: none;
+    --glass-page: #080808;
+    --glass-paper: #101010;
+    --glass-screen: #202020;
+    --glass-ink: #f5f5f5;
+    --glass-muted: #c4c6c8;
+    --glass-line: #606367;
+    --glass-accent: #f0a394;
+    --glass-action: #b94e3e;
+    --glass-action-hover: #983e32;
+    --glass-soft: rgb(185 78 62 / 18%);
+    --glass-action-ink: #f0a394;
+    --glass-shadow: #101113;
+    --glass-panel: #101010;
+    --glass-panel-page: #080808;
+    --glass-panel-screen: #202020;
+    --glass-panel-muted: #c9cbce;
+    --glass-panel-line: #62666c;
+    --glass-icon: #e6e7e9;
+    --glass-surface-rgb: 0 0 0;
+    --glass-surface-deep-rgb: 0 0 0;
+    --glass-shell-top-rgb: 0 0 0;
+    --glass-shell-bottom-rgb: 0 0 0;
+    --glass-surface-opacity: 55%;
+    --glass-deep-opacity: 62%;
+    --glass-shell-top-opacity: 55%;
+    --glass-shell-bottom-opacity: 62%;
+    --glass-edge-rgb: 205 209 215;
+    --glass-hover-rgb: 200 205 212;
+    --glass-highlight-rgb: 220 223 228;
+    --glass-rim-rgb: 232 235 240;
+    --glass-border-rgb: 218 222 228;
+    --glass-button-rgb: 32 34 37;
+    --glass-button-hover-rgb: 80 84 90;
+    --glass-control-border-rgb: 225 228 232;
+    --glass-control-rgb: 35 37 41;
+    --glass-selected-rgb: 220 224 230;
+    --window-scene-panel: rgb(var(--glass-surface-rgb) / var(--glass-surface-opacity));
+    --window-scene-task: rgb(var(--glass-surface-deep-rgb) / var(--glass-deep-opacity));
+    --window-scene-popover: #101010;
+    --window-scene-border: rgb(205 209 215 / 30%);
+    --window-material-ink: #f5f5f5;
+    --window-material-muted: #c4c6c8;
+    --window-material-accent: #f0a394;
+    --window-material-line: rgb(255 255 255 / 8%);
+    --window-material-scheme: dark;
+    --window-product-page: #080808;
+    --window-product-screen: #202020;
+  }
+
+  /* Brand red owns selection and primary actions; green retains status meaning. */
+  html:is([data-window-design="glass"], [data-window-design="graphite"]) body .workspace-dock button[aria-expanded="true"] {
+    color: var(--pixel-tomato-ink);
+    background: var(--glass-soft, rgb(185 78 62 / 18%));
+    box-shadow: inset 2px 0 var(--pixel-tomato);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]) body .workspace-dock button[aria-expanded="true"] :is(svg, .workspace-dock-label) {
+    color: var(--pixel-tomato-ink);
+    text-shadow: none;
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]) body .workspace-menu-item[aria-current="page"] {
+    color: var(--glass-action-ink, #f0a394);
+    background: var(--glass-soft, rgb(185 78 62 / 18%));
+    box-shadow: inset 2px 0 var(--pixel-tomato);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action {
+    background: var(--pixel-tomato);
+    border-color: var(--pixel-tomato);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action:hover:not(:disabled) {
+    background: var(--pixel-tomato-hover);
+    border-color: var(--pixel-tomato-hover);
+  }
+
+  /* Contain hover paint without clipping window popovers or resize handles. */
+  html[data-window-design="graphite"] body .workspace-window-heading {
+    border-radius: calc(var(--window-radius) - 2px) calc(var(--window-radius) - 2px) 0 0;
+    overflow: hidden;
+    background: rgb(255 255 255 / 4%);
+    border-color: var(--window-material-line);
+  }
+
+  html[data-window-design="graphite"] body .workspace-window-handle {
+    border-radius: calc(var(--window-radius) - 5px) 8px 8px 8px;
+  }
+
+  html[data-window-design="graphite"] body .workspace-window-close {
+    border-radius: 12px;
+  }
+
+  html[data-window-design="graphite"] body .workspace-dock button {
+    border-radius: 6px;
+  }
+
+  html[data-window-design="graphite"] body :is(.workspace-window-handle:hover, .workspace-window-handle:focus-visible) {
+    background: rgb(255 255 255 / 9%);
+  }
+
+  html[data-window-design="graphite"]:not([data-background="pocket-garden"]) body .pomodoro-home :is(.workspace-dock, .workspace-window, .working-sidebar) {
+    border-radius: var(--window-radius);
+    border-color: var(--window-material-line);
+    box-shadow: var(--window-shadow);
+    -webkit-backdrop-filter: var(--window-backdrop);
+    backdrop-filter: var(--window-backdrop);
+  }
+
+  .appearance-window-preview[data-window-design="graphite"] .appearance-window-sample {
+    background: linear-gradient(135deg, rgb(var(--glass-shell-top-rgb) / var(--glass-shell-top-opacity)), rgb(var(--glass-shell-bottom-rgb) / var(--glass-shell-bottom-opacity)));
+    border: 1px solid rgb(var(--glass-edge-rgb) / 30%);
+    border-radius: 14px;
+    box-shadow: var(--window-shadow);
+    -webkit-backdrop-filter: var(--window-backdrop);
+    backdrop-filter: var(--window-backdrop);
+  }
+
+  .appearance-window-preview[data-window-design="graphite"] .appearance-window-sample-header {
+    background: rgb(var(--glass-highlight-rgb) / 7%);
+    border-color: rgb(var(--glass-edge-rgb) / 30%);
+  }
+}

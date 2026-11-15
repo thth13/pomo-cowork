@@ -217,7 +217,7 @@ export const TaskPicker = memo(function TaskPicker({
                 aria-label={triggerLabel ?? copy.selection}
                 aria-busy={loading}
                 data-i18n-ignore
-                data-background-mode={variant !== 'mini-timer' && backgroundId !== 'default' || undefined}
+                data-background-mode={variant !== 'mini-timer' && backgroundId !== 'pocket-garden' || undefined}
                 data-mini-timer-picker={variant === 'mini-timer' || undefined}
                 data-daily-flow-picker={variant === 'daily-flow' || undefined}
                 initial={{ opacity: 0, y: reducedMotion ? 0 : -4 }}

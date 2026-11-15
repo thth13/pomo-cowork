@@ -7,6 +7,7 @@ export const appearanceCopy = {
       'dark-red': { name: 'Dark red', description: 'Deep burgundy surfaces with warm rose accents and light text.' },
       ivory: { name: 'Ivory', description: 'Soft ivory surfaces, beige details and warm gray text.' },
       white: { name: 'White', description: 'Bright white surfaces, soft gray borders and dark text.' },
+      graphite: { name: 'Graphite', description: 'Dark gray glass with subtle transparency and a soft blur.' },
       glass: { name: 'Glass', description: 'Translucent surfaces with a soft blur.' },
       matte: { name: 'Matte', description: 'Solid surfaces with soft edges.' },
       pixel: { name: 'Pixel', description: 'Square corners, crisp borders and shadows.' },
@@ -29,7 +30,7 @@ export const appearanceCopy = {
     blocked: 'Your browser paused the video. Press Play background to try again.', retry: 'Try again',
     source: 'Video source: Mixkit',
     unlockPremium: 'Unlock with Pro. View plans.',
-    names: { default: 'Pocket garden', 'rainy-window': 'Rainy window', 'misty-lake': 'Morning mist', 'sunset-coast': 'Peach coast', 'forest-rain': 'Forest rain', 'forest-stream': 'Woodland stream', 'ocean-sunset': 'Ocean sunset', 'alpine-dawn': 'Alpine dawn', 'desert-dunes': 'Desert dunes', 'aurora-lake': 'Aurora lake', 'magic-academy': 'Magic academy', 'pixel-campfire': 'Forest campfire', 'pixel-autumn': 'Autumn breeze', 'peach-glow': 'Peach glow', 'mint-haze': 'Mint haze', 'violet-dusk': 'Violet dusk' },
+    names: { default: 'Misty lake', 'pocket-garden': 'Pocket garden', 'rainy-window': 'Rainy window', 'misty-lake': 'Morning mist', 'sunset-coast': 'Peach coast', 'emerald-hills': 'Emerald hills', 'rose-twilight': 'Rose twilight', 'forest-dawn': 'Forest dawn', 'silent-shore': 'Silent shore', 'forest-rain': 'Forest rain', 'forest-stream': 'Woodland stream', 'ocean-sunset': 'Ocean sunset', 'alpine-dawn': 'Alpine dawn', 'desert-dunes': 'Desert dunes', 'aurora-lake': 'Aurora lake', 'magic-academy': 'Magic academy', 'pixel-campfire': 'Forest campfire', 'pixel-autumn': 'Autumn breeze', 'peach-glow': 'Peach glow', 'mint-haze': 'Mint haze', 'violet-dusk': 'Violet dusk', 'pearl-flow': 'Pearl flow', 'sage-mist': 'Sage mist', 'prism-waves': 'Prism waves', 'painted-sunrise': 'Painted sunrise', 'pastel-peaks': 'Pastel peaks', 'hudson-valley': 'Hudson valley' },
     fonts: { pixel: 'Pixel', sans: 'Clean', serif: 'Editorial', mono: 'Mono', rounded: 'Soft', orbitron: 'Orbitron', 'space-grotesk': 'Space', cormorant: 'Cormorant', bebas: 'Bebas', vt323: 'Terminal' },
   },
   es: {
@@ -40,6 +41,7 @@ export const appearanceCopy = {
       'dark-red': { name: 'Rojo oscuro', description: 'Superficies burdeos con detalles rosa cálido y texto claro.' },
       ivory: { name: 'Marfil', description: 'Superficies marfil suaves, detalles beige y texto gris cálido.' },
       white: { name: 'Blanco', description: 'Superficies blancas, bordes gris suave y texto oscuro.' },
+      graphite: { name: 'Grafito', description: 'Cristal gris oscuro con transparencia sutil y un suave desenfoque.' },
       glass: { name: 'Cristal', description: 'Superficies translúcidas con un suave desenfoque.' },
       matte: { name: 'Mate', description: 'Superficies opacas con bordes suaves.' },
       pixel: { name: 'Píxel', description: 'Esquinas cuadradas, bordes y sombras definidos.' },
@@ -62,7 +64,7 @@ export const appearanceCopy = {
     blocked: 'Tu navegador ha pausado el vídeo. Pulsa Reproducir fondo para reintentarlo.', retry: 'Reintentar',
     source: 'Fuente del vídeo: Mixkit',
     unlockPremium: 'Desbloquea con Pro. Ver planes.',
-    names: { default: 'Pequeño jardín', 'rainy-window': 'Ventana con lluvia', 'misty-lake': 'Bruma matinal', 'sunset-coast': 'Costa al atardecer', 'forest-rain': 'Lluvia en el bosque', 'forest-stream': 'Arroyo del bosque', 'ocean-sunset': 'Ocaso en el mar', 'alpine-dawn': 'Amanecer alpino', 'desert-dunes': 'Dunas del desierto', 'aurora-lake': 'Lago de auroras', 'magic-academy': 'Academia de magia', 'pixel-campfire': 'Fogata en el bosque', 'pixel-autumn': 'Brisa otoñal', 'peach-glow': 'Brillo melocotón', 'mint-haze': 'Bruma menta', 'violet-dusk': 'Ocaso violeta' },
+    names: { default: 'Lago con niebla', 'pocket-garden': 'Pequeño jardín', 'rainy-window': 'Ventana con lluvia', 'misty-lake': 'Bruma matinal', 'sunset-coast': 'Costa al atardecer', 'emerald-hills': 'Colinas esmeralda', 'rose-twilight': 'Crepúsculo rosado', 'forest-dawn': 'Amanecer en el bosque', 'silent-shore': 'Costa serena', 'forest-rain': 'Lluvia en el bosque', 'forest-stream': 'Arroyo del bosque', 'ocean-sunset': 'Ocaso en el mar', 'alpine-dawn': 'Amanecer alpino', 'desert-dunes': 'Dunas del desierto', 'aurora-lake': 'Lago de auroras', 'magic-academy': 'Academia de magia', 'pixel-campfire': 'Fogata en el bosque', 'pixel-autumn': 'Brisa otoñal', 'peach-glow': 'Brillo melocotón', 'mint-haze': 'Bruma menta', 'violet-dusk': 'Ocaso violeta', 'pearl-flow': 'Flujo perlado', 'sage-mist': 'Bruma salvia', 'prism-waves': 'Ondas prismáticas', 'painted-sunrise': 'Amanecer ilustrado', 'pastel-peaks': 'Cumbres pastel', 'hudson-valley': 'Valle del Hudson' },
     fonts: { pixel: 'Píxel', sans: 'Limpia', serif: 'Editorial', mono: 'Mono', rounded: 'Suave', orbitron: 'Orbitron', 'space-grotesk': 'Space', cormorant: 'Cormorant', bebas: 'Bebas', vt323: 'Terminal' },
   },
 } as const

@@ -1,7 +1,17 @@
 const BLOB_BASE_URL = process.env.NEXT_PUBLIC_BLOB_BASE_URL
 
 export const BACKGROUNDS = [
-  { id: 'default', kind: 'default' },
+  { id: 'default', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/default-misty-lake.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/default-misty-lake.webp` },
+  { id: 'emerald-hills', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/emerald-hills.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/emerald-hills-thumb.webp` },
+  { id: 'rose-twilight', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/rose-twilight.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/rose-twilight-thumb.webp` },
+  { id: 'forest-dawn', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/forest-dawn.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/forest-dawn-thumb.webp` },
+  { id: 'silent-shore', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/silent-shore.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/silent-shore-thumb.webp` },
+  { id: 'pearl-flow', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/pearl-flow.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/pearl-flow-thumb.webp` },
+  { id: 'sage-mist', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/sage-mist.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/sage-mist-thumb.webp` },
+  { id: 'prism-waves', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/prism-waves.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/prism-waves-thumb.webp` },
+  { id: 'painted-sunrise', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/painted-sunrise.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/painted-sunrise-thumb.webp` },
+  { id: 'pastel-peaks', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/pastel-peaks.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/pastel-peaks-thumb.webp` },
+  { id: 'hudson-valley', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/hudson-valley.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/hudson-valley-thumb.webp` },
   { id: 'rainy-window', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/rainy-window.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/rainy-window-thumb.webp` },
   { id: 'misty-lake', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/misty-lake.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/misty-lake-thumb.webp` },
   { id: 'sunset-coast', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/sunset-coast.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/sunset-coast-thumb.webp` },
@@ -17,11 +27,12 @@ export const BACKGROUNDS = [
   { id: 'peach-glow', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/peach-glow.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/peach-glow-thumb.jpg` },
   { id: 'mint-haze', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/mint-haze.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/mint-haze-thumb.jpg` },
   { id: 'violet-dusk', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/violet-dusk.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/violet-dusk-thumb.jpg` },
+  { id: 'pocket-garden', kind: 'default' },
 ] as const
 
 export const PREMIUM_TIMER_FONTS = ['orbitron', 'space-grotesk', 'cormorant', 'bebas', 'vt323'] as const
-export const TIMER_FONTS = ['pixel', 'sans', 'serif', 'mono', 'rounded', ...PREMIUM_TIMER_FONTS] as const
-export const FREE_WINDOW_DESIGNS = ['glass', 'matte', 'pixel'] as const
+export const TIMER_FONTS = ['sans', 'pixel', 'serif', 'mono', 'rounded', ...PREMIUM_TIMER_FONTS] as const
+export const FREE_WINDOW_DESIGNS = ['graphite', 'glass', 'matte', 'pixel'] as const
 export const PREMIUM_WINDOW_DESIGNS = ['white', 'dark-red', 'ivory', 'clear-glass', 'minimal', 'outline', 'paper', 'terminal', 'neon'] as const
 export const WINDOW_DESIGNS = [...FREE_WINDOW_DESIGNS, ...PREMIUM_WINDOW_DESIGNS] as const
 export const PLAY_BACKGROUND_EVENT = 'pomo:play-background'
@@ -48,7 +59,7 @@ export function isPremiumWindowDesign(design: WindowDesign): boolean {
 
 export const DEFAULT_APPEARANCE = {
   backgroundId: 'default' as BackgroundId,
-  timerFont: 'pixel' as TimerFont,
+  timerFont: 'sans' as TimerFont,
   windowDesign: 'glass' as WindowDesign,
   videoPaused: false,
 }
@@ -57,7 +68,7 @@ export function parseAppearance(value: unknown): typeof DEFAULT_APPEARANCE {
   const saved = value && typeof value === 'object' ? value as Record<string, unknown> : {}
   return {
     backgroundId: BACKGROUNDS.find(background => background.id === saved.backgroundId)?.id ?? 'default',
-    timerFont: TIMER_FONTS.find(font => font === saved.timerFont) ?? 'pixel',
+    timerFont: TIMER_FONTS.find(font => font === saved.timerFont) ?? DEFAULT_APPEARANCE.timerFont,
     windowDesign: WINDOW_DESIGNS.find(design => design === saved.windowDesign) ?? 'glass',
     videoPaused: saved.videoPaused === true,
   }

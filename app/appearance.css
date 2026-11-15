@@ -187,14 +187,10 @@ button.appearance-choice:focus-visible { outline: 3px solid var(--pixel-accent);
 .appearance-scene-preview > img { width: 100%; height: 100%; object-fit: cover; }
 .appearance-default-preview { display: grid; width: 100%; height: 100%; place-items: center; }
 .appearance-default-preview > span { font-family: var(--font-pixel); font-size: 14px; color: var(--pixel-ink); letter-spacing: -1px; }
-.appearance-choice:has(input[value="default"]) { grid-column: 1 / -1; flex-direction: row; align-items: center; gap: 12px; }
-.appearance-choice:has(input[value="default"]) .appearance-scene-preview { width: 88px; flex-shrink: 0; }
 .appearance-choice-label { display: flex; align-items: center; justify-content: space-between; gap: 4px; padding: 8px 5px 5px; font-size: 12px; line-height: 1.4; overflow-wrap: anywhere; pointer-events: none; }
 .appearance-video-badge, .appearance-selected { position: absolute; display: grid; place-items: center; width: 23px; height: 23px; border: 1px solid var(--pixel-line); background: var(--pixel-paper); color: var(--pixel-ink); }
 .appearance-video-badge { bottom: 5px; left: 5px; }
 .appearance-selected { top: 5px; right: 5px; border-color: var(--pixel-accent); color: var(--pixel-tomato-ink); }
-.appearance-choice:has(input[value="default"]) .appearance-choice-label { flex: 1; min-width: 0; padding-block: 5px; }
-.appearance-choice:has(input[value="default"]) .appearance-selected { position: static; flex-shrink: 0; }
 .appearance-scene-loading { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--pixel-paper) 85%, transparent); color: var(--pixel-ink); }
 .appearance-scene-loading > svg { animation: appearance-loading-spin 1s linear infinite; }
 @keyframes appearance-loading-spin { to { transform: rotate(360deg); } }
