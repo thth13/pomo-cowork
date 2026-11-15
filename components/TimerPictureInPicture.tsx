@@ -13,6 +13,7 @@ import { useTaskMenu } from '@/hooks/useTaskMenu'
 import { SessionType } from '@/types'
 import { TaskOption } from '@/types/task'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
+import { BACKGROUNDS } from '@/lib/appearance'
 
 interface TimerPictureInPictureProps {
   triggerTarget: HTMLElement | null
@@ -45,6 +46,8 @@ export function TimerPictureInPicture({
 }: TimerPictureInPictureProps) {
   const { t, language } = useI18n()
   const timerFont = useAppearanceStore(state => state.timerFont)
+  const backgroundId = useAppearanceStore(state => state.backgroundId)
+  const scene = BACKGROUNDS.find(background => background.id === backgroundId)
   const { pipWindow, isSupported, isOpening, error, open, close, clearError } = controller
   const triggerRef = useRef<HTMLButtonElement>(null)
   const wasOpen = useRef(false)
@@ -119,6 +122,14 @@ export function TimerPictureInPicture({
       </>, triggerTarget)}
       {pipWindow && createPortal(
         <main className="mini-timer" data-timer-mode={sessionType} lang={language} data-no-translate="true">
+          {scene && scene.kind !== 'default' && (
+            <div className="workspace-background" aria-hidden="true">
+              {/* Video scenes use their still preview in the compact window. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={scene.kind === 'video' ? scene.preview : scene.src} alt="" className="workspace-background-media" />
+              <div className="workspace-background-wash" />
+            </div>
+          )}
           <header className="mini-timer-header">
             <span className="mini-timer-label"><span className="pixel-led timer-mode-marker" aria-hidden="true" />{sessionLabel}</span>
             <span className="mini-timer-status" role="status">

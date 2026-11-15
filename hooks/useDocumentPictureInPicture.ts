@@ -35,7 +35,7 @@ function prepareDocument(pipWindow: Window) {
 
   pipDocument.documentElement.dataset.miniTimer = 'true'
   const syncAppearance = () => {
-    for (const attribute of ['class', 'style', 'lang', 'dir']) {
+    for (const attribute of ['class', 'style', 'lang', 'dir', 'data-background', 'data-window-design']) {
       const value = document.documentElement.getAttribute(attribute)
       if (value === null) pipDocument.documentElement.removeAttribute(attribute)
       else pipDocument.documentElement.setAttribute(attribute, value)
@@ -46,7 +46,7 @@ function prepareDocument(pipWindow: Window) {
   const observer = new MutationObserver(syncAppearance)
   observer.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ['class', 'style', 'lang', 'dir'],
+    attributeFilter: ['class', 'style', 'lang', 'dir', 'data-background', 'data-window-design'],
   })
   observer.observe(document.body, { attributes: true, attributeFilter: ['class'] })
   return () => observer.disconnect()

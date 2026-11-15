@@ -2970,6 +2970,10 @@ html[data-mini-timer] body {
 }
 
 .mini-timer {
+  --workspace-timer-action-height: 32px;
+  --workspace-timer-action-padding: 5px 8px;
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -3000,10 +3004,11 @@ html[data-mini-timer] body {
 }
 
 .mini-timer-display {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
   min-height: 0;
 }
 
@@ -3047,9 +3052,12 @@ html[data-mini-timer] body {
 }
 
 .mini-timer-track {
+  /* Keep the meter inside the shared gap instead of adding another row. */
+  position: absolute;
+  top: calc(100% + 2px);
   width: 100%;
   height: 4px;
-  margin-top: 2px;
+  margin: 0;
   gap: 2px;
   flex: none;
 }
@@ -3058,10 +3066,6 @@ html[data-mini-timer] body {
   width: 100%;
   margin: 0;
   padding: 0;
-}
-
-.mini-timer-display:has(.mini-timer-track)+.timer-actions {
-  margin-top: 4px;
 }
 
 .timer-actions-compact>div,

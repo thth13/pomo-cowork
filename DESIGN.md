@@ -36,8 +36,9 @@ buttons and navigation selection, with #f0a394 selected text and a translucent
 red selection fill. Dock selection uses the same red indicator as the right
 navigation menu; green remains reserved for status and growth indicators.
 
-Graphite (`graphite`) is the first free site theme; Glass is second. Existing saved
-choices and the Glass default remain unchanged. Graphite shares Glass geometry,
+Graphite (`graphite`) is the default and first free site theme; Glass is second.
+Existing saved choices remain unchanged. `DEFAULT_APPEARANCE.windowDesign` owns the
+default for initialization, parsing, reset and the startup script. Graphite shares Glass geometry,
 blur, open home timer and background wash through `app/default-neon.css`, with a
 black palette: #080808 page, #101010 paper, #202020 screen, #f5f5f5 ink,
 #c4c6c8 muted and #dedfe1 accent. Black window gradient opacity is 55–62%, with soft
@@ -652,8 +653,13 @@ apply immediately through I18nProvider.
 The native mini timer opens from the top-left pop-out button on the shared timer.
 Its 300×180px requested initial window keeps the pixel digits, segmented progress and Inter
 controls on the existing page surface. `app/globals.css` owns `.mini-timer-*` rules;
-all colors and fonts reuse runtime tokens. The window follows live theme and locale
-changes, wraps controls when resized narrowly and owns natural document scrolling.
+all colors and fonts reuse runtime tokens. The window mirrors the root background
+and window-design attributes as well as theme and locale changes. Selected photo
+scenes reuse the workspace image and wash; video scenes use their still preview.
+Glass and Graphite share the home timer's white numerals, translucent task control,
+segmented track and tomato primary action through `app/default-neon.css`, preserving
+compact sizing. Other materials retain their root palette. The window wraps controls
+when resized narrowly and owns natural document scrolling.
 Time tracking displays elapsed time without a fictional remaining-time meter.
 The mini window shows the session mode and status in a compact top row, with 10px
 outer padding and an 8px section rhythm. Digits cap at 36px and actions are 32px tall.
@@ -661,8 +667,9 @@ A minimal shared TaskPicker sits directly below the digits as one 26px row with 
 selected title (or select-task prompt) and chevron. Descriptions and the repeated
 Current task prefix are omitted in this variant. Its compact popup overlays content
 within the mini window's viewport and never expands the window or timer layout.
-The progress track stays in the digit/task group, 4px below the task row; the
-action row has 12px clearance below that group. The timer group does not stretch;
+The digit/task and task/action gaps are both 8px. The progress track sits inside
+the task/action gap, 2px below the task row, without adding a layout row. The
+digit line box is 1.4em to contain the enlarged numeral face. The timer group does not stretch;
 the complete stack is centered vertically so hidden flex space cannot distort gaps.
 Opening the mini window does not autofocus an action; keyboard focus indicators
 remain available when navigating its controls.

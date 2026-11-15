@@ -61,7 +61,8 @@
     .feedback-panel, .feedback-prompt, [data-beep-surface], [data-floating-timer],
     .focus-station, .working-sidebar, .seo-timer, .seo-social,
     .workspace-dock, .workspace-navigation-control
-  ) {
+  ),
+  html[data-mini-timer]:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .task-popover[data-mini-timer-picker] {
     background: var(--neon-shell);
     border-color: rgb(var(--glass-border-rgb, 231 211 255) / 19%);
     -webkit-backdrop-filter: var(--window-backdrop);
@@ -170,30 +171,35 @@
     letter-spacing: .14em;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-led {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-led,
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .pixel-led {
     border-radius: 50%;
     box-shadow: 0 0 10px rgb(var(--glass-highlight-rgb, 226 195 255) / 35%);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track,
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .pixel-timer-track {
     height: 3px;
     max-width: 220px;
     gap: 3px;
     opacity: .8;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track span {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track span,
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .pixel-timer-track span {
     border: 0;
     border-radius: 10px;
     background: rgb(255 255 255 / 16%);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track .filled {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track .filled,
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .pixel-timer-track .filled {
     background: var(--timer-mode-color);
     opacity: 1;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) button {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) button,
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .timer-actions button {
     min-height: var(--workspace-timer-action-height, 48px);
     padding: var(--workspace-timer-action-padding, 12px 22px);
     border: 1px solid rgb(var(--glass-control-border-rgb, 238 219 255) / 16%);
@@ -204,7 +210,8 @@
     font-weight: 500;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions button:hover:not(:disabled) {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions button:hover:not(:disabled),
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .timer-actions button:hover:not(:disabled) {
     background: rgb(var(--glass-button-hover-rgb, 103 57 142) / 75%);
     border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 40%);
   }
@@ -236,7 +243,8 @@
     right: 30%;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] :is(.first-focus-options button, .current-task-trigger) {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] :is(.first-focus-options button, .current-task-trigger),
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer :is(.first-focus-options button, .current-task-trigger) {
     border-radius: 12px;
     border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 20%);
     background: rgb(var(--glass-control-rgb, 35 21 53) / 55%);
@@ -254,12 +262,14 @@
     border-radius: 10px;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] button:focus-visible {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] button:focus-visible,
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer button:focus-visible {
     outline: 2px solid var(--glass-ink, #f4dfff);
     outline-offset: 4px;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] button:disabled {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] button:disabled,
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer button:disabled {
     opacity: .5;
   }
 
@@ -380,12 +390,14 @@
     box-shadow: inset 2px 0 var(--pixel-tomato);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action,
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .timer-actions .timer-primary-action {
     background: var(--pixel-tomato);
     border-color: var(--pixel-tomato);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action:hover:not(:disabled) {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action:hover:not(:disabled),
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .timer-actions .timer-primary-action:hover:not(:disabled) {
     background: var(--pixel-tomato-hover);
     border-color: var(--pixel-tomato-hover);
   }
@@ -434,5 +446,28 @@
   .appearance-window-preview[data-window-design="graphite"] .appearance-window-sample-header {
     background: rgb(var(--glass-highlight-rgb) / 7%);
     border-color: rgb(var(--glass-edge-rgb) / 30%);
+  }
+}
+
+/* Native mini timer shares the open home timer's foreground and materials. */
+@media (forced-colors: none) {
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .mini-timer {
+    color: var(--pixel-ink);
+    text-shadow: 0 1px 4px rgb(0 0 0 / 45%);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .mini-timer-digits {
+    color: #fff;
+    text-shadow: 0 2px 6px rgb(0 0 0 / 28%), 0 6px 24px rgb(0 0 0 / 16%);
+  }
+
+  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .mini-timer-digits[data-timer-font="sans"] {
+    font-family: Inter, system-ui, sans-serif;
+    font-weight: 700;
+  }
+
+  html[data-mini-timer] body .mini-timer .timer-actions button {
+    font-size: 12px;
+    text-shadow: none;
   }
 }

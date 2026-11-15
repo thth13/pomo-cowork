@@ -60,7 +60,7 @@ export function isPremiumWindowDesign(design: WindowDesign): boolean {
 export const DEFAULT_APPEARANCE = {
   backgroundId: 'default' as BackgroundId,
   timerFont: 'sans' as TimerFont,
-  windowDesign: 'glass' as WindowDesign,
+  windowDesign: 'graphite' as WindowDesign,
   videoPaused: false,
 }
 
@@ -69,7 +69,7 @@ export function parseAppearance(value: unknown): typeof DEFAULT_APPEARANCE {
   return {
     backgroundId: BACKGROUNDS.find(background => background.id === saved.backgroundId)?.id ?? 'default',
     timerFont: TIMER_FONTS.find(font => font === saved.timerFont) ?? DEFAULT_APPEARANCE.timerFont,
-    windowDesign: WINDOW_DESIGNS.find(design => design === saved.windowDesign) ?? 'glass',
+    windowDesign: WINDOW_DESIGNS.find(design => design === saved.windowDesign) ?? DEFAULT_APPEARANCE.windowDesign,
     videoPaused: saved.videoPaused === true,
   }
 }
