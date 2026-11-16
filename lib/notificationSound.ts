@@ -20,9 +20,9 @@ const ensureAudioContext = () => {
 }
 
 const stopActiveSources = () => {
-  for (const source of activeSources) {
+  activeSources.forEach(source => {
     try { source.stop() } catch { /* Source may already have ended. */ }
-  }
+  })
   activeSources.clear()
 }
 
