@@ -29,12 +29,10 @@ export function conversionPercent(numerator: number, denominator: number): numbe
 }
 
 export function conversionMetrics(counts: { newVisitors: number; anonymous: number; registered: number; active: number }) {
-  const profiles = counts.anonymous + counts.registered
-  const visitors = counts.newVisitors + profiles
+  const visitors = counts.newVisitors + counts.anonymous + counts.registered
   return {
-    profiles, visitors,
-    visitToAnonymous: conversionPercent(profiles, visitors),
-    anonymousToRegistered: conversionPercent(counts.registered, profiles),
+    visitors,
+    visitToAnonymous: conversionPercent(counts.anonymous, visitors),
     visitToRegistered: conversionPercent(counts.registered, visitors),
     activeConversion: conversionPercent(counts.active, visitors),
   }

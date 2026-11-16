@@ -15,8 +15,8 @@ type ConversionRow = {
 type Conversions = {
   rows: ConversionRow[]; total: number; page: number; pageSize: number
   start: string; end: string; visitors: number; newVisitors: number; anonymous: number; registered: number
-  profiles: number; active: number; pending: number; referrers: string[]
-  visitToAnonymous: number | null; anonymousToRegistered: number | null
+  active: number; pending: number; referrers: string[]
+  visitToAnonymous: number | null
   visitToRegistered: number | null; activeConversion: number | null
   updatedAt: string
 }
@@ -85,8 +85,8 @@ export default function AdminConversions() {
   const referrers = Array.from(new Set([...(referrer && referrer !== '__none__' ? [referrer] : []), ...(data?.referrers ?? [])]))
   const stages = [
     { label: 'All visitors', value: data?.visitors, rate: null, note: `New visitors + anonymous + registered. Still without a profile: ${count(data?.newVisitors)}.` },
-    { label: 'Reached anonymous stage', value: data?.profiles, rate: data?.visitToAnonymous, note: `Anonymous + registered profiles. Currently anonymous: ${count(data?.anonymous)}. Registered profiles remain included in this stage.` },
-    { label: 'Registered users', value: data?.registered, rate: data?.anonymousToRegistered, note: 'Registered ÷ (anonymous + registered) profiles.' },
+    { label: 'Anonymous users', value: data?.anonymous, rate: data?.visitToAnonymous, note: 'Users who are still anonymous ÷ all visitors. Registered users are excluded from this count.' },
+    { label: 'Registered users', value: data?.registered, rate: data?.visitToRegistered, note: 'Registered ÷ all visitors (new visitors + current anonymous + registered users).' },
   ]
   return <section className="admin-conversions" aria-label="Visitor conversions">
     <div className="admin-data-toolbar"><div><h2>{dateLabel(start)} – {dateLabel(end)}</h2><p>Current visitor and account records created in this period. Status and last activity are evaluated through now.</p></div><button type="button" disabled={loading || !valid} onClick={refresh}>Refresh</button></div>
@@ -110,7 +110,7 @@ export default function AdminConversions() {
       </section>
       <ol className="admin-conversion-funnel" aria-label="Visit to registration funnel">{stages.map((stage, index) => <li className="admin-metric" key={stage.label}>
         <h3 className="admin-metric-label">{stage.label}</h3><strong>{count(stage.value)}</strong>
-        {index > 0 && <p className="admin-conversion-rate">{percent(stage.rate)} <span>{index === 1 ? 'visit → anonymous' : 'anonymous → registered'}</span></p>}
+        {index > 0 && <p className="admin-conversion-rate">{percent(stage.rate)} <span>{index === 1 ? 'currently anonymous / all visitors' : 'all visitors → registered'}</span></p>}
         <p className="admin-metric-note">{stage.note}</p>
       </li>)}</ol>
       <div className="admin-conversion-summary"><p><strong>{percent(data?.visitToRegistered)}</strong> visit → registered · {count(data?.registered)} / {count(data?.visitors)}</p></div>
@@ -135,6 +135,6 @@ export default function AdminConversions() {
         </> : <p className="admin-data-state">{valid ? 'Use Refresh above to retry loading visitors and users.' : 'Choose a valid period to load visitors and users.'}</p>}
       </div>
     </section>
-    <div className="admin-conversion-method"><h3>How this is counted</h3><p>All visitors = New visitors + current anonymous users + registered users. The anonymous stage includes both anonymous and registered profiles, so upgrading an account does not remove it from that stage.</p><p>The period filters each record by its creation date in Kyiv time. Registration keeps the original anonymous profile creation date. Counts use current records and status, not historical transition dates; deleted records are excluded.</p><p>Active means lastSeenAt is at least 24 elapsed hours after createdAt. The last activity can be after the selected period. Empty groups show no percentage.</p><p>Referrer filtering applies to New visitors for every date and to accounts created from 15 Nov 2026 onward. Older accounts are included without checking their referrer. With All referrers, no source restriction applies.</p></div>
+    <div className="admin-conversion-method"><h3>How this is counted</h3><p>All visitors = New visitors + current anonymous users + registered users. Anonymous users counts only profiles that are still anonymous. Registered users are counted separately, and their conversion rate is registered ÷ all visitors, including new visitors without a profile.</p><p>The period filters each record by its creation date in Kyiv time. Registration keeps the original anonymous profile creation date. Counts use current records and status, not historical transition dates; deleted records are excluded.</p><p>Active means lastSeenAt is at least 24 elapsed hours after createdAt. The last activity can be after the selected period. Empty groups show no percentage.</p><p>Referrer filtering applies to New visitors for every date and to accounts created from 15 Nov 2026 onward. Older accounts are included without checking their referrer. With All referrers, no source restriction applies.</p></div>
   </section>
 }

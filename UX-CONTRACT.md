@@ -1377,10 +1377,9 @@ with authorizeAdmin, disables caching and aggregates existing GuestVisit and Use
 records only. No new events, schema columns or migrations are needed for this step.
 
 For an inclusive Kyiv creation-date range, total visitors = New visitors + current
-anonymous profiles + current registered profiles. The anonymous stage includes
-anonymous + registered profiles; its rate divides that total by all visitors.
-Registration rate is registered / (anonymous + registered); overall registration
-rate is also shown as registered / all visitors. Conversion preserves the existing
+anonymous profiles + current registered profiles. Anonymous users includes only profiles that are still anonymous; its rate is
+current anonymous / all visitors. Registered users are counted separately;
+registration rate is registered / all visitors, including guests without a profile. Conversion preserves the existing
 anonymous User.createdAt; transition dates are intentionally irrelevant. Deleted
 records are excluded, and these are current-state counts, not event history.
 
