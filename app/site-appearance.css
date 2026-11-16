@@ -14,7 +14,7 @@
 
   :root.dark[data-window-design] { --site-scheme: dark; }
 
-  :root:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+  :root:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
     --pixel-page: color-mix(in srgb, var(--window-material-paper) 92%, var(--window-material-ink));
     --pixel-paper: var(--window-material-paper);
     --pixel-screen: var(--window-material-screen);
@@ -33,13 +33,38 @@
   }
 
   /* Dark-mode selectors have the same priority as their light counterpart. */
-  :root.dark:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+  :root.dark:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
     --site-scheme: var(--window-material-scheme);
   }
 
-  :root:is([data-window-design="white"], [data-window-design="ivory"]) { --pixel-page: var(--window-material-paper); --pixel-growth: #49663a; }
+  :root:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="ivory"]) { --pixel-page: var(--window-material-paper); --pixel-growth: #49663a; }
   :root[data-window-design="paper"] { --pixel-growth: #647b5b; }
   :root:is([data-window-design="dark-red"], [data-window-design="terminal"], [data-window-design="neon"]) { --pixel-growth: #a7bc91; }
+
+
+  :root[data-window-design="glass"], :root.dark[data-window-design="glass"] {
+    --pixel-page: #141c19;
+    --pixel-paper: #202b24;
+    --pixel-screen: #2a382e;
+    --pixel-ink: #f7f8f3;
+    --pixel-muted: #d3ded3;
+    --pixel-line: #657269;
+    --pixel-accent: #e39a87;
+    --pixel-tomato-ink: #ffb29f;
+    --site-scheme: dark;
+    --window-radius: 3px;
+    --window-backdrop: blur(18px) saturate(110%);
+    --window-scene-panel: rgb(20 28 25 / 68%);
+    --window-shadow: inset 0 0 0 1px rgb(255 255 255 / 16%), 0 12px 40px rgb(0 0 0 / 18%);
+  }
+
+  :root[data-window-design="pocket-garden-night"], :root.dark[data-window-design="pocket-garden-night"] {
+    --pixel-page: #1c2320;
+    --pixel-growth: #a7bc91;
+    --pixel-tomato-soft: #43332d;
+    --pixel-tomato-ink: #eab6a6;
+    --pixel-shadow: #141b17;
+  }
 
   html[data-window-design] body {
     --site-surface: var(--pixel-paper);
@@ -48,15 +73,15 @@
     color-scheme: var(--site-scheme);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]) body {
+  html:is([data-window-design="glass"], [data-window-design="aurora"], [data-window-design="graphite"]) body {
     --site-surface: color-mix(in srgb, var(--pixel-paper) 78%, transparent);
   }
 
   html[data-window-design="clear-glass"] body { --site-surface: var(--window-shell-fill); }
   html[data-window-design="minimal"] body { --site-surface: transparent; }
 
-  /* Match the existing scene palette where scenery actually renders. */
-  html[data-window-design] body:has(.product-scenery) {
+  /* Every route uses the selected material, regardless of wallpaper. */
+  html[data-window-design] body {
     --site-surface: var(--window-scene-panel, rgb(20 28 25 / 68%));
   }
 

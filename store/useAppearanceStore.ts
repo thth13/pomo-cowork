@@ -160,6 +160,12 @@ export const useAppearanceStore = create<AppearanceStore>((set, get) => {
     },
     setWindowDesign: windowDesign => {
       if (isPremiumWindowDesign(windowDesign) && !canUsePremium()) return
+      if (windowDesign === 'pocket-garden' || windowDesign === 'pocket-garden-night') {
+        cancelPendingBackground()
+        set({ mediaStatus: 'idle' })
+        save({ windowDesign, backgroundId: windowDesign === 'pocket-garden' ? 'grid' : 'grid-night' })
+        return
+      }
       save({ windowDesign })
     },
     setVideoPaused: videoPaused => save({ videoPaused }),

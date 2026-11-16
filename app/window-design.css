@@ -18,7 +18,38 @@
     --timer-long-break-on-dark: #46627a;
   }
 
-  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"]) body :is(.pomodoro-home, .seo-shell) [data-timer-panel] {
+
+  :root:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), .appearance-window-preview:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]) {
+    --window-material-paper: #fbfaf5;
+    --window-material-screen: #e1e6d6;
+    --window-material-ink: #303a32;
+    --window-material-muted: #656d61;
+    --window-material-line: #b0b5a6;
+    --window-material-accent: #983e32;
+    --window-material-scheme: light;
+    --window-material-texture: none;
+    --window-radius: 3px;
+    --window-shadow: 3px 3px 0 #d0d3c6;
+    --timer-focus-on-dark: #b94e3e;
+    --timer-short-break-on-dark: #647b5b;
+    --timer-long-break-on-dark: #647d91;
+  }
+
+  :root[data-window-design="pocket-garden-night"], .appearance-window-preview[data-window-design="pocket-garden-night"] {
+    --window-material-paper: #252e28;
+    --window-material-screen: #333f34;
+    --window-material-ink: #eceee4;
+    --window-material-muted: #b4bcae;
+    --window-material-line: #566453;
+    --window-material-accent: #e39a87;
+    --window-material-scheme: dark;
+    --window-shadow: 3px 3px 0 #141b17;
+    --timer-focus-on-dark: #e39a87;
+    --timer-short-break-on-dark: #a7bc91;
+    --timer-long-break-on-dark: #a0b5c6;
+  }
+
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"]) body :is(.pomodoro-home, .seo-shell) [data-timer-panel] {
     --timer-focus-color: var(--window-material-accent);
     --timer-short-break-color: var(--timer-short-break-on-dark);
     --timer-long-break-color: var(--timer-long-break-on-dark);
@@ -98,7 +129,7 @@
     --window-shadow: 0 0 0 1px rgb(142 123 232 / 35%), 0 0 20px rgb(142 123 232 / 22%), inset 0 0 18px rgb(142 123 232 / 7%);
   }
 
-  :root:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+  :root:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
     --window-scene-panel: var(--window-material-paper);
     --window-scene-task: var(--window-material-paper);
     --window-scene-task-hover: var(--window-material-screen);
@@ -112,7 +143,7 @@
 
   /* Material palettes stay local to app windows; page scenery and semantic
      action colors retain their existing owners. Previews reuse these tokens. */
-  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body :is(
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body :is(
     .workspace-window, .workspace-navigation-panel, .workspace-account-card,
     .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
     .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
@@ -139,24 +170,24 @@
     text-shadow: none;
   }
 
-  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window-content > div {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window-content > div {
     color: var(--window-material-ink);
     background: transparent;
   }
 
-  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .dark\:bg-slate-700, .dark\:bg-slate-800) {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .dark\:bg-slate-700, .dark\:bg-slate-800) {
     background-color: var(--window-material-paper);
   }
 
-  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white) {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white) {
     color: var(--window-material-ink);
   }
 
-  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600) {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600) {
     color: var(--window-material-muted);
   }
 
-  html:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"]) body :is(.pomodoro-home, .seo-shell) :is(.pixel-timer-settings, .pixel-timer-popout, .timer-appearance-trigger, .timer-mode-tab, .coworker-tile-profile, .coworker-tile-menu):hover {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"]) body :is(.pomodoro-home, .seo-shell) :is(.pixel-timer-settings, .pixel-timer-popout, .timer-appearance-trigger, .timer-mode-tab, .coworker-tile-profile, .coworker-tile-menu):hover {
     color: var(--window-material-ink);
   }
 
@@ -482,7 +513,7 @@
 }
 
 @media (forced-colors: none) {
-  .appearance-window-preview:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample {
+  .appearance-window-preview:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample {
     background: var(--window-material-texture), var(--window-material-paper);
     border-color: var(--window-material-line);
     border-radius: min(10px, var(--window-radius));
@@ -491,16 +522,16 @@
     backdrop-filter: none;
   }
 
-  .appearance-window-preview:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-header {
+  .appearance-window-preview:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-header {
     background: var(--window-material-screen);
     border-color: var(--window-material-line);
   }
 
-  .appearance-window-preview:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample i {
+  .appearance-window-preview:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample i {
     background: var(--window-material-muted);
   }
 
-  .appearance-window-preview:is([data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-body i:last-child {
+  .appearance-window-preview:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) .appearance-window-sample-body i:last-child {
     background: var(--window-material-accent);
   }
 
@@ -528,4 +559,19 @@
   .appearance-window-preview[data-window-design] .appearance-window-sample { border-color: CanvasText; background: Canvas; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
   .appearance-window-preview[data-window-design] .appearance-window-sample-header { background: Canvas; border-color: CanvasText; }
   .appearance-window-preview .appearance-window-sample i { background: CanvasText; }
+}
+
+/* Recognizable garden wallpaper behind each material miniature. */
+.appearance-window-preview:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]) {
+  --preview-grid-page: #f1efe7;
+  --preview-grid-line: #b0b5a666;
+  background-color: var(--preview-grid-page);
+  background-image:
+    linear-gradient(var(--preview-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--preview-grid-line) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+.appearance-window-preview[data-window-design="pocket-garden-night"] {
+  --preview-grid-page: #1c2320;
+  --preview-grid-line: #56645380;
 }

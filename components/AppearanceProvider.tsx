@@ -11,23 +11,6 @@ const sceneryRoutes = /^\/(?:beep|daily-flow|rooms|leaderboard|stats|statistics|
 
 export function AppearanceProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname()
-  const backgroundId = useAppearanceStore(state => state.backgroundId)
-  const windowDesign = useAppearanceStore(state => state.windowDesign)
-  const hydrated = useAppearanceStore(state => state.hydrated)
-
-  useEffect(() => {
-    if (!hydrated) return
-    document.documentElement.dataset.background = backgroundId
-    return () => { delete document.documentElement.dataset.background }
-  }, [backgroundId, hydrated])
-
-  useEffect(() => {
-    if (!hydrated) return
-    const root = document.documentElement
-    root.dataset.windowDesign = windowDesign
-    return () => { delete root.dataset.windowDesign }
-  }, [windowDesign, hydrated])
-
   useEffect(() => {
     useAppearanceStore.getState().hydrate()
     let expiryTimeout: number | undefined
@@ -57,7 +40,7 @@ export function AppearanceProvider({ children }: { children: ReactNode }) {
     }
   }, [])
   return <>
-    {backgroundId !== 'pocket-garden' && (sceneryRoutes.test(pathname) || Boolean(usernameFromHandle(pathname.split('/')[1] || ''))) &&
+    {(sceneryRoutes.test(pathname) || Boolean(usernameFromHandle(pathname.split('/')[1] || ''))) &&
       <div className="product-scenery" aria-hidden="true"><WorkspaceBackground /></div>}
     {children}
   </>

@@ -149,18 +149,18 @@ export default function AppearanceSettings({ triggerClassName = 'timer-appearanc
                     label={`${copy.names[background.id]}${isPremiumBackground(background.id) && !state.hasProAccess ? `. ${copy.unlockPremium}` : ''}`}
                     onSelect={() => state.setBackground(background.id)} onUnlock={openPaywall}>
                     <span className="appearance-scene-preview">
-                      {background.id === 'pocket-garden' ? <span className="appearance-garden-preview appearance-default-preview garden-page"><span aria-hidden="true">25:00</span></span> : (
+                      {background.kind === 'default' ? <span className="appearance-garden-preview appearance-default-preview garden-page" data-grid-tone={background.id === 'grid-night' ? 'night' : 'day'}><span aria-hidden="true">25:00</span></span> : (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={background.preview} alt="" width={320} height={180} loading="lazy" />
                       )}
                       {background.kind === 'video' && <span className="appearance-video-badge"><Film size={12} aria-hidden="true" /><span className="sr-only">{copy.videos}</span></span>}
                       {'animation' in background && <span className="appearance-video-badge">{background.animation === 'autumn' ? <Leaf size={12} aria-hidden="true" /> : <Flame size={12} aria-hidden="true" />}<span className="sr-only">{copy.animated}</span></span>}
-                      {background.id !== 'pocket-garden' && state.backgroundId === background.id && <span className="appearance-selected"><Check size={13} aria-hidden="true" /><span className="sr-only">{copy.selected}</span></span>}
+                      {background.kind !== 'default' && state.backgroundId === background.id && <span className="appearance-selected"><Check size={13} aria-hidden="true" /><span className="sr-only">{copy.selected}</span></span>}
                       {loadingBackgroundId === background.id && <span className="appearance-scene-loading"><Loader2 size={24} aria-hidden="true" /><span className="sr-only">{copy.loading}</span></span>}
                     </span>
                     <span className="appearance-choice-label">
                       {copy.names[background.id]}
-                      {background.id === 'pocket-garden' && state.backgroundId === background.id && <span className="appearance-selected"><Check size={13} aria-hidden="true" /><span className="sr-only">{copy.selected}</span></span>}
+                      {background.kind === 'default' && state.backgroundId === background.id && <span className="appearance-selected"><Check size={13} aria-hidden="true" /><span className="sr-only">{copy.selected}</span></span>}
                     </span>
                   </AppearanceChoice>
                 ))}

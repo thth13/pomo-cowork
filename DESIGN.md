@@ -29,6 +29,23 @@ spacing:
 
 # Pomo Pocket Garden
 
+The home workspace disables document scrolling and uses `scrollbar-gutter: auto`
+on its html/body shell so the global stable gutter cannot leave an empty strip
+beside the wallpaper. Internal panels retain their own scrollbar geometry;
+other routes keep the global stable gutter. Verified by static CSS review only.
+
+## Branded startup loader
+
+`components/SiteLoader.tsx` and its CSS module own the shared startup loading
+visual for HomeWorkspace and InitialLoader. Reuse the existing PixelSprout logo
+inside a fine timer dial, with a lowercase pomo wordmark, tomato accent and
+localized loading status. The mascot floats while a single dial marker orbits;
+reduced motion disables all animation. Home loading keeps the workspace scenery;
+the fullscreen variant uses `--pixel-page`. Colors inherit the canonical
+`--pixel-ink`, `--pixel-muted`, `--pixel-growth` and `--pixel-tomato` tokens from
+the existing theme adapters. Loading readiness and route exclusions remain owned
+by the callers; never introduce a minimum waiting time or simulated percentage.
+
 ## Graphite glass variant
 
 Glass and Graphite use tomato red (#b94e3e, hover #983e32) for primary
@@ -37,6 +54,22 @@ red selection fill. Dock selection uses the same red indicator as the right
 navigation menu; green remains reserved for status and growth indicators.
 
 Graphite (`graphite`) is the default and first free site theme; Glass is second.
+The Graphite and Glass homepage Currently Working rail sits directly on the scenery without a fill,
+backdrop blur, rounded shell or shadow. The existing left divider remains;
+on photo scenes, individual participant tiles share the left dock's color and opacity
+through `--glass-workspace-surface` (12px blur, 12px corners, 12% edges), with 8px gaps. Small 32px portraits, 12px
+medium-weight names, 11px task text and 10px status text keep presence secondary.
+Time uses 12px Inter with tabular numerals; progress is a muted 2px hairline.
+At viewport widths of at least 1536px and heights of at least 821px, presence
+returns to desktop density: 40px avatars, 14px names and time, 12px tasks,
+11px status text and 20px vertical card padding. Smaller laptop viewports
+retain the compact sizes above.
+The current user's tile has a tomato-colored leading border. Hover softly lifts
+the fill and edge; keyboard focus retains a clear outline. Collapsed tiles keep
+portraits and mini timers, and empty states have no card.
+`app/default-neon.css` owns these overrides, scoped to
+`#workspace-working` so shared material selectors cannot restore the shell,
+including in the empty, collapsed and keyboard-focus states.
 Existing saved choices remain unchanged. `DEFAULT_APPEARANCE.windowDesign` owns the
 default for initialization, parsing, reset and the startup script. Graphite shares Glass geometry,
 blur, open home timer and background wash through `app/default-neon.css`, with a
@@ -76,11 +109,12 @@ credits and Unsplash source links are recorded in `public/backgrounds/CREDITS.md
 `lib/appearance.ts` owns their IDs and `lib/i18n/appearance.ts` their English/Spanish
 names. The default background and saved choices remain unchanged.
 
-The default background is the misty Montana lake by Katie Moum (Unsplash), served
-from `${BLOB_BASE_URL}/backgrounds/images/default-misty-lake.webp`. Credits remain
-in `public/backgrounds/CREDITS.md`; local wallpaper copies are removed. The root
-layout supplies `--default-background-image` from the shared catalog for CSS backgrounds.
-The shared scene renderer, dark overlay and open timer composition remain active.
+The default background is the user-supplied smooth dark-green paper texture.
+`lib/appearance.ts` owns the local 2560px image and 480px preview URLs:
+`/backgrounds/images/default-moss-green.webp` and `default-moss-green-thumb.webp`.
+The root layout exposes `--default-background-image` for CSS fallbacks;
+the workspace and picture-in-picture use the shared image renderer.
+Interface palettes remain unchanged.
 With Glass selected, side panels (dock, floating windows and presence rail) use a
 shared translucent violet material with light text and violet edges across photo
 backgrounds. Other window designs retain their own palette and surfaces from
@@ -90,22 +124,19 @@ subtle violet borders, soft shadows and 18px corners. The light window palette
 overrides are removed; window text and controls use the shared dark tokens again.
 The open white timer remains unchanged.
 The Glass preview matches the new material.
-Misty lake (`default`) is a regular image scene, rendered by WorkspaceBackground
-like every other photograph, including the product-route scenery wrapper and task
-picker scene adapter. It no longer bypasses the shared scenery material/contrast
-rules via a CSS-only background. Switching between photos therefore keeps the
-same timer and window treatment; saved appearance IDs remain compatible.
+Moss green (`default`) uses the shared image scene renderer and material styling.
+Saved appearance IDs remain compatible.
 Background labels omit the default suffix. The initial background preview shows
 two complete rows; expanded options continue on the next row, using the responsive
 column count so there is no gap at the reveal boundary.
-Background choices start with the new scenes: Misty lake, Emerald hills,
+Background choices start with the new scenes: Moss green, Misty lake, Emerald hills,
 Rose twilight, Forest dawn, Silent shore, Pearl flow, Sage mist, Prism waves,
 Painted sunrise, Pastel peaks and Hudson valley, followed by the existing scenes.
-Misty lake uses the stock photo as its thumbnail. The existing `default` ID continues to mean this default photo.
+Moss green uses the texture as its thumbnail. The `default` ID selects this image.
 Pocket garden has its own free `pocket-garden` ID at the bottom of the list; it
 restores the original garden background and base palette. AppearanceProvider and
 the startup script expose the background choice on the document so the photo and
-neon adapters do not override Pocket garden. Reset selects Misty lake.
+neon adapters do not override Pocket garden. Reset selects Moss green.
 With Glass or Graphite selected, photo scenes use a neutral black gradient wash (37.5/36.25/34.375% opacity), without a blue or violet tint.
 The ordinary home timer adds a local neutral black radial scrim (25% at its
 center, fading completely at the edges), without a frame or a solid card fill.
@@ -2534,3 +2565,75 @@ private/no-store responses. Only these three switches are logged, as explicitly
 clarified by the user; timer durations, profile and appearance are outside this log.
 The new migration is additive. Prisma generation/migration are permitted; project
 launch, test builds and tsc remain prohibited by the user.
+
+The original default Montana lake photo is a free library choice in second position,
+immediately after Moss green. Its stable ID is `montana-lake`; it reuses the existing
+`default-misty-lake.webp` asset and is separate from the Morning mist (`misty-lake`) scene.
+
+
+## Independent site themes and wallpaper (2026-11-16)
+
+Site theme (`windowDesign`) and wallpaper (`backgroundId`) are independent saved
+choices. Graphite remains the default. Glass restores the original green-tinted
+translucent material; Aurora preserves the violet glass variant; Pocket Garden
+is a free opaque beige/sage theme on every route. The grid is a wallpaper with
+fixed colors, rendered through WorkspaceBackground just like photos and videos.
+Selecting any wallpaper must not select or disable a material.
+
+`lib/appearance.ts` owns IDs and legacy migration: old Pocket Garden background
+preferences resolve to the grid wallpaper plus Pocket Garden theme. The initial
+layout script uses the same migration before hydration. `app/window-design.css`
+owns Pocket Garden material tokens and previews, `app/site-appearance.css` maps
+materials across routes, and `app/default-neon.css` owns Graphite/Aurora without
+background-ID exceptions. AppearanceProvider renders every wallpaper on product
+routes, including the grid. Theme and background controls retain independent
+storage updates, premium access checks and localized labels.
+
+Static source review only for this change; no build, tsc or runtime launch,
+per the user's instruction. Browser appearance remains for user verification.
+
+
+### Open timer correction
+
+Pocket Garden, Graphite and Violet glass (stored as `aurora`) keep the ordinary
+home timer open, with no panel fill, blur, rounded edge or box shadow. Pocket
+Garden has a transparent timer surface: the wallpaper's light wash remains visible
+without a black radial overlay, matching the supplied reference. Only Graphite
+and Violet glass use the feathered dark radial scrim. The explicit timer selector outranks the generic material
+shadow adapter. Daily Flow retains its own panel. Violet glass exposes the prior
+purple Glass palette under a separate, recognizable name; its shared material
+tokens also apply to product pages and dialogs. Glass remains unchanged.
+
+
+### Pocket Garden Night
+
+`pocket-garden-night` is a separate free theme using the original dark garden
+palette: page #1c2320, paper #252e28, screen #333f34, ink #eceee4, muted #b4bcae,
+and borders #566453. It reuses Pocket Garden geometry and transparent open timer,
+with no dark timer scrim. Its material scheme stays dark independently of the
+legacy light/dark toggle. `grid-night` is a separately selectable free wallpaper
+with fixed dark garden colors and the same grid/light-wash composition as Grid.
+Selecting Pocket Garden explicitly also selects Grid; selecting Pocket Garden
+Night also selects Night grid. The appearance store saves the pair together and
+cancels any pending wallpaper load. Subsequent manual wallpaper changes preserve
+the selected theme, and restoring saved preferences preserves that custom pair.
+Other theme selections leave wallpaper unchanged.
+
+`DocumentHtml` owns the root background and window-design attributes directly
+from the appearance store, including the server-rendered Graphite default.
+AppearanceProvider hydrates and synchronizes preferences but never deletes root
+appearance attributes during effect cleanup. This preserves the selected material
+through Fast Refresh and remounts. The layout bootstrap still applies saved free
+themes before hydration to reduce initial theme flash.
+
+Currently Working in both Pocket Garden themes sits directly on the wallpaper:
+the outer rail has no fill, blur, rounded corners or shadow. Preserve its existing
+responsive left border, heading divider and participant separators. The shared
+open-rail rule in `app/default-neon.css` owns this treatment independently of the
+chosen wallpaper; participant controls retain the garden palette.
+
+
+Garden wallpapers are labeled Pocket Garden and Pocket Garden Night in both
+locales; saved IDs remain `grid` and `grid-night`. The matching site-theme
+miniatures show a 12px grid behind their sample windows, using fixed day/night
+wallpaper colors so they remain recognizable under any active theme.

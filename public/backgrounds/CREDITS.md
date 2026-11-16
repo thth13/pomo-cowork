@@ -1,4 +1,10 @@
-# Default background
+# Default background — Moss green
+
+- User-supplied file: `smooth-green-background-with-high-quality.jpg`.
+- Source supplied by the user: https://www.magnific.com/free-photo/smooth-green-background-with-high-quality_15667129.htm
+- Local assets: `images/default-moss-green.webp` (2560px) and `images/default-moss-green-thumb.webp` (480px).
+
+# Previous default background
 
 All wallpaper files below are hosted in storage under `backgrounds/images/`,
 using the configured `NEXT_PUBLIC_BLOB_BASE_URL`. Local copies have been removed.

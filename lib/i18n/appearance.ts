@@ -4,6 +4,9 @@ export const appearanceCopy = {
     description: 'Choose a theme for all pages, your scenery and timer font.',
     windowDesign: 'Site theme',
     windowDesigns: {
+      'pocket-garden': { name: 'Pocket Garden', description: 'Warm beige windows, sage details and dark text on every page.' },
+      'pocket-garden-night': { name: 'Pocket Garden Night', description: 'Dark garden surfaces, sage details and warm light text.' },
+      aurora: { name: 'Violet glass', description: 'The original violet glass with luminous edges.' },
       'dark-red': { name: 'Dark red', description: 'Deep burgundy surfaces with warm rose accents and light text.' },
       ivory: { name: 'Ivory', description: 'Soft ivory surfaces, beige details and warm gray text.' },
       white: { name: 'White', description: 'Bright white surfaces, soft gray borders and dark text.' },
@@ -30,7 +33,7 @@ export const appearanceCopy = {
     blocked: 'Your browser paused the video. Press Play background to try again.', retry: 'Try again',
     source: 'Video source: Mixkit',
     unlockPremium: 'Unlock with Pro. View plans.',
-    names: { default: 'Misty lake', 'pocket-garden': 'Pocket garden', 'rainy-window': 'Rainy window', 'misty-lake': 'Morning mist', 'sunset-coast': 'Peach coast', 'emerald-hills': 'Emerald hills', 'rose-twilight': 'Rose twilight', 'forest-dawn': 'Forest dawn', 'silent-shore': 'Silent shore', 'forest-rain': 'Forest rain', 'forest-stream': 'Woodland stream', 'ocean-sunset': 'Ocean sunset', 'alpine-dawn': 'Alpine dawn', 'desert-dunes': 'Desert dunes', 'aurora-lake': 'Aurora lake', 'magic-academy': 'Magic academy', 'pixel-campfire': 'Forest campfire', 'pixel-autumn': 'Autumn breeze', 'peach-glow': 'Peach glow', 'mint-haze': 'Mint haze', 'violet-dusk': 'Violet dusk', 'pearl-flow': 'Pearl flow', 'sage-mist': 'Sage mist', 'prism-waves': 'Prism waves', 'painted-sunrise': 'Painted sunrise', 'pastel-peaks': 'Pastel peaks', 'hudson-valley': 'Hudson valley' },
+    names: { default: 'Moss green', 'montana-lake': 'Misty lake', grid: 'Pocket Garden', 'grid-night': 'Pocket Garden Night', 'rainy-window': 'Rainy window', 'misty-lake': 'Morning mist', 'sunset-coast': 'Peach coast', 'emerald-hills': 'Emerald hills', 'rose-twilight': 'Rose twilight', 'forest-dawn': 'Forest dawn', 'silent-shore': 'Silent shore', 'forest-rain': 'Forest rain', 'forest-stream': 'Woodland stream', 'ocean-sunset': 'Ocean sunset', 'alpine-dawn': 'Alpine dawn', 'desert-dunes': 'Desert dunes', 'aurora-lake': 'Aurora lake', 'magic-academy': 'Magic academy', 'pixel-campfire': 'Forest campfire', 'pixel-autumn': 'Autumn breeze', 'peach-glow': 'Peach glow', 'mint-haze': 'Mint haze', 'violet-dusk': 'Violet dusk', 'pearl-flow': 'Pearl flow', 'sage-mist': 'Sage mist', 'prism-waves': 'Prism waves', 'painted-sunrise': 'Painted sunrise', 'pastel-peaks': 'Pastel peaks', 'hudson-valley': 'Hudson valley' },
     fonts: { pixel: 'Pixel', sans: 'Clean', serif: 'Editorial', mono: 'Mono', rounded: 'Soft', orbitron: 'Orbitron', 'space-grotesk': 'Space', cormorant: 'Cormorant', bebas: 'Bebas', vt323: 'Terminal' },
   },
   es: {
@@ -38,6 +41,9 @@ export const appearanceCopy = {
     description: 'Elige un tema para todas las páginas, el fondo y la tipografía del temporizador.',
     windowDesign: 'Tema del sitio',
     windowDesigns: {
+      'pocket-garden': { name: 'Pocket Garden', description: 'Ventanas beige, detalles salvia y texto oscuro en todas las páginas.' },
+      'pocket-garden-night': { name: 'Pocket Garden Night', description: 'Superficies oscuras, detalles salvia y texto claro cálido.' },
+      aurora: { name: 'Cristal violeta', description: 'El cristal violeta original con bordes luminosos.' },
       'dark-red': { name: 'Rojo oscuro', description: 'Superficies burdeos con detalles rosa cálido y texto claro.' },
       ivory: { name: 'Marfil', description: 'Superficies marfil suaves, detalles beige y texto gris cálido.' },
       white: { name: 'Blanco', description: 'Superficies blancas, bordes gris suave y texto oscuro.' },
@@ -64,7 +70,7 @@ export const appearanceCopy = {
     blocked: 'Tu navegador ha pausado el vídeo. Pulsa Reproducir fondo para reintentarlo.', retry: 'Reintentar',
     source: 'Fuente del vídeo: Mixkit',
     unlockPremium: 'Desbloquea con Pro. Ver planes.',
-    names: { default: 'Lago con niebla', 'pocket-garden': 'Pequeño jardín', 'rainy-window': 'Ventana con lluvia', 'misty-lake': 'Bruma matinal', 'sunset-coast': 'Costa al atardecer', 'emerald-hills': 'Colinas esmeralda', 'rose-twilight': 'Crepúsculo rosado', 'forest-dawn': 'Amanecer en el bosque', 'silent-shore': 'Costa serena', 'forest-rain': 'Lluvia en el bosque', 'forest-stream': 'Arroyo del bosque', 'ocean-sunset': 'Ocaso en el mar', 'alpine-dawn': 'Amanecer alpino', 'desert-dunes': 'Dunas del desierto', 'aurora-lake': 'Lago de auroras', 'magic-academy': 'Academia de magia', 'pixel-campfire': 'Fogata en el bosque', 'pixel-autumn': 'Brisa otoñal', 'peach-glow': 'Brillo melocotón', 'mint-haze': 'Bruma menta', 'violet-dusk': 'Ocaso violeta', 'pearl-flow': 'Flujo perlado', 'sage-mist': 'Bruma salvia', 'prism-waves': 'Ondas prismáticas', 'painted-sunrise': 'Amanecer ilustrado', 'pastel-peaks': 'Cumbres pastel', 'hudson-valley': 'Valle del Hudson' },
+    names: { default: 'Verde musgo', 'montana-lake': 'Lago con niebla', grid: 'Pocket Garden', 'grid-night': 'Pocket Garden Night', 'rainy-window': 'Ventana con lluvia', 'misty-lake': 'Bruma matinal', 'sunset-coast': 'Costa al atardecer', 'emerald-hills': 'Colinas esmeralda', 'rose-twilight': 'Crepúsculo rosado', 'forest-dawn': 'Amanecer en el bosque', 'silent-shore': 'Costa serena', 'forest-rain': 'Lluvia en el bosque', 'forest-stream': 'Arroyo del bosque', 'ocean-sunset': 'Ocaso en el mar', 'alpine-dawn': 'Amanecer alpino', 'desert-dunes': 'Dunas del desierto', 'aurora-lake': 'Lago de auroras', 'magic-academy': 'Academia de magia', 'pixel-campfire': 'Fogata en el bosque', 'pixel-autumn': 'Brisa otoñal', 'peach-glow': 'Brillo melocotón', 'mint-haze': 'Bruma menta', 'violet-dusk': 'Ocaso violeta', 'pearl-flow': 'Flujo perlado', 'sage-mist': 'Bruma salvia', 'prism-waves': 'Ondas prismáticas', 'painted-sunrise': 'Amanecer ilustrado', 'pastel-peaks': 'Cumbres pastel', 'hudson-valley': 'Valle del Hudson' },
     fonts: { pixel: 'Píxel', sans: 'Limpia', serif: 'Editorial', mono: 'Mono', rounded: 'Suave', orbitron: 'Orbitron', 'space-grotesk': 'Space', cormorant: 'Cormorant', bebas: 'Bebas', vt323: 'Terminal' },
   },
 } as const

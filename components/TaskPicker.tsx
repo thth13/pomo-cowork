@@ -13,7 +13,6 @@ import { taskService } from '@/services/taskService'
 import { taskPickerCopy } from '@/lib/i18n/taskPicker'
 import { gardenCopy } from '@/lib/i18n/garden'
 import { useQuickTasks } from '@/hooks/useQuickTasks'
-import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useTimerStore } from '@/store/useTimerStore'
 import { SessionType } from '@/types'
 import { projectColorStyle } from '@/lib/projectColors'
@@ -65,7 +64,6 @@ export const TaskPicker = memo(function TaskPicker({
   const router = useRouter()
   const copy = taskPickerCopy[language]
   const reducedMotion = useReducedMotion()
-  const backgroundId = useAppearanceStore(state => state.backgroundId)
   const searchRef = useRef<HTMLInputElement>(null)
   const allOptions = useTimerStore(state => state.taskOptions)
   const [expandedProjects, setExpandedProjects] = useState<string[]>([])
@@ -217,7 +215,7 @@ export const TaskPicker = memo(function TaskPicker({
                 aria-label={triggerLabel ?? copy.selection}
                 aria-busy={loading}
                 data-i18n-ignore
-                data-background-mode={variant !== 'mini-timer' && backgroundId !== 'pocket-garden' || undefined}
+                data-background-mode={variant !== 'mini-timer' || undefined}
                 data-mini-timer-picker={variant === 'mini-timer' || undefined}
                 data-daily-flow-picker={variant === 'daily-flow' || undefined}
                 initial={{ opacity: 0, y: reducedMotion ? 0 : -4 }}

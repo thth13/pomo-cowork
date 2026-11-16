@@ -95,7 +95,12 @@ export default function RootLayout({
   return (
     <DocumentHtml>
       <head>
-        <style>{`:root { --default-background-image: url(${JSON.stringify(BACKGROUNDS[0].src)}); }`}</style>
+        {/* Style content is raw text in HTML; preserve CSS quotes during SSR. */}
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `:root { --default-background-image: url(${JSON.stringify(BACKGROUNDS[0].src).replace(/</g, '\\3c ')}); }`,
+          }}
+        />
         <link rel="describedby" href="/llms.txt" type="text/plain" />
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
         <script
@@ -110,8 +115,8 @@ export default function RootLayout({
               }
               try {
                 const appearance = JSON.parse(localStorage.getItem('pomo:appearance:v1') || 'null');
-                document.documentElement.dataset.background = appearance?.backgroundId === 'pocket-garden' ? 'pocket-garden' : 'default';
-                const design = appearance && appearance.windowDesign;
+                document.documentElement.dataset.background = appearance?.backgroundId === 'pocket-garden' ? 'grid' : appearance?.backgroundId || 'default';
+                const design = appearance?.backgroundId === 'pocket-garden' ? 'pocket-garden' : appearance && appearance.windowDesign;
                 document.documentElement.dataset.windowDesign = ${JSON.stringify(FREE_WINDOW_DESIGNS)}.includes(design) ? design : ${JSON.stringify(DEFAULT_APPEARANCE.windowDesign)};
               } catch (e) {
                 document.documentElement.dataset.windowDesign = ${JSON.stringify(DEFAULT_APPEARANCE.windowDesign)};

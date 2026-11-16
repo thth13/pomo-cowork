@@ -2,14 +2,11 @@
    Existing appearance IDs and saved choices remain the source of truth. */
 @media (forced-colors: none) {
   :root, :root.dark {
-    /* Katie Moum / Unsplash. See public/backgrounds/CREDITS.md. */
     --aurora-background: var(--default-background-image);
   }
 
-  :root:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]), :root.dark:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) {
-    --aurora-background:
-      linear-gradient(180deg, rgb(0 0 0 / 37.5%), rgb(0 0 0 / 36.25%) 50%, rgb(0 0 0 / 34.375%)),
-      var(--default-background-image);
+  :root:is([data-window-design="aurora"], [data-window-design="graphite"]), :root.dark:is([data-window-design="aurora"], [data-window-design="graphite"]) {
+    --aurora-background: var(--default-background-image);
     --glass-accent: #f0a394;
     --pixel-page: var(--glass-page, #171326);
     --pixel-paper: var(--glass-paper, #241c36);
@@ -44,17 +41,17 @@
   }
 
   /* Only paint the ordinary background; photo/video scenery stays visible. */
-  html:not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) :is(.garden-page, .journal-shell:has(.my-projects)),
-  html:not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) {
+  html:not([data-background="grid"], [data-background="grid-night"]) body:not(:has(.workspace-background, .product-scenery)) :is(.garden-page, .journal-shell:has(.my-projects)),
+  html:not([data-background="grid"], [data-background="grid-night"]) body:not(:has(.workspace-background, .product-scenery)) {
     background-image: var(--aurora-background);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    background-color: #17212c;
+    background-color: #273323;
     background-attachment: fixed;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) :is(
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body:not(:has(.workspace-background, .product-scenery)) :is(
     .workspace-window, .workspace-navigation-panel, .workspace-account-card,
     .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
     .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
@@ -62,7 +59,7 @@
     .focus-station, .working-sidebar, .seo-timer, .seo-social,
     .workspace-dock, .workspace-navigation-control
   ),
-  html[data-mini-timer]:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .task-popover[data-mini-timer-picker] {
+  html[data-mini-timer]:is([data-window-design="aurora"], [data-window-design="graphite"]) .task-popover[data-mini-timer-picker] {
     background: var(--neon-shell);
     border-color: rgb(var(--glass-border-rgb, 231 211 255) / 19%);
     -webkit-backdrop-filter: var(--window-backdrop);
@@ -71,7 +68,7 @@
     box-shadow: var(--window-shadow);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) :is(
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body:not(:has(.workspace-background, .product-scenery)) :is(
     .workspace-window-heading, .appearance-header, .appearance-footer,
     .workspace-menu-heading
   ) {
@@ -79,11 +76,11 @@
     border-color: var(--pixel-line);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) .workspace-window-content > div {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body:not(:has(.workspace-background, .product-scenery)) .workspace-window-content > div {
     background: transparent;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body:not(:has(.workspace-background, .product-scenery)) :is(.workspace-window, .workspace-dock, .focus-station, .working-sidebar):focus-within {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body:not(:has(.workspace-background, .product-scenery)) :is(.workspace-window, .workspace-dock, .focus-station, .working-sidebar):focus-within {
     box-shadow: var(--window-shadow), 0 0 0 1px var(--pixel-accent);
   }
 
@@ -104,7 +101,7 @@
   .appearance-default-preview:not(.appearance-garden-preview) > span { color: var(--glass-ink, #fbf7ff); }
   .dark .appearance-default-preview:not(.appearance-garden-preview) > span { color: #f1edff; }
 
-  .appearance-window-preview[data-window-design="glass"] .appearance-window-sample {
+  .appearance-window-preview[data-window-design="aurora"] .appearance-window-sample {
     background: linear-gradient(135deg, #462657, #261b39) padding-box,
       linear-gradient(125deg, #c6a4e0, #a87594) border-box;
     border: 1px solid transparent;
@@ -112,31 +109,36 @@
     box-shadow: 0 0 18px rgb(139 92 246 / 30%);
   }
 
-  .appearance-window-preview[data-window-design="glass"] .appearance-window-sample-header {
+  .appearance-window-preview[data-window-design="aurora"] .appearance-window-sample-header {
     background: rgb(167 139 250 / 15%);
     border-color: rgb(196 181 253 / 25%);
   }
 
   /* Glass materials use a dark reading overlay behind the open timer. */
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .workspace-background-wash {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) .workspace-background-wash {
     background: linear-gradient(180deg, rgb(0 0 0 / 37.5%), rgb(0 0 0 / 36.25%) 50%, rgb(0 0 0 / 34.375%));
   }
 
-  /* A feathered local scrim keeps the timer open without a visible card edge. */
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home .focus-station:not(:has(.daily-flow-content)) {
+  /* Open timers have no card edge; dark glass uses a feathered local scrim. */
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home:has(.workspace-background) .focus-station:not(:has(.daily-flow-content)) {
     background: radial-gradient(ellipse closest-side at center, rgb(0 0 0 / 25%) 0%, rgb(0 0 0 / 18%) 45%, transparent 100%);
     border-color: transparent;
+    border-radius: 0;
     box-shadow: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home .focus-station [data-timer-panel] {
+  html:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]) body .pomodoro-home:has(.workspace-background) .focus-station:not(:has(.daily-flow-content)) {
+    background: transparent;
+  }
+
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home .focus-station [data-timer-panel] {
     padding: var(--workspace-timer-padding, 20px clamp(12px, 3vw, 32px));
     color: var(--glass-ink, #fbf7ff);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-screen {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-timer-screen {
     background: transparent;
     border: 0;
     box-shadow: none;
@@ -144,7 +146,7 @@
     margin-bottom: var(--workspace-timer-screen-gap, 24px);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-digits {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-timer-digits {
     color: #fff;
     font-size: var(--workspace-timer-font-size, clamp(44px, 6.7vw, 86px));
     padding: var(--workspace-timer-digits-padding, 18px 0 22px);
@@ -152,17 +154,17 @@
     text-shadow: 0 2px 6px rgb(0 0 0 / 28%), 0 6px 24px rgb(0 0 0 / 16%);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-digits[data-timer-font="sans"] {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-timer-digits[data-timer-font="sans"] {
     font-family: Inter, system-ui, sans-serif;
     font-weight: 700;
     --timer-optical-scale: 1.4;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-digits-long {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-timer-digits-long {
     font-size: var(--workspace-timer-long-font-size, clamp(32px, 5vw, 64px));
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-status {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-timer-status {
     color: var(--glass-muted, #e4d8f0);
     text-shadow: 0 1px 4px rgb(0 0 0 / 45%);
     font-family: Inter, system-ui, sans-serif;
@@ -171,35 +173,35 @@
     letter-spacing: .14em;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-led,
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .pixel-led {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-led,
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .pixel-led {
     border-radius: 50%;
     box-shadow: 0 0 10px rgb(var(--glass-highlight-rgb, 226 195 255) / 35%);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track,
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .pixel-timer-track {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track,
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .pixel-timer-track {
     height: 3px;
     max-width: 220px;
     gap: 3px;
     opacity: .8;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track span,
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .pixel-timer-track span {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track span,
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .pixel-timer-track span {
     border: 0;
     border-radius: 10px;
     background: rgb(255 255 255 / 16%);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track .filled,
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .pixel-timer-track .filled {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-timer-track .filled,
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .pixel-timer-track .filled {
     background: var(--timer-mode-color);
     opacity: 1;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) button,
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .timer-actions button {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) button,
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .timer-actions button {
     min-height: var(--workspace-timer-action-height, 48px);
     padding: var(--workspace-timer-action-padding, 12px 22px);
     border: 1px solid rgb(var(--glass-control-border-rgb, 238 219 255) / 16%);
@@ -210,19 +212,19 @@
     font-weight: 500;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions button:hover:not(:disabled),
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .timer-actions button:hover:not(:disabled) {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-actions button:hover:not(:disabled),
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .timer-actions button:hover:not(:disabled) {
     background: rgb(var(--glass-button-hover-rgb, 103 57 142) / 75%);
     border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 40%);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-mode-tabs {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-mode-tabs {
     gap: 4px;
     flex-wrap: wrap;
     margin-top: 4px;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab {
     border-radius: 10px;
     color: #e8e8ec;
     text-shadow: 0 1px 4px rgb(0 0 0 / 45%);
@@ -230,12 +232,12 @@
     letter-spacing: .015em;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab[aria-pressed="true"] {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab[aria-pressed="true"] {
     color: #fff;
     background: rgb(255 255 255 / 9%);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab[aria-pressed="true"]::after {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab[aria-pressed="true"]::after {
     height: 2px;
     border-radius: 2px;
     background: var(--glass-accent, #e5caff);
@@ -243,37 +245,37 @@
     right: 30%;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] :is(.first-focus-options button, .current-task-trigger),
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer :is(.first-focus-options button, .current-task-trigger) {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] :is(.first-focus-options button, .current-task-trigger),
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer :is(.first-focus-options button, .current-task-trigger) {
     border-radius: 12px;
     border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 20%);
     background: rgb(var(--glass-control-rgb, 35 21 53) / 55%);
     color: var(--glass-ink, #eee4f8);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .first-focus-options button[aria-pressed="true"] {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .first-focus-options button[aria-pressed="true"] {
     background: rgb(var(--glass-selected-rgb, 222 185 255) / 18%);
     border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 45%);
     color: #fff;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] :is(.pixel-timer-settings, .timer-appearance-trigger) {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] :is(.pixel-timer-settings, .timer-appearance-trigger) {
     color: var(--glass-icon, #e1d3ee);
     border-radius: 10px;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] button:focus-visible,
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer button:focus-visible {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] button:focus-visible,
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer button:focus-visible {
     outline: 2px solid var(--glass-ink, #f4dfff);
     outline-offset: 4px;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] button:disabled,
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer button:disabled {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] button:disabled,
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer button:disabled {
     opacity: .5;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home .first-focus-intro {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home .first-focus-intro {
     font-size: clamp(14px, 1.4vw, 18px);
     font-weight: 500;
     color: var(--glass-ink, #f8efff);
@@ -281,7 +283,7 @@
 
   /* Glass variants share their selected material across photo backgrounds.
      Other designs keep their palette and surfaces from window-design.css. */
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home :is(
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home :is(
     .workspace-dock, .workspace-window, .working-sidebar
   ) {
     --scene-panel: rgb(var(--glass-surface-rgb, 43 27 63) / var(--glass-surface-opacity, 85%));
@@ -303,14 +305,32 @@
     --pixel-accent: var(--glass-accent, #dfc5ff);
     --pixel-tomato-ink: var(--glass-accent, #dfc5ff);
     --pixel-tomato-soft: var(--glass-soft, rgb(185 78 62 / 18%));
+    --glass-workspace-surface: linear-gradient(135deg, rgb(var(--glass-shell-top-rgb, 65 37 87) / var(--glass-shell-top-opacity, 88%)), rgb(var(--glass-shell-bottom-rgb, 37 22 57) / var(--glass-shell-bottom-opacity, 90%)));
     color: var(--scene-primary);
     color-scheme: dark;
-    background: linear-gradient(135deg, rgb(var(--glass-shell-top-rgb, 65 37 87) / var(--glass-shell-top-opacity, 88%)), rgb(var(--glass-shell-bottom-rgb, 37 22 57) / var(--glass-shell-bottom-opacity, 90%)));
+    background: var(--glass-workspace-surface);
     border-color: var(--scene-border);
     border-radius: 18px;
     box-shadow: inset 0 1px 0 rgb(var(--glass-rim-rgb, 239 215 255) / 12%), 0 12px 36px rgb(19 7 33 / 22%);
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
+  }
+
+  /* Violet Glass keeps its original palette on product pages and dialogs too. */
+  :root[data-window-design="aurora"],
+  :root.dark[data-window-design="aurora"],
+  .appearance-window-preview[data-window-design="aurora"] {
+    --window-scene-panel: rgb(43 27 63 / 85%);
+    --window-scene-task: rgb(27 20 43 / 89%);
+    --window-scene-popover: #271a3c;
+    --window-scene-border: rgb(211 177 255 / 30%);
+    --window-material-ink: #fbf7ff;
+    --window-material-muted: #d1c3e0;
+    --window-material-accent: #f0a394;
+    --window-material-line: #705284;
+    --window-material-scheme: dark;
+    --window-product-page: #21172f;
+    --window-product-screen: #3b2850;
   }
 
   /* Graphite reuses Glass behavior with translucent black surfaces. */
@@ -373,31 +393,31 @@
   }
 
   /* Brand red owns selection and primary actions; green retains status meaning. */
-  html:is([data-window-design="glass"], [data-window-design="graphite"]) body .workspace-dock button[aria-expanded="true"] {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .workspace-dock button[aria-expanded="true"] {
     color: var(--pixel-tomato-ink);
     background: var(--glass-soft, rgb(185 78 62 / 18%));
     box-shadow: inset 2px 0 var(--pixel-tomato);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]) body .workspace-dock button[aria-expanded="true"] :is(svg, .workspace-dock-label) {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .workspace-dock button[aria-expanded="true"] :is(svg, .workspace-dock-label) {
     color: var(--pixel-tomato-ink);
     text-shadow: none;
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]) body .workspace-menu-item[aria-current="page"] {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .workspace-menu-item[aria-current="page"] {
     color: var(--glass-action-ink, #f0a394);
     background: var(--glass-soft, rgb(185 78 62 / 18%));
     box-shadow: inset 2px 0 var(--pixel-tomato);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action,
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .timer-actions .timer-primary-action {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action,
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .timer-actions .timer-primary-action {
     background: var(--pixel-tomato);
     border-color: var(--pixel-tomato);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action:hover:not(:disabled),
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) body .mini-timer .timer-actions .timer-primary-action:hover:not(:disabled) {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action:hover:not(:disabled),
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .timer-actions .timer-primary-action:hover:not(:disabled) {
     background: var(--pixel-tomato-hover);
     border-color: var(--pixel-tomato-hover);
   }
@@ -426,12 +446,232 @@
     background: rgb(255 255 255 / 9%);
   }
 
-  html[data-window-design="graphite"]:not([data-background="pocket-garden"]) body .pomodoro-home :is(.workspace-dock, .workspace-window, .working-sidebar) {
+  html[data-window-design="graphite"] body .pomodoro-home :is(.workspace-dock, .workspace-window, .working-sidebar) {
     border-radius: var(--window-radius);
     border-color: var(--window-material-line);
     box-shadow: var(--window-shadow);
     -webkit-backdrop-filter: var(--window-backdrop);
     backdrop-filter: var(--window-backdrop);
+  }
+
+  /* Open presence rails keep their dividers, without a card over the wallpaper. */
+  html:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"], [data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working {
+    background: transparent;
+    border-radius: 0;
+    box-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+
+  /* Quiet presence cards: small portraits, soft glass and a hairline progress track. */
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip {
+    gap: 8px;
+    padding-block: 12px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip-heading h2 {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -.015em;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip-heading > div {
+    font-size: 10px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile {
+    flex-shrink: 0;
+    background: var(--glass-workspace-surface);
+    border: 1px solid rgb(var(--glass-edge-rgb) / 12%);
+    border-radius: 12px;
+    box-shadow: inset 0 1px 0 rgb(var(--glass-rim-rgb) / 5%);
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-self {
+    border-inline-start-color: var(--glass-action-ink);
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile:focus-within {
+    border-color: rgb(var(--glass-edge-rgb) / 48%);
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-profile {
+    gap: 10px;
+    padding: 14px 12px;
+    border-radius: inherit;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border-color: rgb(var(--glass-edge-rgb) / 18%);
+    font-size: 13px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-details {
+    gap: 5px 12px;
+    align-items: center;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-identity {
+    padding-right: 28px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-name {
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 500;
+    letter-spacing: -.01em;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-task {
+    font-size: 11px;
+    line-height: 16px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-status {
+    gap: 5px;
+    font-size: 10px;
+    line-height: 18px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-dot {
+    flex-basis: 5px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-time {
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 18px;
+    font-weight: 500;
+    letter-spacing: .02em;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-progress {
+    height: 2px;
+    margin-top: 4px;
+    border: 0;
+    border-radius: 2px;
+    background: rgb(var(--glass-edge-rgb) / 12%);
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-progress > span {
+    border-radius: inherit;
+    background: var(--glass-panel-muted);
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-menu {
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-menu svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-you {
+    top: 14px;
+    right: 12px;
+    font-size: 9px;
+    line-height: 18px;
+    font-weight: 500;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-reactions {
+    gap: 5px;
+    padding: 0 12px 12px 54px;
+    font-size: 10px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-reactions button {
+    border-radius: 6px;
+    padding: 3px 6px;
+  }
+
+  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working[data-collapsed="true"] .coworker-tile-profile {
+    padding: 12px 4px;
+    gap: 7px;
+  }
+
+  /* Full desktop density; compact laptop sizes remain below this breakpoint. */
+  @media (min-width: 1536px) and (min-height: 821px) {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip-heading h2 {
+      font-size: 15px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip-heading > div {
+      font-size: 11px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-profile {
+      gap: 12px; padding: 20px 12px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-avatar {
+      width: 40px; height: 40px; font-size: 16px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-details {
+      gap: 7px 12px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-name {
+      font-size: 14px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-task {
+      font-size: 12px; line-height: 17px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-status {
+      font-size: 11px; gap: 7px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-time {
+      font-size: 14px; line-height: 22px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-dot {
+      flex-basis: 7px; width: 7px; height: 7px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-menu {
+      width: 30px; height: 30px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-menu svg {
+      width: 18px; height: 18px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-you {
+      top: 20px; font-size: 10px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-reactions {
+      padding-left: 64px; font-size: 11px;
+    }
+
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working[data-collapsed="true"] .coworker-tile-profile {
+      padding: 14px 4px;
+      gap: 8px;
+    }
+  }
+
+  @media (hover: hover) {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile:hover {
+      background-color: rgb(var(--glass-rim-rgb) / 5%);
+      border-color: rgb(var(--glass-edge-rgb) / 24%);
+    }
   }
 
   .appearance-window-preview[data-window-design="graphite"] .appearance-window-sample {
@@ -451,17 +691,17 @@
 
 /* Native mini timer shares the open home timer's foreground and materials. */
 @media (forced-colors: none) {
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .mini-timer {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) .mini-timer {
     color: var(--pixel-ink);
     text-shadow: 0 1px 4px rgb(0 0 0 / 45%);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .mini-timer-digits {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) .mini-timer-digits {
     color: #fff;
     text-shadow: 0 2px 6px rgb(0 0 0 / 28%), 0 6px 24px rgb(0 0 0 / 16%);
   }
 
-  html:is([data-window-design="glass"], [data-window-design="graphite"]):not([data-background="pocket-garden"]) .mini-timer-digits[data-timer-font="sans"] {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"]) .mini-timer-digits[data-timer-font="sans"] {
     font-family: Inter, system-ui, sans-serif;
     font-weight: 700;
   }

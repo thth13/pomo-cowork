@@ -153,6 +153,7 @@ export default function WorkspaceBackground() {
   const backgroundId = useAppearanceStore(state => state.backgroundId)
   const revision = useAppearanceStore(state => state.mediaRevision)
   const scene = BACKGROUNDS.find(background => background.id === backgroundId)
-  if (isMinimalSeoPath(pathname) || !scene || scene.kind === 'default') return null
+  if (isMinimalSeoPath(pathname) || !scene) return null
+  if (scene.kind === 'default') return <div className="workspace-background workspace-background-grid" data-grid-tone={scene.id === 'grid-night' ? 'night' : 'day'} aria-hidden="true" />
   return <BackgroundMedia key={`${scene.id}:${revision}`} scene={scene} />
 }

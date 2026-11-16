@@ -1561,6 +1561,8 @@ html:has(.workspace-page),
 body:has(.workspace-page) {
   height: 100%;
   overflow: hidden;
+  /* Workspace panels own scrolling; the document needs no reserved gutter. */
+  scrollbar-gutter: auto;
 }
 
 .workspace-page {
