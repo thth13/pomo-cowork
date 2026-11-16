@@ -2637,3 +2637,21 @@ Garden wallpapers are labeled Pocket Garden and Pocket Garden Night in both
 locales; saved IDs remain `grid` and `grid-night`. The matching site-theme
 miniatures show a 12px grid behind their sample windows, using fixed day/night
 wallpaper colors so they remain recognizable under any active theme.
+
+
+## Administration conversion metrics
+
+Conversions (`/admin#conversions`) reuses the existing administration shell,
+metric cards, palette and Inter typography. A prominent full-width activity card
+precedes a three-step count/rate funnel, which stacks on narrow screens. Native
+From/Through calendar inputs and the existing native referrer select pattern own
+filter interaction; their popup locale and geometry are platform-owned. Dates and
+source persist in URL parameters. `app/admin/admin.css` owns this section's layout;
+all colors resolve through existing `--admin-*` tokens and the site theme adapter.
+No new runtime palette or acquisition tracking models are introduced.
+
+
+The Conversions section places a combined visitor/anonymous/registered table below
+its metrics. It reuses admin table cells, wrapped URL/message cells, horizontal
+scrolling and pagination controls. Row type is explicit text, and unavailable
+metadata uses the existing dash/Not recorded convention. No new visual tokens.

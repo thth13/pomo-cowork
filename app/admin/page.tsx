@@ -9,6 +9,7 @@ import HomeLink from '@/components/HomeLink'
 import { ArrowLeft, ArrowUpRight, Crown, LayoutDashboard, Link2, MessageSquare, MousePointer2, ShieldCheck, Users, MessageCircle, ListChecks, BarChart3 } from 'lucide-react'
 import AdminAllMetrics from '@/components/admin/AdminAllMetrics'
 import AdminUserCounts from '@/components/admin/AdminUserCounts'
+import AdminConversions from '@/components/admin/AdminConversions'
 import AdminOverview from '@/components/admin/AdminOverview'
 import AdminProductUpdates from '@/components/admin/AdminProductUpdates'
 import AdminBeepMessages from '@/components/admin/AdminBeepMessages'
@@ -32,6 +33,7 @@ const sections = [
   { id: 'settings-changes', label: 'Settings changes', icon: ListChecks, description: 'Saved workspace preference changes, with previous and new values.' },
   { id: 'updates', label: 'Product updates', icon: MessageSquare, description: 'Preview illustrated updates and send in-app notifications to registered accounts.' },
   { id: 'metrics', label: 'All metrics', icon: BarChart3, description: 'Community totals, current activity, and all-time records.' },
+  { id: 'conversions', label: 'Conversions', icon: BarChart3, description: 'Visitors, anonymous profiles, registrations and activity after 24 hours.' },
   { id: 'user-counts', label: 'User counts', icon: Users, description: 'Registered and anonymous account counts by creation month. Calendar months use Kyiv time.' },
   { id: 'referrals', label: 'Referral links', icon: Link2, description: 'Manage campaign links and track the people they bring to Pomo.' },
   { id: 'users', label: 'Pro users', icon: Crown, description: 'Manage Premium access and review active memberships.' },
@@ -95,6 +97,7 @@ export default function AdminPage() {
             {section === 'updates' && <AdminProductUpdates />}
             {section === 'overview' && <AdminOverview />}
             {section === 'metrics' && <AdminAllMetrics />}
+            {section === 'conversions' && <AdminConversions />}
             {section === 'user-counts' && <AdminUserCounts />}
             {section === 'beep' && <AdminBeepMessages />}
             {section === 'beep-events' && <AdminBeepEvents />}

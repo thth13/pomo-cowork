@@ -251,3 +251,43 @@ body:has(.admin-shell) { background: #f5f7fa; }
 .admin-record-details { margin-top: 0; min-width: 150px; max-width: 360px; }
 .admin-record-details[open] { width: 300px; }
 .admin-beep-text { margin-top: 6px; white-space: pre-wrap; }
+
+/* Conversion metrics reuse the administration palette and metric cards. */
+.admin-conversion-range { flex-wrap: wrap; align-items: flex-end; }
+.admin-conversion-range label { display: flex; flex-direction: column; gap: 6px; color: var(--admin-secondary); font-size: 12px; }
+.admin-conversion-range input { min-width: 0; padding: 8px 12px; border: 1px solid var(--admin-line); border-radius: 6px; background: var(--admin-surface); color: var(--admin-ink); font: inherit; color-scheme: inherit; }
+.admin-conversion-range > p { flex-basis: 100%; }
+.admin-conversions button:not(:disabled) { cursor: pointer; }
+.admin-conversions button:active:not(:disabled) { background: var(--admin-subtle); }
+.admin-conversions :is(button, input, select):focus-visible { outline: 2px solid var(--admin-accent); outline-offset: 3px; }
+.admin-conversion-active { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 32px; padding: 28px; margin-bottom: 20px; border: 1px solid var(--admin-accent-line); border-radius: 12px; background: var(--admin-accent-soft); }
+.admin-conversion-active h2 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+.admin-conversion-active p { max-width: 66ch; }
+.admin-conversion-active > .admin-data-note { grid-column: 1 / -1; }
+.admin-conversion-active-value { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; gap: 6px; }
+.admin-conversion-active-value strong { font-size: clamp(36px, 5vw, 56px); line-height: 1.1; color: var(--admin-accent-hover); }
+.admin-conversion-active-value span { color: var(--admin-secondary); font-size: 12px; }
+.admin-conversion-funnel { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; list-style: none; padding: 0; margin: 0 0 18px; }
+.admin-conversion-rate { margin-top: 12px; font-size: 19px; font-weight: 600; }
+.admin-conversion-rate span { display: block; color: var(--admin-secondary); font-size: 12px; font-weight: 400; }
+.admin-conversion-summary { display: flex; flex-wrap: wrap; gap: 12px 28px; margin-bottom: 16px; color: var(--admin-secondary); font-size: 13px; }
+.admin-conversion-summary strong { color: var(--admin-ink); }
+.admin-conversion-method { margin-top: 24px; border-top: 1px solid var(--admin-line); padding-top: 20px; color: var(--admin-muted); font-size: 12px; }
+.admin-conversion-method h3 { color: var(--admin-ink); font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.admin-conversion-method p + p { margin-top: 8px; }
+@media (max-width: 800px) {
+  .admin-conversion-active { grid-template-columns: minmax(0, 1fr); padding: 20px; }
+  .admin-conversion-active-value { align-items: flex-start; }
+  .admin-conversion-funnel { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+}
+@media (forced-colors: active) {
+  .admin-conversion-active { border-color: CanvasText; background: Canvas; }
+  .admin-conversion-active-value strong { color: CanvasText; }
+}
+
+.admin-conversion-filter-note { margin: -8px 0 20px; }
+.admin-conversions .admin-referrer-filter { flex-wrap: wrap; }
+.admin-conversions select { cursor: pointer; }
+.admin-conversions :is(input, select):hover { border-color: var(--admin-accent); }
+
+.admin-conversion-records { margin-top: 24px; }

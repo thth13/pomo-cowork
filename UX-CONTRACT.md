@@ -1367,3 +1367,53 @@ AdminSettingsChanges and the authorizeAdmin-protected API expose newest-first
 Failed client saves preserve the choice and offer Retry; account transitions discard
 old-account pending changes and ignore late responses. Guests remain local without
 fabricated audit records. Closing/reopening the mini window is not a preference edit.
+
+
+## Administration conversions
+
+Source: the user's November 16 clarification; `app/api/admin/conversions/route.ts`,
+`lib/conversionPeriod.ts` and `AdminConversions`. The read-only endpoint authorizes
+with authorizeAdmin, disables caching and aggregates existing GuestVisit and User
+records only. No new events, schema columns or migrations are needed for this step.
+
+For an inclusive Kyiv creation-date range, total visitors = New visitors + current
+anonymous profiles + current registered profiles. The anonymous stage includes
+anonymous + registered profiles; its rate divides that total by all visitors.
+Registration rate is registered / (anonymous + registered); overall registration
+rate is also shown as registered / all visitors. Conversion preserves the existing
+anonymous User.createdAt; transition dates are intentionally irrelevant. Deleted
+records are excluded, and these are current-state counts, not event history.
+
+The main activity rate is accounts with lastSeenAt >= createdAt + 24 elapsed hours,
+divided by all visitors in the group. Continuous presence and actual return both
+qualify. GuestVisit has no lastSeenAt and contributes only to the denominator.
+Activity may occur after the selected range; accounts younger than 24 hours remain
+in the denominator and are separately noted. Zero denominators show a dash.
+
+Default range is the seven full calendar days ending yesterday in Europe/Kyiv.
+Native date inputs accept platform-owned popup geometry/locale/keyboard behavior,
+as in the existing admin month picker. The server independently resolves local
+midnights for DST and rejects invalid/reversed/future ranges. conversionStart,
+conversionEnd and conversionReferrer persist in the URL; resetting dates preserves
+source. The native referrer select reuses the New visitors filter convention.
+Specific source and Direct/unknown filters always apply to GuestVisit; for User
+they apply only to createdAt on/after 2026-11-15 00:00 Kyiv. Earlier profiles are
+included regardless of referrer. All referrers imposes no source restriction.
+
+useAdminData owns timeout, cancellation, loading/error states and Refresh retry.
+The activity card is primary; count/rate cards stack on mobile without introducing
+page-height bounds. Verification leaves runtime rendering to the user; no project
+launch, build or tsc.
+
+
+The same Conversions section includes a combined table of GuestVisit, anonymous
+User and registered User records. A single shared SQL dataset applies the date
+range and November 15 referrer exception to both metrics and rows. Counts and
+paged rows use one Repeatable Read snapshot. The server returns 50 records per
+page, clamps out-of-range pages and sorts by createdAt descending, then kind and
+ID for stable ties. conversionPage persists in the URL; changes to dates/source
+reset it. Pagination pins the displayed default date range when sharing links.
+Rows show user/profile or visitor IP/ID, type, creation and last-seen Kyiv times,
+24-hour activity, referrer and landing page. Guest last-seen/activity and account
+landing pages are unavailable rather than fabricated. Existing native admin table,
+scroll region, pagination, useAdminData and profile-link owners are reused.
