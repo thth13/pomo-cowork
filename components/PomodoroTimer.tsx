@@ -404,7 +404,9 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
   const { showNotification, playSound } = useNotifications(
     notificationEnabled,
     soundEnabled,
-    soundVolume
+    soundVolume,
+    user?.settings?.startSound,
+    user?.settings?.stopSound
   )
 
   const filteredTaskOptions = useMemo(() => {
@@ -582,6 +584,7 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
     try {
       // Optimistic local start (don't wait for network)
       startSession(taskName, duration, type, tempId, currentRoomId, dailyFlow)
+      playSound('start')
 
       sendMessageToServiceWorker({
         type: 'START_TIMER',
@@ -682,6 +685,7 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
     mutateSessions,
     selectedTask?.title,
     cancelSession,
+    playSound,
     startSession,
     t.timer.timeTracking,
     t.timer.workSession,
@@ -836,6 +840,7 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
 
       // Optimistic local start (don't wait for network)
       startSession(taskName, duration, startType, tempId, currentRoomId, dailyFlow)
+      playSound('start')
 
       sendMessageToServiceWorker({
         type: 'START_TIMER',
@@ -1154,6 +1159,7 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
         
         // Optimistically stop timer immediately
         cancelSession()
+        playSound('end')
         
         // Stop Service Worker timer
         sendMessageToServiceWorker({
@@ -1313,11 +1319,7 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
 
     showNotification(completionTitle, notificationBody)
 
-    if (nextType === SessionType.SHORT_BREAK || nextType === SessionType.LONG_BREAK) {
-      playSound('start')
-    } else {
-      playSound('end')
-    }
+    playSound('end')
 
     if (isAutoStartEnabled) {
       scheduleAutoStart(() => initiateSession(nextType))

@@ -1417,3 +1417,22 @@ Rows show user/profile or visitor IP/ID, type, creation and last-seen Kyiv times
 24-hour activity, referrer and landing page. Guest last-seen/activity and account
 landing pages are unavailable rather than fabricated. Existing native admin table,
 scroll region, pagination, useAdminData and profile-link owners are reused.
+
+
+## Timer sound preferences
+
+UserSettings.startSound/stopSound and /api/settings own saved sound IDs;
+lib/timerSounds.ts owns their allowlist and English/Spanish option names.
+/settings edits these with the existing explicit Save action. Separate native
+selects accept platform popup behavior; Preview plays the draft choice at the
+current volume and reports playback failure inline without losing the selection.
+Ten local CC0 recordings offer 3.84–12.79-second bell/chime/gong cues at the end
+of the list, after the five original options. Labels display only the localized
+name, without duration; public/sounds/CREDITS.md records provenance. The shared
+notificationSound engine replaces playback for previews/stops and queues timer
+starts behind the completion sound, preserving its full tail without delaying
+the actual timer. A new preview or stop also cancels queued starts.
+The timer plays Start on actual session starts and Stop on manual stop or interval
+completion, respecting the existing sound toggle and volume. Pause/resume stay
+quiet. Missing legacy values fall back to Classic. The additive migration defaults
+existing accounts to Classic; new sound IDs are validated server-side.

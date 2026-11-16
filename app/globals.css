@@ -60,7 +60,7 @@
   padding: 5px;
   overflow-x: auto;
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--window-radius, 3px);
   background: var(--pixel-paper);
   scrollbar-gutter: stable;
 }
@@ -70,7 +70,7 @@
   min-height: 34px;
   padding: 6px 10px;
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: min(10px, max(0px, calc(var(--window-radius, 3px) - 1px)));
   color: var(--pixel-muted);
   font-size: 13px;
   font-weight: 600;
@@ -1711,7 +1711,7 @@ body:has(.workspace-page) {
   width: max-content;
   background: var(--pixel-paper);
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--window-radius, 3px);
   box-shadow: 2px 2px 0 var(--pixel-shadow);
 }
 
@@ -1725,7 +1725,7 @@ body:has(.workspace-page) {
   background: transparent;
   color: var(--pixel-ink);
   border: 0;
-  border-radius: 0 2px 2px 0;
+  border-radius: 0 max(0px, calc(var(--window-radius, 3px) - 1px)) max(0px, calc(var(--window-radius, 3px) - 1px)) 0;
   font-size: 12px;
   cursor: pointer;
 }
@@ -1786,7 +1786,7 @@ body:has(.workspace-page) {
   color: var(--pixel-ink);
   background: transparent;
   border: 0;
-  border-radius: 2px 0 0 2px;
+  border-radius: max(0px, calc(var(--window-radius, 3px) - 1px)) 0 0 max(0px, calc(var(--window-radius, 3px) - 1px));
   cursor: pointer;
 }
 
@@ -1827,7 +1827,7 @@ body:has(.workspace-page) {
   color: var(--pixel-ink);
   background: var(--pixel-paper);
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--window-radius, 3px);
   box-shadow: 4px 4px 0 var(--pixel-shadow);
 }
 
@@ -1908,7 +1908,7 @@ body:has(.workspace-page) {
   background: var(--pixel-paper);
   color: var(--pixel-ink);
   border: 1px solid var(--pixel-line);
-  border-radius: 3px;
+  border-radius: var(--window-radius, 3px);
   box-shadow: 4px 4px 0 var(--pixel-shadow);
 }
 
@@ -1921,6 +1921,7 @@ body:has(.workspace-page) {
   padding: 14px 16px;
   background: var(--pixel-screen);
   border-bottom: 1px solid var(--pixel-line);
+  border-radius: max(0px, calc(var(--window-radius, 3px) - 1px)) max(0px, calc(var(--window-radius, 3px) - 1px)) 0 0;
 }
 
 .workspace-menu-title {
@@ -1982,7 +1983,7 @@ body:has(.workspace-page) {
   min-height: 38px;
   padding: 8px 10px;
   border: 1px solid transparent;
-  border-radius: 2px;
+  border-radius: min(10px, max(0px, calc(var(--window-radius, 3px) - 1px)));
   background: transparent;
   color: var(--pixel-ink);
   font-size: 13px;

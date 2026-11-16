@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { playStartSound, playEndSound } from '@/lib/notificationSound'
 
-export function useNotifications(enabled: boolean, soundEnabled: boolean, volume: number) {
+export function useNotifications(enabled: boolean, soundEnabled: boolean, volume: number, startSound = 'classic', stopSound = 'classic') {
   const showNotification = useCallback(
     (title: string, body: string) => {
       if (!enabled || typeof window === 'undefined') {
@@ -31,11 +31,11 @@ export function useNotifications(enabled: boolean, soundEnabled: boolean, volume
 
       const play = type === 'start' ? playStartSound : playEndSound
 
-      play(volume).catch((error) => {
+      play(volume, type === 'start' ? startSound : stopSound, type === 'start').catch((error) => {
         console.error(`Failed to play ${type} sound:`, error)
       })
     },
-    [soundEnabled, volume]
+    [soundEnabled, volume, startSound, stopSound]
   )
 
   return { showNotification, playSound }

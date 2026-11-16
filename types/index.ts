@@ -31,6 +31,8 @@ export interface UserSettings {
   longBreakAfter: number
   soundEnabled: boolean
   soundVolume: number
+  startSound?: string
+  stopSound?: string
   notificationsEnabled: boolean
 }
 

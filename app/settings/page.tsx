@@ -29,7 +29,8 @@ import AvatarUploader from '@/components/AvatarUploader'
 import { useI18n } from '@/components/I18nProvider'
 import AuthModal from '@/components/AuthModal'
 import { PaywallModal } from '@/components/PaywallModal'
-import { playEndSound, disposeNotificationSound } from '@/lib/notificationSound'
+import { TIMER_SOUNDS } from '@/lib/timerSounds'
+import { playStartSound, playEndSound, disposeNotificationSound } from '@/lib/notificationSound'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -44,6 +45,9 @@ export default function SettingsPage() {
   const beepCopy = language === 'es'
     ? { title: 'Mr. Beep', label: 'Mostrar Mr. Beep', description: 'Tu compañero de concentración en pantallas de escritorio.', hint: 'Se aplica al instante y se guarda en este navegador.' }
     : { title: 'Mr. Beep', label: 'Show Mr. Beep', description: 'Your focus companion on desktop screens.', hint: 'Applies immediately and is saved in this browser.' }
+  const soundCopy = language === 'es'
+    ? { title: 'Señales de sonido', description: 'Sonidos al iniciar, detener o completar una sesión.', background: 'También suenan con la pestaña en segundo plano.', toggle: 'Activar sonidos del temporizador', volume: 'Volumen', start: 'Sonido de inicio', stop: 'Sonido de parada y finalización', preview: 'Escuchar', error: 'No se pudo reproducir el sonido. Inténtalo de nuevo.', hint: 'Escucha los sonidos antes de guardar los cambios.' }
+    : { title: 'Sound cues', description: 'Sounds when a session starts, stops or finishes.', background: 'Also plays when the tab is in the background.', toggle: 'Enable timer sounds', volume: 'Volume', start: 'Start sound', stop: 'Stop and completion sound', preview: 'Preview', error: 'Could not play this sound. Try again.', hint: 'Preview sounds before saving your changes.' }
   const profileCopy = t.settingsProfile
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const { setTimerSettings } = useTimerStore()
@@ -63,6 +67,8 @@ export default function SettingsPage() {
     longBreakAfter: 4,
     soundEnabled: true,
     soundVolume: 0.5,
+    startSound: 'classic',
+    stopSound: 'classic',
     notificationsEnabled: true,
   })
 
@@ -75,6 +81,17 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [saveMessage, setSaveMessage] = useState('')
   const [testMessage, setTestMessage] = useState('')
+  const [soundError, setSoundError] = useState('')
+
+  const previewSound = async (type: 'start' | 'stop') => {
+    setSoundError('')
+    try {
+      const play = type === 'start' ? playStartSound : playEndSound
+      await play(settings.soundVolume, type === 'start' ? settings.startSound : settings.stopSound)
+    } catch {
+      setSoundError(soundCopy.error)
+    }
+  }
   const [subscriptionMessage, setSubscriptionMessage] = useState('')
   const [isCancellingSubscription, setIsCancellingSubscription] = useState(false)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
@@ -226,7 +243,7 @@ export default function SettingsPage() {
       setTestMessage('Notification sent')
 
       if (settings.soundEnabled) {
-        await playEndSound(settings.soundVolume)
+        await playEndSound(settings.soundVolume, settings.stopSound)
       }
     } catch (error) {
       console.error('Failed to send test notification:', error)
@@ -586,14 +603,14 @@ export default function SettingsPage() {
                 </div>
               </div>
               <div className="settings-toggle">
-                <input id="settings-beep-visible" type="checkbox" className="settings-checkbox" checked={beepVisible}
+                <input id="settings-beep-visible" type="checkbox" role="switch" className="settings-checkbox settings-focus-switch" checked={beepVisible}
                   disabled={!beepHydrated} aria-describedby="settings-beep-help" onChange={event => setBeepVisible(event.currentTarget.checked)} />
               </div>
             </div>
           </section>}
 
           <section className="settings-panel">
-            <div className="relative grid gap-6 md:grid-cols-2">
+            <div className="settings-alerts-layout">
               <div className="settings-inset p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
@@ -603,25 +620,25 @@ export default function SettingsPage() {
                       </span>
                       <div>
                         <h3 className="text-base font-semibold text-slate-900 dark:text-white">
-                          Sound cues
+                          {soundCopy.title}
                         </h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                          Audible signals when a session ends.
+                          {soundCopy.description}
                         </p>
                       </div>
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">
-                      Works even if the app tab is backgrounded.
+                      {soundCopy.background}
                     </div>
                   </div>
 
                   <label className="settings-toggle">
                     <input
-                      type="checkbox"
+                      type="checkbox" role="switch"
                       checked={settings.soundEnabled}
                       onChange={(e) => handleSettingChange('soundEnabled', e.target.checked)}
-                      className="settings-checkbox"
-                      aria-label="Toggle sound notifications"
+                      className="settings-checkbox settings-focus-switch"
+                      aria-label={soundCopy.toggle}
                     />
                   </label>
                 </div>
@@ -629,7 +646,7 @@ export default function SettingsPage() {
                 {settings.soundEnabled && (
                   <div className="mt-5 space-y-2">
                     <label htmlFor="settings-volume" className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                      Volume — {Math.round(settings.soundVolume * 100)}%
+                      {soundCopy.volume} — {Math.round(settings.soundVolume * 100)}%
                     </label>
                     <input
                       id="settings-volume"
@@ -641,59 +658,81 @@ export default function SettingsPage() {
                       onChange={(e) => handleSettingChange('soundVolume', parseFloat(e.target.value))}
                       className="settings-volume"
                     />
+                    <div className="settings-sound-choices">
+                      {(['startSound', 'stopSound'] as const).map(key => {
+                        const label = key === 'startSound' ? soundCopy.start : soundCopy.stop
+                        return (
+                          <div key={key} className="settings-sound-choice">
+                            <label htmlFor={`settings-${key}`}>{label}</label>
+                            <div className="settings-sound-controls">
+                              <select
+                                id={`settings-${key}`}
+                                value={settings[key] ?? 'classic'}
+                                onChange={event => { handleSettingChange(key, event.target.value); setSoundError('') }}
+                              >
+                                {TIMER_SOUNDS.map(sound => (
+                                  <option key={sound.id} value={sound.id}>
+                                    {sound[language === 'es' ? 'es' : 'en']}
+                                  </option>
+                                ))}
+                              </select>
+                              <button type="button" onClick={() => void previewSound(key === 'startSound' ? 'start' : 'stop')} aria-label={`${soundCopy.preview}: ${label}`}>
+                                <Volume2 size={16} aria-hidden="true" />
+                                {soundCopy.preview}
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <p className="settings-sound-hint">{soundCopy.hint}</p>
+                      {soundError && <p className="settings-sound-error" role="alert">{soundError}</p>}
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="settings-inset p-6">
-                <div className="flex flex-col gap-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
-                        <span className="settings-section-icon">
-                          <Bell className="h-5 w-5" />
-                        </span>
-                        <div>
-                          <h3 className="text-base font-semibold text-slate-900 dark:text-white">
-                            Browser notifications
-                          </h3>
-                          <p className="text-sm text-slate-500 dark:text-slate-400">
-                            Heads-up alerts when sessions flip.
-                          </p>
-                        </div>
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        We only ping you after you grant browser permissions.
-                      </p>
-                    </div>
-                    <label className="settings-toggle">
-                      <input
-                        type="checkbox"
-                        checked={settings.notificationsEnabled}
-                        onChange={(e) => handleSettingChange('notificationsEnabled', e.target.checked)}
-                        className="settings-checkbox"
-                        aria-label="Toggle browser notifications"
-                      />
-                    </label>
+              <div className="settings-inset settings-notifications">
+                <div className="settings-notifications-header">
+                  <span className="settings-section-icon" aria-hidden="true">
+                    <Bell className="h-5 w-5" />
+                  </span>
+                  <div className="settings-notifications-copy">
+                    <h3 id="settings-notifications-title">
+                      {language === 'es' ? 'Notificaciones del navegador' : 'Browser notifications'}
+                    </h3>
+                    <p id="settings-notifications-description">
+                      {language === 'es' ? 'Recibe un aviso cuando termine una sesión.' : 'Get an alert when a session finishes.'}
+                    </p>
                   </div>
-
+                  <label className="settings-toggle">
+                    <input
+                      type="checkbox" role="switch"
+                      checked={settings.notificationsEnabled}
+                      onChange={(e) => handleSettingChange('notificationsEnabled', e.target.checked)}
+                      className="settings-checkbox settings-focus-switch"
+                      aria-labelledby="settings-notifications-title"
+                      aria-describedby="settings-notifications-description settings-notifications-help"
+                    />
+                  </label>
+                </div>
+                <div className="settings-notifications-footer">
+                  <p id="settings-notifications-help">
+                    {language === 'es' ? 'Requiere permiso de tu navegador.' : 'Requires permission from your browser.'}
+                  </p>
                   <button
                     type="button"
                     className="settings-button settings-button-primary"
                     onClick={handleTestNotification}
                   >
-                    Test notification
+                    <Bell size={15} aria-hidden="true" />
+                    {language === 'es' ? 'Probar notificación' : 'Test notification'}
                   </button>
-
-                  {testMessage && (
-                    <span
-                      role="status"
-                      className="text-sm text-slate-500 dark:text-slate-400"
-                    >
-                      {testMessage}
-                    </span>
-                  )}
                 </div>
+                {testMessage && (
+                  <p role="status" className="settings-notifications-status">
+                    {testMessage}
+                  </p>
+                )}
               </div>
             </div>
           </section>

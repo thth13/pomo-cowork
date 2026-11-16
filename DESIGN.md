@@ -2655,3 +2655,47 @@ The Conversions section places a combined visitor/anonymous/registered table bel
 its metrics. It reuses admin table cells, wrapped URL/message cells, horizontal
 scrolling and pagination controls. Row type is explicit text, and unavailable
 metadata uses the existing dash/Not recorded convention. No new visual tokens.
+
+
+## Timer sound choices
+
+Settings retains its existing inset panels, pixel theme tokens and volume slider.
+Separate Start sound and Stop and completion sound controls offer Classic, Bell,
+Soft chime, Digital and Wooden tap, followed by ten recorded bell/chime/gong cues
+(3.84–12.79 seconds), with localized English/Spanish names and explicit Preview
+buttons. Options display names only, without duration. Local MP3s
+and CC0 source credits live in public/sounds; lib/timerSounds.ts owns the catalog. The native select intentionally accepts platform-owned
+popup styling, like the settings language control. Previews use the draft volume
+and selection; saving commits both IDs to UserSettings through /api/settings.
+The shared notificationSound engine owns playback, synthesized cues and Classic
+MP3 caching. Previews and stop cues replace previous playback; timer start cues
+queue behind the completion sound so auto-start does not truncate its decay.
+The audio clock schedules cues without delaying the timer itself. Actual starts play the start cue,
+manual stops and completed intervals play the end cue. Pauses remain quiet.
+
+
+Browser notifications uses a compact, content-height row below Sound cues rather
+than a stretched sibling card. Its header pairs the icon, title and helper with
+the shared switch; a fine divider separates browser permission help from a
+content-width tomato-red primary Test notification button. Inline status follows the action.
+Sound selectors share two columns from 768px and stack below that breakpoint.
+settings.css owns geometry; existing pixel tokens and shared settings controls own
+palette, radius, focus and interaction states. No fixed height or scroll changes.
+
+Settings boolean controls (workspace preferences, companion, sound and browser
+notifications) share the existing settings-focus-switch styling and native checkbox
+behavior with role="switch". Checked tracks use tomato red and the thumb moves
+right; keyboard focus, disabled and forced-colors states share one CSS owner.
+
+Shared settings switches animate the thumb over 200ms and track/border colors
+over 180ms. Transitions apply only with prefers-reduced-motion: no-preference;
+reduced-motion users retain immediate state changes.
+
+
+PersonalNavigation, the compact account/Menu header, its dropdown and account
+preview share the active material's --window-radius through app/globals.css.
+Menu items and personal navigation links derive an inset radius capped at 10px;
+the split header buttons and dropdown heading follow the shell's inner corners
+so hover/active fills remain rounded. The shell keeps overflow visible for the
+account preview and unread badge. Without a material token, the existing 3px
+shell / 2px control geometry remains the fallback.

@@ -1,3 +1,4 @@
+import { isTimerSoundId } from '@/lib/timerSounds'
 import { validUsername } from '@/lib/journal/validation'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/db'
@@ -145,17 +146,21 @@ export async function PUT(request: NextRequest) {
       longBreakAfter,
       soundEnabled,
       soundVolume,
+      startSound,
+      stopSound,
       notificationsEnabled
     } = data
 
-    if (workDuration !== undefined || shortBreak !== undefined || longBreak !== undefined || longBreakAfter !== undefined) {
+    if ([workDuration, shortBreak, longBreak, longBreakAfter, soundEnabled, soundVolume, startSound, stopSound, notificationsEnabled].some(value => value !== undefined)) {
       // Validate input
       if (
         (workDuration !== undefined && (workDuration < 1 || workDuration > 60)) ||
         (shortBreak !== undefined && (shortBreak < 1 || shortBreak > 30)) ||
         (longBreak !== undefined && (longBreak < 1 || longBreak > 60)) ||
         (longBreakAfter !== undefined && (longBreakAfter < 2 || longBreakAfter > 10)) ||
-        (soundVolume !== undefined && (soundVolume < 0 || soundVolume > 1))
+        (soundVolume !== undefined && (typeof soundVolume !== 'number' || !Number.isFinite(soundVolume) || soundVolume < 0 || soundVolume > 1)) ||
+        (startSound !== undefined && !isTimerSoundId(startSound)) ||
+        (stopSound !== undefined && !isTimerSoundId(stopSound))
       ) {
         return NextResponse.json(
           { error: 'Invalid settings values' },
@@ -170,6 +175,8 @@ export async function PUT(request: NextRequest) {
       if (longBreakAfter !== undefined) updateData.longBreakAfter = longBreakAfter
       if (soundEnabled !== undefined) updateData.soundEnabled = soundEnabled
       if (soundVolume !== undefined) updateData.soundVolume = soundVolume
+      if (startSound !== undefined) updateData.startSound = startSound
+      if (stopSound !== undefined) updateData.stopSound = stopSound
       if (notificationsEnabled !== undefined) updateData.notificationsEnabled = notificationsEnabled
 
       await prisma.userSettings.upsert({
@@ -183,6 +190,8 @@ export async function PUT(request: NextRequest) {
           longBreakAfter: longBreakAfter ?? 4,
           soundEnabled: soundEnabled ?? true,
           soundVolume: soundVolume ?? 0.5,
+          startSound: startSound ?? 'classic',
+          stopSound: stopSound ?? 'classic',
           notificationsEnabled: notificationsEnabled ?? true,
         }
       })
