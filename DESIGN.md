@@ -2703,7 +2703,10 @@ shell / 2px control geometry remains the fallback.
 ## Workspace notes
 
 Notes opens from the shared desktop Tools dock and mobile tool menu inside
-WorkspaceWindow, retaining its resizing, focus and geometry behavior. A horizontally
+WorkspaceWindow, retaining its resizing, focus and geometry behavior. Its default
+size is a narrow vertical 410 × 570px rectangle matching the supplied reference,
+bounded by the viewport;
+manually saved dimensions still take precedence. A horizontally
 scrolling browser-style tab strip owns note selection and creation; each tab has
 an accessible close action with an inline Restore note recovery. Arrow keys and
 Home/End navigate tabs. The note title also names its tab. The writing surface uses

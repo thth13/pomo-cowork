@@ -1,5 +1,5 @@
 #workspace-notes {
-  width: min(620px, calc(100vw - 16px));
+  width: min(410px, calc(100vw - 16px));
   height: min(570px, calc(100dvh - 120px - env(safe-area-inset-bottom)));
   max-height: calc(100dvh - 120px - env(safe-area-inset-bottom));
 }
