@@ -15,7 +15,7 @@ import type { VisitorDetails } from '@/lib/visitorDetails'
 
 export type AdminDataKind = 'directory' | 'wall' | 'habits' | 'visitors'
 type Person = { id: string; username: string; isAnonymous: boolean }
-type UserRow = Person & { countryCode: string | null; createdAt: string; lastSeenAt: string | null; totalMinutes: number; totalPomodoros: number; sessionsCount: number }
+type UserRow = Person & { referrer: string | null; countryCode: string | null; createdAt: string; lastSeenAt: string | null; totalMinutes: number; totalPomodoros: number; sessionsCount: number }
 type WallRow = { id: string; message: string; createdAt: string; author: Person; profileUser: Person }
 type HabitRow = { id: string; title: string; startDate: string; archived: boolean; createdAt: string; user: Person; _count: { completions: number } }
 type VisitorRow = { id: string; ipAddress: string | null; countryCode: string | null; pagePath: string; createdAt: string; details: VisitorDetails | null }
@@ -68,7 +68,7 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
   useEffect(() => {
     if (data?.referrers) setReferrers(data.referrers)
   }, [data])
-  const headers = kind === 'visitors' ? ['IP address', 'Country', 'Browser / OS', 'Device', 'Landing page', 'Referrer', 'Visited · Kyiv', 'Details', 'Manage'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions', ...(userType === 'anonymous' ? ['Manage'] : [])]
+  const headers = kind === 'visitors' ? ['IP address', 'Country', 'Browser / OS', 'Device', 'Landing page', 'Referrer', 'Visited · Kyiv', 'Details', 'Manage'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions', 'Referrer', ...(userType === 'anonymous' ? ['Manage'] : [])]
 
   useEffect(() => {
     setSelectedVisit(null)
@@ -123,7 +123,7 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
               </tr>
               if ('message' in row) return <tr key={row.id}><td><div className="admin-wall-participants"><Link href={userProfileHref(row.author)}>{row.author.username}</Link><span aria-hidden="true">→</span><span className="sr-only">to</span><Link href={userProfileHref(row.profileUser)}>{row.profileUser.username}</Link></div></td><td className="admin-message-cell">{row.message}</td><td>{date(row.createdAt)}</td></tr>
               if ('title' in row) return <tr key={row.id}><td className="admin-message-cell">{row.title}</td><td>{person(row.user)}</td><td><span className={`admin-status ${row.archived ? 'admin-status-archived' : 'admin-status-active'}`}>{row.archived ? 'Archived' : 'Active'}</span></td><td>{row.startDate}</td><td>{row._count.completions}</td><td>{date(row.createdAt)}</td></tr>
-              return <tr key={row.id}><td>{person(row)}{connected && onlineIds[row.id] && <span className="admin-online-status">Online</span>}</td><td>{countryFlag(row.countryCode)}</td><td>{date(row.createdAt)}</td><td>{date(row.lastSeenAt)}</td><td>{Math.floor(row.totalMinutes / 60)}h {row.totalMinutes % 60}m</td><td>{row.totalPomodoros}</td><td>{row.sessionsCount}</td>{userType === 'anonymous' && <td>{row.isAnonymous && <button type="button" className="community-button admin-visit-delete" aria-label={`Delete anonymous user ${row.username}`} onClick={() => { setUserDeleted(false); setSelectedUser(row) }}>Delete</button>}</td>}</tr>
+              return <tr key={row.id}><td>{person(row)}{connected && onlineIds[row.id] && <span className="admin-online-status">Online</span>}</td><td>{countryFlag(row.countryCode)}</td><td>{date(row.createdAt)}</td><td>{date(row.lastSeenAt)}</td><td>{Math.floor(row.totalMinutes / 60)}h {row.totalMinutes % 60}m</td><td>{row.totalPomodoros}</td><td>{row.sessionsCount}</td><td className="admin-message-cell">{row.referrer || '—'}</td>{userType === 'anonymous' && <td>{row.isAnonymous && <button type="button" className="community-button admin-visit-delete" aria-label={`Delete anonymous user ${row.username}`} onClick={() => { setUserDeleted(false); setSelectedUser(row) }}>Delete</button>}</td>}</tr>
             })}</tbody>
           </table>
         </div>

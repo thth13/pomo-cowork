@@ -156,7 +156,7 @@ export async function GET(request: NextRequest) {
     }
 
     await recordUserCountry(request, user.id)
-    await removeRequestGuestVisit(request)
+    await removeRequestGuestVisit(request, undefined, user.id)
 
     // Генерируем JWT токен
     await recordReferralSignup(referralCode, user.id)

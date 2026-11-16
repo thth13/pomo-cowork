@@ -5,7 +5,7 @@ import { getTokenFromHeader, verifyToken } from '@/lib/auth'
 import { isValidAnonymousId } from '@/lib/anonymousProfile'
 import { consumeVisitor, lockVisitor, VISITOR_COOKIE } from '@/lib/guestVisits'
 import { getRequestCountry } from '@/lib/userCountry'
-import { buildVisitorDetails } from '@/lib/visitorDetails'
+import { buildVisitorDetails, sanitizeVisitorReferrer } from '@/lib/visitorDetails'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,7 +22,11 @@ export async function POST(request: NextRequest) {
     const authenticated = payload ? await prisma.user.findUnique({ where: { id: payload.userId }, select: { id: true } }) : null
     // Do not classify an account as a new visitor while its auth check is unavailable.
     if (token && !authenticated) return new NextResponse(null, { status: 401 })
+    const referrer = sanitizeVisitorReferrer(body?.details?.referrer)
     if (!isValidAnonymousId(id)) {
+      if (authenticated && referrer) {
+        await prisma.user.updateMany({ where: { id: authenticated.id, referrer: null }, data: { referrer } })
+      }
       return new NextResponse(null, { status: authenticated ? 204 : 400, headers: { 'Cache-Control': 'no-store' } })
     }
 
@@ -41,7 +45,7 @@ export async function POST(request: NextRequest) {
         tx.user.findUnique({ where: { id }, select: { id: true } }),
       ])
       if (authenticated || account || identity?.converted) {
-        await consumeVisitor(tx, id)
+        await consumeVisitor(tx, id, authenticated?.id ?? account?.id, referrer)
         return
       }
       // Keep the initial landing page and timestamp across reloads and navigation.

@@ -16,6 +16,7 @@ model User {
   description          String?
   displayName          String?
   countryCode          String?   @db.VarChar(2)
+  referrer             String?   @db.VarChar(500)
   location             String?
   websiteUrl           String?
   githubUrl            String?
@@ -33,6 +34,8 @@ model User {
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   lastSeenAt           DateTime?
+
+  visitorIdentities VisitorIdentity[]
 
   beepMemory BeepMemory?
   beepPreferences BeepPreferences?
@@ -90,7 +93,11 @@ model User {
 model VisitorIdentity {
   id        String @id
   converted Boolean @default(false)
+  userId    String?
+  user      User? @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
   visit     GuestVisit?
+
+  @@index([userId])
 
   @@map("visitor_identities")
 }

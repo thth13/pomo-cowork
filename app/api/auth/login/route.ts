@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
     }
 
     await recordUserCountry(request, user.id)
-    await removeRequestGuestVisit(request, anonymousId)
+    await removeRequestGuestVisit(request, anonymousId, user.id)
 
     // Generate JWT token
     const token = generateToken({

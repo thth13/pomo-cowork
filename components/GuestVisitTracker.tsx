@@ -50,7 +50,7 @@ export default function GuestVisitTracker() {
         const response = await fetch('/api/visits', {
           method: 'POST', credentials: 'same-origin', keepalive: true,
           headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
-          body: JSON.stringify({ anonymousId: visitorId.current, pagePath: landingPage.current, details: authToken ? undefined : details.current }),
+          body: JSON.stringify({ anonymousId: visitorId.current, pagePath: landingPage.current, details: authToken ? { referrer: details.current?.referrer } : details.current }),
         })
         if (!response.ok && response.status >= 500) throw new Error('Visit tracking unavailable')
       } catch {

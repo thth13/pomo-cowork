@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
       const users = await prisma.user.findMany({
         where, skip, take, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
         select: {
-          ...identity, countryCode: true, createdAt: true, lastSeenAt: true,
+          ...identity, countryCode: true, createdAt: true, lastSeenAt: true, referrer: true,
           sessions: {
             where: { status: { in: ['COMPLETED', 'CANCELLED'] }, type: { in: ['WORK', 'TIME_TRACKING'] } },
             select: { startedAt: true, endedAt: true, completedAt: true, duration: true, remainingSeconds: true, pausedAt: true, type: true, status: true },

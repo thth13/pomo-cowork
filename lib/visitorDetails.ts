@@ -35,7 +35,7 @@ const integer = (value: unknown, max: number): number | null =>
   typeof value === 'number' && Number.isInteger(value) ? number(value, max) : null
 const boolean = (value: unknown): boolean | null => typeof value === 'boolean' ? value : null
 
-function referrer(value: unknown): string | null {
+export function sanitizeVisitorReferrer(value: unknown): string | null {
   if (typeof value !== 'string' || value.length > 8192) return null
   try {
     const url = new URL(value)
@@ -96,7 +96,7 @@ export function buildVisitorDetails(request: Request, input: unknown): VisitorDe
   }
   return {
     browser: browser.name, browserVersion: browser.version, os: os.name, osVersion: os.version,
-    deviceType, userAgent, referrer: referrer(raw.referrer),
+    deviceType, userAgent, referrer: sanitizeVisitorReferrer(raw.referrer),
     language: text(raw.language, 35) ?? text(request.headers.get('accept-language')?.split(',')[0], 35),
     languages: Array.isArray(raw.languages) ? raw.languages.slice(0, 10).map(value => text(value, 35)).filter((value): value is string => value !== null) : [],
     timezone, screenWidth: integer(raw.screenWidth, 100000), screenHeight: integer(raw.screenHeight, 100000),

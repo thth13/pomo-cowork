@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
     }
 
     await recordUserCountry(request, user.id)
-    await removeRequestGuestVisit(request, anonymousId)
+    await removeRequestGuestVisit(request, anonymousId, user.id)
 
     await recordReferralSignup(referralCode, user.id)
 
