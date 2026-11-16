@@ -2699,3 +2699,48 @@ the split header buttons and dropdown heading follow the shell's inner corners
 so hover/active fills remain rounded. The shell keeps overflow visible for the
 account preview and unread badge. Without a material token, the existing 3px
 shell / 2px control geometry remains the fallback.
+
+## Workspace notes
+
+Notes opens from the shared desktop Tools dock and mobile tool menu inside
+WorkspaceWindow, retaining its resizing, focus and geometry behavior. A horizontally
+scrolling browser-style tab strip owns note selection and creation; each tab has
+an accessible close action with an inline Restore note recovery. Arrow keys and
+Home/End navigate tabs. The note title also names its tab. The writing surface uses
+Inter with a compact 15px medium-weight title, a borderless formatting bar with
+14px icons in 28px targets, and 20px writing margins (16px on mobile). Active
+formatting uses a quiet neutral fill; the title and toolbar have no accent rules.
+The save status occupies a compact unframed footer. The writing area has no
+word counter or enclosing focus outline. The title input also has no focus frame
+or shadow; buttons retain focus rings.
+Existing --pixel-* and --theme-control-radius tokens own all colors and controls;
+app/workspace-notes.css owns only feature layout. No global tokens change.
+
+Tiptap owns rich text, selection, formatting and per-note undo history. Notes support
+headings, emphasis, lists, quotes and code. Prisma WorkspaceNotes stores a versioned
+JSON collection per user, preserving tab order and atomic saves. /api/notes owns
+GET/PUT with private/no-store responses and server-resolved ownership through the
+existing account/anonymous identity contract. Parameterized Prisma SQL reads and
+atomic compare-and-swap writes work even if dev hot reload retains a generated
+client module from before WorkspaceNotes was added. The user relation cascades on account
+registration and deletion, matching other guest-owned data.
+
+useWorkspaceNotes serializes saves after a 500ms typing pause, flushes on blur and
+window unmount, preserves edits while requests run, and warns before page unload
+when changes remain unsaved. The footer distinguishes pending, saving, saved and
+failed states. An optimistic revision check rejects stale writes with 409. Explicit
+Save draft copies recovery keeps remote notes and adds changed local notes with new
+IDs. Load/save failures offer retry without clearing drafts. Collections are bounded
+to 200 notes / 2 MB; the server validates the editor structure before persistence.
+
+The previous account/guest browser key is read once for legacy import, then marked
+imported in the database. No note bodies are written to browser storage; the old
+value remains untouched as a backup. Unavailable legacy storage does not prevent
+loading server notes. Authentication keeps its existing browser identity mechanism.
+English/Spanish messages and accessible labels live in lib/i18n/notes.ts. Only the
+writing area scrolls vertically; tabs own horizontal overflow and toolbar controls
+wrap on narrow windows.
+
+Verification: ESLint and diff checks pass. A read-only GET against the already-running
+local server reproduced the stale-client failure, then returned HTTP 200 after the
+fix. No project launch, build or tsc was performed.

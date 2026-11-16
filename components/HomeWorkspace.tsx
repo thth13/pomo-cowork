@@ -9,6 +9,7 @@ import Navbar from '@/components/Navbar'
 import PomodoroTimer from '@/components/PomodoroTimer'
 import DailyFlow from '@/components/DailyFlow'
 import WorkspaceCalendar from '@/components/WorkspaceCalendar'
+import { notesCopy } from '@/lib/i18n/notes'
 import { calendarCopy } from '@/lib/i18n/calendar'
 import { useWorkspaceModeStore } from '@/store/useWorkspaceModeStore'
 import { useFocusPreferencesStore } from '@/store/useFocusPreferencesStore'
@@ -26,7 +27,7 @@ import { dailyGoalCopy } from '@/lib/i18n/dailyGoal'
 import { useI18n } from '@/components/I18nProvider'
 // import PocketGarden from '@/components/PocketGarden'
 import { gardenCopy } from '@/lib/i18n/garden'
-import { Timer, MessageCircle, History, ListTodo, Medal, HelpCircle, CalendarDays, CalendarCheck, ChevronRight, Headphones, Target, UsersRound, X } from 'lucide-react'
+import { Timer, MessageCircle, History, ListTodo, Medal, HelpCircle, CalendarDays, CalendarCheck, FileText, ChevronRight, Headphones, Target, UsersRound, X } from 'lucide-react'
 import Habits from '@/components/Habits'
 import { habitsCopy } from '@/lib/i18n/habits'
 import WorkspaceWindow from '@/components/WorkspaceWindow'
@@ -38,12 +39,14 @@ import { ambientSoundsCopy } from '@/lib/i18n/ambientSounds'
 import ResetWrappedNotificationButton from '@/components/wrapped/ResetWrappedNotificationButton'
 import SiteLoader from '@/components/SiteLoader'
 
-type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits' | 'sounds' | 'goal' | 'calendar'
+const WorkspaceNotes = dynamic(() => import('@/components/WorkspaceNotes'), { ssr: false })
+
+type PanelId = 'chat' | 'history' | 'tasks' | 'progress' | 'about' | 'habits' | 'sounds' | 'goal' | 'calendar' | 'notes'
 const WORKING_COLLAPSED_STORAGE_KEY = 'pomo:working:collapsed:v1'
 const OPEN_PANELS_STORAGE_KEY = 'pomo:windows:open:v2'
 const WORKING_HINT_STORAGE_KEY = 'pomo:working:onboarding-dismissed:v1'
 const isPanelId = (value: unknown): value is PanelId =>
-  value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits' || value === 'sounds' || value === 'goal' || value === 'calendar'
+  value === 'chat' || value === 'history' || value === 'tasks' || value === 'progress' || value === 'habits' || value === 'sounds' || value === 'goal' || value === 'calendar' || value === 'notes'
 
 export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
   const offline = useFocusPreferencesStore(state => state.offline)
@@ -86,6 +89,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
     { id: 'chat', title: copy.chat, icon: MessageCircle },
     { id: 'history', title: copy.history, icon: History },
     { id: 'tasks', title: copy.tasks, icon: ListTodo },
+    { id: 'notes', title: notesCopy[language].title, icon: FileText },
     { id: 'calendar', title: calendarCopy[language].title, icon: CalendarDays },
     { id: 'habits', title: habitsCopy[language].title, icon: CalendarCheck },
     { id: 'goal', title: dailyGoalCopy[language].title, icon: Target },
@@ -384,7 +388,7 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
           Retain visited bodies so closing a window preserves drafts. */}
       {panels.map(({ id, title }, index) => workspaceLoading && id !== 'about' ? null : (
         <WorkspaceWindow key={id} id={`workspace-${id}`} title={title} open={openPanels.includes(id) && (id !== 'about' || !isAuthenticated)} offset={id === 'sounds' ? 0 : index * 28} layer={Math.max(0, panelOrder.indexOf(id))} onActivate={() => bringToFront(id)} onClose={() => closePanel(id)} headerAction={id === 'tasks' ? <Link href="/projects" prefetch={false} className="workspace-window-header-link"><span>{language === 'es' ? 'Gestionar proyectos' : 'Manage projects'}</span><ChevronRight size={14} aria-hidden="true" /></Link> : undefined}>
-          {(id === 'about' || openPanels.includes(id) || panelOrder.includes(id)) && (id === 'calendar' ? <WorkspaceCalendar key={user?.id ?? 'guest'} owner={user?.id ?? 'guest'} isVisible={openPanels.includes(id)} /> : id === 'goal' ? <DailyGoal isVisible={openPanels.includes(id)} /> : id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact isVisible={openPanels.includes(id)} /> : id === 'tasks' ? <TaskList ref={taskListRef} isVisible={openPanels.includes(id)} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution isVisible={openPanels.includes(id)} /> : <WorkHistory isVisible={openPanels.includes(id)} />)}
+          {(id === 'about' || openPanels.includes(id) || panelOrder.includes(id)) && (id === 'notes' ? <WorkspaceNotes key={user?.id ?? 'guest'} owner={user?.id ?? 'guest'} /> : id === 'calendar' ? <WorkspaceCalendar key={user?.id ?? 'guest'} owner={user?.id ?? 'guest'} isVisible={openPanels.includes(id)} /> : id === 'goal' ? <DailyGoal isVisible={openPanels.includes(id)} /> : id === 'sounds' ? <FocusSounds mixer={ambientMixer} /> : id === 'about' ? overview : id === 'habits' ? <Habits compact isVisible={openPanels.includes(id)} /> : id === 'tasks' ? <TaskList ref={taskListRef} isVisible={openPanels.includes(id)} /> : id === 'chat' ? <Chat isVisible={openPanels.includes('chat')} /> : id === 'progress' ? <TodayContribution isVisible={openPanels.includes(id)} /> : <WorkHistory isVisible={openPanels.includes(id)} />)}
         </WorkspaceWindow>
       ))}
     </div>
