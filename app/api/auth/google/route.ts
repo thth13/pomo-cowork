@@ -1,26 +1,13 @@
 import { recordUserCountry } from '@/lib/userCountry'
 import { removeRequestGuestVisit } from '@/lib/guestVisits'
-import { registerAnonymousUser } from '@/lib/registerAnonymousUser'
-import crypto from 'crypto'
+import { resolveGoogleUser } from '@/lib/googleUser'
 import { NextRequest, NextResponse } from 'next/server'
 import { Prisma } from '@prisma/client'
-import { prisma } from '@/lib/db'
-import { generateToken, hashPassword } from '@/lib/auth'
+import { generateToken } from '@/lib/auth'
 import { recordReferralSignup } from '@/lib/referrals'
-import { generateUniqueUsername } from '@/lib/username'
 import { isValidAnonymousId } from '@/lib/anonymousProfile'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
-
-const DEFAULT_SETTINGS = {
-  workDuration: 25,
-  shortBreak: 5,
-  longBreak: 15,
-  longBreakAfter: 4,
-  soundEnabled: true,
-  soundVolume: 0.5,
-  notificationsEnabled: true,
-} as const
 
 type UserWithSettings = Prisma.UserGetPayload<{ include: { settings: true } }>
 
@@ -86,74 +73,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid Google token' }, { status: 401 })
     }
 
-    const email = payload.email.toLowerCase()
-    const displayName = payload.name || email.split('@')[0]
-    const avatarUrl = payload.picture
-    let convertedAnonymousId: string | null = null
-
-    let user = await prisma.user.findUnique({ where: { email }, include: { settings: true } })
-
-    if (user && !user.settings) {
-      const settings = await prisma.userSettings.create({
-        data: { userId: user.id, ...DEFAULT_SETTINGS },
-      })
-
-      user = { ...user, settings }
-    }
-
-    // Upgrade anonymous user if provided and the email does not exist yet
-    if (!user && anonymousId) {
-      const anonymousUser = await prisma.user.findUnique({ where: { id: anonymousId }, include: { settings: true } })
-
-      if (anonymousUser && anonymousUser.isAnonymous) {
-        const username = await generateUniqueUsername(displayName)
-        const hashedPassword = await hashPassword(crypto.randomBytes(32).toString('hex'))
-
-        user = await registerAnonymousUser(anonymousId, {
-          email,
-          username,
-          password: hashedPassword,
-          avatarUrl,
-        })
-        convertedAnonymousId = anonymousId
-
-        if (!user.settings) {
-          const settings = await prisma.userSettings.create({
-            data: { userId: user.id, ...DEFAULT_SETTINGS },
-          })
-
-          user = { ...user, settings }
-        }
-      }
-    }
-
-    // Create user if not exists
-    if (!user) {
-      const username = await generateUniqueUsername(displayName)
-      const hashedPassword = await hashPassword(crypto.randomBytes(32).toString('hex'))
-
-      user = await prisma.user.create({
-        data: {
-          email,
-          username,
-          password: hashedPassword,
-          avatarUrl,
-          settings: {
-            create: { ...DEFAULT_SETTINGS },
-          },
-        },
-        include: { settings: true },
-      })
-    }
-
-    // Update avatar for existing user if it is missing
-    if (user && !user.avatarUrl && avatarUrl) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { avatarUrl },
-        include: { settings: true },
-      })
-    }
+    const { user, convertedAnonymousId } = await resolveGoogleUser(payload, anonymousId)
 
     await recordUserCountry(request, user.id)
     await removeRequestGuestVisit(request, anonymousId, user.id)

@@ -187,6 +187,13 @@ export default function HomeWorkspace({ overview }: { overview: ReactNode }) {
       const authError = params.get('auth_error')
 
       if (authToken) {
+        const guestId = sessionStorage.getItem('google_auth_anonymous_id')
+        sessionStorage.removeItem('google_auth_anonymous_id')
+        const convertedId = params.get('guest_converted') === '1' ? guestId : null
+        if (convertedId && localStorage.getItem('anonymous_user_id') === convertedId) {
+          localStorage.removeItem('anonymous_user_id')
+        }
+        useAuthStore.setState({ convertedAnonymousId: convertedId })
         localStorage.setItem('token', authToken)
         
         // Очищаем URL от параметров

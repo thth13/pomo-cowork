@@ -171,9 +171,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', invi
 
     // Сохраняем anonymous ID перед редиректом
     const anonymousId = localStorage.getItem('anonymous_user_id')
-    if (anonymousId) {
-      sessionStorage.setItem('google_auth_anonymous_id', anonymousId)
-    }
+    sessionStorage.setItem('google_auth_anonymous_id', anonymousId ?? '')
 
     // OAuth 2.0 redirect flow
     const redirectUri = `${window.location.origin}/api/auth/google/callback`
@@ -181,7 +179,8 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login', invi
     const baseState = crypto.randomUUID()
     const referralCode = localStorage.getItem('referral_code')
     const state = referralCode ? `${baseState}|ref:${referralCode}` : baseState
-    sessionStorage.setItem('google_oauth_state', state)
+    const secure = window.location.protocol === 'https:' ? '; Secure' : ''
+    document.cookie = `pomo_google_flow=${baseState}.${anonymousId ?? ''}; Path=/api/auth/google/callback; Max-Age=900; SameSite=Lax${secure}`
 
     console.log('Google OAuth redirect URI:', redirectUri)
 

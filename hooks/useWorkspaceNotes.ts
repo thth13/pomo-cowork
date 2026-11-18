@@ -89,7 +89,9 @@ export function useWorkspaceNotes(owner: string) {
       setNotes(initial)
       loaded.current = true
       setReady(true)
-      if (!result.legacyImported || initial !== result.notes) {
+      // A new guest can view the initial draft and local notes without creating
+      // a server profile. Their first edit saves the whole collection.
+      if (!result.legacyImported && (owner !== 'guest' || result.revision > 0)) {
         generation.current += 1
         setDirty(true)
         void flush()

@@ -1,26 +1,15 @@
 import { recordUserCountry } from '@/lib/userCountry'
 import { removeRequestGuestVisit } from '@/lib/guestVisits'
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
-import { generateToken, hashPassword } from '@/lib/auth'
+import { resolveGoogleUser } from '@/lib/googleUser'
+import { isValidAnonymousId } from '@/lib/anonymousProfile'
+import { generateToken } from '@/lib/auth'
 import { normalizeReferralCode, recordReferralSignup } from '@/lib/referrals'
-import { generateUniqueUsername } from '@/lib/username'
-import crypto from 'crypto'
 
 export const dynamic = 'force-dynamic'
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET
-
-const DEFAULT_SETTINGS = {
-  workDuration: 25,
-  shortBreak: 5,
-  longBreak: 15,
-  longBreakAfter: 4,
-  soundEnabled: true,
-  soundVolume: 0.5,
-  notificationsEnabled: true,
-} as const
 
 const getReferralFromState = (state: string | null): string | null => {
   if (!state) return null
@@ -51,6 +40,12 @@ export async function GET(request: NextRequest) {
         new URL('/?auth_error=missing_parameters', request.url)
       )
     }
+
+    const [nonce, guestId] = (request.cookies.get('pomo_google_flow')?.value ?? '').split('.')
+    if (!nonce || nonce !== state.split('|')[0]) {
+      return NextResponse.redirect(new URL('/?auth_error=invalid_state', request.url))
+    }
+    const anonymousId = isValidAnonymousId(guestId) ? guestId : null
 
     if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
       return NextResponse.redirect(
@@ -102,61 +97,13 @@ export async function GET(request: NextRequest) {
     }
 
     const userInfo = await userInfoResponse.json()
-    const email = userInfo.email?.toLowerCase()
-    const displayName = userInfo.name || email?.split('@')[0]
-    const avatarUrl = userInfo.picture
-
-    if (!email) {
-      return NextResponse.redirect(
-        new URL('/?auth_error=no_email', request.url)
-      )
+    if (!userInfo.email || userInfo.aud !== GOOGLE_CLIENT_ID) {
+      return NextResponse.redirect(new URL('/?auth_error=invalid_token', request.url))
     }
-
-    // Ищем или создаем пользователя
-    let user = await prisma.user.findUnique({
-      where: { email },
-      include: { settings: true },
-    })
-
-    if (user && !user.settings) {
-      const settings = await prisma.userSettings.create({
-        data: { userId: user.id, ...DEFAULT_SETTINGS },
-      })
-      user = { ...user, settings }
-    }
-
-    // Апгрейд анонимного пользователя (если есть)
-    // Note: в sessionStorage мы не можем получить доступ на сервере,
-    // поэтому передадим это на клиент через query params
-    if (!user) {
-      const username = await generateUniqueUsername(displayName)
-      const hashedPassword = await hashPassword(crypto.randomBytes(32).toString('hex'))
-
-      user = await prisma.user.create({
-        data: {
-          email,
-          username,
-          password: hashedPassword,
-          avatarUrl,
-          settings: {
-            create: { ...DEFAULT_SETTINGS },
-          },
-        },
-        include: { settings: true },
-      })
-    }
-
-    // Обновляем аватар если его нет
-    if (user && !user.avatarUrl && avatarUrl) {
-      user = await prisma.user.update({
-        where: { id: user.id },
-        data: { avatarUrl },
-        include: { settings: true },
-      })
-    }
+    const { user, convertedAnonymousId } = await resolveGoogleUser(userInfo, anonymousId)
 
     await recordUserCountry(request, user.id)
-    await removeRequestGuestVisit(request, undefined, user.id)
+    await removeRequestGuestVisit(request, anonymousId, user.id)
 
     // Генерируем JWT токен
     await recordReferralSignup(referralCode, user.id)
@@ -171,7 +118,10 @@ export async function GET(request: NextRequest) {
     const redirectUrl = new URL('/', request.url)
     redirectUrl.searchParams.set('auth_token', jwtToken)
 
-    return NextResponse.redirect(redirectUrl)
+    if (convertedAnonymousId) redirectUrl.searchParams.set('guest_converted', '1')
+    const response = NextResponse.redirect(redirectUrl)
+    response.cookies.set('pomo_google_flow', '', { path: '/api/auth/google/callback', maxAge: 0 })
+    return response
   } catch (error) {
     console.error('Google OAuth callback error:', error)
     return NextResponse.redirect(
