@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/store/useAuthStore'
-import { notFound } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import HomeLink from '@/components/HomeLink'
@@ -48,14 +47,10 @@ const sections = [
 ] as const
 
 export default function AdminPage() {
-  const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore()
+  const user = useAuthStore(state => state.user)
   const [section, setSection] = useState<AdminSection>('overview')
   const [eventsVisited, setEventsVisited] = useState(false)
   const active = sections.find(item => item.id === section) ?? sections[0]
-
-  useEffect(() => {
-    if (!isAuthenticated && !isLoading) void checkAuth()
-  }, [isAuthenticated, isLoading, checkAuth])
 
   useEffect(() => {
     const syncSection = () => {
@@ -76,8 +71,6 @@ export default function AdminPage() {
     return () => { document.title = previous }
   }, [active.label])
 
-  if (!isLoading && !isAuthenticated) notFound()
-
   return (
     <div className="admin-shell" data-no-translate>
       <a className="admin-skip" href="#admin-content">Skip to content</a>
@@ -93,19 +86,17 @@ export default function AdminPage() {
         <header className="admin-topbar"><div className="admin-breadcrumb">Workspace <span>/</span> <strong>{active.label}</strong></div><div className="admin-account"><span className="admin-avatar" aria-hidden="true">{(user?.username || user?.email || 'A').slice(0, 1).toUpperCase()}</span><span>{user?.username || 'Admin'}<small>Administrator</small></span></div></header>
         <main className="admin-content" id="admin-content" tabIndex={-1}>
           <div className="admin-page-heading"><div><p className="admin-eyebrow">ADMIN CONSOLE</p><h1>{active.label}</h1>{active.description && <p>{active.description}</p>}</div><HomeLink className="admin-site-link">Open website<ArrowUpRight size={16} aria-hidden="true" /></HomeLink></div>
-          {isLoading ? <div className="admin-loading" role="status">Loading account…</div> : <>
-            {section === 'updates' && <AdminProductUpdates />}
-            {section === 'overview' && <AdminOverview />}
-            {section === 'metrics' && <AdminAllMetrics />}
-            {section === 'conversions' && <AdminConversions />}
-            {section === 'user-counts' && <AdminUserCounts />}
-            {section === 'beep' && <AdminBeepMessages />}
-            {section === 'beep-events' && <AdminBeepEvents />}
-            {section === 'settings-changes' && <AdminSettingsChanges />}
-            <AdminReferralManager section={section} />
-            {(['directory', 'wall', 'habits', 'visitors'] as string[]).includes(section) && <AdminDataTable key={section} kind={section as AdminDataKind} />}
-            {eventsVisited && <div hidden={section !== 'events'}><AdminPaywallEvents /></div>}
-          </>}
+          {section === 'updates' && <AdminProductUpdates />}
+          {section === 'overview' && <AdminOverview />}
+          {section === 'metrics' && <AdminAllMetrics />}
+          {section === 'conversions' && <AdminConversions />}
+          {section === 'user-counts' && <AdminUserCounts />}
+          {section === 'beep' && <AdminBeepMessages />}
+          {section === 'beep-events' && <AdminBeepEvents />}
+          {section === 'settings-changes' && <AdminSettingsChanges />}
+          <AdminReferralManager section={section} />
+          {(['directory', 'wall', 'habits', 'visitors'] as string[]).includes(section) && <AdminDataTable key={section} kind={section as AdminDataKind} />}
+          {eventsVisited && <div hidden={section !== 'events'}><AdminPaywallEvents /></div>}
         </main>
       </div>
     </div>
