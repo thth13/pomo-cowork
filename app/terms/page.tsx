@@ -1,5 +1,6 @@
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
+import { focusPlaylists } from '@/lib/focusMusic'
 
 const SupportContact = dynamic(() => import('@/components/SupportContact'), {
   ssr: false,
@@ -209,6 +210,26 @@ export default function TermsOfServicePage() {
             triggerClassName="text-sm font-medium text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
           />
         </div>
+      </section>
+
+      <section id="music-credits" aria-labelledby="music-credits-heading" className="mt-10 scroll-mt-8 space-y-4 border-t border-gray-200 pt-6 text-sm leading-6 text-gray-700 dark:border-slate-700 dark:text-slate-300">
+        <h2 id="music-credits-heading" className="text-base font-semibold text-gray-900 dark:text-slate-100">Music credits</h2>
+        <p>
+          The Deep Focus playlist features music by{' '}
+          <a href="https://incompetech.com" className="underline underline-offset-2">Kevin MacLeod (incompetech.com)</a>,
+          licensed under{' '}
+          <a href="https://creativecommons.org/licenses/by/4.0/" className="underline underline-offset-2">Creative Commons Attribution 4.0 International (CC BY 4.0)</a>.
+          {' '}These are original recordings, provided without modifications. The recordings remain
+          governed by that license; restrictions elsewhere in these Terms do not limit the rights it grants.
+        </p>
+        <ul className="list-disc space-y-2 pl-5">
+          {focusPlaylists.flatMap(playlist => playlist.tracks.map(track => (
+            <li key={track.id}>
+              <a href={track.source} className="underline underline-offset-2">{track.title}</a>
+              {' '}— {track.artist} (incompetech.com). CC BY 4.0.
+            </li>
+          )))}
+        </ul>
       </section>
     </main>
   )

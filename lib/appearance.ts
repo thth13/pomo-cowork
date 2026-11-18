@@ -1,7 +1,7 @@
 const BLOB_BASE_URL = process.env.NEXT_PUBLIC_BLOB_BASE_URL
 
 export const BACKGROUNDS = [
-  { id: 'default', kind: 'image', src: '/backgrounds/images/default-moss-green.webp', preview: '/backgrounds/images/default-moss-green-thumb.webp' },
+  { id: 'prism-waves', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/prism-waves.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/prism-waves-thumb.webp` },
   { id: 'montana-lake', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/default-misty-lake.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/default-misty-lake.webp` },
   { id: 'emerald-hills', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/emerald-hills.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/emerald-hills-thumb.webp` },
   { id: 'rose-twilight', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/rose-twilight.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/rose-twilight-thumb.webp` },
@@ -9,7 +9,7 @@ export const BACKGROUNDS = [
   { id: 'silent-shore', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/silent-shore.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/silent-shore-thumb.webp` },
   { id: 'pearl-flow', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/pearl-flow.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/pearl-flow-thumb.webp` },
   { id: 'sage-mist', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/sage-mist.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/sage-mist-thumb.webp` },
-  { id: 'prism-waves', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/prism-waves.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/prism-waves-thumb.webp` },
+  { id: 'default', kind: 'image', src: '/backgrounds/images/default-moss-green.webp', preview: '/backgrounds/images/default-moss-green-thumb.webp' },
   { id: 'painted-sunrise', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/painted-sunrise.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/painted-sunrise-thumb.webp` },
   { id: 'pastel-peaks', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/pastel-peaks.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/pastel-peaks-thumb.webp` },
   { id: 'hudson-valley', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/hudson-valley.webp`, preview: `${BLOB_BASE_URL}/backgrounds/images/hudson-valley-thumb.webp` },
@@ -60,7 +60,7 @@ export function isPremiumWindowDesign(design: WindowDesign): boolean {
 }
 
 export const DEFAULT_APPEARANCE = {
-  backgroundId: 'default' as BackgroundId,
+  backgroundId: 'prism-waves' as BackgroundId,
   timerFont: 'sans' as TimerFont,
   windowDesign: 'graphite' as WindowDesign,
   videoPaused: false,
@@ -70,7 +70,7 @@ export function parseAppearance(value: unknown): typeof DEFAULT_APPEARANCE {
   const saved = value && typeof value === 'object' ? value as Record<string, unknown> : {}
   const legacyGarden = saved.backgroundId === 'pocket-garden'
   return {
-    backgroundId: legacyGarden ? 'grid' : BACKGROUNDS.find(background => background.id === saved.backgroundId)?.id ?? 'default',
+    backgroundId: legacyGarden ? 'grid' : BACKGROUNDS.find(background => background.id === saved.backgroundId)?.id ?? DEFAULT_APPEARANCE.backgroundId,
     timerFont: TIMER_FONTS.find(font => font === saved.timerFont) ?? DEFAULT_APPEARANCE.timerFont,
     windowDesign: legacyGarden ? 'pocket-garden' : WINDOW_DESIGNS.find(design => design === saved.windowDesign) ?? DEFAULT_APPEARANCE.windowDesign,
     videoPaused: saved.videoPaused === true,

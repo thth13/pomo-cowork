@@ -115,10 +115,11 @@ export default function RootLayout({
               }
               try {
                 const appearance = JSON.parse(localStorage.getItem('pomo:appearance:v1') || 'null');
-                document.documentElement.dataset.background = appearance?.backgroundId === 'pocket-garden' ? 'grid' : appearance?.backgroundId || 'default';
+                document.documentElement.dataset.background = appearance?.backgroundId === 'pocket-garden' ? 'grid' : appearance?.backgroundId || ${JSON.stringify(DEFAULT_APPEARANCE.backgroundId)};
                 const design = appearance?.backgroundId === 'pocket-garden' ? 'pocket-garden' : appearance && appearance.windowDesign;
                 document.documentElement.dataset.windowDesign = ${JSON.stringify(FREE_WINDOW_DESIGNS)}.includes(design) ? design : ${JSON.stringify(DEFAULT_APPEARANCE.windowDesign)};
               } catch (e) {
+                document.documentElement.dataset.background = ${JSON.stringify(DEFAULT_APPEARANCE.backgroundId)};
                 document.documentElement.dataset.windowDesign = ${JSON.stringify(DEFAULT_APPEARANCE.windowDesign)};
               }
             `,

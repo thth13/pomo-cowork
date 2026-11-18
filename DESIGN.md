@@ -109,8 +109,10 @@ credits and Unsplash source links are recorded in `public/backgrounds/CREDITS.md
 `lib/appearance.ts` owns their IDs and `lib/i18n/appearance.ts` their English/Spanish
 names. The default background and saved choices remain unchanged.
 
-The default background is the user-supplied smooth dark-green paper texture.
-`lib/appearance.ts` owns the local 2560px image and 480px preview URLs:
+The default background is Prism waves (`prism-waves`), including reset and missing
+or invalid saved background fallbacks. Existing saved choices retain their IDs.
+Moss green remains the user-supplied smooth dark-green paper texture.
+`lib/appearance.ts` owns its local 2560px image and 480px preview URLs:
 `/backgrounds/images/default-moss-green.webp` and `default-moss-green-thumb.webp`.
 The root layout exposes `--default-background-image` for CSS fallbacks;
 the workspace and picture-in-picture use the shared image renderer.
@@ -129,14 +131,14 @@ Saved appearance IDs remain compatible.
 Background labels omit the default suffix. The initial background preview shows
 two complete rows; expanded options continue on the next row, using the responsive
 column count so there is no gap at the reveal boundary.
-Background choices start with the new scenes: Moss green, Misty lake, Emerald hills,
-Rose twilight, Forest dawn, Silent shore, Pearl flow, Sage mist, Prism waves,
+Background choices start with the new scenes: Prism waves, Misty lake, Emerald hills,
+Rose twilight, Forest dawn, Silent shore, Pearl flow, Sage mist, Moss green,
 Painted sunrise, Pastel peaks and Hudson valley, followed by the existing scenes.
 Moss green uses the texture as its thumbnail. The `default` ID selects this image.
 Pocket garden has its own free `pocket-garden` ID at the bottom of the list; it
 restores the original garden background and base palette. AppearanceProvider and
 the startup script expose the background choice on the document so the photo and
-neon adapters do not override Pocket garden. Reset selects Moss green.
+neon adapters do not override Pocket garden. Reset selects Prism waves.
 With Glass or Graphite selected, photo scenes use a neutral black gradient wash (37.5/36.25/34.375% opacity), without a blue or violet tint.
 The ordinary home timer adds a local neutral black radial scrim (25% at its
 center, fading completely at the edges), without a frame or a solid card fill.
@@ -2747,3 +2749,57 @@ wrap on narrow windows.
 Verification: ESLint and diff checks pass. A read-only GET against the already-running
 local server reproduced the stale-client failure, then returned HTTP 200 after the
 fix. No project launch, build or tsc was performed.
+
+## Focus music player
+
+`HomeWorkspace` exposes Music beside Sounds in the dock and mobile tools menu.
+`FocusMusicPlayer` uses the shared `WorkspaceWindow` with its existing header,
+close, drag, resize and geometry behavior. Spotify embeds are removed.
+`lib/focusMusic.ts` owns the playlist catalog, currently only Deep Focus with
+10 full Kevin MacLeod recordings in `public/audio/deep-focus`. CC BY 4.0 credits
+and original source links are available in the player disclosure and CREDITS.md.
+No account or external playback service is required. Future playlists belong
+in the catalog; no selector is shown while there is only one.
+
+Player controls provide play/pause, previous/next, seek, volume, track selection,
+auto-advance and playlist wraparound. Volume persists locally; opening never
+autoplays and closing unmounts/stops audio. Errors offer retry and buffering has
+a status. Track selection cancels stale play attempts. UI uses existing pixel
+paper, screen, ink, muted, line, growth and tomato tokens and theme radii, with
+English/Spanish labels, keyboard-operable native controls and reduced motion.
+Only the selected track loads; the other nine files are not prefetched.
+Static review and audio-file inspection only; project launch, builds and tsc
+are omitted at the user's request.
+
+The music player keeps a small text-only playlist heading, compact track rows and
+quiet playback controls. Its seek rail is 2px with a 6px thumb inside a larger
+keyboard/touch target. Volume is disclosed by the speaker button in an anchored
+popup; it focuses the slider, closes on outside click or focus departure, and
+Escape closes only the popup and restores focus to its trigger. The popup uses
+existing paper, line and ink tokens and stays within the player width.
+
+The focus music reference layout uses a 64px moss-texture cover (the existing
+background thumbnail with a music glyph), Deep Focus title and a single current
+track subtitle. Previous/play/next sit directly below the title; the speaker
+button aligns right on the same row. A 2px progress rail spans the width below
+the cover and controls. Track list and license credits are collapsed disclosures
+by default, keeping the ordinary player compact. Volume opens below its trigger
+within the scrollable window body so it is not clipped above the player.
+Existing playback behavior and theme tokens remain the canonical owners.
+
+The music track list is always expanded as a plain list. Its local scrollbar
+uses a transparent track and a 4px WebKit thumb (thin on Firefox), tinted at
+18% ink normally and 38% on hover or keyboard focus; forced colors restores
+system colors. Full music attribution lives in `/terms#music-credits`, derived
+from the shared playlist catalog with title/source, author, CC BY 4.0 and
+unmodified-recording notice. A small readable Music credits link remains below
+the tracks, so attribution is easy to find without a large in-player section.
+
+Track rows show a 28px thumbnail reusing the playlist moss cover instead of a
+number. The playing row overlays a small music glyph; the title, duration and
+selected-row indicator remain. The full cover is retained above the list.
+
+The playlist uses a single original 72px illustrated night-landscape cover at
+`public/audio/deep-focus/cover.svg`, left of its name. Track rows use numbers
+and a playing glyph, with no individual thumbnails. This replaces the moss
+background thumbnail that was too subtle to read as a playlist cover.
