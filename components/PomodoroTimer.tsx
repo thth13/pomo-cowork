@@ -30,6 +30,7 @@ import { getOrCreateAnonymousId, getAnonymousUsername } from '@/lib/anonymousUse
 import { sendMessageToServiceWorker } from '@/lib/serviceWorker'
 import { sessionService, SessionData } from '@/services/sessionService'
 import { taskService } from '@/services/taskService'
+import { prepareNotificationSound } from '@/lib/notificationSound'
 import { useNotifications } from '@/hooks/useNotifications'
 import { TaskOption } from '@/types/task'
 import ProjectPicker from '@/components/journal/ProjectPicker'
@@ -840,7 +841,9 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
 
       // Optimistic local start (don't wait for network)
       startSession(taskName, duration, startType, tempId, currentRoomId, dailyFlow)
-      playSound('start')
+      if (soundEnabled) {
+        void prepareNotificationSound().catch(error => console.error('Failed to prepare timer audio:', error))
+      }
 
       sendMessageToServiceWorker({
         type: 'START_TIMER',
@@ -1159,7 +1162,6 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
         
         // Optimistically stop timer immediately
         cancelSession()
-        playSound('end')
         
         // Stop Service Worker timer
         sendMessageToServiceWorker({
@@ -1231,6 +1233,7 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
     }
 
     completedSessionIdRef.current = currentSession.id
+    playSound('end')
 
     const completedType = currentSession.type
     const sessionSnapshot = currentSession
@@ -1318,8 +1321,6 @@ export function PomodoroTimerRuntime({ target, returnHref, onSessionComplete, id
       : t.timer.nextSessionReady
 
     showNotification(completionTitle, notificationBody)
-
-    playSound('end')
 
     if (isAutoStartEnabled) {
       scheduleAutoStart(() => initiateSession(nextType))

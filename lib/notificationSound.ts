@@ -19,6 +19,12 @@ const ensureAudioContext = () => {
   return audioContext
 }
 
+// Unlock audio during the manual start gesture so later timer events can play.
+export const prepareNotificationSound = async () => {
+  const context = ensureAudioContext()
+  if (context?.state === 'suspended') await context.resume()
+}
+
 const stopActiveSources = () => {
   activeSources.forEach(source => {
     try { source.stop() } catch { /* Source may already have ended. */ }
@@ -68,7 +74,7 @@ const playSynthesized = (context: AudioContext, sound: 'bell' | 'chime' | 'digit
   }
 }
 
-// Timer starts queue behind the completion cue; previews and stops replace playback.
+// Timer starts queue behind the completion cue; previews and completions replace playback.
 // Queue scheduling uses the audio clock, so background-tab timer throttling cannot cut off a cue.
 const playSound = (type: 'start' | 'end', volume: number, selection: string, queue = false): Promise<void> => {
   const context = ensureAudioContext()
