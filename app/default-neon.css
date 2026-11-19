@@ -120,7 +120,8 @@
   }
 
   /* Open timers have no card edge; dark glass uses a feathered local scrim. */
-  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home:has(.workspace-background) .focus-station:not(:has(.daily-flow-content)) {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home:has(.workspace-background) .focus-station:not(:has(.daily-flow-content)),
+  html[data-window-design="white"] body .pomodoro-home .focus-station:has([data-timer-panel]):not(:has(.daily-flow-content)) {
     background: radial-gradient(ellipse closest-side at center, rgb(0 0 0 / 25%) 0%, rgb(0 0 0 / 18%) 45%, transparent 100%);
     border-color: transparent;
     border-radius: 0;
@@ -133,12 +134,31 @@
     background: transparent;
   }
 
+  html[data-window-design="white"] .workspace-background-wash {
+    background: rgb(0 0 0 / 20%);
+  }
+
+  html[data-window-design="white"] .pomodoro-home:has(.workspace-background) .focus-station:not(:has(.daily-flow-content)) .pixel-timer-screen {
+    --scene-primary: #fff;
+    --scene-secondary: #fff;
+    --scene-icon: #fff;
+    --scene-shadow: 0 1px 4px rgb(0 0 0 / 75%);
+  }
+
+  html[data-window-design="white"] .pomodoro-home:has(.workspace-background) .focus-station:not(:has(.daily-flow-content)) .pixel-timer-status {
+    text-shadow: var(--scene-shadow);
+  }
+
+  html[data-window-design="white"] .pomodoro-home:has(.workspace-background) .pixel-timer-screen :is(.pixel-timer-settings, .pixel-timer-popout, .timer-appearance-trigger) svg {
+    filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
+  }
+
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home .focus-station [data-timer-panel] {
     padding: var(--workspace-timer-padding, 20px clamp(12px, 3vw, 32px));
     color: var(--glass-ink, #fbf7ff);
   }
 
-  html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .pixel-timer-screen {
+  html:is([data-window-design="aurora"], [data-window-design="graphite"], [data-window-design="white"]) body .pomodoro-home [data-timer-panel] .pixel-timer-screen {
     background: transparent;
     border: 0;
     box-shadow: none;
@@ -200,6 +220,7 @@
     opacity: 1;
   }
 
+  html[data-window-design="white"] body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) button,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) button,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .timer-actions button {
     min-height: var(--workspace-timer-action-height, 48px);
@@ -212,18 +233,21 @@
     font-weight: 500;
   }
 
+  html[data-window-design="white"] body .pomodoro-home [data-timer-panel] .timer-actions button:hover:not(:disabled),
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-actions button:hover:not(:disabled),
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .timer-actions button:hover:not(:disabled) {
     background: rgb(var(--glass-button-hover-rgb, 103 57 142) / 75%);
     border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 40%);
   }
 
+  html[data-window-design="white"] body .pomodoro-home:has(.workspace-background) [data-timer-panel] .timer-mode-tabs,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-mode-tabs {
     gap: 4px;
     flex-wrap: wrap;
     margin-top: 4px;
   }
 
+  html[data-window-design="white"] body .pomodoro-home:has(.workspace-background) [data-timer-panel] .timer-mode-tab,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab {
     border-radius: 10px;
     color: #e8e8ec;
@@ -232,11 +256,13 @@
     letter-spacing: .015em;
   }
 
+  html[data-window-design="white"] body .pomodoro-home:has(.workspace-background) [data-timer-panel] .timer-mode-tab[aria-pressed="true"],
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab[aria-pressed="true"] {
     color: #fff;
     background: rgb(255 255 255 / 9%);
   }
 
+  html[data-window-design="white"] body .pomodoro-home:has(.workspace-background) [data-timer-panel] .timer-mode-tab[aria-pressed="true"]::after,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-mode-tab[aria-pressed="true"]::after {
     height: 2px;
     border-radius: 2px;
@@ -245,6 +271,7 @@
     right: 30%;
   }
 
+  html[data-window-design="white"] body .pomodoro-home [data-timer-panel] :is(.first-focus-options button, .current-task-trigger),
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] :is(.first-focus-options button, .current-task-trigger),
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer :is(.first-focus-options button, .current-task-trigger) {
     border-radius: 12px;
@@ -253,6 +280,7 @@
     color: var(--glass-ink, #eee4f8);
   }
 
+  html[data-window-design="white"] body .pomodoro-home [data-timer-panel] .first-focus-options button[aria-pressed="true"],
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .first-focus-options button[aria-pressed="true"] {
     background: rgb(var(--glass-selected-rgb, 222 185 255) / 18%);
     border-color: rgb(var(--glass-control-border-rgb, 238 219 255) / 45%);
@@ -264,12 +292,14 @@
     border-radius: 10px;
   }
 
+  html[data-window-design="white"] body .pomodoro-home:has(.workspace-background) [data-timer-panel] button:focus-visible,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] button:focus-visible,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer button:focus-visible {
     outline: 2px solid var(--glass-ink, #f4dfff);
     outline-offset: 4px;
   }
 
+  html[data-window-design="white"] body .pomodoro-home [data-timer-panel] button:disabled,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] button:disabled,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer button:disabled {
     opacity: .5;
@@ -281,8 +311,8 @@
     color: var(--glass-ink, #f8efff);
   }
 
-  /* Glass variants share their selected material across photo backgrounds.
-     Other designs keep their palette and surfaces from window-design.css. */
+  /* Workspace glass and the Active Sessions rail share their scene palette. */
+  html[data-window-design="white"] .pomodoro-home #workspace-working,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home :is(
     .workspace-dock, .workspace-window, .working-sidebar
   ) {
@@ -333,16 +363,60 @@
     --window-product-screen: #3b2850;
   }
 
-  /* Graphite reuses Glass behavior with translucent black surfaces. */
-  :root[data-window-design="graphite"],
-  :root.dark[data-window-design="graphite"],
-  .appearance-window-preview[data-window-design="graphite"] {
+  :root:is([data-window-design="graphite"], [data-window-design="white"]),
+  :root.dark:is([data-window-design="graphite"], [data-window-design="white"]),
+  .appearance-window-preview:is([data-window-design="graphite"], [data-window-design="white"]) {
     --window-radius: 28px;
     --theme-panel-radius: var(--window-radius);
     --theme-control-radius: 10px;
     --window-backdrop: blur(32px) saturate(110%);
     --window-shadow: 0 14px 40px rgb(0 0 0 / 16%);
-    --window-material-texture: none;
+    --glass-surface-opacity: 55%;
+    --glass-deep-opacity: 62%;
+    --glass-button-rgb: 32 34 37;
+    --glass-button-hover-rgb: 80 84 90;
+    --glass-control-border-rgb: 225 228 232;
+    --glass-control-rgb: 35 37 41;
+    --glass-selected-rgb: 220 224 230;
+  }
+
+  :root[data-window-design="white"],
+  .appearance-window-preview[data-window-design="white"] {
+    --window-shell-fill: var(--window-material-paper);
+  }
+
+  html[data-window-design="white"] .pomodoro-home [data-timer-panel] {
+    --glass-ink: #f5f5f5;
+    --glass-accent: #f0a394;
+  }
+
+  html[data-window-design="white"] .pomodoro-home [data-timer-panel] .current-task-trigger svg {
+    color: inherit;
+  }
+
+  html[data-window-design="white"] .pomodoro-home [data-timer-panel] .current-task-trigger:is(:hover:not(:disabled), [aria-expanded="true"]) {
+    background: rgb(var(--glass-button-hover-rgb) / 75%);
+    border-color: rgb(var(--glass-control-border-rgb) / 40%);
+  }
+
+  html[data-window-design="white"] body .task-popover:not([data-daily-flow-picker], [data-mini-timer-picker]) {
+    --pixel-ink: #f5f5f5;
+    --pixel-muted: #c4c6c8;
+    --pixel-line: rgb(205 209 215 / 30%);
+    --pixel-screen: #202020;
+    --pixel-tomato-ink: #f0a394;
+    --scene-selected: var(--pixel-screen);
+    background: rgb(0 0 0 / var(--glass-surface-opacity));
+    border-color: var(--pixel-line);
+    color: var(--pixel-ink);
+    color-scheme: dark;
+  }
+
+  /* Graphite reuses Glass behavior with translucent black surfaces. */
+  :root[data-window-design="graphite"],
+  :root.dark[data-window-design="graphite"],
+  .appearance-window-preview[data-window-design="graphite"],
+  html[data-window-design="white"] .pomodoro-home #workspace-working {
     --glass-page: #080808;
     --glass-paper: #101010;
     --glass-screen: #202020;
@@ -365,20 +439,19 @@
     --glass-surface-deep-rgb: 0 0 0;
     --glass-shell-top-rgb: 0 0 0;
     --glass-shell-bottom-rgb: 0 0 0;
-    --glass-surface-opacity: 55%;
-    --glass-deep-opacity: 62%;
-    --glass-shell-top-opacity: 55%;
-    --glass-shell-bottom-opacity: 62%;
+    --glass-shell-top-opacity: var(--glass-surface-opacity);
+    --glass-shell-bottom-opacity: var(--glass-deep-opacity);
     --glass-edge-rgb: 205 209 215;
     --glass-hover-rgb: 200 205 212;
     --glass-highlight-rgb: 220 223 228;
     --glass-rim-rgb: 232 235 240;
     --glass-border-rgb: 218 222 228;
-    --glass-button-rgb: 32 34 37;
-    --glass-button-hover-rgb: 80 84 90;
-    --glass-control-border-rgb: 225 228 232;
-    --glass-control-rgb: 35 37 41;
-    --glass-selected-rgb: 220 224 230;
+  }
+
+  :root[data-window-design="graphite"],
+  :root.dark[data-window-design="graphite"],
+  .appearance-window-preview[data-window-design="graphite"] {
+    --window-material-texture: none;
     --window-scene-panel: rgb(var(--glass-surface-rgb) / var(--glass-surface-opacity));
     --window-scene-task: rgb(var(--glass-surface-deep-rgb) / var(--glass-deep-opacity));
     --window-scene-popover: #101010;
@@ -410,12 +483,14 @@
     box-shadow: inset 2px 0 var(--pixel-tomato);
   }
 
+  html[data-window-design="white"] body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action,
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .timer-actions .timer-primary-action {
     background: var(--pixel-tomato);
     border-color: var(--pixel-tomato);
   }
 
+  html[data-window-design="white"] body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action:hover:not(:disabled),
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .pomodoro-home [data-timer-panel] .timer-actions:not(.timer-actions-compact) .timer-primary-action:hover:not(:disabled),
   html:is([data-window-design="aurora"], [data-window-design="graphite"]) body .mini-timer .timer-actions .timer-primary-action:hover:not(:disabled) {
     background: var(--pixel-tomato-hover);
@@ -423,22 +498,22 @@
   }
 
   /* Contain hover paint without clipping window popovers or resize handles. */
-  html[data-window-design="graphite"] body .workspace-window-heading {
+  html:is([data-window-design="graphite"], [data-window-design="white"]) body .workspace-window-heading {
     border-radius: calc(var(--window-radius) - 2px) calc(var(--window-radius) - 2px) 0 0;
     overflow: hidden;
     background: rgb(255 255 255 / 4%);
     border-color: var(--window-material-line);
   }
 
-  html[data-window-design="graphite"] body .workspace-window-handle {
+  html:is([data-window-design="graphite"], [data-window-design="white"]) body .workspace-window-handle {
     border-radius: calc(var(--window-radius) - 5px) 8px 8px 8px;
   }
 
-  html[data-window-design="graphite"] body .workspace-window-close {
+  html:is([data-window-design="graphite"], [data-window-design="white"]) body .workspace-window-close {
     border-radius: 12px;
   }
 
-  html[data-window-design="graphite"] body .workspace-dock button {
+  html:is([data-window-design="graphite"], [data-window-design="white"]) body .workspace-dock button {
     border-radius: 6px;
   }
 
@@ -446,7 +521,7 @@
     background: rgb(255 255 255 / 9%);
   }
 
-  html[data-window-design="graphite"] body .pomodoro-home :is(.workspace-dock, .workspace-window, .working-sidebar) {
+  html:is([data-window-design="graphite"], [data-window-design="white"]) body .pomodoro-home :is(.workspace-dock, .workspace-window, .working-sidebar) {
     border-radius: var(--window-radius);
     border-color: var(--window-material-line);
     box-shadow: var(--window-shadow);
@@ -455,7 +530,7 @@
   }
 
   /* Open presence rails keep their dividers, without a card over the wallpaper. */
-  html:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"], [data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working {
+  html:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"], [data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working {
     background: transparent;
     border-radius: 0;
     box-shadow: none;
@@ -463,23 +538,58 @@
     backdrop-filter: none;
   }
 
+  html[data-window-design="white"] .pomodoro-home:not(:has(.workspace-background)) #workspace-working :is(.coworker-strip-heading, .coworker-strip-empty, .working-sidebar-toggle, .workspace-room-switch) {
+    --pixel-muted: var(--window-material-muted);
+    --scene-border: var(--window-material-line);
+    --scene-secondary: var(--window-material-muted);
+    --scene-primary: var(--window-material-ink);
+    color: var(--scene-primary);
+  }
+
+  html[data-window-design="white"] .pomodoro-home #workspace-working .coworker-tile {
+    --glass-workspace-surface: var(--window-material-paper);
+    --glass-edge-rgb: 36 39 46;
+    --glass-panel-muted: var(--window-material-muted);
+    --glass-action-ink: var(--window-material-accent);
+    --scene-primary: var(--window-material-ink);
+    --scene-secondary: var(--window-material-muted);
+    --scene-accent: var(--window-material-accent);
+    --scene-hover: var(--window-material-screen);
+    --scene-selected: var(--window-material-screen);
+    --scene-task: var(--window-material-paper);
+    --scenery-ink: var(--scene-primary);
+    --pixel-paper: var(--window-material-paper);
+    --pixel-screen: var(--window-material-screen);
+    --pixel-ink: var(--scene-primary);
+    --pixel-muted: var(--scene-secondary);
+    --pixel-line: var(--window-material-line);
+    --pixel-tomato-ink: var(--scene-accent);
+    color: var(--pixel-ink);
+    color-scheme: light;
+  }
+
+  html[data-window-design="white"] .pomodoro-home #workspace-working :is(.coworker-tile-profile, .coworker-tile-menu):hover {
+    color: var(--scene-primary);
+    background: var(--scene-hover);
+  }
+
   /* Quiet presence cards: small portraits, soft glass and a hairline progress track. */
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-strip {
     gap: 8px;
     padding-block: 12px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip-heading h2 {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-strip-heading h2 {
     font-size: 13px;
     font-weight: 500;
     letter-spacing: -.015em;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip-heading > div {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-strip-heading > div {
     font-size: 10px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile {
     flex-shrink: 0;
     background: var(--glass-workspace-surface);
     border: 1px solid rgb(var(--glass-edge-rgb) / 12%);
@@ -489,21 +599,21 @@
     backdrop-filter: blur(12px);
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-self {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-self {
     border-inline-start-color: var(--glass-action-ink);
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile:focus-within {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile:focus-within {
     border-color: rgb(var(--glass-edge-rgb) / 48%);
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-profile {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-profile {
     gap: 10px;
     padding: 14px 12px;
     border-radius: inherit;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-avatar {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-avatar {
     width: 32px;
     height: 32px;
     border-radius: 10px;
@@ -511,41 +621,41 @@
     font-size: 13px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-details {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-details {
     gap: 5px 12px;
     align-items: center;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-identity {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-identity {
     padding-right: 28px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-name {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-name {
     font-size: 12px;
     line-height: 18px;
     font-weight: 500;
     letter-spacing: -.01em;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-task {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-task {
     font-size: 11px;
     line-height: 16px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-status {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-status {
     gap: 5px;
     font-size: 10px;
     line-height: 18px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-dot {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-dot {
     flex-basis: 5px;
     width: 5px;
     height: 5px;
     border-radius: 50%;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-time {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-time {
     font-family: Inter, system-ui, sans-serif;
     font-size: 12px;
     line-height: 18px;
@@ -553,7 +663,7 @@
     letter-spacing: .02em;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-progress {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-progress {
     height: 2px;
     margin-top: 4px;
     border: 0;
@@ -561,12 +671,12 @@
     background: rgb(var(--glass-edge-rgb) / 12%);
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-progress > span {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-progress > span {
     border-radius: inherit;
     background: var(--glass-panel-muted);
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-menu {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-menu {
     top: 8px;
     right: 8px;
     width: 28px;
@@ -574,12 +684,12 @@
     border-radius: 8px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-menu svg {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-menu svg {
     width: 16px;
     height: 16px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-you {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-you {
     top: 14px;
     right: 12px;
     font-size: 9px;
@@ -587,91 +697,98 @@
     font-weight: 500;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-reactions {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-reactions {
     gap: 5px;
     padding: 0 12px 12px 54px;
     font-size: 10px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-reactions button {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-reactions button {
     border-radius: 6px;
     padding: 3px 6px;
   }
 
-  html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working[data-collapsed="true"] .coworker-tile-profile {
+  html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working[data-collapsed="true"] .coworker-tile-profile {
     padding: 12px 4px;
     gap: 7px;
   }
 
   /* Full desktop density; compact laptop sizes remain below this breakpoint. */
   @media (min-width: 1536px) and (min-height: 821px) {
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip-heading h2 {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-strip-heading h2 {
       font-size: 15px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-strip-heading > div {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-strip-heading > div {
       font-size: 11px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-profile {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-profile {
       gap: 12px; padding: 20px 12px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-avatar {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-avatar {
       width: 40px; height: 40px; font-size: 16px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-details {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-details {
       gap: 7px 12px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-name {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-name {
       font-size: 14px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-task {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-task {
       font-size: 12px; line-height: 17px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-status {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-status {
       font-size: 11px; gap: 7px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-time {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-time {
       font-size: 14px; line-height: 22px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-dot {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-dot {
       flex-basis: 7px; width: 7px; height: 7px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-menu {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-menu {
       width: 30px; height: 30px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-menu svg {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-menu svg {
       width: 18px; height: 18px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-you {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-you {
       top: 20px; font-size: 10px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile-reactions {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile-reactions {
       padding-left: 64px; font-size: 11px;
     }
 
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working[data-collapsed="true"] .coworker-tile-profile {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working[data-collapsed="true"] .coworker-tile-profile {
       padding: 14px 4px;
       gap: 8px;
     }
   }
 
   @media (hover: hover) {
-    html:is([data-window-design="graphite"], [data-window-design="aurora"]) .pomodoro-home #workspace-working .coworker-tile:hover {
+    html:is([data-window-design="graphite"], [data-window-design="aurora"], [data-window-design="white"]) .pomodoro-home #workspace-working .coworker-tile:hover {
       background-color: rgb(var(--glass-rim-rgb) / 5%);
       border-color: rgb(var(--glass-edge-rgb) / 24%);
     }
+  }
+
+  .appearance-window-preview[data-window-design="white"] .appearance-window-sample {
+    background: var(--window-shell-fill);
+    border-radius: 14px;
+    -webkit-backdrop-filter: var(--window-backdrop);
+    backdrop-filter: var(--window-backdrop);
   }
 
   .appearance-window-preview[data-window-design="graphite"] .appearance-window-sample {

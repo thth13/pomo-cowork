@@ -2464,9 +2464,11 @@ on the right; actions span the header on narrow screens.
 
 ## White site theme
 
-White is a premium Site theme, following the free Glass, Matte and Pixel choices. It uses opaque white
-surfaces, neutral gray secondary surfaces and borders, dark text and the existing
-tomato accent. `app/window-design.css` owns its material tokens and preview;
+White is a premium Site theme, following the free Glass, Matte and Pixel choices. It shares Graphite’s 28px window corners and open home timer.
+The home timer also shares Graphite’s button styling and dark translucent task picker.
+Active Sessions shares Graphite’s open rail, rounded corners and responsive card sizing, with opaque white participant cards and dark text.
+It uses opaque white window surfaces, neutral gray secondary surfaces and borders, dark text and the existing
+tomato accent. `app/window-design.css` owns its palette and `app/default-neon.css` sets its window fill.
 `app/site-appearance.css` maps them to site tokens with a pure white page.
 The material stays light in either light/dark mode and with scenery enabled.
 It reuses the shared appearance registry, radio cards, persistence and bootstrap.

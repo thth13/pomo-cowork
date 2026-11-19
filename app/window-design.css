@@ -11,8 +11,6 @@
     --window-material-accent: #983e32;
     --window-material-scheme: light;
     --window-material-texture: none;
-    --window-radius: 8px;
-    --window-shadow: 0 4px 18px rgb(24 32 48 / 7%);
     --timer-focus-on-dark: #983e32;
     --timer-short-break-on-dark: #49663a;
     --timer-long-break-on-dark: #46627a;
@@ -271,7 +269,7 @@
 
   /* Apply transparent materials on plain backgrounds as well as scenery.
      This is a fill, never element opacity: text and controls stay fully visible. */
-  html:is([data-window-design="clear-glass"], [data-window-design="minimal"]) body :is(
+  html:is([data-window-design="white"], [data-window-design="clear-glass"], [data-window-design="minimal"]) body :is(
     .workspace-window, .workspace-navigation-panel, .workspace-account-card,
     .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
     .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
