@@ -53,7 +53,7 @@ buttons and navigation selection, with #f0a394 selected text and a translucent
 red selection fill. Dock selection uses the same red indicator as the right
 navigation menu; green remains reserved for status and growth indicators.
 
-Graphite (`graphite`) is the default and first free site theme; Glass is second.
+Graphite (`graphite`) is the default and first free site theme.
 The Graphite and Glass homepage Currently Working rail sits directly on the scenery without a fill,
 backdrop blur, rounded shell or shadow. The existing left divider remains;
 on photo scenes, individual participant tiles share the left dock's color and opacity
@@ -1003,14 +1003,14 @@ uses #18172d panels with a static violet glow and 16px corners. Each material ow
 a complete local foreground, muted, border and control palette, independent of
 scenery and the page theme. Dense content and semantic action colors stay shared.
 Their previews reuse the material tokens; no new assets or animation are required.
-The twelve choices use three columns on desktop and two on narrow screens.
-Glass, Matte and Pixel appear first and are free; all remaining nine styles require active Pro access.
+The theme choices use three columns on desktop and two on narrow screens.
+Graphite, Pocket Garden, Pocket Garden Night, White and Glass appear first, in that order, and are free. All remaining styles require active Pro access.
 Locked cards show the shared Pro badge and open the existing paywall. Style changes
 apply immediately, independently of scenery, timer font and light/dark theme.
 The store checks access when choosing, restoring and syncing preferences. Without
-Pro, a saved premium choice falls back to Glass but is retained for reactivation.
+Pro, a saved premium choice falls back to Graphite but is retained for reactivation.
 Before auth is verified, the early page bootstrap applies only free themes. The browser preference and cross-tab updates belong to
-`useAppearanceStore`; missing or invalid saved styles fall back to Glass, and Reset
+`useAppearanceStore`; missing or invalid saved styles fall back to Graphite, and Reset
 appearance restores it. The settings dialog itself previews the current material.
 
 `app/window-design.css` owns `--window-radius`, `--window-shadow`, `--window-backdrop`
@@ -2464,7 +2464,7 @@ on the right; actions span the header on narrow screens.
 
 ## White site theme
 
-White is a premium Site theme, following the free Glass, Matte and Pixel choices. It shares Graphite’s 28px window corners and open home timer.
+White is the fourth free site theme. It shares Graphite’s 28px window corners and open home timer.
 The home timer also shares Graphite’s button styling and dark translucent task picker.
 Active Sessions shares Graphite’s open rail, rounded corners and responsive card sizing, with opaque white participant cards and dark text.
 It uses opaque white window surfaces, neutral gray secondary surfaces and borders, dark text and the existing
@@ -2473,14 +2473,11 @@ tomato accent. `app/window-design.css` owns its palette and `app/default-neon.cs
 The material stays light in either light/dark mode and with scenery enabled.
 It reuses the shared appearance registry, radio cards, persistence and bootstrap.
 
-Dark red and Ivory are premium materials after White in the theme registry.
-Dark red replaces Cream with deep burgundy surfaces, warm rose accents and light
-text, using a dark color scheme in either page mode. Ivory uses a softer neutral
-ivory surface with beige secondary surfaces and warm gray text. Both use smooth
-10px corners, restrained shadows and no paper texture. Their canonical material
-tokens and miniature previews live in `app/window-design.css`, with site-wide
-palette mapping in `app/site-appearance.css`. All choices after Glass, Matte and
-Pixel use the existing Pro gate, restoration rules and shared paywall.
+Dark red and Ivory require Pro. Dark red uses the Violet Glass timer, open
+Currently Working rail, scenery dimming and feathered timer shadow in both page
+modes. Its translucent burgundy panels, rose accents and settings preview share
+the glass palette in `app/default-neon.css`. Ivory uses neutral ivory surfaces,
+beige secondary surfaces, warm gray text and smooth 10px corners.
 
 ## Workspace calendar
 

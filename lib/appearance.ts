@@ -34,8 +34,8 @@ export const BACKGROUNDS = [
 
 export const PREMIUM_TIMER_FONTS = ['orbitron', 'space-grotesk', 'cormorant', 'bebas', 'vt323'] as const
 export const TIMER_FONTS = ['sans', 'pixel', 'serif', 'mono', 'rounded', ...PREMIUM_TIMER_FONTS] as const
-export const FREE_WINDOW_DESIGNS = ['graphite', 'glass', 'pocket-garden', 'pocket-garden-night', 'aurora', 'matte', 'pixel'] as const
-export const PREMIUM_WINDOW_DESIGNS = ['white', 'dark-red', 'ivory', 'clear-glass', 'minimal', 'outline', 'paper', 'terminal', 'neon'] as const
+export const FREE_WINDOW_DESIGNS = ['graphite', 'pocket-garden', 'pocket-garden-night', 'white', 'glass'] as const
+export const PREMIUM_WINDOW_DESIGNS = ['aurora', 'matte', 'pixel', 'dark-red', 'ivory', 'clear-glass', 'minimal', 'outline', 'paper', 'terminal', 'neon'] as const
 export const WINDOW_DESIGNS = [...FREE_WINDOW_DESIGNS, ...PREMIUM_WINDOW_DESIGNS] as const
 export const PLAY_BACKGROUND_EVENT = 'pomo:play-background'
 export type BackgroundId = (typeof BACKGROUNDS)[number]['id']

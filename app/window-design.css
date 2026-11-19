@@ -47,7 +47,7 @@
     --timer-long-break-on-dark: #a0b5c6;
   }
 
-  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"]) body :is(.pomodoro-home, .seo-shell) [data-timer-panel] {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="ivory"]) body :is(.pomodoro-home, .seo-shell) [data-timer-panel] {
     --timer-focus-color: var(--window-material-accent);
     --timer-short-break-color: var(--timer-short-break-on-dark);
     --timer-long-break-color: var(--timer-long-break-on-dark);
@@ -62,7 +62,8 @@
     --window-material-accent: #f0a1ad;
     --window-material-scheme: dark;
     --window-material-texture: none;
-    --window-radius: 10px;
+    --window-radius: 18px;
+    --window-backdrop: blur(24px) saturate(115%);
     --window-shadow: 0 4px 18px rgb(18 4 8 / 28%);
     --timer-focus-on-dark: #f0a1ad;
     --timer-short-break-on-dark: #b5cfaa;
@@ -127,7 +128,7 @@
     --window-shadow: 0 0 0 1px rgb(142 123 232 / 35%), 0 0 20px rgb(142 123 232 / 22%), inset 0 0 18px rgb(142 123 232 / 7%);
   }
 
-  :root:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
+  :root:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) {
     --window-scene-panel: var(--window-material-paper);
     --window-scene-task: var(--window-material-paper);
     --window-scene-task-hover: var(--window-material-screen);
@@ -141,7 +142,7 @@
 
   /* Material palettes stay local to app windows; page scenery and semantic
      action colors retain their existing owners. Previews reuse these tokens. */
-  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body :is(
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body :is(
     .workspace-window, .workspace-navigation-panel, .workspace-account-card,
     .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
     .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
@@ -168,24 +169,24 @@
     text-shadow: none;
   }
 
-  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window-content > div {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window-content > div {
     color: var(--window-material-ink);
     background: transparent;
   }
 
-  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .dark\:bg-slate-700, .dark\:bg-slate-800) {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.bg-white, .bg-gray-50, .bg-gray-100, .bg-slate-50, .bg-slate-100, .dark\:bg-slate-700, .dark\:bg-slate-800) {
     background-color: var(--window-material-paper);
   }
 
-  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white) {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-700, .text-gray-800, .text-gray-900, .text-slate-700, .text-slate-800, .text-slate-900, .dark\:text-white) {
     color: var(--window-material-ink);
   }
 
-  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600) {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="ivory"], [data-window-design="paper"], [data-window-design="terminal"], [data-window-design="neon"]) body .workspace-window :is(.text-gray-400, .text-gray-500, .text-gray-600, .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600) {
     color: var(--window-material-muted);
   }
 
-  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="dark-red"], [data-window-design="ivory"], [data-window-design="paper"]) body :is(.pomodoro-home, .seo-shell) :is(.pixel-timer-settings, .pixel-timer-popout, .timer-appearance-trigger, .timer-mode-tab, .coworker-tile-profile, .coworker-tile-menu):hover {
+  html:is(:is([data-window-design="pocket-garden"], [data-window-design="pocket-garden-night"]), [data-window-design="white"], [data-window-design="ivory"], [data-window-design="paper"]) body :is(.pomodoro-home, .seo-shell) :is(.pixel-timer-settings, .pixel-timer-popout, .timer-appearance-trigger, .timer-mode-tab, .coworker-tile-profile, .coworker-tile-menu):hover {
     color: var(--window-material-ink);
   }
 
