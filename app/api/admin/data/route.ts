@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const denied = await authorizeAdmin(request)
     if (denied) return denied
     const body = await request.json().catch(() => null)
-    if (!body || !['directory', 'online', 'wall', 'habits', 'visitors'].includes(body.kind) || !Number.isSafeInteger(body.page) || body.page < 1) {
+    if (!body || !['directory', 'online', 'wall', 'habits', 'visitors', 'notes'].includes(body.kind) || !Number.isSafeInteger(body.page) || body.page < 1) {
       return NextResponse.json({ error: 'Invalid list or page.' }, { status: 400 })
     }
     if (body.kind === 'online' && (!Array.isArray(body.onlineIds) || body.onlineIds.length > 10000 || body.onlineIds.some((id: unknown) => typeof id !== 'string' || id.length > 128))) {
@@ -27,6 +27,27 @@ export async function POST(request: NextRequest) {
     const paging = (total: number) => {
       const page = Math.min(body.page, Math.max(1, Math.ceil(total / pageSize)))
       return { page, skip: (page - 1) * pageSize, take: pageSize }
+    }
+    if (body.kind === 'notes') {
+      const result = await prisma.$transaction(async tx => {
+        const [counts] = await tx.$queryRaw<{ total: bigint; totalNotes: bigint }[]>`
+          SELECT count(*) AS total, coalesce(sum(jsonb_array_length(notes)), 0) AS "totalNotes"
+          FROM workspace_notes
+          WHERE notes <> '[]'::jsonb
+        `
+        const total = Number(counts.total)
+        const { page, skip, take } = paging(total)
+        const rows = await tx.$queryRaw<{ id: string; username: string; isAnonymous: boolean; notesCount: number }[]>`
+          SELECT u.id, u.username, u."isAnonymous", jsonb_array_length(w.notes) AS "notesCount"
+          FROM workspace_notes w
+          JOIN users u ON u.id = w."userId"
+          WHERE w.notes <> '[]'::jsonb
+          ORDER BY "notesCount" DESC, u.username ASC, u.id ASC
+          LIMIT ${take} OFFSET ${skip}
+        `
+        return { rows, total, totalNotes: Number(counts.totalNotes), page, pageSize }
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead })
+      return NextResponse.json(result, { headers: { 'Cache-Control': 'private, no-store' } })
     }
     if (body.kind === 'visitors') {
       if (body.referrer !== undefined && (typeof body.referrer !== 'string' || body.referrer.length > 500)) {

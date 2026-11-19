@@ -13,14 +13,15 @@ import AdminDeleteDialog from './AdminDeleteDialog'
 import { useAuthStore } from '@/store/useAuthStore'
 import type { VisitorDetails } from '@/lib/visitorDetails'
 
-export type AdminDataKind = 'directory' | 'wall' | 'habits' | 'visitors'
+export type AdminDataKind = 'directory' | 'wall' | 'habits' | 'visitors' | 'notes'
 type Person = { id: string; username: string; isAnonymous: boolean }
 type UserRow = Person & { referrer: string | null; countryCode: string | null; createdAt: string; lastSeenAt: string | null; totalMinutes: number; totalPomodoros: number; sessionsCount: number }
 type WallRow = { id: string; message: string; createdAt: string; author: Person; profileUser: Person }
 type HabitRow = { id: string; title: string; startDate: string; archived: boolean; createdAt: string; user: Person; _count: { completions: number } }
+type NotesRow = Person & { notesCount: number }
 type VisitorRow = { id: string; ipAddress: string | null; countryCode: string | null; pagePath: string; createdAt: string; details: VisitorDetails | null }
-type ListData = { rows: (UserRow | WallRow | HabitRow | VisitorRow)[]; total: number; page: number; pageSize: number; referrers?: string[] }
-const titles = { directory: 'All users', wall: 'Wall messages', habits: 'Habits', visitors: 'New visitors' }
+type ListData = { rows: (UserRow | WallRow | HabitRow | VisitorRow | NotesRow)[]; total: number; page: number; pageSize: number; referrers?: string[]; totalNotes?: number }
+const titles = { directory: 'All users', wall: 'Wall messages', habits: 'Habits', visitors: 'New visitors', notes: 'Notes' }
 const countryNames = new Intl.DisplayNames(['en'], { type: 'region', fallback: 'none' })
 const countryFlag = (code: string | null) => {
   const normalized = code?.toUpperCase()
@@ -68,7 +69,8 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
   useEffect(() => {
     if (data?.referrers) setReferrers(data.referrers)
   }, [data])
-  const headers = kind === 'visitors' ? ['IP address', 'Country', 'Browser / OS', 'Device', 'Landing page', 'Referrer', 'Visited · Kyiv', 'Details', 'Manage'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions', 'Referrer', ...(userType === 'anonymous' ? ['Manage'] : [])]
+  const headingTotal = kind === 'notes' ? data?.totalNotes : data?.total
+  const headers = kind === 'notes' ? ['User', 'Saved notes'] : kind === 'visitors' ? ['IP address', 'Country', 'Browser / OS', 'Device', 'Landing page', 'Referrer', 'Visited · Kyiv', 'Details', 'Manage'] : kind === 'wall' ? ['Profile wall', 'Message', 'Created · Kyiv'] : kind === 'habits' ? ['Habit', 'Owner', 'Status', 'Start date', 'Completions', 'Created · Kyiv'] : ['User', 'Country', 'Created · Kyiv', 'Last seen · Kyiv', 'Focus time', 'Pomodoros', 'Sessions', 'Referrer', ...(userType === 'anonymous' ? ['Manage'] : [])]
 
   useEffect(() => {
     setSelectedVisit(null)
@@ -85,9 +87,10 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
     }
   }, [loading])
 
-  return <section aria-label={titles[kind]}>
+  return <section aria-label={titles[kind]} className={kind === 'notes' ? 'admin-notes' : undefined}>
     <div className="admin-data-toolbar">
-      <div><h2>{titles[kind]}{data ? ` · ${data.total.toLocaleString('en-US')}` : ''}</h2>
+      <div><h2>{titles[kind]}{headingTotal !== undefined ? ` · ${headingTotal.toLocaleString('en-US')}` : ''}</h2>
+        {kind === 'notes' && <p>Currently saved notes across registered and guest accounts, most notes first.</p>}
         {kind === 'habits' && <p>All active and archived habits, newest first.</p>}
         {kind === 'wall' && <p>All existing profile wall messages, newest first.</p>}
         {kind === 'visitors' && <p>First visits without an account. Removed after sign-in, registration, or anonymous profile creation.</p>}
@@ -123,11 +126,12 @@ export default function AdminDataTable({ kind }: { kind: AdminDataKind }) {
               </tr>
               if ('message' in row) return <tr key={row.id}><td><div className="admin-wall-participants"><Link href={userProfileHref(row.author)}>{row.author.username}</Link><span aria-hidden="true">→</span><span className="sr-only">to</span><Link href={userProfileHref(row.profileUser)}>{row.profileUser.username}</Link></div></td><td className="admin-message-cell">{row.message}</td><td>{date(row.createdAt)}</td></tr>
               if ('title' in row) return <tr key={row.id}><td className="admin-message-cell">{row.title}</td><td>{person(row.user)}</td><td><span className={`admin-status ${row.archived ? 'admin-status-archived' : 'admin-status-active'}`}>{row.archived ? 'Archived' : 'Active'}</span></td><td>{row.startDate}</td><td>{row._count.completions}</td><td>{date(row.createdAt)}</td></tr>
+              if ('notesCount' in row) return <tr key={row.id}><td>{person(row)}</td><td>{row.notesCount.toLocaleString('en-US')}</td></tr>
               return <tr key={row.id}><td>{person(row)}{connected && onlineIds[row.id] && <span className="admin-online-status">Online</span>}</td><td>{countryFlag(row.countryCode)}</td><td>{date(row.createdAt)}</td><td>{date(row.lastSeenAt)}</td><td>{Math.floor(row.totalMinutes / 60)}h {row.totalMinutes % 60}m</td><td>{row.totalPomodoros}</td><td>{row.sessionsCount}</td><td className="admin-message-cell">{row.referrer || '—'}</td>{userType === 'anonymous' && <td>{row.isAnonymous && <button type="button" className="community-button admin-visit-delete" aria-label={`Delete anonymous user ${row.username}`} onClick={() => { setUserDeleted(false); setSelectedUser(row) }}>Delete</button>}</td>}</tr>
             })}</tbody>
           </table>
         </div>
-        <nav className="admin-data-pagination" aria-label={`${titles[kind]} pages`}><span>{data.total ? (data.page - 1) * data.pageSize + 1 : 0}–{Math.min(data.page * data.pageSize, data.total)} of {data.total} · Page {data.page} of {Math.max(1, Math.ceil(data.total / data.pageSize))}</span><div><button type="button" disabled={data.page <= 1} onClick={() => setPage(data.page - 1)}>Previous</button><button type="button" disabled={data.page * data.pageSize >= data.total} onClick={() => setPage(data.page + 1)}>Next</button></div></nav>
+        <nav className="admin-data-pagination" aria-label={`${titles[kind]} pages`}><span>{data.total ? (data.page - 1) * data.pageSize + 1 : 0}–{Math.min(data.page * data.pageSize, data.total)} of {data.total}{kind === 'notes' ? ' accounts' : ''} · Page {data.page} of {Math.max(1, Math.ceil(data.total / data.pageSize))}</span><div><button type="button" disabled={data.page <= 1} onClick={() => setPage(data.page - 1)}>Previous</button><button type="button" disabled={data.page * data.pageSize >= data.total} onClick={() => setPage(data.page + 1)}>Next</button></div></nav>
       </> : <p className="admin-data-state">Use Refresh to try loading this list again.</p>}
     </div>
     {selectedUser && <AdminDeleteDialog key={`${token}:${selectedUser.id}`} token={token}

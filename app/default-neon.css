@@ -58,7 +58,7 @@
     .feedback-panel, .feedback-prompt, [data-beep-surface], [data-floating-timer],
     .focus-station, .working-sidebar, .seo-timer, .seo-social,
     .workspace-dock, .workspace-navigation-control
-  ),
+  ):not(:where([data-window-design="graphite"] .admin-shell *)),
   html[data-mini-timer]:is([data-window-design="aurora"], [data-window-design="dark-red"], [data-window-design="graphite"]) .task-popover[data-mini-timer-picker] {
     background: var(--neon-shell);
     border-color: rgb(var(--glass-border-rgb, 231 211 255) / 19%);

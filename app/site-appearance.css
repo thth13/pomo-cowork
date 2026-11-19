@@ -95,7 +95,7 @@
     .community-dialog:not(.kofi-support-dialog), .appearance-dialog, .wrapped-dialog,
     .guest-signup-dialog, .notifications-panel, .rank-toast, .task-popover,
     .feedback-panel, .feedback-prompt, [data-beep-surface], [data-floating-timer]
-  ) {
+  ):not(:where(.admin-shell *)) {
     background: var(--site-surface);
     border-color: var(--window-material-line);
     border-radius: var(--window-radius);
@@ -117,7 +117,7 @@
     .blog-note, .blog-feature, .blog-session, .blog-intro-note,
     .seo-workspace, .seo-card, .seo-steps, .seo-advantage,
     .admin-metric, .admin-overview-panel, .admin-loading
-  ):not(:where(.workspace-window *, .daily-flow-content *, .kofi-support-dialog *)) {
+  ):not(:where(.workspace-window *, .daily-flow-content *, .kofi-support-dialog *, [data-window-design="graphite"] .admin-shell *)) {
     color: var(--pixel-ink);
     background: var(--window-material-texture, none), var(--site-surface);
     border-color: var(--pixel-line);
@@ -133,7 +133,7 @@
     border-radius: var(--window-radius, 3px);
   }
 
-  html[data-window-design] body :is(div, section, article, aside):is(.bg-white, .bg-white\/70, .bg-white\/80, .bg-white\/85, .bg-white\/90):is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl):not(:where(.workspace-window *, .kofi-support-dialog *, .appearance-window-preview, .appearance-window-preview *)) {
+  html[data-window-design] body :is(div, section, article, aside):is(.bg-white, .bg-white\/70, .bg-white\/80, .bg-white\/85, .bg-white\/90):is(.rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl):not(:where(.workspace-window *, .kofi-support-dialog *, .appearance-window-preview, .appearance-window-preview *, [data-window-design="graphite"] .admin-shell *)) {
     background: var(--window-material-texture, none), var(--site-surface);
     border-color: var(--pixel-line);
     box-shadow: var(--window-shadow, 0 8px 24px rgb(0 0 0 / 10%));
@@ -158,9 +158,8 @@
     border-color: var(--pixel-line);
   }
 
-  /* Admin formerly had an independent palette. Resolve aliases from root site
-     roles, never from its local pixel aliases (which would form a cycle). */
-  html[data-window-design] body .admin-shell {
+  /* Graphite keeps the admin's light palette. Other materials use site roles. */
+  html[data-window-design]:not(:where([data-window-design="graphite"])) body .admin-shell {
     --admin-surface: var(--site-paper);
     --admin-subtle: var(--site-screen);
     --admin-line: var(--site-line);
@@ -178,7 +177,7 @@
     color-scheme: var(--site-scheme);
   }
 
-  html[data-window-design] body .admin-brand-icon {
+  html[data-window-design]:not(:where([data-window-design="graphite"])) body .admin-brand-icon {
     background: var(--site-ink);
     color: var(--site-paper);
   }

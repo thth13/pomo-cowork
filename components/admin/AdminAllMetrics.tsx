@@ -1,6 +1,7 @@
 'use client'
 
 import AdminOverview from './AdminOverview'
+import AdminDataTable from './AdminDataTable'
 import { useAdminData } from './useAdminData'
 
 type MetricRecord = { period: string; count: number } | null
@@ -33,6 +34,7 @@ export default function AdminAllMetrics() {
       </div>)}</div>
       <p className="admin-data-note">Registrations use account creation dates. Timer records include all session types and registered or guest accounts; each account counts once per day in the unique-user record.</p>
     </section>
+    <AdminDataTable kind="notes" />
     <AdminOverview showOnlinePanel={false} />
   </>
 }

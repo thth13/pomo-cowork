@@ -1,7 +1,15 @@
-/* Admin defaults; site-appearance.css adapts these roles to the selected theme. */
+/* Light admin palette used by default and under Graphite. */
+.admin-shell,
+html:root[data-window-design="graphite"]:has(.admin-shell) {
+  --admin-subtle: #f5f7fa;
+  --pixel-scroll-track: var(--admin-subtle);
+  --pixel-scroll-thumb: #cbd5e1;
+  --pixel-scroll-hover: #94a3b8;
+  --pixel-scroll-active: #64748b;
+}
+
 .admin-shell {
   --admin-surface: #ffffff;
-  --admin-subtle: #f5f7fa;
   --admin-line: #e4e8ee;
   --admin-ink: #172033;
   --admin-secondary: #475569;
@@ -19,10 +27,6 @@
   --pixel-accent: var(--admin-accent);
   --pixel-shadow: transparent;
   --font-pixel: inherit;
-  --pixel-scroll-track: var(--admin-subtle);
-  --pixel-scroll-thumb: #cbd5e1;
-  --pixel-scroll-hover: #94a3b8;
-  --pixel-scroll-active: #64748b;
   color-scheme: light;
   min-height: 100dvh;
   display: grid;
@@ -134,6 +138,9 @@
 .admin-refresh { margin-top: 16px; padding: 8px 12px; color: var(--admin-accent-hover); border: 1px solid var(--admin-accent-line); background: var(--admin-accent-soft); font-size: 12px; }
 body:has(.admin-shell) :is(.kofi-widget, .feedback-widget) { display: none; }
 body:has(.admin-shell) { background: #f5f7fa; }
+@media (forced-colors: none) {
+  html[data-window-design="graphite"] body:has(.admin-shell) { background: var(--admin-subtle); color-scheme: light; }
+}
 
 .admin-refresh:disabled { opacity: .55; }
 .admin-shell .rank-toast { border-radius: 12px; box-shadow: 0 8px 30px #17203315; }
@@ -228,7 +235,7 @@ body:has(.admin-shell) { background: #f5f7fa; }
 .admin-shell .country-flag-trigger:hover { background: var(--admin-subtle); }
 .admin-shell .country-flag-tooltip { border-radius: 8px; box-shadow: 0 4px 16px #17203315; }
 
-.admin-records { margin-bottom: 32px; }
+.admin-records, .admin-notes { margin-bottom: 32px; }
 .admin-total-registered { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; margin-bottom: 16px; border: 1px solid var(--admin-accent-line); border-radius: 12px; background: var(--admin-accent-soft); }
 .admin-total-registered h3 { font-size: 16px; font-weight: 600; }
 .admin-total-registered p { margin-top: 6px; color: var(--admin-secondary); font-size: 12px; }
