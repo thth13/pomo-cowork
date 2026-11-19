@@ -7,7 +7,7 @@ import './tools.css'
 export default function ToolsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="seo-shell garden-page" lang="en" data-i18n-ignore>
-      <WorkspaceBackground />
+      <WorkspaceBackground fixedBackgroundId="default" />
       <a className="seo-skip" href="#seo-content">Skip to content</a>
       <header className="seo-header">
         <HomeLink className="seo-brand">Pomo Cowork</HomeLink>

@@ -4,7 +4,7 @@ import { isMinimalSeoPath } from '@/lib/seoRoutes'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { BACKGROUNDS, PLAY_BACKGROUND_EVENT } from '@/lib/appearance'
+import { BACKGROUNDS, PLAY_BACKGROUND_EVENT, type BackgroundId } from '@/lib/appearance'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
 import { useSceneryContrast } from '@/hooks/useSceneryContrast'
@@ -148,12 +148,12 @@ function BackgroundMedia({ scene }: { scene: Scene }) {
   )
 }
 
-export default function WorkspaceBackground() {
+export default function WorkspaceBackground({ fixedBackgroundId }: { fixedBackgroundId?: BackgroundId }) {
   const pathname = usePathname()
-  const backgroundId = useAppearanceStore(state => state.backgroundId)
+  const backgroundId = useAppearanceStore(state => fixedBackgroundId ?? state.backgroundId)
   const revision = useAppearanceStore(state => state.mediaRevision)
   const scene = BACKGROUNDS.find(background => background.id === backgroundId)
-  if (isMinimalSeoPath(pathname) || !scene) return null
+  if ((!fixedBackgroundId && isMinimalSeoPath(pathname)) || !scene) return null
   if (scene.kind === 'default') return <div className="workspace-background workspace-background-grid" data-grid-tone={scene.id === 'grid-night' ? 'night' : 'day'} aria-hidden="true" />
   return <BackgroundMedia key={`${scene.id}:${revision}`} scene={scene} />
 }

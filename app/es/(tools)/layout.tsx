@@ -1,10 +1,12 @@
 import Link from 'next/link'
+import WorkspaceBackground from '@/components/WorkspaceBackground'
 import ThemeToggle from '@/components/ThemeToggle'
 import '../../(tools)/tools.css'
 
 export default function SpanishToolsLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="seo-shell garden-page" lang="es" data-i18n-ignore>
+      <WorkspaceBackground fixedBackgroundId="default" />
       <a className="seo-skip" href="#seo-content">Saltar al contenido</a>
       <header className="seo-header">
         <Link className="seo-brand" href="/es">Pomo Cowork</Link>

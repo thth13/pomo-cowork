@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import WorkspaceBackground from '@/components/WorkspaceBackground'
 import { japaneseSeoSlugs } from '@/lib/japaneseSeoRoutes'
 import { japaneseSeoPages } from '@/lib/japaneseSeoPages'
 import '../../(tools)/tools.css'
@@ -6,6 +7,7 @@ import './japanese-tools.css'
 
 export default function JapaneseToolsLayout({ children }: { children: React.ReactNode }) {
   return <div className="seo-shell ja-shell" lang="ja" data-i18n-ignore>
+    <WorkspaceBackground fixedBackgroundId="default" />
     <a className="seo-skip" href="#seo-content">本文へ移動</a>
     <header className="seo-header">
       <Link className="seo-brand" href="/ja/pomodoro-timer" aria-label="Pomo Cowork ポモドーロタイマー">Pomo Cowork</Link>
