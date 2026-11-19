@@ -90,19 +90,19 @@ its preview uses the same surface channels. English and Spanish labels live in
 
 ## Default aurora appearance
 
-Three free ready-made illustrated backgrounds are sourced from Unsplash:
+Three ready-made illustrated backgrounds are sourced from Unsplash:
 Painted sunrise by Deep, Pastel peaks by Akanksha Maurya, and Hudson valley from
 The New York Public Library's Spencer Collection. Storage-hosted WebP images and separate
 480px previews reuse the shared scenery renderer and appearance persistence.
 Source links and licensing are recorded in `public/backgrounds/CREDITS.md`.
 
-Three free gradient scenes extend the appearance catalog: Pearl flow (soft blue
+Three gradient scenes extend the appearance catalog: Pearl flow (soft blue
 and pink), Sage mist (blurred greens) and Prism waves (blue, pink and orange
 gradient waves). They use storage-hosted WebP files with separate previews, the existing
 image renderer and scenery contrast adapter. Their IDs and localized labels live
 in the shared appearance catalog; source credits live beside the assets.
 
-Four additional free photo scenes follow the existing scenery renderer and contrast
+Four additional photo scenes follow the existing scenery renderer and contrast
 adapter: Emerald hills, Rose twilight, Forest dawn and Silent shore. Their 2560px
 WebP assets and separate 480px previews live in storage under `backgrounds/images/`; photographer
 credits and Unsplash source links are recorded in `public/backgrounds/CREDITS.md`.
@@ -131,14 +131,11 @@ Saved appearance IDs remain compatible.
 Background labels omit the default suffix. The initial background preview shows
 two complete rows; expanded options continue on the next row, using the responsive
 column count so there is no gap at the reveal boundary.
-Background choices start with the new scenes: Prism waves, Misty lake, Emerald hills,
-Rose twilight, Forest dawn, Silent shore, Pearl flow, Sage mist, Moss green,
-Painted sunrise, Pastel peaks and Hudson valley, followed by the existing scenes.
+The wallpaper gallery shows free choices first in the order defined by
+`FREE_BACKGROUNDS`, followed by Pro choices in catalog order.
 Moss green uses the texture as its thumbnail. The `default` ID selects this image.
-Pocket garden has its own free `pocket-garden` ID at the bottom of the list; it
-restores the original garden background and base palette. AppearanceProvider and
-the startup script expose the background choice on the document so the photo and
-neon adapters do not override Pocket garden. Reset selects Prism waves.
+AppearanceProvider and the startup script expose the background choice on the
+document. Reset selects Prism waves.
 With Glass or Graphite selected, photo scenes use a neutral black gradient wash (37.5/36.25/34.375% opacity), without a blue or violet tint.
 The ordinary home timer adds a local neutral black radial scrim (25% at its
 center, fading completely at the edges), without a frame or a solid card fill.
@@ -153,8 +150,9 @@ Pocket garden keeps its original treatment.
 The home timer floats directly on the background without a card or inset screen.
 Large white numerals, quiet mode tabs, a fine segmented progress track and rounded
 translucent controls form its hierarchy. Existing actions and accessible names stay
-intact. Sans (Clean) is the default timer font and first choice; Pixel is second.
-Explicit saved font choices are retained.
+intact. Clean (Sans), Pixel and Editorial are free timer fonts in that order.
+All other timer fonts, including Mono and Soft, require active Pro access.
+Clean is the default and the fallback while a saved Pro font is unavailable.
 `app/default-neon.css` owns the runtime pixel/window tokens and shared material
 adapter, loaded after existing styles. `lib/appearance.ts` owns the default font.
 The frontmatter palette remains the legacy garden palette for other materials.
@@ -1004,7 +1002,7 @@ a complete local foreground, muted, border and control palette, independent of
 scenery and the page theme. Dense content and semantic action colors stay shared.
 Their previews reuse the material tokens; no new assets or animation are required.
 The theme choices use three columns on desktop and two on narrow screens.
-Graphite, Pocket Garden, Pocket Garden Night, White and Glass appear first, in that order, and are free. All remaining styles require active Pro access.
+Graphite, Pocket Garden, Pocket Garden Night and Glass appear first, in that order, and are free. White follows Glass and is the first theme that requires active Pro access.
 Locked cards show the shared Pro badge and open the existing paywall. Style changes
 apply immediately, independently of scenery, timer font and light/dark theme.
 The store checks access when choosing, restoring and syncing preferences. Without
@@ -2464,7 +2462,7 @@ on the right; actions span the header on narrow screens.
 
 ## White site theme
 
-White is the fourth free site theme. It shares Graphite’s 28px window corners and open home timer.
+White is the first Pro site theme and appears directly after Glass. It shares Graphite’s 28px window corners and open home timer.
 The home timer also shares Graphite’s button styling and dark translucent task picker.
 Active Sessions shares Graphite’s open rail, rounded corners and responsive card sizing, with opaque white participant cards and dark text.
 It uses opaque white window surfaces, neutral gray secondary surfaces and borders, dark text and the existing
@@ -2567,8 +2565,8 @@ clarified by the user; timer durations, profile and appearance are outside this 
 The new migration is additive. Prisma generation/migration are permitted; project
 launch, test builds and tsc remain prohibited by the user.
 
-The original default Montana lake photo is a free library choice in second position,
-immediately after Moss green. Its stable ID is `montana-lake`; it reuses the existing
+The original default Montana lake photo follows Prism waves in the gallery.
+Its stable ID is `montana-lake`. It reuses the existing
 `default-misty-lake.webp` asset and is separate from the Morning mist (`misty-lake`) scene.
 
 
@@ -2638,6 +2636,12 @@ Garden wallpapers are labeled Pocket Garden and Pocket Garden Night in both
 locales; saved IDs remain `grid` and `grid-night`. The matching site-theme
 miniatures show a 12px grid behind their sample windows, using fixed day/night
 wallpaper colors so they remain recognizable under any active theme.
+
+The free wallpapers are Prism waves, Misty lake, Rainy window, Morning mist,
+Peach coast, Pocket Garden and Pocket Garden Night. All other wallpapers require
+active Pro access. `lib/appearance.ts` owns this list for the gallery, store and
+early page bootstrap. A saved Pro wallpaper falls back to Prism waves while
+access is unavailable and is restored when active Pro access is confirmed.
 
 
 ## Administration conversion metrics
@@ -2736,6 +2740,10 @@ failed states. An optimistic revision check rejects stale writes with 409. Expli
 Save draft copies recovery keeps remote notes and adds changed local notes with new
 IDs. Load/save failures offer retry without clearing drafts. Collections are bounded
 to 200 notes / 2 MB; the server validates the editor structure before persistence.
+Guests and free accounts can create one note. Adding another opens the shared Pro
+paywall, whose benefits include multiple notes. Existing notes stay editable after
+Pro expires. Adding a note, restoring a deleted note or saving draft copies must
+fit the plan's limit. Legacy import fills available slots and retains the browser backup.
 
 The previous account/guest browser key is read once for legacy import, then marked
 imported in the database. No note bodies are written to browser storage; the old

@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { emptyNote, readLegacyNotes, type WorkspaceNote } from '@/lib/notes'
+import { emptyNote, fitsFreeNotesLimit, FREE_NOTES_LIMIT, MAX_WORKSPACE_NOTES, readLegacyNotes, type WorkspaceNote } from '@/lib/notes'
+import { hasActiveProAccess } from '@/lib/proAccess'
 import { createNotesClient, NotesRequestError } from '@/services/notesService'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -82,7 +83,9 @@ export function useWorkspaceNotes(owner: string) {
       if (!result.legacyImported) {
         const legacy = readLegacyNotes(owner)
         const ids = new Set(initial.map(note => note.id))
-        initial = [...initial, ...legacy.filter(note => !ids.has(note.id))]
+        const limit = hasActiveProAccess(useAuthStore.getState().user) ? MAX_WORKSPACE_NOTES : FREE_NOTES_LIMIT
+        const available = Math.max(0, limit - initial.length)
+        initial = [...initial, ...legacy.filter(note => !ids.has(note.id)).slice(0, available)]
       }
       if (result.revision === 0 && initial.length === 0) initial = [emptyNote()]
       notesRef.current = initial
@@ -117,11 +120,13 @@ export function useWorkspaceNotes(owner: string) {
           if (note.id === activeId) selectedId = id
           return { ...note, id }
         })
+      const next = [...remote.notes, ...copies]
+      if (!hasActiveProAccess(useAuthStore.getState().user) && !fitsFreeNotesLimit(next, remote.notes)) return false
       revision.current = remote.revision
       base.current = remote.notes
       legacyImported.current = true
       showError(null)
-      commit([...remote.notes, ...copies])
+      commit(next)
       void flush()
       return selectedId
     } catch { showError('conflict') }

@@ -1,5 +1,8 @@
 import type { JSONContent } from '@tiptap/react'
 
+export const FREE_NOTES_LIMIT = 1
+export const MAX_WORKSPACE_NOTES = 200
+
 export interface WorkspaceNote {
   id: string
   title: string
@@ -40,8 +43,14 @@ export function isWorkspaceNote(value: unknown): value is WorkspaceNote {
 }
 
 export function isNotesCollection(value: unknown): value is WorkspaceNote[] {
-  return Array.isArray(value) && value.length <= 200 && value.every(isWorkspaceNote) &&
+  return Array.isArray(value) && value.length <= MAX_WORKSPACE_NOTES && value.every(isWorkspaceNote) &&
     new Set(value.map(note => note.id)).size === value.length
+}
+
+export function fitsFreeNotesLimit(next: WorkspaceNote[], saved: WorkspaceNote[]) {
+  if (next.length <= FREE_NOTES_LIMIT) return true
+  const savedIds = new Set(saved.map(note => note.id))
+  return next.every(note => savedIds.has(note.id))
 }
 
 // Read-only migration of the previous implementation. The server is now the
@@ -55,6 +64,6 @@ export function readLegacyNotes(owner: string): WorkspaceNote[] {
       if (!isWorkspaceNote(note) || seen.has(note.id)) return false
       seen.add(note.id)
       return true
-    }).slice(0, 200)
+    }).slice(0, MAX_WORKSPACE_NOTES)
   } catch { return [] }
 }

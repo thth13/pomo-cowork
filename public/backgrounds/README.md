@@ -41,7 +41,7 @@ gallery thumbnails are hosted on the CDN configured by `BLOB_BASE_URL`, under
 Landscape JPEG exports use quality 84; gradients use quality 90 to preserve smooth transitions.
 All gallery thumbnails are 320px wide; JPEG thumbnails use quality 75. Original PNG
 outputs remain in Codex's generated-image library. The catalog is in `lib/appearance.ts`.
-Existing free images and videos retain their Vercel Blob paths; video source links
+Existing images and videos retain their Vercel Blob paths; video source links
 remain attached to each entry in that catalog.
 
 ## Final generation prompts

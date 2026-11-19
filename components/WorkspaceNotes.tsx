@@ -1,14 +1,18 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type MouseEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { EditorContent, useEditor, useEditorState, type JSONContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Placeholder from '@tiptap/extension-placeholder'
 import { Bold, Italic, Strikethrough, Heading2, List, ListOrdered, Quote, Code2, Undo2, Redo2, Plus, X, FileText, Check } from 'lucide-react'
 import { useI18n } from '@/components/I18nProvider'
+import { PaywallModal } from '@/components/PaywallModal'
 import { notesCopy } from '@/lib/i18n/notes'
-import { emptyNote, type WorkspaceNote } from '@/lib/notes'
+import { emptyNote, FREE_NOTES_LIMIT, type WorkspaceNote } from '@/lib/notes'
+import { hasActiveProAccess } from '@/lib/proAccess'
 import { useWorkspaceNotes } from '@/hooks/useWorkspaceNotes'
+import { useAuthStore } from '@/store/useAuthStore'
 import '@/app/workspace-notes.css'
 
 type Copy = { [Key in keyof typeof notesCopy.en]: string }
@@ -65,14 +69,25 @@ export default function WorkspaceNotes({ owner }: { owner: string }) {
   const { language } = useI18n()
   const copy = notesCopy[language]
   const { notes, notesRef, ready, error, saving, dirty, commit, retry, saveCopies } = useWorkspaceNotes(owner)
+  const [showPaywall, setShowPaywall] = useState(false)
   const [activeId, setActiveId] = useState('')
   const [removed, setRemoved] = useState<{ note: WorkspaceNote; index: number } | null>(null)
+  const paywallTrigger = useRef<HTMLButtonElement | null>(null)
   const titleRef = useRef<HTMLInputElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
   const active = notes.find(note => note.id === activeId) ?? notes[0]
 
+  const canAdd = () => notesRef.current.length < FREE_NOTES_LIMIT || hasActiveProAccess(useAuthStore.getState().user)
+  const openPaywall = (trigger: HTMLButtonElement) => {
+    paywallTrigger.current = trigger
+    setShowPaywall(true)
+  }
   const update = (id: string, patch: Partial<WorkspaceNote>) => commit(notesRef.current.map(note => note.id === id ? { ...note, ...patch } : note))
-  const add = () => {
+  const add = (event: MouseEvent<HTMLButtonElement>) => {
+    if (!canAdd()) {
+      openPaywall(event.currentTarget)
+      return
+    }
     const note = emptyNote()
     commit([...notesRef.current, note])
     setActiveId(note.id)
@@ -112,19 +127,35 @@ export default function WorkspaceNotes({ owner }: { owner: string }) {
     </div>
     {error && <div className="notes-feedback" role="alert">
       {error === 'conflict' ? copy.conflict : error === 'limit' ? copy.limit : copy.error}
-      <button type="button" disabled={saving} onClick={error === 'conflict' ? () => {
-        void saveCopies(active?.id).then(id => { if (id) setActiveId(id) })
+      <button type="button" disabled={saving} onClick={error === 'conflict' ? event => {
+        const trigger = event.currentTarget
+        void saveCopies(active?.id).then(id => {
+          if (id === false) openPaywall(trigger)
+          else if (id) setActiveId(id)
+        })
       } : retry}>{error === 'conflict' ? copy.saveCopies : copy.retry}</button>
     </div>}
-    {removed && <div className="notes-feedback" role="status">{copy.deleted}<button type="button" onClick={() => {
-      const next = [...notesRef.current]
-      next.splice(Math.min(removed.index, next.length), 0, removed.note)
-      commit(next.filter((note, index, items) => items.findIndex(item => item.id === note.id) === index)); setActiveId(removed.note.id); setRemoved(null)
+    {removed && <div className="notes-feedback" role="status">{copy.deleted}<button type="button" onClick={event => {
+      if (!notesRef.current.some(note => note.id === removed.note.id)) {
+        if (!canAdd()) {
+          openPaywall(event.currentTarget)
+          return
+        }
+        const next = [...notesRef.current]
+        next.splice(Math.min(removed.index, next.length), 0, removed.note)
+        commit(next)
+      }
+      setActiveId(removed.note.id)
+      setRemoved(null)
     }}>{copy.restore}</button></div>}
     {active ? <section className="notes-panel" id="notes-panel" role="tabpanel" aria-labelledby={`note-tab-${active.id}`}>
       <div className="notes-title-row"><input ref={titleRef} aria-label={copy.name} placeholder={copy.untitled} maxLength={160} value={active.title} onChange={event => update(active.id, { title: event.target.value })} /></div>
       <NoteEditor key={active.id} note={active} copy={copy} onChange={content => update(active.id, { content })} />
     </section> : <div className="notes-empty"><FileText size={30} strokeWidth={1.2} aria-hidden="true" /><p>{copy.empty}</p><button type="button" onClick={add}><Plus size={16} aria-hidden="true" />{copy.create}</button></div>}
     <footer className="notes-footer">{error ? <X size={12} aria-hidden="true" /> : !dirty && <Check size={12} aria-hidden="true" />}<span role="status">{error ? copy.notSaved : saving ? copy.saving : dirty ? copy.unsaved : copy.saved}</span></footer>
+    {showPaywall && createPortal(<PaywallModal onClose={() => {
+      setShowPaywall(false)
+      requestAnimationFrame(() => paywallTrigger.current?.focus({ preventScroll: true }))
+    }} />, document.body)}
   </div>
 }

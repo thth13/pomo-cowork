@@ -3,12 +3,17 @@
 import { Children, useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { ChevronDown, Check, Crown, Film, Flame, Leaf, Loader2, Palette, Pause, Play, RotateCcw, X } from 'lucide-react'
-import { BACKGROUNDS, isAnimatedBackground, isPremiumBackground, isPremiumTimerFont, isPremiumWindowDesign, PLAY_BACKGROUND_EVENT, TIMER_FONTS, WINDOW_DESIGNS } from '@/lib/appearance'
+import { BACKGROUNDS, FREE_BACKGROUNDS, isAnimatedBackground, isPremiumBackground, isPremiumTimerFont, isPremiumWindowDesign, PLAY_BACKGROUND_EVENT, TIMER_FONTS, WINDOW_DESIGNS } from '@/lib/appearance'
 import { appearanceCopy } from '@/lib/i18n/appearance'
 import { useI18n } from '@/components/I18nProvider'
 import { useAppearanceStore } from '@/store/useAppearanceStore'
 import { useReducedMotionPreference } from '@/hooks/useReducedMotionPreference'
 import { PaywallModal } from '@/components/PaywallModal'
+
+const galleryBackgrounds = [
+  ...FREE_BACKGROUNDS.flatMap(id => BACKGROUNDS.filter(background => background.id === id)),
+  ...BACKGROUNDS.filter(background => isPremiumBackground(background.id)),
+]
 
 function AppearanceOptions({ title, className, children }: { title: string; className: string; children: ReactNode }) {
   const [expanded, setExpanded] = useState(false)
@@ -143,7 +148,7 @@ export default function AppearanceSettings({ triggerClassName = 'timer-appearanc
             <fieldset className="appearance-section">
               <legend>{copy.backgrounds}</legend>
               <AppearanceOptions title={copy.backgrounds} className="appearance-scenes">
-                {BACKGROUNDS.map(background => (
+                {galleryBackgrounds.map(background => (
                   <AppearanceChoice key={background.id} premium={isPremiumBackground(background.id)} locked={isPremiumBackground(background.id) && !state.hasProAccess}
                     name={radioName} value={background.id} checked={(state.pendingBackgroundId ?? state.backgroundId) === background.id} busy={loadingBackgroundId === background.id}
                     label={`${copy.names[background.id]}${isPremiumBackground(background.id) && !state.hasProAccess ? `. ${copy.unlockPremium}` : ''}`}

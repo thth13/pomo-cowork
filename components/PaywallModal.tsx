@@ -1,6 +1,6 @@
 'use client'
 
-import { ArrowRight, BarChart3, CalendarCheck, Clock3, Crown, Heart, Image as ImageIcon, Loader2, Timer, Users } from 'lucide-react'
+import { ArrowRight, BarChart3, CalendarCheck, Clock3, Crown, FileText, Heart, Image as ImageIcon, Loader2, Timer, Users } from 'lucide-react'
 import { createPortal, flushSync } from 'react-dom'
 import CommunityDialog from '@/components/CommunityDialog'
 import Link from 'next/link'
@@ -39,6 +39,7 @@ export const PaywallModal = ({ onClose, description }: PaywallModalProps) => {
   const features = [
     { id: 'wallpapers', label: t.paywall.premiumWallpapers, icon: ImageIcon },
     { id: 'habits', label: t.paywall.unlimitedHabits, icon: CalendarCheck },
+    { id: 'notes', label: t.paywall.multipleNotes, icon: FileText },
     { id: 'rooms', label: t.paywall.createPrivateRooms, icon: Users },
     { id: 'statistics', label: t.paywall.advancedStatistics, icon: BarChart3 },
     { id: 'time-entry', label: t.paywall.manualTimeEntry, icon: Clock3 },

@@ -3,8 +3,9 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { resolveTaskUserId } from '@/lib/taskAuth'
 import { getTokenFromHeader, verifyToken } from '@/lib/auth'
-import { isNotesCollection, type NotesSnapshot } from '@/lib/notes'
+import { fitsFreeNotesLimit, FREE_NOTES_LIMIT, isNotesCollection, type NotesSnapshot } from '@/lib/notes'
 import { isValidAnonymousId } from '@/lib/anonymousProfile'
+import { hasActiveProAccess } from '@/lib/proAccess'
 
 export const dynamic = 'force-dynamic'
 const headers = { 'Cache-Control': 'private, no-store' }
@@ -72,22 +73,35 @@ export async function PUT(request: NextRequest) {
     typeof body.legacyImported !== 'boolean' || !isNotesCollection(body.notes)) {
     return json({ error: 'Invalid notes.' }, 400)
   }
+  const { notes, revision, legacyImported } = body
   try {
     const userId = await owner(request, true)
     if (!userId) return json({ error: 'Unauthorized' }, 401)
-    const notesJson = JSON.stringify(body.notes)
-    const result = body.revision === 0
+    if (notes.length > FREE_NOTES_LIMIT) {
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { isPro: true, proExpiresAt: true } })
+      if (!hasActiveProAccess(user)) {
+        const [saved] = await prisma.$queryRaw<Pick<NotesSnapshot, 'notes' | 'revision'>[]>`
+          SELECT "notes", "revision" FROM "workspace_notes" WHERE "userId" = ${userId}
+        `
+        if (revision !== (saved?.revision ?? 0)) return json({ error: 'Notes changed in another window.' }, 409)
+        if (!fitsFreeNotesLimit(notes, saved?.notes ?? [])) {
+          return json({ error: 'The free plan allows one note.', code: 'FREE_NOTES_LIMIT' }, 403)
+        }
+      }
+    }
+    const notesJson = JSON.stringify(notes)
+    const result = revision === 0
       ? await prisma.$queryRaw<{ revision: number }[]>`
           INSERT INTO "workspace_notes" ("userId", "notes", "revision", "legacyImported", "updatedAt")
-          VALUES (${userId}, ${notesJson}::jsonb, 1, ${body.legacyImported}, CURRENT_TIMESTAMP)
+          VALUES (${userId}, ${notesJson}::jsonb, 1, ${legacyImported}, CURRENT_TIMESTAMP)
           ON CONFLICT ("userId") DO NOTHING
           RETURNING "revision"
         `
       : await prisma.$queryRaw<{ revision: number }[]>`
           UPDATE "workspace_notes"
           SET "notes" = ${notesJson}::jsonb, "revision" = "revision" + 1,
-              "legacyImported" = ${body.legacyImported}, "updatedAt" = CURRENT_TIMESTAMP
-          WHERE "userId" = ${userId} AND "revision" = ${body.revision}
+              "legacyImported" = ${legacyImported}, "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "userId" = ${userId} AND "revision" = ${revision}
           RETURNING "revision"
         `
     if (!result.length) return json({ error: 'Notes changed in another window.' }, 409)

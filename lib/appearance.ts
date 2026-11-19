@@ -19,36 +19,45 @@ export const BACKGROUNDS = [
   { id: 'forest-rain', kind: 'video', src: `${BLOB_BASE_URL}/backgrounds/videos/forest-rain.mp4`, preview: `${BLOB_BASE_URL}/backgrounds/posters/forest-rain.jpg`, source: 'https://mixkit.co/free-stock-video/raining-in-a-cloud-forest-full-of-tall-trees-22728/' },
   { id: 'forest-stream', kind: 'video', src: `${BLOB_BASE_URL}/backgrounds/videos/forest-stream.mp4`, preview: `${BLOB_BASE_URL}/backgrounds/posters/forest-stream.jpg`, source: 'https://mixkit.co/free-stock-video/forest-stream-in-the-sunlight-529/' },
   { id: 'ocean-sunset', kind: 'video', src: `${BLOB_BASE_URL}/backgrounds/videos/ocean-sunset.mp4`, preview: `${BLOB_BASE_URL}/backgrounds/posters/ocean-sunset.jpg`, source: 'https://mixkit.co/free-stock-video/stunning-sunset-seen-from-the-sea-4119/' },
-  { id: 'alpine-dawn', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/alpine-dawn.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/alpine-dawn-thumb.jpg` },
-  { id: 'desert-dunes', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/desert-dunes.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/desert-dunes-thumb.jpg` },
-  { id: 'aurora-lake', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/aurora-lake.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/aurora-lake-thumb.jpg` },
-  { id: 'magic-academy', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/magic-academy-gothic.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/magic-academy-gothic-thumb.jpg` },
-  { id: 'pixel-campfire', kind: 'image', premium: true, animation: 'campfire', src: `${BLOB_BASE_URL}/backgrounds/images/pixel-campfire.png`, preview: `${BLOB_BASE_URL}/backgrounds/images/pixel-campfire-thumb.png` },
-  { id: 'pixel-autumn', kind: 'image', premium: true, animation: 'autumn', src: `${BLOB_BASE_URL}/backgrounds/images/pixel-autumn.png`, preview: `${BLOB_BASE_URL}/backgrounds/images/pixel-autumn-thumb.png` },
-  { id: 'peach-glow', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/peach-glow.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/peach-glow-thumb.jpg` },
-  { id: 'mint-haze', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/mint-haze.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/mint-haze-thumb.jpg` },
-  { id: 'violet-dusk', kind: 'image', premium: true, src: `${BLOB_BASE_URL}/backgrounds/images/violet-dusk.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/violet-dusk-thumb.jpg` },
+  { id: 'alpine-dawn', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/alpine-dawn.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/alpine-dawn-thumb.jpg` },
+  { id: 'desert-dunes', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/desert-dunes.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/desert-dunes-thumb.jpg` },
+  { id: 'aurora-lake', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/aurora-lake.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/aurora-lake-thumb.jpg` },
+  { id: 'magic-academy', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/magic-academy-gothic.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/magic-academy-gothic-thumb.jpg` },
+  { id: 'pixel-campfire', kind: 'image', animation: 'campfire', src: `${BLOB_BASE_URL}/backgrounds/images/pixel-campfire.png`, preview: `${BLOB_BASE_URL}/backgrounds/images/pixel-campfire-thumb.png` },
+  { id: 'pixel-autumn', kind: 'image', animation: 'autumn', src: `${BLOB_BASE_URL}/backgrounds/images/pixel-autumn.png`, preview: `${BLOB_BASE_URL}/backgrounds/images/pixel-autumn-thumb.png` },
+  { id: 'peach-glow', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/peach-glow.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/peach-glow-thumb.jpg` },
+  { id: 'mint-haze', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/mint-haze.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/mint-haze-thumb.jpg` },
+  { id: 'violet-dusk', kind: 'image', src: `${BLOB_BASE_URL}/backgrounds/images/violet-dusk.jpg`, preview: `${BLOB_BASE_URL}/backgrounds/images/violet-dusk-thumb.jpg` },
   { id: 'grid', kind: 'default' },
   { id: 'grid-night', kind: 'default' },
 ] as const
 
-export const PREMIUM_TIMER_FONTS = ['orbitron', 'space-grotesk', 'cormorant', 'bebas', 'vt323'] as const
-export const TIMER_FONTS = ['sans', 'pixel', 'serif', 'mono', 'rounded', ...PREMIUM_TIMER_FONTS] as const
-export const FREE_WINDOW_DESIGNS = ['graphite', 'pocket-garden', 'pocket-garden-night', 'white', 'glass'] as const
-export const PREMIUM_WINDOW_DESIGNS = ['aurora', 'matte', 'pixel', 'dark-red', 'ivory', 'clear-glass', 'minimal', 'outline', 'paper', 'terminal', 'neon'] as const
+export const PREMIUM_TIMER_FONTS = ['mono', 'rounded', 'orbitron', 'space-grotesk', 'cormorant', 'bebas', 'vt323'] as const
+export const TIMER_FONTS = ['sans', 'pixel', 'serif', ...PREMIUM_TIMER_FONTS] as const
+export const FREE_WINDOW_DESIGNS = ['graphite', 'pocket-garden', 'pocket-garden-night', 'glass'] as const
+export const PREMIUM_WINDOW_DESIGNS = ['white', 'aurora', 'matte', 'pixel', 'dark-red', 'ivory', 'clear-glass', 'minimal', 'outline', 'paper', 'terminal', 'neon'] as const
 export const WINDOW_DESIGNS = [...FREE_WINDOW_DESIGNS, ...PREMIUM_WINDOW_DESIGNS] as const
 export const PLAY_BACKGROUND_EVENT = 'pomo:play-background'
 export type BackgroundId = (typeof BACKGROUNDS)[number]['id']
 export type TimerFont = (typeof TIMER_FONTS)[number]
 export type WindowDesign = (typeof WINDOW_DESIGNS)[number]
 
+export const FREE_BACKGROUNDS: readonly BackgroundId[] = [
+  'prism-waves',
+  'montana-lake',
+  'rainy-window',
+  'misty-lake',
+  'sunset-coast',
+  'grid',
+  'grid-night',
+]
+
 export function isAnimatedBackground(background: (typeof BACKGROUNDS)[number]): boolean {
   return background.kind === 'video' || 'animation' in background
 }
 
 export function isPremiumBackground(id: BackgroundId): boolean {
-  const background = BACKGROUNDS.find(item => item.id === id)
-  return Boolean(background && 'premium' in background && background.premium)
+  return !FREE_BACKGROUNDS.includes(id)
 }
 
 export function isPremiumTimerFont(font: TimerFont): boolean {

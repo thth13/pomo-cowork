@@ -25,7 +25,7 @@ import { Bebas_Neue, Cormorant_Garamond, Inter, Orbitron, Space_Grotesk, VT323 }
 import type { Metadata } from 'next'
 import { ThemeProvider } from '@/components/ThemeProvider'
 import { AppearanceProvider } from '@/components/AppearanceProvider'
-import { BACKGROUNDS, DEFAULT_APPEARANCE, FREE_WINDOW_DESIGNS } from '@/lib/appearance'
+import { BACKGROUNDS, DEFAULT_APPEARANCE, FREE_BACKGROUNDS, FREE_WINDOW_DESIGNS } from '@/lib/appearance'
 import ConnectionDebug from '@/components/ConnectionDebug'
 import AuthProvider from '@/components/AuthProvider'
 import OfflineToast from '@/components/OfflineToast'
@@ -115,7 +115,8 @@ export default function RootLayout({
               }
               try {
                 const appearance = JSON.parse(localStorage.getItem('pomo:appearance:v1') || 'null');
-                document.documentElement.dataset.background = appearance?.backgroundId === 'pocket-garden' ? 'grid' : appearance?.backgroundId || ${JSON.stringify(DEFAULT_APPEARANCE.backgroundId)};
+                const background = appearance?.backgroundId === 'pocket-garden' ? 'grid' : appearance?.backgroundId;
+                document.documentElement.dataset.background = ${JSON.stringify(FREE_BACKGROUNDS)}.includes(background) ? background : ${JSON.stringify(DEFAULT_APPEARANCE.backgroundId)};
                 const design = appearance?.backgroundId === 'pocket-garden' ? 'pocket-garden' : appearance && appearance.windowDesign;
                 document.documentElement.dataset.windowDesign = ${JSON.stringify(FREE_WINDOW_DESIGNS)}.includes(design) ? design : ${JSON.stringify(DEFAULT_APPEARANCE.windowDesign)};
               } catch (e) {
